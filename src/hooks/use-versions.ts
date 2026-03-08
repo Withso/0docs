@@ -35,12 +35,12 @@ export function useVersions(projectId: string | undefined) {
   const addVersion = async (label: string) => {
     if (!projectId) return;
     const { data } = await supabase
-      .from("doc_versions" as any)
+      .from("doc_versions")
       .insert({ project_id: projectId, version_label: label, is_default: versions.length === 0 })
       .select()
       .single();
     if (data) {
-      const row = data as unknown as DocVersion;
+      const row = data as DocVersion;
       setVersions((v) => [row, ...v]);
       if (versions.length === 0) setActiveVersion(row);
     }
