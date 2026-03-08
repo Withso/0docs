@@ -88,6 +88,20 @@ const Dashboard = () => {
     if (!error) setProjects((p) => p.filter((proj) => proj.id !== id));
   };
 
+  const seedDemo = async () => {
+    const { data, error } = await supabase.functions.invoke("seed-demo-project", {
+      body: { user_id: user!.id },
+    });
+    if (error) {
+      toast({ title: "Error", description: "Failed to create demo project", variant: "destructive" });
+    } else {
+      toast({ title: "Demo project created!" });
+      fetchProjects();
+    }
+  };
+
+  const hasDemoProject = projects.some((p) => p.slug === "agentation-docs-demo");
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
