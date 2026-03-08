@@ -145,6 +145,14 @@ const Builder = () => {
               variant="outline"
               size="sm"
               className="h-8 text-xs"
+              onClick={() => navigate(`/builder/${projectId}/analytics`)}
+            >
+              <BarChart3 className="h-3.5 w-3.5 mr-1.5" /> Analytics
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
               onClick={() => window.open(`/docs/${project?.slug}`, "_blank")}
             >
               <Eye className="h-3.5 w-3.5 mr-1.5" /> Preview
