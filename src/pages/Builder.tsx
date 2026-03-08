@@ -22,6 +22,7 @@ const Builder = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [openApiOpen, setOpenApiOpen] = useState(false);
 
   const {
     project, pages, activePage, setActivePage, sections, blocks, loading,
@@ -30,6 +31,58 @@ const Builder = () => {
   } = useBuilder(projectId, user?.id);
 
   const { settings, loading: settingsLoading } = useDesignSettings(projectId);
+
+  const handleOpenAPIImport = useCallback(async (parsed: ParsedOpenAPI) => {
+    if (!projectId) return;
+
+    // Group endpoints by tag → one page per tag
+    const tagGroups = new Map<string, typeof parsed.endpoints>();
+    for (const ep of parsed.endpoints) {
+      const tag = ep.tags[0] || "Default";
+      if (!tagGroups.has(tag)) tagGroups.set(tag, []);
+      tagGroups.get(tag)!.push(ep);
+    }
+
+    let pageIndex = pages.length;
+    for (const [tag, endpoints] of tagGroups) {
+      // Create page
+      const slug = `api-${tag.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+      const { data: page } = await supabase
+        .from("pages")
+        .insert({ project_id: projectId, title: `API: ${tag}`, slug, order_index: pageIndex++ })
+        .select()
+        .single();
+      if (!page) continue;
+
+      // Create one section per endpoint
+      for (let i = 0; i < endpoints.length; i++) {
+        const ep = endpoints[i];
+        const { data: section } = await supabase
+          .from("sections")
+          .insert({ page_id: page.id, title: `${ep.method} ${ep.path}`, order_index: i })
+          .select()
+          .single();
+        if (!section) continue;
+
+        // Add api_endpoint block
+        await supabase.from("blocks").insert({
+          section_id: section.id,
+          type: "api_endpoint" as any,
+          content: {
+            method: ep.method,
+            path: ep.path,
+            description: ep.description,
+            parameters: ep.parameters,
+            response: ep.response,
+          },
+          order_index: 0,
+        });
+      }
+    }
+
+    // Reload by navigating
+    window.location.reload();
+  }, [projectId, pages.length]);
 
   if (loading || settingsLoading) {
     return (
