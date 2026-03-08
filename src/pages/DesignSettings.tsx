@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,10 +13,11 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   ArrowLeft, Save, RotateCcw, Type, AlignLeft, Code, ImageIcon,
   Film, Youtube, ListOrdered, List, StickyNote, AlertCircle, Layout, Sidebar, Palette,
-  GripHorizontal, Minimize2, Maximize2, Eye,
+  Eye, PanelRightClose, PanelRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -98,68 +99,9 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-type NavSection = "global" | "colors" | "layout" | "sidebar" | BlockKey;
-
-const globalNavItems: { key: NavSection; label: string; icon: typeof Type }[] = [
-  { key: "global", label: "Typography", icon: Type },
-  { key: "colors", label: "Colors", icon: Palette },
-  { key: "layout", label: "Layout", icon: Layout },
-  { key: "sidebar", label: "Sidebar", icon: Sidebar },
-];
-
 interface DocPage { id: string; title: string; slug: string; order_index: number; }
 interface DocSection { id: string; page_id: string; title: string; order_index: number; }
 interface DocBlock { id: string; section_id: string; type: string; content: any; order_index: number; }
-
-// ─── Draggable + Resizable hook ──────────────────────
-function useDraggableResizable(
-  initialX: number, initialY: number, initialW: number, initialH: number, minW: number, minH: number
-) {
-  const [pos, setPos] = useState({ x: initialX, y: initialY });
-  const [size, setSize] = useState({ w: initialW, h: initialH });
-  const dragging = useRef(false);
-  const resizing = useRef(false);
-  const offset = useRef({ x: 0, y: 0 });
-
-  const onDragStart = useCallback((e: React.MouseEvent) => {
-    dragging.current = true;
-    offset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
-    e.preventDefault();
-  }, [pos]);
-
-  const onResizeStart = useCallback((e: React.MouseEvent) => {
-    resizing.current = true;
-    offset.current = { x: e.clientX, y: e.clientY };
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (dragging.current) {
-        setPos({
-          x: Math.max(0, Math.min(window.innerWidth - 100, e.clientX - offset.current.x)),
-          y: Math.max(0, Math.min(window.innerHeight - 100, e.clientY - offset.current.y)),
-        });
-      }
-      if (resizing.current) {
-        const dx = e.clientX - offset.current.x;
-        const dy = e.clientY - offset.current.y;
-        offset.current = { x: e.clientX, y: e.clientY };
-        setSize((prev) => ({
-          w: Math.max(minW, prev.w + dx),
-          h: Math.max(minH, prev.h + dy),
-        }));
-      }
-    };
-    const onMouseUp = () => { dragging.current = false; resizing.current = false; };
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => { window.removeEventListener("mousemove", onMouseMove); window.removeEventListener("mouseup", onMouseUp); };
-  }, [minW, minH]);
-
-  return { pos, size, onDragStart, onResizeStart };
-}
 
 // ─── Main Page ───────────────────────────────────────
 const DesignSettingsPage = () => {
@@ -170,9 +112,8 @@ const DesignSettingsPage = () => {
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
   const [local, setLocal] = useState<DS>(defaultDesignSettings);
-  const [activeNav, setActiveNav] = useState<NavSection>("global");
   const [projectData, setProjectData] = useState<any>(null);
-  const [collapsed, setCollapsed] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
 
   // Doc data
   const [pages, setPages] = useState<DocPage[]>([]);
@@ -181,11 +122,9 @@ const DesignSettingsPage = () => {
   const [blocks, setBlocks] = useState<DocBlock[]>([]);
   const [docLoading, setDocLoading] = useState(true);
 
-  const { pos, size, onDragStart, onResizeStart } = useDraggableResizable(
-    Math.max(0, window.innerWidth - 420), 80, 380, 560, 300, 300
-  );
-
-  const highlightedBlockType = blockSections.some((b) => b.key === activeNav) ? (activeNav as string) : null;
+  // Track which block accordion is open for highlight
+  const [openAccordionValues, setOpenAccordionValues] = useState<string[]>([]);
+  const highlightedBlockType = blockSections.find((b) => openAccordionValues.includes(`block-${b.key}`))?.key || null;
 
   useEffect(() => { if (!settingsLoading) setLocal(settings); }, [settings, settingsLoading]);
 
@@ -237,10 +176,10 @@ const DesignSettingsPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Design settings header bar */}
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* Header bar */}
       <header className="border-b bg-background sticky top-0 z-[60] shrink-0">
-        <div className="px-6 h-11 flex items-center justify-between">
+        <div className="px-4 h-11 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/builder/${projectId}`)}>
               <ArrowLeft className="h-4 w-4" />
@@ -249,6 +188,9 @@ const DesignSettingsPage = () => {
             <span className="text-muted-foreground text-xs">/ Design Settings</span>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPanelOpen(!panelOpen)} title={panelOpen ? "Hide panel" : "Show panel"}>
+              {panelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
+            </Button>
             <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleReset}>
               <RotateCcw className="h-3 w-3 mr-1" /> Reset
             </Button>
@@ -262,113 +204,112 @@ const DesignSettingsPage = () => {
         </div>
       </header>
 
-      {/* Full-page live documentation — uses the exact same shared component as PublicDocs */}
-      <div className="flex-1 overflow-auto">
-        <DocContentView
-          settings={local}
-          projectName={projectData?.name || ""}
-          pages={pages}
-          activePage={activePage}
-          sections={sections}
-          blocks={blocks}
-          onSelectPage={setActivePage}
-          highlightType={highlightedBlockType}
-          headerStickyTop={44}
-          hideHeader
-        />
-      </div>
-
-      {/* ─── Floating Resizable Settings Panel ─── */}
-      <div
-        className="fixed z-[70] bg-background border rounded-xl shadow-2xl flex flex-col overflow-hidden"
-        style={{
-          left: pos.x,
-          top: pos.y,
-          width: collapsed ? 220 : size.w,
-          height: collapsed ? "auto" : size.h,
-        }}
-      >
-        {/* Drag handle */}
-        <div
-          onMouseDown={onDragStart}
-          className="flex items-center justify-between px-3 py-2 border-b cursor-grab active:cursor-grabbing select-none bg-muted/50 rounded-t-xl shrink-0"
-        >
-          <div className="flex items-center gap-2">
-            <GripHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold text-foreground">Design Settings</span>
-          </div>
-          <button onClick={() => setCollapsed(!collapsed)} className="p-1 rounded hover:bg-secondary transition-colors">
-            {collapsed ? <Maximize2 className="h-3 w-3 text-muted-foreground" /> : <Minimize2 className="h-3 w-3 text-muted-foreground" />}
-          </button>
+      {/* Split layout: preview + settings panel */}
+      <div className="flex-1 flex min-h-0">
+        {/* Left: Live documentation preview */}
+        <div className="flex-1 overflow-auto">
+          <DocContentView
+            settings={local}
+            projectName={projectData?.name || ""}
+            pages={pages}
+            activePage={activePage}
+            sections={sections}
+            blocks={blocks}
+            onSelectPage={setActivePage}
+            highlightType={highlightedBlockType}
+            headerStickyTop={0}
+            hideHeader
+          />
         </div>
 
-        {!collapsed && (
-          <>
-            {/* Nav tabs */}
-            <div className="border-b px-2 py-1.5 shrink-0 max-h-[140px] overflow-y-auto">
-              <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest px-1 py-0.5">Global</div>
-              <div className="flex flex-wrap gap-0.5 mb-1">
-                {globalNavItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeNav === item.key;
-                  return (
-                    <button
-                      key={item.key}
-                      onClick={() => setActiveNav(item.key)}
-                      className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
-                        isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                      }`}
-                    >
-                      <Icon className="h-3 w-3" /> {item.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest px-1 py-0.5">Blocks</div>
-              <div className="flex flex-wrap gap-0.5">
+        {/* Right: Fixed settings panel */}
+        {panelOpen && (
+          <aside className="w-[340px] shrink-0 border-l bg-background flex flex-col">
+            <div className="px-4 py-3 border-b shrink-0">
+              <h2 className="text-sm font-semibold text-foreground">Customize</h2>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Adjust typography, colors, layout &amp; block styles</p>
+            </div>
+
+            <ScrollArea className="flex-1">
+              <Accordion
+                type="multiple"
+                value={openAccordionValues}
+                onValueChange={setOpenAccordionValues}
+                className="px-3"
+              >
+                {/* ─── Global Settings ─── */}
+                <div className="pt-3 pb-1">
+                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest px-1">Global</span>
+                </div>
+
+                <AccordionItem value="typography" className="border-b-0">
+                  <AccordionTrigger className="py-2.5 text-xs hover:no-underline">
+                    <span className="flex items-center gap-2"><Type className="h-3.5 w-3.5 text-muted-foreground" /> Typography</span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3 pb-2">
+                      <TypographyControls local={local} update={update} />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="colors" className="border-b-0">
+                  <AccordionTrigger className="py-2.5 text-xs hover:no-underline">
+                    <span className="flex items-center gap-2"><Palette className="h-3.5 w-3.5 text-muted-foreground" /> Colors</span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3 pb-2">
+                      <ColorControls local={local} update={update} />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="layout" className="border-b-0">
+                  <AccordionTrigger className="py-2.5 text-xs hover:no-underline">
+                    <span className="flex items-center gap-2"><Layout className="h-3.5 w-3.5 text-muted-foreground" /> Layout</span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3 pb-2">
+                      <LayoutControls local={local} update={update} />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="sidebar" className="border-b-0">
+                  <AccordionTrigger className="py-2.5 text-xs hover:no-underline">
+                    <span className="flex items-center gap-2"><Sidebar className="h-3.5 w-3.5 text-muted-foreground" /> Sidebar</span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3 pb-2">
+                      <SidebarControls local={local} update={update} />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* ─── Block Styles ─── */}
+                <div className="pt-4 pb-1">
+                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest px-1">Block Styles</span>
+                </div>
+
                 {blockSections.map((item) => {
                   const Icon = item.icon;
-                  const isActive = activeNav === item.key;
                   return (
-                    <button
-                      key={item.key}
-                      onClick={() => setActiveNav(item.key)}
-                      className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
-                        isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                      }`}
-                    >
-                      <Icon className="h-3 w-3" /> {item.label}
-                    </button>
+                    <AccordionItem key={item.key} value={`block-${item.key}`} className="border-b-0">
+                      <AccordionTrigger className="py-2.5 text-xs hover:no-underline">
+                        <span className="flex items-center gap-2"><Icon className="h-3.5 w-3.5 text-muted-foreground" /> {item.label}</span>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-3 pb-2">
+                          <BlockControls blockKey={item.key} local={local} updateBlockStyle={updateBlockStyle} update={update} />
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
                   );
                 })}
-              </div>
-            </div>
-
-            {/* Controls area */}
-            <ScrollArea className="flex-1 min-h-0">
-              <div className="p-4 space-y-4">
-                {activeNav === "global" && <TypographyControls local={local} update={update} />}
-                {activeNav === "colors" && <ColorControls local={local} update={update} />}
-                {activeNav === "layout" && <LayoutControls local={local} update={update} />}
-                {activeNav === "sidebar" && <SidebarControls local={local} update={update} />}
-                {blockSections.some((b) => b.key === activeNav) && (
-                  <BlockControls blockKey={activeNav as BlockKey} local={local} updateBlockStyle={updateBlockStyle} update={update} />
-                )}
-              </div>
+              </Accordion>
+              <div className="h-6" />
             </ScrollArea>
-
-            {/* Resize handle */}
-            <div
-              onMouseDown={onResizeStart}
-              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
-              style={{ touchAction: "none" }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-muted-foreground/50">
-                <path d="M14 14L8 14L14 8Z" fill="currentColor" />
-                <path d="M14 14L11 14L14 11Z" fill="currentColor" opacity="0.5" />
-              </svg>
-            </div>
-          </>
+          </aside>
         )}
       </div>
     </div>
@@ -379,7 +320,6 @@ const DesignSettingsPage = () => {
 function TypographyControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
   return (
     <>
-      <h3 className="text-xs font-semibold text-foreground">Typography</h3>
       <div>
         <Label className="text-[11px] text-muted-foreground mb-1 block">Heading Font</Label>
         <Select value={local.headingFont} onValueChange={(v) => update("headingFont", v)}>
@@ -443,7 +383,6 @@ function ColorControls({ local, update }: { local: DS; update: <K extends keyof 
   ];
   return (
     <>
-      <h3 className="text-xs font-semibold text-foreground">Colors</h3>
       {colors.map((c) => (
         <ColorField key={c.key} label={c.label} value={local[c.key] as string} onChange={(v) => update(c.key, v as any)} />
       ))}
@@ -455,7 +394,6 @@ function ColorControls({ local, update }: { local: DS; update: <K extends keyof 
 function LayoutControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
   return (
     <>
-      <h3 className="text-xs font-semibold text-foreground">Layout</h3>
       <div>
         <Label className="text-[11px] text-muted-foreground mb-1 block">Content Width: {local.contentMaxWidth}px</Label>
         <Slider value={[local.contentMaxWidth]} onValueChange={([v]) => update("contentMaxWidth", v)} min={500} max={900} step={10} />
@@ -498,7 +436,6 @@ function LayoutControls({ local, update }: { local: DS; update: <K extends keyof
 function SidebarControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
   return (
     <>
-      <h3 className="text-xs font-semibold text-foreground">Sidebar</h3>
       <ColorField label="Background" value={local.sidebarBg} onChange={(v) => update("sidebarBg", v)} />
       <ColorField label="Text Color" value={local.sidebarTextColor} onChange={(v) => update("sidebarTextColor", v)} />
       <ColorField label="Active Color" value={local.sidebarActiveColor} onChange={(v) => update("sidebarActiveColor", v)} />
@@ -543,9 +480,7 @@ function BlockControls({
 
   return (
     <>
-      <h3 className="text-xs font-semibold text-foreground">{label} Block</h3>
       <p className="text-[10px] text-muted-foreground">Customize {label.toLowerCase()} blocks. Leave empty for global defaults.</p>
-      <Separator />
 
       {supportsTextStyle && (
         <ColorField label="Text Color" value={resolvedColor} onChange={(v) => updateBlockStyle(blockKey, "color", v)} />
