@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, LogOut, ExternalLink, Trash2 } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Trash2, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -88,6 +88,20 @@ const Dashboard = () => {
     if (!error) setProjects((p) => p.filter((proj) => proj.id !== id));
   };
 
+  const seedDemo = async () => {
+    const { data, error } = await supabase.functions.invoke("seed-demo-project", {
+      body: { user_id: user!.id },
+    });
+    if (error) {
+      toast({ title: "Error", description: "Failed to create demo project", variant: "destructive" });
+    } else {
+      toast({ title: "Demo project created!" });
+      fetchProjects();
+    }
+  };
+
+  const hasDemoProject = projects.some((p) => p.slug === "agentation-docs-demo");
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -114,6 +128,12 @@ const Dashboard = () => {
                 <Plus className="h-4 w-4 mr-2" /> New Project
               </Button>
             </DialogTrigger>
+            {!hasDemoProject && (
+              <Button variant="outline" onClick={seedDemo}>
+                <BookOpen className="h-4 w-4 mr-2" /> Load Demo Project
+              </Button>
+            )}
+
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New Project</DialogTitle>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,16 @@ const Auth = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      if (isSignUp) {
+        // Seed demo project for new users
+        try {
+          await supabase.functions.invoke("seed-demo-project", {
+            body: { user_id: (await supabase.auth.getUser()).data.user?.id },
+          });
+        } catch (e) {
+          console.error("Demo seed failed:", e);
+        }
+      }
       navigate("/dashboard");
     }
     setLoading(false);
