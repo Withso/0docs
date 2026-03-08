@@ -64,26 +64,28 @@ const DocContentView = ({
   return (
     <DesignSettingsWrapper settings={s} className="min-h-full">
       {/* Doc header */}
-      <header
-        className="border-b sticky z-40"
-        style={{
-          top: headerStickyTop,
-          backgroundColor: `hsl(${s.backgroundColor})`,
-          borderColor: `hsl(${s.borderColor})`,
-        }}
-      >
-        <div
-          style={{ maxWidth: `${frameMaxWidth}px` }}
-          className="mx-auto px-6 h-12 flex items-center justify-between"
+      {!hideHeader && (
+        <header
+          className="border-b sticky z-40"
+          style={{
+            top: headerStickyTop,
+            backgroundColor: `hsl(${s.backgroundColor})`,
+            borderColor: `hsl(${s.borderColor})`,
+          }}
         >
-          <span
-            className="font-semibold text-sm"
-            style={{ fontFamily: `'${s.bodyFont}', sans-serif` }}
+          <div
+            style={{ maxWidth: `${frameMaxWidth}px` }}
+            className="mx-auto px-6 h-12 flex items-center justify-between"
           >
-            {projectName}
-          </span>
-        </div>
-      </header>
+            <span
+              className="font-semibold text-sm"
+              style={{ fontFamily: `'${s.bodyFont}', sans-serif` }}
+            >
+              {projectName}
+            </span>
+          </div>
+        </header>
+      )}
 
       <div
         style={{ maxWidth: `${frameMaxWidth}px` }}
