@@ -525,59 +525,79 @@ function BlockControls({
   const bs = local.blockStyles[blockKey];
   const label = blockSections.find((b) => b.key === blockKey)?.label || blockKey;
 
+  const supportsTextStyle = ["heading", "paragraph", "code_block", "ordered_list", "unordered_list", "note", "callout", "image"].includes(blockKey);
+  const supportsBackground = ["code_block", "note", "callout", "image", "video", "youtube"].includes(blockKey);
+  const supportsBorder = ["note", "callout", "code_block", "image", "video", "youtube"].includes(blockKey);
+  const supportsRadius = ["code_block", "note", "callout", "image", "video", "youtube"].includes(blockKey);
+  const supportsPadding = ["code_block", "note", "callout", "image", "video", "youtube"].includes(blockKey);
+
   const resolvedColor = bs.color || local.foregroundColor;
-  const resolvedBg = bs.backgroundColor || (blockKey === "code_block" ? local.codeBlockBg : blockKey === "note" ? local.noteBg : blockKey === "callout" ? local.accentColor : "");
+  const resolvedBg = bs.backgroundColor || (blockKey === "code_block" ? local.codeBlockBg : blockKey === "note" ? local.noteBg : blockKey === "callout" ? local.accentColor : "0 0% 100%");
   const resolvedBorder = bs.borderColor || (blockKey === "note" ? local.noteBorderColor : local.borderColor);
   const resolvedFont = bs.fontFamily || (blockKey === "heading" ? local.headingFont : blockKey === "code_block" ? local.codeFont : local.bodyFont);
-  const resolvedSize = bs.fontSize || (blockKey === "heading" ? local.headingFontSize : local.baseFontSize);
+  const resolvedSize = bs.fontSize || (blockKey === "heading" ? local.headingFontSize : blockKey === "image" ? local.baseFontSize - 1 : local.baseFontSize);
   const resolvedWeight = bs.fontWeight || (blockKey === "heading" ? local.headingWeight : "400");
   const resolvedRadius = bs.borderRadius ?? (blockKey === "code_block" ? local.codeBlockBorderRadius : 8);
-  const resolvedPadding = bs.padding ?? (["code_block", "note", "callout"].includes(blockKey) ? 16 : 0);
+  const resolvedPadding = bs.padding ?? (["code_block", "note", "callout"].includes(blockKey) ? 16 : ["image", "video", "youtube"].includes(blockKey) ? 0 : 0);
 
   return (
     <>
       <h3 className="text-xs font-semibold text-foreground">{label} Block</h3>
       <p className="text-[10px] text-muted-foreground">Customize {label.toLowerCase()} blocks. Leave empty for global defaults.</p>
       <Separator />
-      <ColorField label="Text Color" value={resolvedColor} onChange={(v) => updateBlockStyle(blockKey, "color", v)} />
-      {["code_block", "note", "callout"].includes(blockKey) && (
+
+      {supportsTextStyle && (
+        <ColorField label="Text Color" value={resolvedColor} onChange={(v) => updateBlockStyle(blockKey, "color", v)} />
+      )}
+      {supportsBackground && (
         <ColorField label="Background" value={resolvedBg} onChange={(v) => updateBlockStyle(blockKey, "backgroundColor", v)} />
       )}
-      {["note", "callout", "code_block"].includes(blockKey) && (
+      {supportsBorder && (
         <ColorField label="Border" value={resolvedBorder} onChange={(v) => updateBlockStyle(blockKey, "borderColor", v)} />
       )}
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Font</Label>
-        <Select value={resolvedFont} onValueChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {(blockKey === "code_block" ? codeFontOptions : fontOptions).map((f) => (
-              <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Font Size: {resolvedSize}px</Label>
-        <Slider value={[resolvedSize]} onValueChange={([v]) => updateBlockStyle(blockKey, "fontSize", v)} min={10} max={32} step={1} />
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Font Weight</Label>
-        <Select value={resolvedWeight} onValueChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>{weightOptions.map((w) => <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      {["code_block", "note", "callout", "image", "video", "youtube"].includes(blockKey) && (
+
+      {supportsTextStyle && (
+        <div>
+          <Label className="text-[11px] text-muted-foreground mb-1 block">Font</Label>
+          <Select value={resolvedFont} onValueChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(blockKey === "code_block" ? codeFontOptions : fontOptions).map((f) => (
+                <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {supportsTextStyle && (
+        <div>
+          <Label className="text-[11px] text-muted-foreground mb-1 block">Font Size: {resolvedSize}px</Label>
+          <Slider value={[resolvedSize]} onValueChange={([v]) => updateBlockStyle(blockKey, "fontSize", v)} min={10} max={32} step={1} />
+        </div>
+      )}
+
+      {supportsTextStyle && (
+        <div>
+          <Label className="text-[11px] text-muted-foreground mb-1 block">Font Weight</Label>
+          <Select value={resolvedWeight} onValueChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>{weightOptions.map((w) => <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {supportsRadius && (
         <div>
           <Label className="text-[11px] text-muted-foreground mb-1 block">Border Radius: {resolvedRadius}px</Label>
           <Slider value={[resolvedRadius]} onValueChange={([v]) => updateBlockStyle(blockKey, "borderRadius", v)} min={0} max={20} step={1} />
         </div>
       )}
-      {["code_block", "note", "callout"].includes(blockKey) && (
+
+      {supportsPadding && (
         <div>
           <Label className="text-[11px] text-muted-foreground mb-1 block">Padding: {resolvedPadding}px</Label>
-          <Slider value={[resolvedPadding]} onValueChange={([v]) => updateBlockStyle(blockKey, "padding", v)} min={4} max={32} step={2} />
+          <Slider value={[resolvedPadding]} onValueChange={([v]) => updateBlockStyle(blockKey, "padding", v)} min={0} max={32} step={2} />
         </div>
       )}
     </>

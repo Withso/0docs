@@ -114,15 +114,23 @@ const BuilderSidebar = ({
               </div>
 
               {isActive && pageSections.length > 0 && (
-                <nav className="ml-4 mt-0.5 mb-1 space-y-0.5">
+                <nav
+                  className="ml-4 mt-0.5 mb-1"
+                  style={{
+                    gap: `${settings.sidebarPageGap}px`,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
                   {pageSections.map((section) => (
                     <a
                       key={section.id}
                       href={`#section-${section.id}`}
-                      className="block px-2 py-0.5 text-xs rounded transition-colors"
+                      className="block px-2 py-0.5 rounded transition-colors"
                       style={{
                         color: `hsl(${settings.sidebarTextColor})`,
                         fontSize: `${settings.sidebarFontSize - 2}px`,
+                        fontFamily: `'${settings.bodyFont}', sans-serif`,
                       }}
                     >
                       {section.title}
