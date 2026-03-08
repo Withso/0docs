@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useDesignSettings, defaultDesignSettings } from "@/hooks/use-design-settings";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
 import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
+import DocBlockRenderer from "@/components/docs/DocBlockRenderer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft, Save, RotateCcw, Type, AlignLeft, Code, ImageIcon,
   Film, Youtube, ListOrdered, List, StickyNote, AlertCircle, Layout, Sidebar, Palette,
-  GripHorizontal, X, ChevronRight, Minimize2, Maximize2, Eye,
+  GripHorizontal, Minimize2, Maximize2, Eye, ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -81,7 +82,6 @@ const blockSections: { key: BlockKey; label: string; icon: typeof Type }[] = [
   { key: "callout", label: "Callout", icon: AlertCircle },
 ];
 
-// ─── Color field ─────────────────────────────────────
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -99,52 +99,73 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-// ─── Nav sections ────────────────────────────────────
 type NavSection = "global" | "colors" | "layout" | "sidebar" | BlockKey;
 
-const navItems: { key: NavSection; label: string; icon: typeof Type; group: string }[] = [
-  { key: "global", label: "Typography", icon: Type, group: "Global" },
-  { key: "colors", label: "Colors", icon: Palette, group: "Global" },
-  { key: "layout", label: "Layout", icon: Layout, group: "Global" },
-  { key: "sidebar", label: "Sidebar", icon: Sidebar, group: "Global" },
-  ...blockSections.map((b) => ({ key: b.key as NavSection, label: b.label, icon: b.icon, group: "Blocks" })),
+const globalNavItems: { key: NavSection; label: string; icon: typeof Type }[] = [
+  { key: "global", label: "Typography", icon: Type },
+  { key: "colors", label: "Colors", icon: Palette },
+  { key: "layout", label: "Layout", icon: Layout },
+  { key: "sidebar", label: "Sidebar", icon: Sidebar },
 ];
 
-// ─── Interfaces for doc data ─────────────────────────
 interface DocPage { id: string; title: string; slug: string; order_index: number; }
 interface DocSection { id: string; page_id: string; title: string; order_index: number; }
 interface DocBlock { id: string; section_id: string; type: string; content: any; order_index: number; }
 
-// ─── Draggable floating panel hook ───────────────────
-function useDraggable(initialX: number, initialY: number) {
+// ─── Draggable + Resizable hook ──────────────────────
+function useDraggableResizable(
+  initialX: number, initialY: number, initialW: number, initialH: number, minW: number, minH: number
+) {
   const [pos, setPos] = useState({ x: initialX, y: initialY });
+  const [size, setSize] = useState({ w: initialW, h: initialH });
   const dragging = useRef(false);
+  const resizing = useRef(false);
   const offset = useRef({ x: 0, y: 0 });
 
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
+  const onDragStart = useCallback((e: React.MouseEvent) => {
     dragging.current = true;
     offset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
     e.preventDefault();
   }, [pos]);
 
+  const onResizeStart = useCallback((e: React.MouseEvent) => {
+    resizing.current = true;
+    offset.current = { x: e.clientX, y: e.clientY };
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
-      if (!dragging.current) return;
-      setPos({
-        x: Math.max(0, Math.min(window.innerWidth - 100, e.clientX - offset.current.x)),
-        y: Math.max(0, Math.min(window.innerHeight - 100, e.clientY - offset.current.y)),
-      });
+      if (dragging.current) {
+        setPos({
+          x: Math.max(0, Math.min(window.innerWidth - 100, e.clientX - offset.current.x)),
+          y: Math.max(0, Math.min(window.innerHeight - 100, e.clientY - offset.current.y)),
+        });
+      }
+      if (resizing.current) {
+        const dx = e.clientX - offset.current.x;
+        const dy = e.clientY - offset.current.y;
+        offset.current = { x: e.clientX, y: e.clientY };
+        setSize((prev) => ({
+          w: Math.max(minW, prev.w + dx),
+          h: Math.max(minH, prev.h + dy),
+        }));
+      }
     };
-    const onMouseUp = () => { dragging.current = false; };
+    const onMouseUp = () => {
+      dragging.current = false;
+      resizing.current = false;
+    };
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, []);
+  }, [minW, minH]);
 
-  return { pos, onMouseDown };
+  return { pos, size, onDragStart, onResizeStart };
 }
 
 // ─── Main Page ───────────────────────────────────────
@@ -160,20 +181,24 @@ const DesignSettingsPage = () => {
   const [projectData, setProjectData] = useState<any>(null);
   const [collapsed, setCollapsed] = useState(false);
 
-  // Real documentation data
+  // Doc data
   const [pages, setPages] = useState<DocPage[]>([]);
   const [activePage, setActivePage] = useState<DocPage | null>(null);
   const [sections, setSections] = useState<DocSection[]>([]);
   const [blocks, setBlocks] = useState<DocBlock[]>([]);
   const [docLoading, setDocLoading] = useState(true);
 
-  const { pos, onMouseDown } = useDraggable(window.innerWidth - 420, 80);
+  const { pos, size, onDragStart, onResizeStart } = useDraggableResizable(
+    Math.max(0, window.innerWidth - 420), 80, 380, 560, 300, 300
+  );
+
+  // Determine highlighted block type — only when a block section is active
+  const highlightedBlockType = blockSections.some((b) => b.key === activeNav) ? (activeNav as string) : null;
 
   useEffect(() => {
     if (!settingsLoading) setLocal(settings);
   }, [settings, settingsLoading]);
 
-  // Load project + pages
   useEffect(() => {
     if (!projectId) return;
     const load = async () => {
@@ -191,7 +216,6 @@ const DesignSettingsPage = () => {
     load();
   }, [projectId]);
 
-  // Load sections/blocks for active page
   useEffect(() => {
     if (!activePage) { setSections([]); setBlocks([]); return; }
     const load = async () => {
@@ -237,7 +261,7 @@ const DesignSettingsPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
-      {/* Thin header bar */}
+      {/* Header */}
       <header className="border-b bg-background sticky top-0 z-[60] shrink-0">
         <div className="px-6 h-11 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -261,10 +285,9 @@ const DesignSettingsPage = () => {
         </div>
       </header>
 
-      {/* Full-page live documentation preview */}
+      {/* Full-page live documentation — identical to PublicDocs */}
       <div className="flex-1 overflow-auto">
         <DesignSettingsWrapper settings={local} className="min-h-full">
-          {/* Doc header */}
           <header
             className="border-b sticky top-11 z-40"
             style={{ backgroundColor: `hsl(${local.backgroundColor})`, borderColor: `hsl(${local.borderColor})` }}
@@ -281,7 +304,7 @@ const DesignSettingsPage = () => {
             style={{ maxWidth: `${local.contentMaxWidth + local.sidebarWidth + 48}px` }}
             className="mx-auto flex px-6"
           >
-            {/* Sidebar */}
+            {/* Sidebar — same as PublicDocs */}
             <aside
               style={{ width: `${local.sidebarWidth}px`, backgroundColor: `hsl(${local.sidebarBg})` }}
               className="shrink-0 sticky top-[92px] h-[calc(100vh-92px)] overflow-y-auto py-10 pr-6 hidden lg:block"
@@ -336,7 +359,7 @@ const DesignSettingsPage = () => {
               </nav>
             </aside>
 
-            {/* Main content — real documentation */}
+            {/* Main content — real documentation with highlight support */}
             <main className="flex-1 min-w-0 py-10 lg:pl-4">
               {activePage ? (
                 <article style={{ maxWidth: `${local.contentMaxWidth}px` }}>
@@ -373,7 +396,12 @@ const DesignSettingsPage = () => {
                         </h2>
                         <div>
                           {sectionBlocks.map((block) => (
-                            <LiveBlockRenderer key={block.id} block={block} settings={local} />
+                            <DocBlockRenderer
+                              key={block.id}
+                              block={block}
+                              settings={local}
+                              highlightType={highlightedBlockType}
+                            />
                           ))}
                         </div>
                       </section>
@@ -392,69 +420,80 @@ const DesignSettingsPage = () => {
         </DesignSettingsWrapper>
       </div>
 
-      {/* ─── Floating Settings Panel ─── */}
+      {/* ─── Floating Resizable Settings Panel ─── */}
       <div
-        className="fixed z-[70] bg-background border rounded-xl shadow-2xl flex flex-col"
+        className="fixed z-[70] bg-background border rounded-xl shadow-2xl flex flex-col overflow-hidden"
         style={{
           left: pos.x,
           top: pos.y,
-          width: collapsed ? 220 : 380,
-          maxHeight: collapsed ? "auto" : "min(80vh, 700px)",
+          width: collapsed ? 220 : size.w,
+          height: collapsed ? "auto" : size.h,
         }}
       >
-        {/* Drag handle / header */}
+        {/* Drag handle */}
         <div
-          onMouseDown={onMouseDown}
-          className="flex items-center justify-between px-3 py-2 border-b cursor-grab active:cursor-grabbing select-none bg-muted/50 rounded-t-xl"
+          onMouseDown={onDragStart}
+          className="flex items-center justify-between px-3 py-2 border-b cursor-grab active:cursor-grabbing select-none bg-muted/50 rounded-t-xl shrink-0"
         >
           <div className="flex items-center gap-2">
             <GripHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs font-semibold text-foreground">Design Settings</span>
           </div>
-          <div className="flex items-center gap-1">
-            <button onClick={() => setCollapsed(!collapsed)} className="p-1 rounded hover:bg-secondary transition-colors">
-              {collapsed ? <Maximize2 className="h-3 w-3 text-muted-foreground" /> : <Minimize2 className="h-3 w-3 text-muted-foreground" />}
-            </button>
-          </div>
+          <button onClick={() => setCollapsed(!collapsed)} className="p-1 rounded hover:bg-secondary transition-colors">
+            {collapsed ? <Maximize2 className="h-3 w-3 text-muted-foreground" /> : <Minimize2 className="h-3 w-3 text-muted-foreground" />}
+          </button>
         </div>
 
         {!collapsed && (
           <>
             {/* Nav tabs */}
-            <div className="border-b px-2 py-1.5 flex flex-wrap gap-0.5 max-h-[140px] overflow-y-auto">
-              {["Global", "Blocks"].map((group) => (
-                <div key={group} className="w-full">
-                  <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest px-1 py-0.5">
-                    {group}
-                  </div>
-                  <div className="flex flex-wrap gap-0.5">
-                    {navItems
-                      .filter((n) => n.group === group)
-                      .map((item) => {
-                        const Icon = item.icon;
-                        const isActive = activeNav === item.key;
-                        return (
-                          <button
-                            key={item.key}
-                            onClick={() => setActiveNav(item.key)}
-                            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
-                              isActive
-                                ? "bg-primary text-primary-foreground font-medium"
-                                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                            }`}
-                          >
-                            <Icon className="h-3 w-3" />
-                            {item.label}
-                          </button>
-                        );
-                      })}
-                  </div>
-                </div>
-              ))}
+            <div className="border-b px-2 py-1.5 shrink-0 max-h-[140px] overflow-y-auto">
+              <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest px-1 py-0.5">Global</div>
+              <div className="flex flex-wrap gap-0.5 mb-1">
+                {globalNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeNav === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => setActiveNav(item.key)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
+                        isActive
+                          ? "bg-primary text-primary-foreground font-medium"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      <Icon className="h-3 w-3" />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest px-1 py-0.5">Blocks</div>
+              <div className="flex flex-wrap gap-0.5">
+                {blockSections.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeNav === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => setActiveNav(item.key)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
+                        isActive
+                          ? "bg-primary text-primary-foreground font-medium"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      <Icon className="h-3 w-3" />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Controls area */}
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 min-h-0">
               <div className="p-4 space-y-4">
                 {activeNav === "global" && <TypographyControls local={local} update={update} />}
                 {activeNav === "colors" && <ColorControls local={local} update={update} />}
@@ -465,135 +504,24 @@ const DesignSettingsPage = () => {
                 )}
               </div>
             </ScrollArea>
+
+            {/* Resize handle */}
+            <div
+              onMouseDown={onResizeStart}
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+              style={{ touchAction: "none" }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" className="text-muted-foreground/50">
+                <path d="M14 14L8 14L14 8Z" fill="currentColor" />
+                <path d="M14 14L11 14L14 11Z" fill="currentColor" opacity="0.5" />
+              </svg>
+            </div>
           </>
         )}
       </div>
     </div>
   );
 };
-
-// ─── Live Block Renderer (uses design settings for styling) ──
-function LiveBlockRenderer({ block, settings: s }: { block: DocBlock; settings: DS }) {
-  const { content, type } = block;
-  const bs = s.blockStyles[type as BlockKey] || {};
-
-  const getStyle = (): React.CSSProperties => ({
-    color: bs.color ? `hsl(${bs.color})` : undefined,
-    fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : undefined,
-    fontSize: bs.fontSize ? `${bs.fontSize}px` : undefined,
-    fontWeight: (bs.fontWeight as any) || undefined,
-    backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
-    borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : undefined,
-    padding: bs.padding != null ? `${bs.padding}px` : undefined,
-    borderColor: bs.borderColor ? `hsl(${bs.borderColor})` : undefined,
-  });
-
-  switch (type) {
-    case "heading":
-      return (
-        <h3
-          className="mb-3"
-          style={{
-            fontFamily: `'${s.headingFont}', sans-serif`,
-            fontWeight: s.headingWeight,
-            fontSize: `${s.headingFontSize}px`,
-            ...getStyle(),
-          }}
-        >
-          {content.text}
-        </h3>
-      );
-    case "paragraph":
-      return <p className="mb-4" style={{ marginBottom: `${s.paragraphSpacing}px`, ...getStyle() }}>{content.text}</p>;
-    case "code_block":
-      return (
-        <div
-          className="mb-4"
-          style={{
-            backgroundColor: `hsl(${s.codeBlockBg})`,
-            borderRadius: `${s.codeBlockBorderRadius}px`,
-            border: `1px solid hsl(${s.borderColor})`,
-            padding: "16px",
-            fontFamily: `'${s.codeFont}', monospace`,
-            fontSize: `${s.baseFontSize - 1}px`,
-            ...getStyle(),
-          }}
-        >
-          {content.language && (
-            <div className="text-xs mb-2" style={{ color: `hsl(${s.mutedForegroundColor})` }}>{content.language}</div>
-          )}
-          <pre className="m-0 whitespace-pre-wrap text-sm"><code>{content.code}</code></pre>
-        </div>
-      );
-    case "image":
-      return content.url ? (
-        <div className="mb-4">
-          <div
-            className="overflow-hidden border"
-            style={{ borderRadius: s.imageRounded ? "8px" : "0", borderColor: `hsl(${s.borderColor})`, ...getStyle() }}
-          >
-            <img src={content.url} alt={content.alt || ""} className="w-full h-auto" loading="lazy" />
-          </div>
-          {content.alt && <p className="text-sm mt-1" style={{ color: `hsl(${s.mutedForegroundColor})` }}>{content.alt}</p>}
-        </div>
-      ) : null;
-    case "youtube":
-      return content.videoId ? (
-        <div className="mb-4 overflow-hidden border aspect-video" style={{ borderRadius: `${bs.borderRadius ?? 8}px`, borderColor: `hsl(${s.borderColor})` }}>
-          <iframe src={`https://www.youtube.com/embed/${content.videoId}`} className="w-full h-full" allowFullScreen title={content.title || "Video"} />
-        </div>
-      ) : null;
-    case "video":
-      return content.url ? (
-        <video controls className="w-full mb-4 border" style={{ borderRadius: `${bs.borderRadius ?? 8}px`, borderColor: `hsl(${s.borderColor})` }}>
-          <source src={content.url} />
-        </video>
-      ) : null;
-    case "ordered_list":
-      return (
-        <ol className="mb-4 pl-6" style={{ ...getStyle() }}>
-          {(content.items || []).map((item: string, i: number) => <li key={i} className="mb-1">{item}</li>)}
-        </ol>
-      );
-    case "unordered_list":
-      return (
-        <ul className="mb-4 pl-6 list-disc" style={{ ...getStyle() }}>
-          {(content.items || []).map((item: string, i: number) => <li key={i} className="mb-1">{item}</li>)}
-        </ul>
-      );
-    case "note":
-      return (
-        <div
-          className="mb-4"
-          style={{
-            backgroundColor: `hsl(${s.noteBg})`,
-            borderLeft: `${s.noteBorderWidth}px solid hsl(${s.noteBorderColor})`,
-            borderRadius: "0 8px 8px 0",
-            padding: "12px 16px",
-            fontSize: `${s.baseFontSize - 1}px`,
-            ...getStyle(),
-          }}
-        >
-          {content.text}
-        </div>
-      );
-    case "callout":
-      return (
-        <div
-          className="mb-4 border rounded-lg p-4"
-          style={{
-            backgroundColor: `hsl(${s.accentColor})`,
-            borderColor: `hsl(${s.borderColor})`,
-            ...getStyle(),
-          }}
-        >
-          {content.text}
-        </div>
-      );
-    default:
-      return null;
-  }
-}
 
 // ─── Typography Controls ─────────────────────────────
 function TypographyControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {

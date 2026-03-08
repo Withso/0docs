@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronRight } from "lucide-react";
-import { useDesignSettings, defaultDesignSettings } from "@/hooks/use-design-settings";
+import { useDesignSettings } from "@/hooks/use-design-settings";
 import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
+import DocBlockRenderer from "@/components/docs/DocBlockRenderer";
 
 interface Page {
   id: string;
@@ -73,7 +74,6 @@ const PublicDocs = () => {
     load();
   }, [slug, pageSlug]);
 
-  // Load content for active page
   useEffect(() => {
     if (!activePage) return;
 
@@ -205,7 +205,7 @@ const PublicDocs = () => {
                 return (
                   <section key={section.id} className="mb-10" id={`section-${section.id}`}>
                     <h2
-                      className="doc-heading mb-4"
+                      className="flex items-center gap-3 mb-4"
                       style={{
                         fontFamily: `'${designSettings.headingFont}', sans-serif`,
                         fontWeight: designSettings.headingWeight,
@@ -213,10 +213,14 @@ const PublicDocs = () => {
                       }}
                     >
                       {section.title}
+                      <span
+                        className="flex-1 h-px opacity-50"
+                        style={{ backgroundColor: `hsl(${designSettings.sectionLineColor})` }}
+                      />
                     </h2>
-                    <div className="doc-prose">
+                    <div>
                       {sectionBlocks.map((block) => (
-                        <BlockRenderer key={block.id} block={block} settings={designSettings} />
+                        <DocBlockRenderer key={block.id} block={block} settings={designSettings} />
                       ))}
                     </div>
                   </section>
@@ -234,99 +238,6 @@ const PublicDocs = () => {
       </div>
     </DesignSettingsWrapper>
   );
-};
-
-// Read-only block renderer
-const BlockRenderer = ({ block, settings }: { block: Block; settings?: any }) => {
-  const { content, type } = block;
-  const ds = settings;
-
-  switch (type) {
-    case "heading":
-      return (
-        <h3
-          className="mb-3"
-          style={{
-            fontFamily: ds ? `'${ds.headingFont}', sans-serif` : undefined,
-            fontWeight: ds?.headingWeight || "600",
-            fontSize: ds ? `${ds.headingFontSize}px` : undefined,
-          }}
-        >
-          {content.text}
-        </h3>
-      );
-
-    case "paragraph":
-      return <p className="mb-4">{content.text}</p>;
-
-    case "code_block":
-      return (
-        <div className="doc-code-block mb-4">
-          {content.language && (
-            <div className="text-xs text-muted-foreground mb-2">{content.language}</div>
-          )}
-          <pre className="text-sm"><code>{content.code}</code></pre>
-        </div>
-      );
-
-    case "image":
-      return content.url ? (
-        <div className="mb-4">
-          <div className="rounded-lg overflow-hidden border">
-            <img src={content.url} alt={content.alt || ""} className="w-full h-auto" loading="lazy" />
-          </div>
-          {content.alt && <p className="text-sm text-muted-foreground mt-1">{content.alt}</p>}
-        </div>
-      ) : null;
-
-    case "youtube":
-      return content.videoId ? (
-        <div className="rounded-lg overflow-hidden border aspect-video mb-4">
-          <iframe
-            src={`https://www.youtube.com/embed/${content.videoId}`}
-            className="w-full h-full"
-            allowFullScreen
-            title={content.title || "Video"}
-          />
-        </div>
-      ) : null;
-
-    case "video":
-      return content.url ? (
-        <video controls className="w-full rounded-lg border mb-4">
-          <source src={content.url} />
-        </video>
-      ) : null;
-
-    case "ordered_list":
-      return (
-        <ol className="mb-4">
-          {(content.items || []).map((item: string, i: number) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ol>
-      );
-
-    case "unordered_list":
-      return (
-        <ul className="mb-4">
-          {(content.items || []).map((item: string, i: number) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ul>
-      );
-
-    case "note":
-      return <div className="doc-note">{content.text}</div>;
-
-    case "callout":
-      return (
-        <div className="border rounded-lg p-4 bg-secondary/50 mb-4">{content.text}</div>
-      );
-
-    default:
-      return null;
-  }
 };
 
 export default PublicDocs;
