@@ -212,6 +212,7 @@ const Builder = () => {
           )}
         </main>
       </div>
+      <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
     </DesignSettingsWrapper>
   );
 };
