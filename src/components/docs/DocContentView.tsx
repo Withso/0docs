@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import DesignSettingsWrapper from "./DesignSettingsWrapper";
 import DocBlockRenderer from "./DocBlockRenderer";
@@ -33,18 +33,11 @@ interface DocContentViewProps {
   sections: DocSection[];
   blocks: DocBlock[];
   onSelectPage: (page: DocPage) => void;
-  /** If set, blocks of this type get a highlight outline */
   highlightType?: string | null;
-  /** Extra sticky offset for the doc header (e.g. when design settings header is above) */
   headerStickyTop?: number;
-  /** Hide the doc header (useful when parent already shows a header) */
   hideHeader?: boolean;
 }
 
-/**
- * Shared documentation view used by PublicDocs, DesignSettings, and potentially Builder.
- * Renders the exact same layout/structure everywhere for WYSIWYG consistency.
- */
 const DocContentView = ({
   settings: s,
   projectName,
@@ -60,6 +53,40 @@ const DocContentView = ({
   const headerHeight = hideHeader ? 0 : 48;
   const sidebarTop = headerStickyTop + headerHeight;
   const frameMaxWidth = s.contentMaxWidth + s.sidebarWidth + 48;
+
+  // Scroll-tracking: track which section is currently in view
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!s.sidebarShowSectionTracker || sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Find the first section that is intersecting
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const id = entry.target.id.replace("section-", "");
+            setActiveSectionId(id);
+            break;
+          }
+        }
+      },
+      {
+        rootMargin: "-20% 0px -60% 0px",
+        threshold: 0,
+      }
+    );
+
+    // Observe all section elements
+    const sectionEls = sections
+      .map((sec) => document.getElementById(`section-${sec.id}`))
+      .filter(Boolean) as HTMLElement[];
+
+    sectionEls.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [sections, s.sidebarShowSectionTracker]);
 
   return (
     <DesignSettingsWrapper settings={s} className="min-h-full">
@@ -90,8 +117,9 @@ const DocContentView = ({
       <div
         style={{ maxWidth: `${frameMaxWidth}px` }}
         className="mx-auto flex px-6"
+        ref={mainRef}
       >
-        {/* Sidebar */}
+        {/* Sidebar — agentation.dev style */}
         <aside
           style={{
             width: `${s.sidebarWidth}px`,
@@ -102,7 +130,7 @@ const DocContentView = ({
           className="shrink-0 sticky overflow-y-auto py-10 pr-6 hidden lg:block"
         >
           <div
-            className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-2"
+            className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-0"
             style={{ color: `hsl(${s.sidebarTextColor})` }}
           >
             Pages
@@ -113,41 +141,58 @@ const DocContentView = ({
               const pageSections = isActive ? sections : [];
               return (
                 <div key={page.id}>
-                  <div className="flex items-center gap-1">
-                    <ChevronRight
-                      className={`h-3 w-3 shrink-0 transition-transform ${isActive ? "rotate-90" : ""}`}
-                      style={{ color: `hsl(${s.mutedForegroundColor})` }}
-                    />
-                    <button
-                      onClick={() => onSelectPage(page)}
-                      className="flex-1 text-left truncate px-2 py-1 rounded transition-colors"
+                  <button
+                    onClick={() => onSelectPage(page)}
+                    className="text-left truncate py-[3px] transition-colors block w-full"
+                    style={{
+                      fontSize: `${s.sidebarFontSize}px`,
+                      color: isActive
+                        ? `hsl(${s.sidebarActiveColor})`
+                        : `hsl(${s.sidebarTextColor})`,
+                      fontWeight: isActive ? 500 : 400,
+                      fontFamily: `'${s.bodyFont}', sans-serif`,
+                    }}
+                  >
+                    {page.title}
+                  </button>
+                  {/* Section links with scroll-tracking left border indicator */}
+                  {isActive && pageSections.length > 0 && (
+                    <nav
+                      className="ml-px mt-px mb-1"
                       style={{
-                        fontSize: `${s.sidebarFontSize}px`,
-                        color: isActive ? `hsl(${s.sidebarActiveColor})` : `hsl(${s.sidebarTextColor})`,
-                        fontWeight: isActive ? 500 : 400,
-                        backgroundColor: isActive ? `hsl(${s.accentColor})` : "transparent",
-                        fontFamily: `'${s.bodyFont}', sans-serif`,
+                        borderLeft: `1px solid hsl(${s.borderColor} / 0.5)`,
+                        gap: `0px`,
+                        display: "flex",
+                        flexDirection: "column",
                       }}
                     >
-                      {page.title}
-                    </button>
-                  </div>
-                  {isActive && pageSections.length > 0 && (
-                    <nav className="ml-4 mt-0.5 mb-1" style={{ gap: `${s.sidebarPageGap}px`, display: "flex", flexDirection: "column" }}>
-                      {pageSections.map((section) => (
-                        <a
-                          key={section.id}
-                          href={`#section-${section.id}`}
-                          className="block px-2 py-0.5 rounded transition-colors"
-                          style={{
-                            color: `hsl(${s.sidebarTextColor})`,
-                            fontSize: `${s.sidebarFontSize - 2}px`,
-                            fontFamily: `'${s.bodyFont}', sans-serif`,
-                          }}
-                        >
-                          {section.title}
-                        </a>
-                      ))}
+                      {pageSections.map((section) => {
+                        const isSectionActive = activeSectionId === section.id;
+                        return (
+                          <a
+                            key={section.id}
+                            href={`#section-${section.id}`}
+                            className="block py-[3px] pl-3 transition-colors relative"
+                            style={{
+                              color: isSectionActive
+                                ? `hsl(${s.sidebarActiveColor})`
+                                : `hsl(${s.sidebarTextColor} / 0.6)`,
+                              fontSize: `${s.sidebarFontSize - 1}px`,
+                              fontWeight: isSectionActive ? 500 : 400,
+                              fontFamily: `'${s.bodyFont}', sans-serif`,
+                            }}
+                          >
+                            {/* Active indicator line */}
+                            {isSectionActive && (
+                              <span
+                                className="absolute left-[-1px] top-[5px] bottom-[5px] w-[2px] rounded-full"
+                                style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
+                              />
+                            )}
+                            {section.title}
+                          </a>
+                        );
+                      })}
                     </nav>
                   )}
                 </div>
