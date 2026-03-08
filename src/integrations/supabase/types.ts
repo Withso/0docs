@@ -52,6 +52,38 @@ export type Database = {
           },
         ]
       }
+      doc_versions: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          project_id: string
+          version_label: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          project_id: string
+          version_label: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          project_id?: string
+          version_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doc_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_analytics: {
         Row: {
           avg_time_seconds: number | null
@@ -133,29 +165,35 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          meta_description: string | null
           order_index: number
           project_id: string
           slug: string
           title: string
           updated_at: string
+          version_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
+          meta_description?: string | null
           order_index?: number
           project_id: string
           slug: string
           title: string
           updated_at?: string
+          version_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
+          meta_description?: string | null
           order_index?: number
           project_id?: string
           slug?: string
           title?: string
           updated_at?: string
+          version_id?: string | null
         }
         Relationships: [
           {
@@ -163,6 +201,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "doc_versions"
             referencedColumns: ["id"]
           },
         ]

@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
+import type { DocVersion } from "@/hooks/use-versions";
 import DesignSettingsWrapper from "./DesignSettingsWrapper";
 import DocBlockRenderer from "./DocBlockRenderer";
 import DocSidebarNav from "./DocSidebarNav";
 import TableOfContents from "./TableOfContents";
 import SearchDialog from "./SearchDialog";
 import PageFeedback from "./PageFeedback";
+import VersionSelector from "./VersionSelector";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -47,6 +49,9 @@ interface DocContentViewProps {
   showFeedback?: boolean;
   pageId?: string;
   projectId?: string;
+  versions?: DocVersion[];
+  activeVersion?: DocVersion | null;
+  onSelectVersion?: (version: DocVersion) => void;
 }
 
 const DocContentView = ({
@@ -65,6 +70,9 @@ const DocContentView = ({
   showFeedback = false,
   pageId,
   projectId,
+  versions = [],
+  activeVersion,
+  onSelectVersion,
 }: DocContentViewProps) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const headerHeight = hideHeader ? 0 : 48;
@@ -108,12 +116,22 @@ const DocContentView = ({
             style={{ maxWidth: `${frameMaxWidth}px` }}
             className="mx-auto px-6 h-12 flex items-center justify-between"
           >
-            <span
-              className="font-semibold text-sm"
-              style={{ fontFamily: `'${s.bodyFont}', sans-serif` }}
-            >
-              {projectName}
-            </span>
+            <div className="flex items-center gap-3">
+              <span
+                className="font-semibold text-sm"
+                style={{ fontFamily: `'${s.bodyFont}', sans-serif` }}
+              >
+                {projectName}
+              </span>
+              {versions.length > 1 && activeVersion && onSelectVersion && (
+                <VersionSelector
+                  versions={versions}
+                  activeVersion={activeVersion}
+                  onSelect={onSelectVersion}
+                  settings={s}
+                />
+              )}
+            </div>
             <button
               onClick={() => setSearchOpen(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors hover:bg-accent"
