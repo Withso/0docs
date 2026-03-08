@@ -74,8 +74,9 @@ const Builder = () => {
 
   if (loading || settingsLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <span className="h-5 w-5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
+        <span className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <span className="text-[13px] text-muted-foreground">Loading builder...</span>
       </div>
     );
   }
@@ -90,34 +91,35 @@ const Builder = () => {
   return (
     <DesignSettingsWrapper settings={settings} className="min-h-screen">
       <header
-        className="border-b sticky top-0 z-50"
-        style={{ backgroundColor: `hsl(${settings.backgroundColor})`, borderColor: `hsl(${settings.borderColor})` }}
+        className="border-b sticky top-0 z-50 backdrop-blur-xl"
+        style={{ backgroundColor: `hsl(${settings.backgroundColor} / 0.85)`, borderColor: `hsl(${settings.borderColor})` }}
       >
-        <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto px-6 h-12 flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => navigate("/dashboard")}>
+        <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto px-6 h-[52px] flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 rounded-lg" onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div className="flex items-center gap-1.5 min-w-0">
-              <div className="h-6 w-6 rounded-md bg-accent flex items-center justify-center shrink-0">
-                <FileText className="h-3 w-3 text-muted-foreground" />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="h-7 w-7 rounded-lg bg-platform-accent-soft flex items-center justify-center shrink-0">
+                <FileText className="h-3.5 w-3.5 text-primary" />
               </div>
-              <span className="font-semibold text-foreground text-sm truncate">{project?.name}</span>
+              <span className="font-semibold text-foreground text-[14px] truncate">{project?.name}</span>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="text-[13px] text-muted-foreground truncate">{activePage?.title || "No page"}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-8 text-xs hidden sm:flex" onClick={() => navigate(`/builder/${projectId}/design`)}>
+          <div className="flex items-center gap-1.5">
+            <Button variant="ghost" size="sm" className="h-9 text-[13px] hidden sm:flex rounded-lg" onClick={() => navigate(`/builder/${projectId}/design`)}>
               <Palette className="h-3.5 w-3.5 mr-1.5" /> Design
             </Button>
-            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => window.open(`/docs/${project?.slug}`, "_blank")}>
+            <Button variant="outline" size="sm" className="h-9 text-[13px] rounded-lg" onClick={() => window.open(`/docs/${project?.slug}`, "_blank")}>
               <Eye className="h-3.5 w-3.5 sm:mr-1.5" />
               <span className="hidden sm:inline">Preview</span>
             </Button>
 
-            {/* More menu for secondary actions */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -171,18 +173,18 @@ const Builder = () => {
 
               <button
                 onClick={addSection}
-                className="w-full border-2 border-dashed rounded-xl py-6 text-sm text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all mt-6 flex items-center justify-center gap-2"
+                className="w-full border-2 border-dashed rounded-xl py-6 text-[13px] text-muted-foreground hover:text-primary hover:border-primary/30 transition-all mt-6 flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" /> Add Section
               </button>
             </article>
           ) : (
             <div className="text-center py-20 animate-fade-in" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
-              <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mx-auto mb-4">
-                <FileText className="h-6 w-6 text-muted-foreground" />
+              <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-5">
+                <FileText className="h-7 w-7 text-muted-foreground" />
               </div>
-              <p className="mb-4">No pages yet. Add a page to get started.</p>
-              <Button onClick={addPage}>
+              <p className="mb-5 text-[14px]">No pages yet. Add a page to get started.</p>
+              <Button onClick={addPage} className="rounded-lg">
                 <Plus className="h-4 w-4 mr-2" /> Add Page
               </Button>
             </div>
@@ -234,21 +236,20 @@ const PageTitleEditor = ({
       />
       <button
         onClick={() => setShowMeta(!showMeta)}
-        className="text-xs mt-1 px-1 transition-colors hover:opacity-80"
+        className="text-[12px] mt-1.5 px-1 transition-colors hover:text-primary"
         style={{ color: `hsl(${settings.mutedForegroundColor})` }}
       >
         {showMeta ? "Hide SEO ↑" : "SEO Settings ↓"}
       </button>
       {showMeta && (
         <div className="mt-2 animate-fade-in">
-          <label className="text-xs font-medium" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
+          <label className="text-[11px] font-medium" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
             Meta Description
           </label>
           <textarea
-            className="w-full mt-1 bg-transparent border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/20 resize-none"
+            className="w-full mt-1 bg-transparent border rounded-lg px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-ring/20 resize-none"
             style={{
               borderColor: `hsl(${settings.borderColor})`,
-              fontSize: `${settings.baseFontSize - 2}px`,
               color: `hsl(${settings.mutedForegroundColor})`,
             }}
             rows={2}
