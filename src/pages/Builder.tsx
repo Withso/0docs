@@ -196,7 +196,8 @@ const Builder = () => {
   };
 
   const updateBlock = async (blockId: string, updates: Partial<Block>) => {
-    await supabase.from("blocks").update(updates).eq("id", blockId);
+    const dbUpdates: any = { ...updates };
+    await supabase.from("blocks").update(dbUpdates).eq("id", blockId);
     setBlocks((b) => b.map((bl) => (bl.id === blockId ? { ...bl, ...updates } : bl)));
   };
 
