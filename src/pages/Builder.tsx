@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBuilder } from "@/hooks/use-builder";
 import { useDesignSettings } from "@/hooks/use-design-settings";
@@ -7,10 +7,13 @@ import { useDebouncedCallback } from "@/hooks/use-debounce";
 import BuilderSidebar from "@/components/builder/BuilderSidebar";
 import SectionEditor from "@/components/builder/SectionEditor";
 import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
+import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Eye, Palette, FileText } from "lucide-react";
+import { Plus, ArrowLeft, Eye, Palette, FileText, FileJson } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
+import type { ParsedOpenAPI } from "@/lib/openapi-parser";
 
 // Re-export types for backward compat
 export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
