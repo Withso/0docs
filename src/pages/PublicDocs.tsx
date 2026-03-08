@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useDesignSettings } from "@/hooks/use-design-settings";
+import { useVersions, type DocVersion } from "@/hooks/use-versions";
 import DocContentView from "@/components/docs/DocContentView";
 import AskDocsChat from "@/components/docs/AskDocsChat";
+import useSEOHead from "@/hooks/use-seo-head";
 
-interface Page { id: string; title: string; slug: string; order_index: number; }
+interface Page { id: string; title: string; slug: string; order_index: number; meta_description?: string; version_id?: string | null; }
 interface Section { id: string; page_id: string; title: string; order_index: number; }
 interface Block { id: string; section_id: string; type: string; content: any; order_index: number; }
 
@@ -29,9 +31,9 @@ const PublicDocs = () => {
       setProject(proj);
       const { data: pagesData } = await supabase.from("pages").select("*").eq("project_id", proj.id).order("order_index");
       if (pagesData) {
-        setPages(pagesData);
+        setPages(pagesData as Page[]);
         const target = pageSlug ? pagesData.find((p) => p.slug === pageSlug) : pagesData[0];
-        setActivePage(target || pagesData[0] || null);
+        setActivePage((target || pagesData[0] || null) as Page | null);
 
         const pageIds = pagesData.map((p) => p.id);
         if (pageIds.length > 0) {
@@ -51,11 +53,27 @@ const PublicDocs = () => {
     load();
   }, [slug, pageSlug]);
 
+  // Version support
+  const { versions, activeVersion, setActiveVersion } = useVersions(project?.id);
+
+  // Filter pages by active version
+  const filteredPages = versions.length > 0 && activeVersion
+    ? pages.filter((p) => p.version_id === activeVersion.id || !p.version_id)
+    : pages;
+
+  // SEO
+  useSEOHead({
+    title: activePage?.title,
+    description: (activePage as any)?.meta_description,
+    projectName: project?.name,
+    pageSlug: activePage?.slug,
+    projectSlug: slug,
+  });
+
   // Track page view
   useEffect(() => {
     if (!activePage || !project) return;
     const trackView = async () => {
-      // Upsert page analytics
       const { data: existing } = await supabase
         .from("page_analytics" as any)
         .select("id, view_count")
@@ -118,7 +136,7 @@ const PublicDocs = () => {
       <DocContentView
         settings={settings}
         projectName={project?.name || ""}
-        pages={pages}
+        pages={filteredPages}
         activePage={activePage}
         sections={sections}
         blocks={blocks}
@@ -129,6 +147,9 @@ const PublicDocs = () => {
         showFeedback
         pageId={activePage?.id}
         projectId={project?.id}
+        versions={versions}
+        activeVersion={activeVersion}
+        onSelectVersion={setActiveVersion}
       />
       {project?.id && <AskDocsChat projectId={project.id} settings={settings} />}
     </div>
