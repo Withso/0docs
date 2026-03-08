@@ -39,6 +39,8 @@ export interface DesignSettings {
   // Layout
   contentMaxWidth: number;
   sidebarWidth: number;
+  sectionSpacing: number;
+  pageTitleSize: number;
 
   // Block styles
   headingWeight: string;
@@ -52,6 +54,7 @@ export interface DesignSettings {
   sidebarTextColor: string;
   sidebarActiveColor: string;
   sidebarFontSize: number;
+  sidebarPageGap: number;
 
   // Per-block overrides
   blockStyles: {
@@ -105,6 +108,8 @@ export const defaultDesignSettings: DesignSettings = {
 
   contentMaxWidth: 680,
   sidebarWidth: 240,
+  sectionSpacing: 40,
+  pageTitleSize: 24,
 
   headingWeight: "600",
   paragraphSpacing: 16,
@@ -116,6 +121,7 @@ export const defaultDesignSettings: DesignSettings = {
   sidebarTextColor: "0 0% 45%",
   sidebarActiveColor: "0 0% 13%",
   sidebarFontSize: 14,
+  sidebarPageGap: 2,
 
   blockStyles: emptyBlockStyles,
 };
@@ -205,5 +211,8 @@ export function designSettingsToCSSVars(s: DesignSettings): Record<string, strin
     "--ds-code-radius": `${s.codeBlockBorderRadius}px`,
     "--ds-note-border-width": `${s.noteBorderWidth}px`,
     "--ds-image-rounded": s.imageRounded ? "8px" : "0px",
+    "--ds-section-spacing": `${s.sectionSpacing}px`,
+    "--ds-page-title-size": `${s.pageTitleSize}px`,
+    "--ds-sidebar-page-gap": `${s.sidebarPageGap}px`,
   };
 }

@@ -182,11 +182,12 @@ const PageTitleEditor = ({
 
   return (
     <input
-      className="mb-6 w-full bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1"
+      className="w-full bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1"
       style={{
         fontFamily: `'${settings.headingFont}', sans-serif`,
         fontWeight: settings.headingWeight,
-        fontSize: `${settings.headingFontSize + 6}px`,
+        fontSize: `${settings.pageTitleSize}px`,
+        marginBottom: `${settings.sectionSpacing * 0.6}px`,
       }}
       value={title}
       onChange={(e) => {
