@@ -436,6 +436,13 @@ const TableEditor = ({ content, onChange, settings, bs }: { content: any; onChan
 
 const ApiEndpointEditor = ({ content, onChange, settings, bs }: { content: any; onChange: (u: any) => void; settings: DesignSettings; bs: any }) => {
   const methods = ["GET", "POST", "PUT", "DELETE", "PATCH"];
+  const params = content.parameters || [];
+  const updateParam = (i: number, updates: any) => {
+    const newParams = [...params]; newParams[i] = { ...newParams[i], ...updates }; onChange({ parameters: newParams });
+  };
+  const addParam = () => onChange({ parameters: [...params, { name: "", type: "string", required: false }] });
+  const removeParam = (i: number) => onChange({ parameters: params.filter((_: any, idx: number) => idx !== i) });
+
   return (
     <div style={{ border: `1px solid hsl(${bs.borderColor || settings.borderColor})`, borderRadius: `${bs.borderRadius ?? 8}px`, overflow: "hidden", marginBottom: "16px" }}>
       <div className="flex items-center gap-2" style={{ padding: "10px 14px", backgroundColor: `hsl(${settings.accentColor})`, borderBottom: `1px solid hsl(${settings.borderColor})` }}>
@@ -450,6 +457,28 @@ const ApiEndpointEditor = ({ content, onChange, settings, bs }: { content: any; 
         <AutoTextarea value={content.description || ""} onChange={(val) => onChange({ description: val })}
           className="w-full bg-transparent outline-none resize-none" placeholder="Description..."
           style={{ fontSize: `${settings.baseFontSize - 1}px`, color: `hsl(${settings.mutedForegroundColor})` }} />
+      </div>
+      {/* Parameters section */}
+      <div style={{ padding: "0 14px 10px 14px" }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: "6px" }}>
+          <div style={{ fontSize: "11px", fontWeight: 600, color: `hsl(${settings.mutedForegroundColor})` }}>Parameters</div>
+          <button onClick={addParam} style={{ fontSize: "11px", color: `hsl(${settings.primaryColor})` }}>+ Add</button>
+        </div>
+        {params.map((p: any, i: number) => (
+          <div key={i} className="flex items-center gap-2 mb-1.5">
+            <input className="bg-transparent outline-none font-mono flex-1" style={{ fontSize: "12px", padding: "4px 6px", border: `1px solid hsl(${settings.borderColor})`, borderRadius: "4px" }}
+              value={p.name} onChange={(e) => updateParam(i, { name: e.target.value })} placeholder="name" />
+            <select className="bg-transparent outline-none" style={{ fontSize: "11px", padding: "4px", border: `1px solid hsl(${settings.borderColor})`, borderRadius: "4px" }}
+              value={p.type || "string"} onChange={(e) => updateParam(i, { type: e.target.value })}>
+              {["string", "number", "boolean", "object", "array"].map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <label className="flex items-center gap-1" style={{ fontSize: "11px", color: `hsl(${settings.mutedForegroundColor})` }}>
+              <input type="checkbox" checked={!!p.required} onChange={(e) => updateParam(i, { required: e.target.checked })} />
+              req
+            </label>
+            <button onClick={() => removeParam(i)} style={{ fontSize: "11px", color: `hsl(${settings.mutedForegroundColor})` }}>×</button>
+          </div>
+        ))}
       </div>
       <div style={{ padding: "0 14px 10px 14px" }}>
         <div style={{ fontSize: "11px", fontWeight: 600, marginBottom: "4px", color: `hsl(${settings.mutedForegroundColor})` }}>Response</div>
