@@ -39,11 +39,11 @@ const SectionEditor = ({
   }, 600);
 
   return (
-    <section className="group/section" id={`section-${section.id}`} style={{ marginBottom: `${settings.sectionSpacing}px` }}>
+    <section className="group/section animate-fade-in" id={`section-${section.id}`} style={{ marginBottom: `${settings.sectionSpacing}px` }}>
       {/* Section title — editable with debounce */}
       <div className="flex items-center gap-3 mb-4">
         <input
-          className="bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1 min-w-0"
+          className="bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded-md px-1 -ml-1 min-w-0"
           style={{
             fontFamily: `'${settings.headingFont}', sans-serif`,
             fontWeight: settings.headingWeight,
@@ -94,7 +94,7 @@ const SectionEditor = ({
         ) : (
           <button
             onClick={() => setShowAddMenu(true)}
-            className="w-full border border-dashed rounded-lg py-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors flex items-center justify-center gap-1.5"
+            className="w-full border border-dashed rounded-xl py-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all duration-150 flex items-center justify-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" /> Add Block
           </button>

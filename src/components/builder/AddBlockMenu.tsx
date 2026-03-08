@@ -1,15 +1,6 @@
 import {
-  Type,
-  AlignLeft,
-  Code,
-  ImageIcon,
-  Film,
-  Youtube,
-  ListOrdered,
-  List,
-  StickyNote,
-  AlertCircle,
-  X,
+  Type, AlignLeft, Code, ImageIcon, Film, Youtube,
+  ListOrdered, List, StickyNote, AlertCircle, X,
 } from "lucide-react";
 
 const blockTypes = [
@@ -32,21 +23,19 @@ interface AddBlockMenuProps {
 
 const AddBlockMenu = ({ onSelect, onClose }: AddBlockMenuProps) => {
   return (
-    <div className="border rounded-lg bg-background shadow-lg p-2">
-      <div className="flex items-center justify-between px-2 pb-2 mb-1 border-b">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Add Block
-        </span>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+    <div className="border rounded-xl bg-card shadow-platform-lg p-2 animate-fade-in">
+      <div className="flex items-center justify-between px-2.5 pb-2 mb-1 border-b">
+        <span className="platform-label">Add Block</span>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
-      <div className="grid grid-cols-2 gap-1">
+      <div className="grid grid-cols-2 gap-0.5">
         {blockTypes.map(({ type, label, icon: Icon }) => (
           <button
             key={type}
             onClick={() => onSelect(type)}
-            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-left"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-150 text-left"
           >
             <Icon className="h-4 w-4 shrink-0" />
             {label}

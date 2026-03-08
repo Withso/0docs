@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, ChevronRight } from "lucide-react";
+import { Plus, Trash2, ChevronRight, FileText } from "lucide-react";
 import type { Page, Section } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
@@ -34,16 +34,16 @@ const BuilderSidebar = ({
         top: "48px",
         height: "calc(100vh - 48px)",
       }}
-      className="shrink-0 sticky overflow-y-auto py-10 pr-6 hidden lg:block"
+      className="shrink-0 sticky overflow-y-auto py-8 pr-6 hidden lg:block"
     >
       <div
-        className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-2 flex items-center justify-between"
+        className="platform-label mb-3 px-2 flex items-center justify-between"
         style={{ color: `hsl(${settings.sidebarTextColor})` }}
       >
         <span>Pages</span>
         <button
           onClick={onAddPage}
-          className="transition-colors"
+          className="transition-colors hover:opacity-80"
           style={{ color: `hsl(${settings.sidebarTextColor})` }}
           title="Add page"
         >
@@ -60,13 +60,13 @@ const BuilderSidebar = ({
             <div key={page.id}>
               <div className="group flex items-center gap-1">
                 <ChevronRight
-                  className={`h-3 w-3 shrink-0 transition-transform ${isActive ? "rotate-90" : ""}`}
+                  className={`h-3 w-3 shrink-0 transition-transform duration-150 ${isActive ? "rotate-90" : ""}`}
                   style={{ color: `hsl(${settings.mutedForegroundColor})` }}
                 />
                 {editingPageId === page.id ? (
                   <input
                     autoFocus
-                    className="flex-1 px-2 py-1 rounded bg-transparent border-b outline-none"
+                    className="flex-1 px-2 py-1 rounded-md bg-transparent border-b outline-none"
                     style={{
                       fontSize: `${settings.sidebarFontSize}px`,
                       borderColor: `hsl(${settings.borderColor})`,
@@ -90,7 +90,7 @@ const BuilderSidebar = ({
                   <button
                     onClick={() => onSelectPage(page)}
                     onDoubleClick={() => setEditingPageId(page.id)}
-                    className="flex-1 text-left truncate px-2 py-1 rounded transition-colors"
+                    className="flex-1 text-left truncate px-2 py-1.5 rounded-md transition-all duration-150"
                     style={{
                       fontSize: `${settings.sidebarFontSize}px`,
                       color: isActive
@@ -126,7 +126,7 @@ const BuilderSidebar = ({
                     <a
                       key={section.id}
                       href={`#section-${section.id}`}
-                      className="block px-2 py-0.5 rounded transition-colors"
+                      className="block px-2 py-0.5 rounded-md transition-colors hover:bg-accent/50"
                       style={{
                         color: `hsl(${settings.sidebarTextColor})`,
                         fontSize: `${settings.sidebarFontSize - 2}px`,
