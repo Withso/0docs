@@ -51,15 +51,19 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
     </div>
   );
 
+  // Resolve effective font size for code blocks
+  const codeBlockFontSize = bs.fontSize ?? (s.baseFontSize - 1);
+  const codeBlockFont = bs.fontFamily ? `'${bs.fontFamily}', monospace` : `'${s.codeFont}', monospace`;
+
   switch (type) {
     case "heading":
       return wrapHighlight(
         <h3
-          className="mb-3"
           style={{
             fontFamily: `'${s.headingFont}', sans-serif`,
             fontWeight: s.headingWeight,
             fontSize: `${s.headingFontSize}px`,
+            marginBottom: "12px",
             ...getBlockStyle(),
           }}
         >
@@ -82,47 +86,51 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
         </p>
       );
 
-    case "code_block":
+    case "code_block": {
+      const codeStyle = getBlockStyle();
       return wrapHighlight(
         <div
-          className="mb-4"
           style={{
-            backgroundColor: `hsl(${s.codeBlockBg})`,
-            borderRadius: `${s.codeBlockBorderRadius}px`,
-            border: `1px solid hsl(${s.borderColor})`,
-            padding: "16px",
-            fontFamily: `'${s.codeFont}', monospace`,
-            fontSize: `${s.baseFontSize - 1}px`,
-            ...getBlockStyle(),
+            backgroundColor: codeStyle.backgroundColor || `hsl(${s.codeBlockBg})`,
+            borderRadius: codeStyle.borderRadius || `${s.codeBlockBorderRadius}px`,
+            border: `1px solid ${codeStyle.borderColor ? `hsl(${bs.borderColor})` : `hsl(${s.borderColor})`}`,
+            padding: codeStyle.padding || "16px",
+            fontFamily: codeBlockFont,
+            fontSize: `${codeBlockFontSize}px`,
+            color: codeStyle.color,
+            fontWeight: codeStyle.fontWeight,
+            marginBottom: "16px",
           }}
         >
           {content.language && (
-            <div className="text-xs mb-2" style={{ color: `hsl(${s.mutedForegroundColor})` }}>
+            <div style={{ color: `hsl(${s.mutedForegroundColor})`, fontSize: "12px", marginBottom: "8px" }}>
               {content.language}
             </div>
           )}
-          <pre className="m-0 whitespace-pre-wrap text-sm">
-            <code>{content.code}</code>
+          <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: "inherit", fontFamily: "inherit", color: "inherit" }}>
+            <code style={{ fontSize: "inherit", fontFamily: "inherit", color: "inherit" }}>{content.code}</code>
           </pre>
         </div>
       );
+    }
 
     case "image":
       return content.url
         ? wrapHighlight(
-            <div className="mb-4">
+            <div style={{ marginBottom: "16px" }}>
               <div
-                className="overflow-hidden border"
+                className="overflow-hidden"
                 style={{
-                  borderRadius: s.imageRounded ? "8px" : "0",
-                  borderColor: `hsl(${s.borderColor})`,
-                  ...getBlockStyle(),
+                  borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : (s.imageRounded ? "8px" : "0"),
+                  border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+                  ...(bs.backgroundColor ? { backgroundColor: `hsl(${bs.backgroundColor})` } : {}),
+                  ...(bs.padding != null ? { padding: `${bs.padding}px` } : {}),
                 }}
               >
                 <img src={content.url} alt={content.alt || ""} className="w-full h-auto" loading="lazy" />
               </div>
               {content.alt && (
-                <p className="text-sm mt-1" style={{ color: `hsl(${s.mutedForegroundColor})` }}>
+                <p style={{ color: `hsl(${s.mutedForegroundColor})`, fontSize: "14px", marginTop: "4px" }}>
                   {content.alt}
                 </p>
               )}
@@ -134,10 +142,11 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
       return content.videoId
         ? wrapHighlight(
             <div
-              className="mb-4 overflow-hidden border aspect-video"
+              className="overflow-hidden aspect-video"
               style={{
                 borderRadius: `${bs.borderRadius ?? 8}px`,
-                borderColor: `hsl(${s.borderColor})`,
+                border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+                marginBottom: "16px",
               }}
             >
               <iframe
@@ -155,10 +164,11 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
         ? wrapHighlight(
             <video
               controls
-              className="w-full mb-4 border"
+              className="w-full"
               style={{
                 borderRadius: `${bs.borderRadius ?? 8}px`,
-                borderColor: `hsl(${s.borderColor})`,
+                border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+                marginBottom: "16px",
               }}
             >
               <source src={content.url} />
@@ -169,17 +179,18 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
     case "ordered_list":
       return wrapHighlight(
         <ol
-          className="mb-4 pl-6"
           style={{
             fontFamily: `'${s.bodyFont}', sans-serif`,
             fontSize: `${s.baseFontSize}px`,
             lineHeight: s.lineHeight,
             listStyleType: "decimal",
+            paddingLeft: "24px",
+            marginBottom: "16px",
             ...getBlockStyle(),
           }}
         >
           {(content.items || []).map((item: string, i: number) => (
-            <li key={i} className="mb-1">{item}</li>
+            <li key={i} style={{ marginBottom: "4px" }}>{item}</li>
           ))}
         </ol>
       );
@@ -187,55 +198,65 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
     case "unordered_list":
       return wrapHighlight(
         <ul
-          className="mb-4 pl-6 list-disc"
           style={{
             fontFamily: `'${s.bodyFont}', sans-serif`,
             fontSize: `${s.baseFontSize}px`,
             lineHeight: s.lineHeight,
+            listStyleType: "disc",
+            paddingLeft: "24px",
+            marginBottom: "16px",
             ...getBlockStyle(),
           }}
         >
           {(content.items || []).map((item: string, i: number) => (
-            <li key={i} className="mb-1">{item}</li>
+            <li key={i} style={{ marginBottom: "4px" }}>{item}</li>
           ))}
         </ul>
       );
 
-    case "note":
+    case "note": {
+      const noteStyle = getBlockStyle();
       return wrapHighlight(
         <div
-          className="mb-4"
           style={{
-            backgroundColor: `hsl(${s.noteBg})`,
-            borderLeft: `${s.noteBorderWidth}px solid hsl(${s.noteBorderColor})`,
-            borderRadius: "0 8px 8px 0",
-            padding: "12px 16px",
-            fontSize: `${s.baseFontSize - 1}px`,
-            fontFamily: `'${s.bodyFont}', sans-serif`,
+            backgroundColor: noteStyle.backgroundColor || `hsl(${s.noteBg})`,
+            borderLeft: `${s.noteBorderWidth}px solid ${noteStyle.borderColor ? `hsl(${bs.borderColor})` : `hsl(${s.noteBorderColor})`}`,
+            borderRadius: noteStyle.borderRadius || "0 8px 8px 0",
+            padding: noteStyle.padding || "12px 16px",
+            fontSize: noteStyle.fontSize || `${s.baseFontSize - 1}px`,
+            fontFamily: noteStyle.fontFamily || `'${s.bodyFont}', sans-serif`,
+            fontWeight: noteStyle.fontWeight,
+            color: noteStyle.color,
             lineHeight: s.lineHeight,
-            ...getBlockStyle(),
+            marginBottom: "16px",
           }}
         >
           {content.text}
         </div>
       );
+    }
 
-    case "callout":
+    case "callout": {
+      const calloutStyle = getBlockStyle();
       return wrapHighlight(
         <div
-          className="mb-4 border rounded-lg p-4"
           style={{
-            backgroundColor: `hsl(${s.accentColor})`,
-            borderColor: `hsl(${s.borderColor})`,
-            fontFamily: `'${s.bodyFont}', sans-serif`,
-            fontSize: `${s.baseFontSize}px`,
+            backgroundColor: calloutStyle.backgroundColor || `hsl(${s.accentColor})`,
+            border: `1px solid ${calloutStyle.borderColor ? `hsl(${bs.borderColor})` : `hsl(${s.borderColor})`}`,
+            borderRadius: calloutStyle.borderRadius || "8px",
+            padding: calloutStyle.padding || "16px",
+            fontFamily: calloutStyle.fontFamily || `'${s.bodyFont}', sans-serif`,
+            fontSize: calloutStyle.fontSize || `${s.baseFontSize}px`,
+            fontWeight: calloutStyle.fontWeight,
+            color: calloutStyle.color,
             lineHeight: s.lineHeight,
-            ...getBlockStyle(),
+            marginBottom: "16px",
           }}
         >
           {content.text}
         </div>
       );
+    }
 
     default:
       return null;
