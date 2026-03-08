@@ -238,7 +238,7 @@ const PageTitleEditor = ({
   settings: DesignSettings;
 }) => {
   const [title, setTitle] = useState(page.title);
-  const [metaDesc, setMetaDesc] = useState((page as any).meta_description || "");
+  const [metaDesc, setMetaDesc] = useState(page.meta_description || "");
   const [showMeta, setShowMeta] = useState(false);
 
   useEffect(() => {
