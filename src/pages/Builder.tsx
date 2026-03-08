@@ -35,6 +35,8 @@ const Builder = () => {
     deleteBlock,
   } = useBuilder(projectId, user?.id);
 
+  const { settings: designSettings, saving: designSaving, saveSettings, resetSettings } = useDesignSettings(projectId);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
