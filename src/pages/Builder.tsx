@@ -134,6 +134,7 @@ const Builder = () => {
             >
               <FileJson className="h-3.5 w-3.5 mr-1.5" /> Import API
             </Button>
+            {projectId && <VersionManager projectId={projectId} />}
             <Button
               variant="outline"
               size="sm"
