@@ -52,6 +52,83 @@ export type Database = {
           },
         ]
       }
+      page_analytics: {
+        Row: {
+          avg_time_seconds: number | null
+          created_at: string
+          id: string
+          last_viewed_at: string | null
+          page_id: string
+          project_id: string
+          view_count: number
+        }
+        Insert: {
+          avg_time_seconds?: number | null
+          created_at?: string
+          id?: string
+          last_viewed_at?: string | null
+          page_id: string
+          project_id: string
+          view_count?: number
+        }
+        Update: {
+          avg_time_seconds?: number | null
+          created_at?: string
+          id?: string
+          last_viewed_at?: string | null
+          page_id?: string
+          project_id?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_analytics_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: true
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_analytics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          is_helpful: boolean
+          page_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_helpful: boolean
+          page_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_helpful?: boolean
+          page_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_feedback_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pages: {
         Row: {
           created_at: string
@@ -178,6 +255,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      search_queries: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          query: string
+          results_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          query: string
+          results_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          query?: string
+          results_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_queries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sections: {
         Row: {
