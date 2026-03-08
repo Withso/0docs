@@ -43,7 +43,7 @@ const SectionEditor = ({
       {/* Section title — editable with debounce */}
       <div className="flex items-center gap-3 mb-4">
         <input
-          className="bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1 min-w-0"
+          className="bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded-md px-1 -ml-1 min-w-0"
           style={{
             fontFamily: `'${settings.headingFont}', sans-serif`,
             fontWeight: settings.headingWeight,
