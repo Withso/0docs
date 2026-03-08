@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Plus, LogOut, ExternalLink, Trash2, BookOpen, Search,
-  FileText, Settings, MoreHorizontal, FolderOpen, User,
+  FileText, Settings, MoreHorizontal, FolderOpen, User, Clock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -121,16 +121,30 @@ const Dashboard = () => {
     || user?.email?.[0]?.toUpperCase()
     || "U";
 
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return d.toLocaleDateString();
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <aside className="w-[var(--platform-sidebar-width)] border-r bg-background hidden md:flex flex-col shrink-0">
+      <aside className="w-[var(--platform-sidebar-width)] border-r bg-card hidden md:flex flex-col shrink-0">
         {/* Logo */}
-        <div className="h-12 flex items-center gap-2.5 px-5 border-b">
-          <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
-            <FileText className="h-3.5 w-3.5 text-primary-foreground" />
+        <div className="h-[52px] flex items-center gap-2.5 px-5 border-b">
+          <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center shadow-platform-sm">
+            <FileText className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="font-semibold text-sm tracking-tight text-foreground">DocBuilder</span>
+          <span className="font-semibold text-[15px] tracking-tight text-foreground">DocBuilder</span>
         </div>
 
         {/* Nav */}
@@ -152,12 +166,12 @@ const Dashboard = () => {
         <div className="p-3 border-t">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
-                <div className="h-7 w-7 platform-avatar text-[11px]">
+              <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-accent transition-colors">
+                <div className="h-8 w-8 platform-avatar text-[11px]">
                   {userInitial}
                 </div>
                 <div className="flex-1 text-left min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
+                  <p className="text-[13px] font-medium text-foreground truncate">
                     {user?.user_metadata?.display_name || "User"}
                   </p>
                   <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
@@ -168,6 +182,7 @@ const Dashboard = () => {
               <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
                 <User className="h-4 w-4 mr-2" /> Profile Settings
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut} className="text-destructive">
                 <LogOut className="h-4 w-4 mr-2" /> Sign Out
               </DropdownMenuItem>
@@ -183,52 +198,53 @@ const Dashboard = () => {
           <div className="h-full px-6 flex items-center justify-between">
             {/* Mobile logo */}
             <div className="md:hidden flex items-center gap-2">
-              <FileText className="h-4 w-4 text-foreground" />
-              <span className="font-semibold text-sm text-foreground">DocBuilder</span>
+              <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center">
+                <FileText className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <span className="font-semibold text-[15px] text-foreground">DocBuilder</span>
             </div>
 
-            <div className="hidden md:flex items-center gap-2">
-              <span className="platform-label">Projects</span>
-              <span className="text-muted-foreground text-xs">·</span>
-              <span className="text-xs text-muted-foreground">{projects.length} total</span>
+            <div className="hidden md:flex items-center gap-3">
+              <h1 className="text-[15px] font-semibold text-foreground">Projects</h1>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md">{projects.length}</span>
             </div>
 
             <div className="flex items-center gap-2">
               {!hasDemoProject && (
-                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={seedDemo}>
+                <Button variant="ghost" size="sm" className="h-9 text-[13px] rounded-lg" onClick={seedDemo}>
                   <BookOpen className="h-3.5 w-3.5 mr-1.5" /> Demo
                 </Button>
               )}
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="h-8 text-xs">
+                  <Button size="sm" className="h-9 text-[13px] rounded-lg shadow-platform-sm">
                     <Plus className="h-3.5 w-3.5 mr-1.5" /> New Project
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[420px]">
+                <DialogContent className="sm:max-w-[440px]">
                   <DialogHeader>
                     <DialogTitle className="text-lg">Create New Project</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 mt-3">
                     <div>
-                      <label className="text-sm font-medium text-foreground mb-1.5 block">Project Name</label>
+                      <label className="text-[13px] font-medium text-foreground mb-1.5 block">Project Name</label>
                       <Input
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
                         placeholder="My Documentation"
-                        className="h-10"
+                        className="h-11 rounded-lg"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-foreground mb-1.5 block">Description</label>
+                      <label className="text-[13px] font-medium text-foreground mb-1.5 block">Description</label>
                       <Input
                         value={newDesc}
                         onChange={(e) => setNewDesc(e.target.value)}
                         placeholder="A brief description..."
-                        className="h-10"
+                        className="h-11 rounded-lg"
                       />
                     </div>
-                    <Button onClick={createProject} disabled={creating || !newName.trim()} className="w-full h-10">
+                    <Button onClick={createProject} disabled={creating || !newName.trim()} className="w-full h-11 rounded-lg">
                       {creating ? "Creating..." : "Create Project"}
                     </Button>
                   </div>
@@ -239,7 +255,7 @@ const Dashboard = () => {
               <div className="md:hidden">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="h-8 w-8 platform-avatar text-[11px]">
+                    <button className="h-9 w-9 platform-avatar text-[11px]">
                       {userInitial}
                     </button>
                   </DropdownMenuTrigger>
@@ -262,56 +278,57 @@ const Dashboard = () => {
           <div className="max-w-5xl mx-auto px-6 py-8">
             {/* Search */}
             <div className="relative mb-6">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search projects..."
-                className="pl-10 h-10 max-w-sm"
+                className="pl-10 h-11 max-w-sm rounded-lg"
               />
             </div>
 
             {loading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground py-12">
-                <span className="h-4 w-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
-                Loading projects...
+              <div className="flex flex-col items-center gap-3 py-20">
+                <span className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                <span className="text-[13px] text-muted-foreground">Loading projects...</span>
               </div>
             ) : filteredProjects.length === 0 ? (
-              <div className="platform-card text-center py-16">
-                <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mx-auto mb-4">
-                  <FolderOpen className="h-6 w-6 text-muted-foreground" />
+              <div className="platform-card text-center py-20 animate-fade-in">
+                <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-5">
+                  <FolderOpen className="h-7 w-7 text-muted-foreground" />
                 </div>
-                <h3 className="font-medium text-foreground mb-1">
+                <h3 className="font-semibold text-foreground text-[15px] mb-1.5">
                   {searchQuery ? "No projects found" : "No projects yet"}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+                <p className="text-[13px] text-muted-foreground mb-6 max-w-sm mx-auto">
                   {searchQuery
                     ? "Try a different search term"
                     : "Create your first documentation project to get started."}
                 </p>
                 {!searchQuery && (
-                  <Button onClick={() => setDialogOpen(true)} size="sm">
+                  <Button onClick={() => setDialogOpen(true)} className="rounded-lg">
                     <Plus className="h-4 w-4 mr-2" /> New Project
                   </Button>
                 )}
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredProjects.map((project) => (
+                {filteredProjects.map((project, i) => (
                   <div
                     key={project.id}
                     onClick={() => navigate(`/builder/${project.id}`)}
                     className="platform-card cursor-pointer group animate-fade-in"
+                    style={{ animationDelay: `${i * 40}ms`, animationFillMode: "both" }}
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <div className="h-9 w-9 rounded-lg bg-accent flex items-center justify-center">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
+                      <div className="h-10 w-10 rounded-xl bg-platform-accent-soft flex items-center justify-center">
+                        <FileText className="h-[18px] w-[18px] text-primary" />
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
                             onClick={(e) => e.stopPropagation()}
-                            className="h-7 w-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-accent transition-all"
+                            className="h-8 w-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-accent transition-all"
                           >
                             <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                           </button>
@@ -333,14 +350,13 @@ const Dashboard = () => {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    <h3 className="font-medium text-foreground text-sm mb-1">{project.name}</h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                    <h3 className="font-semibold text-foreground text-[14px] mb-1">{project.name}</h3>
+                    <p className="text-[12px] text-muted-foreground line-clamp-2 mb-4">
                       {project.description || "No description"}
                     </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground">
-                        Updated {new Date(project.updated_at).toLocaleDateString()}
-                      </span>
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {formatDate(project.updated_at)}
                     </div>
                   </div>
                 ))}
