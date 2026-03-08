@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useDesignSettings } from "@/hooks/use-design-settings";
 import DocContentView from "@/components/docs/DocContentView";
+import AskDocsChat from "@/components/docs/AskDocsChat";
 
 interface Page { id: string; title: string; slug: string; order_index: number; }
 interface Section { id: string; page_id: string; title: string; order_index: number; }
@@ -32,7 +33,6 @@ const PublicDocs = () => {
         const target = pageSlug ? pagesData.find((p) => p.slug === pageSlug) : pagesData[0];
         setActivePage(target || pagesData[0] || null);
 
-        // Load all sections & blocks for search
         const pageIds = pagesData.map((p) => p.id);
         if (pageIds.length > 0) {
           const { data: allSecs } = await supabase.from("sections").select("*").in("page_id", pageIds).order("order_index");
@@ -50,6 +50,35 @@ const PublicDocs = () => {
     };
     load();
   }, [slug, pageSlug]);
+
+  // Track page view
+  useEffect(() => {
+    if (!activePage || !project) return;
+    const trackView = async () => {
+      // Upsert page analytics
+      const { data: existing } = await supabase
+        .from("page_analytics" as any)
+        .select("id, view_count")
+        .eq("page_id", activePage.id)
+        .limit(1);
+
+      const rows = (existing || []) as unknown as { id: string; view_count: number }[];
+      if (rows.length > 0) {
+        await supabase.from("page_analytics" as any).update({
+          view_count: rows[0].view_count + 1,
+          last_viewed_at: new Date().toISOString(),
+        }).eq("id", rows[0].id);
+      } else {
+        await supabase.from("page_analytics" as any).insert({
+          page_id: activePage.id,
+          project_id: project.id,
+          view_count: 1,
+          last_viewed_at: new Date().toISOString(),
+        });
+      }
+    };
+    trackView();
+  }, [activePage?.id, project?.id]);
 
   useEffect(() => {
     if (!activePage) return;
@@ -97,7 +126,11 @@ const PublicDocs = () => {
         headerStickyTop={0}
         allSections={allSections}
         allBlocks={allBlocks}
+        showFeedback
+        pageId={activePage?.id}
+        projectId={project?.id}
       />
+      {project?.id && <AskDocsChat projectId={project.id} settings={settings} />}
     </div>
   );
 };

@@ -36,14 +36,14 @@ const Analytics = () => {
         const pageIds = pagesData.map((p) => p.id);
 
         const { data: fb } = await supabase.from("page_feedback" as any).select("*").in("page_id", pageIds).order("created_at", { ascending: false }).limit(50);
-        setFeedback((fb || []) as FeedbackRow[]);
+        setFeedback((fb || []) as unknown as FeedbackRow[]);
 
         const { data: an } = await supabase.from("page_analytics" as any).select("page_id, view_count, last_viewed_at").in("page_id", pageIds);
-        setAnalytics((an || []) as AnalyticsRow[]);
+        setAnalytics((an || []) as unknown as AnalyticsRow[]);
       }
 
       const { data: sq } = await supabase.from("search_queries" as any).select("*").eq("project_id", projectId).order("created_at", { ascending: false }).limit(50);
-      setSearches((sq || []) as SearchRow[]);
+      setSearches((sq || []) as unknown as SearchRow[]);
 
       setLoading(false);
     };
