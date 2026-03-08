@@ -55,6 +55,10 @@ export interface DesignSettings {
   sidebarActiveColor: string;
   sidebarFontSize: number;
   sidebarPageGap: number;
+  sidebarIndicatorColor: string;
+  sidebarShowSectionTracker: boolean;
+  sidebarShowPageArrows: boolean;
+  sidebarActivePageBg: boolean;
 
   // Per-block overrides
   blockStyles: {
@@ -122,6 +126,10 @@ export const defaultDesignSettings: DesignSettings = {
   sidebarActiveColor: "0 0% 13%",
   sidebarFontSize: 14,
   sidebarPageGap: 2,
+  sidebarIndicatorColor: "0 0% 13%",
+  sidebarShowSectionTracker: true,
+  sidebarShowPageArrows: false,
+  sidebarActivePageBg: false,
 
   blockStyles: emptyBlockStyles,
 };
