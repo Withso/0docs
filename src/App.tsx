@@ -11,6 +11,7 @@ import Builder from "./pages/Builder";
 import DesignSettingsPage from "./pages/DesignSettings";
 import ProfileSettings from "./pages/ProfileSettings";
 import PublicDocs from "./pages/PublicDocs";
+import Analytics from "./pages/Analytics";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -47,6 +48,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <DesignSettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/builder/:projectId/analytics"
+              element={
+                <ProtectedRoute>
+                  <Analytics />
                 </ProtectedRoute>
               }
             />
