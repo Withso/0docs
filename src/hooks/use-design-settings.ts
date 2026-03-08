@@ -1,6 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface BlockStyleSettings {
+  color: string;
+  fontSize: number;
+  fontWeight: string;
+  fontFamily: string;
+  backgroundColor: string;
+  borderColor: string;
+  borderRadius: number;
+  padding: number;
+}
+
 export interface DesignSettings {
   // Typography
   headingFont: string;
@@ -35,7 +46,40 @@ export interface DesignSettings {
   codeBlockBorderRadius: number;
   noteBorderWidth: number;
   imageRounded: boolean;
+
+  // Sidebar
+  sidebarBg: string;
+  sidebarTextColor: string;
+  sidebarActiveColor: string;
+  sidebarFontSize: number;
+
+  // Per-block overrides
+  blockStyles: {
+    heading: Partial<BlockStyleSettings>;
+    paragraph: Partial<BlockStyleSettings>;
+    code_block: Partial<BlockStyleSettings>;
+    image: Partial<BlockStyleSettings>;
+    video: Partial<BlockStyleSettings>;
+    youtube: Partial<BlockStyleSettings>;
+    ordered_list: Partial<BlockStyleSettings>;
+    unordered_list: Partial<BlockStyleSettings>;
+    note: Partial<BlockStyleSettings>;
+    callout: Partial<BlockStyleSettings>;
+  };
 }
+
+const emptyBlockStyles: DesignSettings["blockStyles"] = {
+  heading: {},
+  paragraph: {},
+  code_block: {},
+  image: {},
+  video: {},
+  youtube: {},
+  ordered_list: {},
+  unordered_list: {},
+  note: {},
+  callout: {},
+};
 
 export const defaultDesignSettings: DesignSettings = {
   headingFont: "Inter",
@@ -67,6 +111,13 @@ export const defaultDesignSettings: DesignSettings = {
   codeBlockBorderRadius: 8,
   noteBorderWidth: 3,
   imageRounded: true,
+
+  sidebarBg: "0 0% 100%",
+  sidebarTextColor: "0 0% 45%",
+  sidebarActiveColor: "0 0% 13%",
+  sidebarFontSize: 14,
+
+  blockStyles: emptyBlockStyles,
 };
 
 export function useDesignSettings(projectId: string | undefined) {
@@ -85,7 +136,12 @@ export function useDesignSettings(projectId: string | undefined) {
         .maybeSingle();
 
       if (data?.settings) {
-        setSettings({ ...defaultDesignSettings, ...(data.settings as any) });
+        const loaded = data.settings as any;
+        setSettings({
+          ...defaultDesignSettings,
+          ...loaded,
+          blockStyles: { ...emptyBlockStyles, ...(loaded.blockStyles || {}) },
+        });
       } else {
         setSettings(defaultDesignSettings);
       }
