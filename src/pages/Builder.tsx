@@ -238,12 +238,12 @@ const PageTitleEditor = ({
   settings: DesignSettings;
 }) => {
   const [title, setTitle] = useState(page.title);
-  const [metaDesc, setMetaDesc] = useState((page as any).meta_description || "");
+  const [metaDesc, setMetaDesc] = useState(page.meta_description || "");
   const [showMeta, setShowMeta] = useState(false);
 
   useEffect(() => {
     setTitle(page.title);
-    setMetaDesc((page as any).meta_description || "");
+    setMetaDesc(page.meta_description || "");
   }, [page.id, page.title]);
 
   const debouncedSave = useDebouncedCallback((value: string) => {
@@ -252,7 +252,7 @@ const PageTitleEditor = ({
   }, 600);
 
   const debouncedMetaSave = useDebouncedCallback((value: string) => {
-    supabase.from("pages").update({ meta_description: value } as any).eq("id", page.id).then(() => {});
+    supabase.from("pages").update({ meta_description: value }).eq("id", page.id).then(() => {});
   }, 800);
 
   return (

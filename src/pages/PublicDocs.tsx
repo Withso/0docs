@@ -7,7 +7,7 @@ import DocContentView from "@/components/docs/DocContentView";
 import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
 
-interface Page { id: string; title: string; slug: string; order_index: number; meta_description?: string; version_id?: string | null; }
+interface Page { id: string; title: string; slug: string; order_index: number; meta_description?: string | null; version_id?: string | null; }
 interface Section { id: string; page_id: string; title: string; order_index: number; }
 interface Block { id: string; section_id: string; type: string; content: any; order_index: number; }
 
@@ -64,7 +64,7 @@ const PublicDocs = () => {
   // SEO
   useSEOHead({
     title: activePage?.title,
-    description: (activePage as any)?.meta_description,
+    description: activePage?.meta_description ?? undefined,
     projectName: project?.name,
     pageSlug: activePage?.slug,
     projectSlug: slug,
@@ -75,19 +75,19 @@ const PublicDocs = () => {
     if (!activePage || !project) return;
     const trackView = async () => {
       const { data: existing } = await supabase
-        .from("page_analytics" as any)
+        .from("page_analytics")
         .select("id, view_count")
         .eq("page_id", activePage.id)
         .limit(1);
 
-      const rows = (existing || []) as unknown as { id: string; view_count: number }[];
+      const rows = existing || [];
       if (rows.length > 0) {
-        await supabase.from("page_analytics" as any).update({
+        await supabase.from("page_analytics").update({
           view_count: rows[0].view_count + 1,
           last_viewed_at: new Date().toISOString(),
-        }).eq("id", rows[0].id);
+        } as any).eq("id", rows[0].id);
       } else {
-        await supabase.from("page_analytics" as any).insert({
+        await supabase.from("page_analytics").insert({
           page_id: activePage.id,
           project_id: project.id,
           view_count: 1,

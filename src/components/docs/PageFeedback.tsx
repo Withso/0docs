@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ThumbsUp, ThumbsDown, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -14,9 +14,17 @@ const PageFeedback = ({ pageId, settings: s }: PageFeedbackProps) => {
   const [comment, setComment] = useState("");
   const [selectedHelpful, setSelectedHelpful] = useState<boolean | null>(null);
 
+  // Reset state when page changes
+  useEffect(() => {
+    setSubmitted(false);
+    setShowComment(false);
+    setComment("");
+    setSelectedHelpful(null);
+  }, [pageId]);
+
   const submitFeedback = async (isHelpful: boolean, feedbackComment?: string) => {
     setSelectedHelpful(isHelpful);
-    await supabase.from("page_feedback" as any).insert({
+    await supabase.from("page_feedback").insert({
       page_id: pageId,
       is_helpful: isHelpful,
       comment: feedbackComment || null,

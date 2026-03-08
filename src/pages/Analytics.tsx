@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,15 +35,15 @@ const Analytics = () => {
       if (pagesData && pagesData.length > 0) {
         const pageIds = pagesData.map((p) => p.id);
 
-        const { data: fb } = await supabase.from("page_feedback" as any).select("*").in("page_id", pageIds).order("created_at", { ascending: false }).limit(50);
-        setFeedback((fb || []) as unknown as FeedbackRow[]);
+        const { data: fb } = await supabase.from("page_feedback").select("*").in("page_id", pageIds).order("created_at", { ascending: false }).limit(50);
+        setFeedback((fb || []) as FeedbackRow[]);
 
-        const { data: an } = await supabase.from("page_analytics" as any).select("page_id, view_count, last_viewed_at").in("page_id", pageIds);
-        setAnalytics((an || []) as unknown as AnalyticsRow[]);
+        const { data: an } = await supabase.from("page_analytics").select("page_id, view_count, last_viewed_at").in("page_id", pageIds);
+        setAnalytics((an || []) as AnalyticsRow[]);
       }
 
-      const { data: sq } = await supabase.from("search_queries" as any).select("*").eq("project_id", projectId).order("created_at", { ascending: false }).limit(50);
-      setSearches((sq || []) as unknown as SearchRow[]);
+      const { data: sq } = await supabase.from("search_queries").select("*").eq("project_id", projectId).order("created_at", { ascending: false }).limit(50);
+      setSearches((sq || []) as SearchRow[]);
 
       setLoading(false);
     };
@@ -168,11 +168,14 @@ const Analytics = () => {
   );
 };
 
-const StatCard = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
-  <div className="rounded-xl border bg-card p-4">
-    <div className="flex items-center gap-2 text-muted-foreground mb-2">{icon}<span className="text-xs">{label}</span></div>
-    <div className="text-2xl font-bold">{value}</div>
-  </div>
+const StatCard = React.forwardRef<HTMLDivElement, { icon: React.ReactNode; label: string; value: string }>(
+  ({ icon, label, value }, ref) => (
+    <div ref={ref} className="rounded-xl border bg-card p-4">
+      <div className="flex items-center gap-2 text-muted-foreground mb-2">{icon}<span className="text-xs">{label}</span></div>
+      <div className="text-2xl font-bold">{value}</div>
+    </div>
+  )
 );
+StatCard.displayName = "StatCard";
 
 export default Analytics;
