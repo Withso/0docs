@@ -116,12 +116,22 @@ const DocContentView = ({
             style={{ maxWidth: `${frameMaxWidth}px` }}
             className="mx-auto px-6 h-12 flex items-center justify-between"
           >
-            <span
-              className="font-semibold text-sm"
-              style={{ fontFamily: `'${s.bodyFont}', sans-serif` }}
-            >
-              {projectName}
-            </span>
+            <div className="flex items-center gap-3">
+              <span
+                className="font-semibold text-sm"
+                style={{ fontFamily: `'${s.bodyFont}', sans-serif` }}
+              >
+                {projectName}
+              </span>
+              {versions.length > 1 && activeVersion && onSelectVersion && (
+                <VersionSelector
+                  versions={versions}
+                  activeVersion={activeVersion}
+                  onSelect={onSelectVersion}
+                  settings={s}
+                />
+              )}
+            </div>
             <button
               onClick={() => setSearchOpen(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors hover:bg-accent"
