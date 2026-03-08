@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Builder from "./pages/Builder";
 import DesignSettingsPage from "./pages/DesignSettings";
+import ProfileSettings from "./pages/ProfileSettings";
 import PublicDocs from "./pages/PublicDocs";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
