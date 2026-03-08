@@ -133,6 +133,8 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
                 style={{
                   borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : (settings.imageRounded ? "8px" : "0"),
                   border: `1px solid hsl(${bs.borderColor || settings.borderColor})`,
+                  ...(bs.backgroundColor ? { backgroundColor: `hsl(${bs.backgroundColor})` } : {}),
+                  ...(bs.padding != null ? { padding: `${bs.padding}px` } : {}),
                 }}
               >
                 <img
@@ -145,7 +147,13 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
             )}
             <input
               className="w-full bg-transparent outline-none mt-1 px-1"
-              style={{ color: `hsl(${settings.mutedForegroundColor})`, fontSize: "12px" }}
+              style={{
+                color: bs.color ? `hsl(${bs.color})` : `hsl(${settings.mutedForegroundColor})`,
+                fontSize: `${bs.fontSize ?? (settings.baseFontSize - 1)}px`,
+                fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${settings.bodyFont}', sans-serif`,
+                fontWeight: (bs.fontWeight as any) || undefined,
+                lineHeight: settings.lineHeight,
+              }}
               value={localContent.alt || ""}
               onChange={(e) => updateContent({ alt: e.target.value })}
               placeholder="Alt text / caption"
@@ -170,18 +178,24 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
             />
             {localContent.videoId && (
               <div
-                className="overflow-hidden aspect-video"
                 style={{
-                  borderRadius: `${bs.borderRadius ?? 8}px`,
+                  backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
                   border: `1px solid hsl(${bs.borderColor || settings.borderColor})`,
+                  borderRadius: `${bs.borderRadius ?? 8}px`,
+                  padding: bs.padding != null ? `${bs.padding}px` : undefined,
                 }}
               >
-                <iframe
-                  src={`https://www.youtube.com/embed/${localContent.videoId}`}
-                  className="w-full h-full"
-                  allowFullScreen
-                  title={localContent.title || "Video"}
-                />
+                <div
+                  className="overflow-hidden aspect-video"
+                  style={{ borderRadius: `${bs.borderRadius ?? 8}px` }}
+                >
+                  <iframe
+                    src={`https://www.youtube.com/embed/${localContent.videoId}`}
+                    className="w-full h-full"
+                    allowFullScreen
+                    title={localContent.title || "Video"}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -203,16 +217,20 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
               placeholder="Video URL..."
             />
             {localContent.url && (
-              <video
-                controls
-                className="w-full"
+              <div
                 style={{
-                  borderRadius: `${bs.borderRadius ?? 8}px`,
+                  backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
                   border: `1px solid hsl(${bs.borderColor || settings.borderColor})`,
+                  borderRadius: `${bs.borderRadius ?? 8}px`,
+                  padding: bs.padding != null ? `${bs.padding}px` : undefined,
                 }}
               >
-                <source src={localContent.url} />
-              </video>
+                <div className="overflow-hidden" style={{ borderRadius: `${bs.borderRadius ?? 8}px` }}>
+                  <video controls className="w-full" style={{ display: "block" }}>
+                    <source src={localContent.url} />
+                  </video>
+                </div>
+              </div>
             )}
           </div>
         );

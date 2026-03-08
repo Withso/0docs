@@ -130,7 +130,16 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
                 <img src={content.url} alt={content.alt || ""} className="w-full h-auto" loading="lazy" />
               </div>
               {content.alt && (
-                <p style={{ color: `hsl(${s.mutedForegroundColor})`, fontSize: "14px", marginTop: "4px" }}>
+                <p
+                  style={{
+                    color: bs.color ? `hsl(${bs.color})` : `hsl(${s.mutedForegroundColor})`,
+                    fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+                    fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
+                    fontWeight: (bs.fontWeight as any) || undefined,
+                    marginTop: "4px",
+                    lineHeight: s.lineHeight,
+                  }}
+                >
                   {content.alt}
                 </p>
               )}
@@ -142,19 +151,22 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
       return content.videoId
         ? wrapHighlight(
             <div
-              className="overflow-hidden aspect-video"
               style={{
-                borderRadius: `${bs.borderRadius ?? 8}px`,
+                backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
                 border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+                borderRadius: `${bs.borderRadius ?? 8}px`,
+                padding: bs.padding != null ? `${bs.padding}px` : undefined,
                 marginBottom: "16px",
               }}
             >
-              <iframe
-                src={`https://www.youtube.com/embed/${content.videoId}`}
-                className="w-full h-full"
-                allowFullScreen
-                title={content.title || "Video"}
-              />
+              <div className="overflow-hidden aspect-video" style={{ borderRadius: `${bs.borderRadius ?? 8}px` }}>
+                <iframe
+                  src={`https://www.youtube.com/embed/${content.videoId}`}
+                  className="w-full h-full"
+                  allowFullScreen
+                  title={content.title || "Video"}
+                />
+              </div>
             </div>
           )
         : null;
@@ -162,17 +174,21 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
     case "video":
       return content.url
         ? wrapHighlight(
-            <video
-              controls
-              className="w-full"
+            <div
               style={{
-                borderRadius: `${bs.borderRadius ?? 8}px`,
+                backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
                 border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+                borderRadius: `${bs.borderRadius ?? 8}px`,
+                padding: bs.padding != null ? `${bs.padding}px` : undefined,
                 marginBottom: "16px",
               }}
             >
-              <source src={content.url} />
-            </video>
+              <div className="overflow-hidden" style={{ borderRadius: `${bs.borderRadius ?? 8}px` }}>
+                <video controls className="w-full" style={{ display: "block" }}>
+                  <source src={content.url} />
+                </video>
+              </div>
+            </div>
           )
         : null;
 
