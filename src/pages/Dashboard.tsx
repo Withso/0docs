@@ -128,6 +128,14 @@ const Dashboard = () => {
                 <Plus className="h-4 w-4 mr-2" /> New Project
               </Button>
             </DialogTrigger>
+            {!hasDemoProject && (
+              <Button variant="outline" onClick={seedDemo}>
+                <BookOpen className="h-4 w-4 mr-2" /> Load Demo Project
+              </Button>
+            )}
+                <Plus className="h-4 w-4 mr-2" /> New Project
+              </Button>
+            </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New Project</DialogTitle>
