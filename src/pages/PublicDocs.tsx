@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronRight } from "lucide-react";
+import { useDesignSettings, defaultDesignSettings } from "@/hooks/use-design-settings";
+import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
 
 interface Page {
   id: string;
@@ -126,18 +128,20 @@ const PublicDocs = () => {
     );
   }
 
+  const { settings: designSettings } = useDesignSettings(project?.id);
+
   return (
-    <div className="min-h-screen bg-background">
+    <DesignSettingsWrapper settings={designSettings} className="min-h-screen">
       {/* Header */}
-      <header className="border-b sticky top-0 bg-background z-40">
-        <div className="max-w-[1100px] mx-auto px-6 h-12 flex items-center">
-          <span className="font-semibold text-foreground text-sm">{project?.name}</span>
+      <header className="border-b sticky top-0 z-40" style={{ backgroundColor: `hsl(${designSettings.backgroundColor})`, borderColor: `hsl(${designSettings.borderColor})` }}>
+        <div style={{ maxWidth: `${designSettings.contentMaxWidth + designSettings.sidebarWidth + 48}px` }} className="mx-auto px-6 h-12 flex items-center">
+          <span className="font-semibold text-sm">{project?.name}</span>
         </div>
       </header>
 
-      <div className="max-w-[1100px] mx-auto flex px-6">
+      <div style={{ maxWidth: `${designSettings.contentMaxWidth + designSettings.sidebarWidth + 48}px` }} className="mx-auto flex px-6">
         {/* Sidebar */}
-        <aside className="w-[240px] shrink-0 sticky top-12 h-[calc(100vh-48px)] overflow-y-auto py-10 pr-6 hidden lg:block">
+        <aside style={{ width: `${designSettings.sidebarWidth}px` }} className="shrink-0 sticky top-12 h-[calc(100vh-48px)] overflow-y-auto py-10 pr-6 hidden lg:block">
           <div className="doc-sidebar-group-label">Pages</div>
           <nav className="space-y-0.5">
             {pages.map((page) => {
@@ -148,9 +152,8 @@ const PublicDocs = () => {
                 <div key={page.id}>
                   <div className="flex items-center gap-1">
                     <ChevronRight
-                      className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${
-                        isActive ? "rotate-90" : ""
-                      }`}
+                      className={`h-3 w-3 shrink-0 transition-transform ${isActive ? "rotate-90" : ""}`}
+                      style={{ color: `hsl(${designSettings.mutedForegroundColor})` }}
                     />
                     <button
                       onClick={() => setActivePage(page)}
@@ -182,8 +185,17 @@ const PublicDocs = () => {
         {/* Main content */}
         <main className="flex-1 min-w-0 py-10 lg:pl-4">
           {activePage && (
-            <article className="max-w-[680px]">
-              <h1 className="text-2xl font-bold text-foreground mb-6">{activePage.title}</h1>
+            <article style={{ maxWidth: `${designSettings.contentMaxWidth}px` }}>
+              <h1
+                className="mb-6"
+                style={{
+                  fontFamily: `'${designSettings.headingFont}', sans-serif`,
+                  fontWeight: designSettings.headingWeight,
+                  fontSize: `${designSettings.headingFontSize + 6}px`,
+                }}
+              >
+                {activePage.title}
+              </h1>
 
               {sections.map((section) => {
                 const sectionBlocks = blocks
@@ -192,10 +204,19 @@ const PublicDocs = () => {
 
                 return (
                   <section key={section.id} className="mb-10" id={`section-${section.id}`}>
-                    <h2 className="doc-heading text-lg mb-4">{section.title}</h2>
+                    <h2
+                      className="doc-heading mb-4"
+                      style={{
+                        fontFamily: `'${designSettings.headingFont}', sans-serif`,
+                        fontWeight: designSettings.headingWeight,
+                        fontSize: `${designSettings.headingFontSize}px`,
+                      }}
+                    >
+                      {section.title}
+                    </h2>
                     <div className="doc-prose">
                       {sectionBlocks.map((block) => (
-                        <BlockRenderer key={block.id} block={block} />
+                        <BlockRenderer key={block.id} block={block} settings={designSettings} />
                       ))}
                     </div>
                   </section>
@@ -203,23 +224,37 @@ const PublicDocs = () => {
               })}
 
               {sections.length === 0 && (
-                <p className="text-muted-foreground">This page has no content yet.</p>
+                <p style={{ color: `hsl(${designSettings.mutedForegroundColor})` }}>
+                  This page has no content yet.
+                </p>
               )}
             </article>
           )}
         </main>
       </div>
-    </div>
+    </DesignSettingsWrapper>
   );
 };
 
 // Read-only block renderer
-const BlockRenderer = ({ block }: { block: Block }) => {
+const BlockRenderer = ({ block, settings }: { block: Block; settings?: any }) => {
   const { content, type } = block;
+  const ds = settings;
 
   switch (type) {
     case "heading":
-      return <h3 className="text-lg font-semibold text-foreground mb-3">{content.text}</h3>;
+      return (
+        <h3
+          className="mb-3"
+          style={{
+            fontFamily: ds ? `'${ds.headingFont}', sans-serif` : undefined,
+            fontWeight: ds?.headingWeight || "600",
+            fontSize: ds ? `${ds.headingFontSize}px` : undefined,
+          }}
+        >
+          {content.text}
+        </h3>
+      );
 
     case "paragraph":
       return <p className="mb-4">{content.text}</p>;

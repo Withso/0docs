@@ -1,0 +1,153 @@
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+export interface DesignSettings {
+  // Typography
+  headingFont: string;
+  bodyFont: string;
+  codeFont: string;
+  baseFontSize: number;
+  headingFontSize: number;
+  lineHeight: number;
+
+  // Colors (HSL strings like "0 0% 13%")
+  backgroundColor: string;
+  foregroundColor: string;
+  primaryColor: string;
+  primaryForegroundColor: string;
+  mutedColor: string;
+  mutedForegroundColor: string;
+  accentColor: string;
+  borderColor: string;
+  linkColor: string;
+  sectionLineColor: string;
+  codeBlockBg: string;
+  noteBg: string;
+  noteBorderColor: string;
+
+  // Layout
+  contentMaxWidth: number;
+  sidebarWidth: number;
+
+  // Block styles
+  headingWeight: string;
+  paragraphSpacing: number;
+  codeBlockBorderRadius: number;
+  noteBorderWidth: number;
+  imageRounded: boolean;
+}
+
+export const defaultDesignSettings: DesignSettings = {
+  headingFont: "Inter",
+  bodyFont: "Inter",
+  codeFont: "JetBrains Mono",
+  baseFontSize: 15,
+  headingFontSize: 18,
+  lineHeight: 1.7,
+
+  backgroundColor: "0 0% 100%",
+  foregroundColor: "0 0% 13%",
+  primaryColor: "0 0% 13%",
+  primaryForegroundColor: "0 0% 100%",
+  mutedColor: "0 0% 96%",
+  mutedForegroundColor: "0 0% 45%",
+  accentColor: "0 0% 96%",
+  borderColor: "0 0% 90%",
+  linkColor: "214 100% 50%",
+  sectionLineColor: "20 70% 55%",
+  codeBlockBg: "0 0% 97%",
+  noteBg: "40 60% 97%",
+  noteBorderColor: "40 60% 85%",
+
+  contentMaxWidth: 680,
+  sidebarWidth: 240,
+
+  headingWeight: "600",
+  paragraphSpacing: 16,
+  codeBlockBorderRadius: 8,
+  noteBorderWidth: 3,
+  imageRounded: true,
+};
+
+export function useDesignSettings(projectId: string | undefined) {
+  const [settings, setSettings] = useState<DesignSettings>(defaultDesignSettings);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    const load = async () => {
+      const { data } = await supabase
+        .from("project_design_settings")
+        .select("*")
+        .eq("project_id", projectId)
+        .maybeSingle();
+
+      if (data?.settings) {
+        setSettings({ ...defaultDesignSettings, ...(data.settings as any) });
+      } else {
+        setSettings(defaultDesignSettings);
+      }
+      setLoading(false);
+    };
+
+    load();
+  }, [projectId]);
+
+  const saveSettings = useCallback(
+    async (newSettings: DesignSettings) => {
+      if (!projectId) return;
+      setSaving(true);
+      setSettings(newSettings);
+
+      await supabase
+        .from("project_design_settings")
+        .upsert(
+          { project_id: projectId, settings: newSettings as any, updated_at: new Date().toISOString() },
+          { onConflict: "project_id" }
+        );
+
+      setSaving(false);
+    },
+    [projectId]
+  );
+
+  const resetSettings = useCallback(() => {
+    saveSettings(defaultDesignSettings);
+  }, [saveSettings]);
+
+  return { settings, loading, saving, saveSettings, resetSettings };
+}
+
+/** Convert DesignSettings to CSS custom properties for injection */
+export function designSettingsToCSSVars(s: DesignSettings): Record<string, string> {
+  return {
+    "--ds-bg": s.backgroundColor,
+    "--ds-fg": s.foregroundColor,
+    "--ds-primary": s.primaryColor,
+    "--ds-primary-fg": s.primaryForegroundColor,
+    "--ds-muted": s.mutedColor,
+    "--ds-muted-fg": s.mutedForegroundColor,
+    "--ds-accent": s.accentColor,
+    "--ds-border": s.borderColor,
+    "--ds-link": s.linkColor,
+    "--ds-section-line": s.sectionLineColor,
+    "--ds-code-bg": s.codeBlockBg,
+    "--ds-note-bg": s.noteBg,
+    "--ds-note-border": s.noteBorderColor,
+    "--ds-heading-font": s.headingFont,
+    "--ds-body-font": s.bodyFont,
+    "--ds-code-font": s.codeFont,
+    "--ds-base-font-size": `${s.baseFontSize}px`,
+    "--ds-heading-font-size": `${s.headingFontSize}px`,
+    "--ds-line-height": String(s.lineHeight),
+    "--ds-content-max": `${s.contentMaxWidth}px`,
+    "--ds-sidebar-width": `${s.sidebarWidth}px`,
+    "--ds-heading-weight": s.headingWeight,
+    "--ds-paragraph-spacing": `${s.paragraphSpacing}px`,
+    "--ds-code-radius": `${s.codeBlockBorderRadius}px`,
+    "--ds-note-border-width": `${s.noteBorderWidth}px`,
+    "--ds-image-rounded": s.imageRounded ? "8px" : "0px",
+  };
+}
