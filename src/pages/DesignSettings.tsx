@@ -12,14 +12,14 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   ArrowLeft, Save, RotateCcw, Type, AlignLeft, Code, ImageIcon,
   Film, Youtube, ListOrdered, List, StickyNote, AlertCircle, Layout, Sidebar, Palette,
-  Eye, PanelRightClose, PanelRight,
+  Eye, PanelRightClose, PanelRight, ChevronDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 // ─── Helpers ─────────────────────────────────────────
 function hslToHex(hsl: string): string {
@@ -82,20 +82,109 @@ const blockSections: { key: BlockKey; label: string; icon: typeof Type }[] = [
   { key: "callout", label: "Callout", icon: AlertCircle },
 ];
 
+// ─── Refined Controls ────────────────────────────────
+
+function SettingsSection({ title, icon: Icon, children, defaultOpen = false }: {
+  title: string; icon: typeof Type; children: React.ReactNode; defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center justify-between w-full py-2.5 group">
+        <span className="flex items-center gap-2 text-[13px] font-medium text-foreground">
+          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+          {title}
+        </span>
+        <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform duration-200", open && "rotate-180")} />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="space-y-4 pb-4 pt-1">
+          {children}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-[11px] font-medium text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function SliderField({ label, value, onChange, min, max, step, unit = "px" }: {
+  label: string; value: number; onChange: (v: number) => void; min: number; max: number; step: number; unit?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-[11px] font-medium text-muted-foreground">{label}</Label>
+        <span className="text-[11px] font-mono text-muted-foreground tabular-nums bg-muted px-1.5 py-0.5 rounded">
+          {value}{unit}
+        </span>
+      </div>
+      <Slider value={[value]} onValueChange={([v]) => onChange(v)} min={min} max={max} step={step} className="ds-slider" />
+    </div>
+  );
+}
+
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <Label className="text-[11px] text-muted-foreground shrink-0">{label}</Label>
-      <div className="flex items-center gap-1.5">
-        <input
-          type="color"
-          value={hslToHex(value)}
-          onChange={(e) => onChange(hexToHsl(e.target.value))}
-          className="w-6 h-6 rounded border cursor-pointer bg-transparent shrink-0"
+    <div className="flex items-center justify-between gap-3">
+      <Label className="text-[11px] font-medium text-muted-foreground shrink-0">{label}</Label>
+      <div className="flex items-center gap-2">
+        <div className="relative">
+          <input
+            type="color"
+            value={hslToHex(value)}
+            onChange={(e) => onChange(hexToHsl(e.target.value))}
+            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+          />
+          <div
+            className="w-7 h-7 rounded-lg border border-border shadow-sm cursor-pointer"
+            style={{ backgroundColor: `hsl(${value})` }}
+          />
+        </div>
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-[100px] text-[10px] h-7 font-mono bg-muted/50 border-0 focus-visible:ring-1"
         />
-        <Input value={value} onChange={(e) => onChange(e.target.value)} className="w-[110px] text-[10px] h-6 font-mono" />
       </div>
     </div>
+  );
+}
+
+function FontSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="h-8 text-xs bg-muted/50 border-0 focus:ring-1">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((f) => (
+          <SelectItem key={f} value={f} className="text-xs" style={{ fontFamily: f }}>{f}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function WeightSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="h-8 text-xs bg-muted/50 border-0 focus:ring-1">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {weightOptions.map((w) => (
+          <SelectItem key={w.value} value={w.value} className="text-xs">{w.label}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -115,16 +204,11 @@ const DesignSettingsPage = () => {
   const [projectData, setProjectData] = useState<any>(null);
   const [panelOpen, setPanelOpen] = useState(true);
 
-  // Doc data
   const [pages, setPages] = useState<DocPage[]>([]);
   const [activePage, setActivePage] = useState<DocPage | null>(null);
   const [sections, setSections] = useState<DocSection[]>([]);
   const [blocks, setBlocks] = useState<DocBlock[]>([]);
   const [docLoading, setDocLoading] = useState(true);
-
-  // Track which block accordion is open for highlight
-  const [openAccordionValues, setOpenAccordionValues] = useState<string[]>([]);
-  const highlightedBlockType = blockSections.find((b) => openAccordionValues.includes(`block-${b.key}`))?.key || null;
 
   useEffect(() => { if (!settingsLoading) setLocal(settings); }, [settings, settingsLoading]);
 
@@ -172,42 +256,50 @@ const DesignSettingsPage = () => {
   const handleReset = () => { setLocal(defaultDesignSettings); resetSettings(); toast({ title: "Design settings reset to defaults" }); };
 
   if (settingsLoading || docLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Loading...</div>;
+    return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground text-sm">Loading…</div>;
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      {/* Header bar */}
-      <header className="border-b bg-background sticky top-0 z-[60] shrink-0">
-        <div className="px-4 h-11 flex items-center justify-between">
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
+      {/* Header */}
+      <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-[60] shrink-0">
+        <div className="px-4 h-12 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/builder/${projectId}`)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => navigate(`/builder/${projectId}`)}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <span className="font-semibold text-foreground text-sm">{projectData?.name}</span>
-            <span className="text-muted-foreground text-xs">/ Design Settings</span>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-foreground text-sm">{projectData?.name}</span>
+              <span className="text-muted-foreground text-xs">/</span>
+              <span className="text-muted-foreground text-xs">Design</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPanelOpen(!panelOpen)} title={panelOpen ? "Hide panel" : "Show panel"}>
+          <div className="flex items-center gap-1.5">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setPanelOpen(!panelOpen)}>
               {panelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
             </Button>
-            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleReset}>
-              <RotateCcw className="h-3 w-3 mr-1" /> Reset
+            <Button variant="ghost" size="sm" className="h-8 text-xs rounded-lg gap-1.5" onClick={handleReset}>
+              <RotateCcw className="h-3 w-3" /> Reset
             </Button>
-            <Button size="sm" className="h-7 text-xs" disabled={!hasChanges || saving} onClick={handleSave}>
-              <Save className="h-3 w-3 mr-1" /> {saving ? "Saving..." : "Save"}
+            <Button
+              size="sm"
+              className="h-8 text-xs rounded-lg gap-1.5 bg-foreground text-background hover:bg-foreground/90"
+              disabled={!hasChanges || saving}
+              onClick={handleSave}
+            >
+              <Save className="h-3 w-3" /> {saving ? "Saving…" : "Save"}
             </Button>
-            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => window.open(`/docs/${projectData?.slug}`, "_blank")}>
-              <Eye className="h-3 w-3 mr-1" /> Preview
+            <Button variant="ghost" size="sm" className="h-8 text-xs rounded-lg gap-1.5" onClick={() => window.open(`/docs/${projectData?.slug}`, "_blank")}>
+              <Eye className="h-3 w-3" /> Preview
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Split layout: preview + settings panel */}
+      {/* Split layout */}
       <div className="flex-1 flex min-h-0">
-        {/* Left: Live documentation preview */}
-        <div className="flex-1 overflow-auto">
+        {/* Left: Live preview */}
+        <div className="flex-1 overflow-auto bg-muted/30">
           <DocContentView
             settings={local}
             projectName={projectData?.name || ""}
@@ -216,98 +308,78 @@ const DesignSettingsPage = () => {
             sections={sections}
             blocks={blocks}
             onSelectPage={setActivePage}
-            highlightType={highlightedBlockType}
             headerStickyTop={0}
             hideHeader
           />
         </div>
 
-        {/* Right: Fixed settings panel */}
+        {/* Right: Settings panel */}
         {panelOpen && (
-          <aside className="w-[340px] shrink-0 border-l bg-background flex flex-col">
+          <aside className="w-[320px] shrink-0 border-l bg-background flex flex-col">
             <div className="px-4 py-3 border-b shrink-0">
-              <h2 className="text-sm font-semibold text-foreground">Customize</h2>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Adjust typography, colors, layout &amp; block styles</p>
+              <h2 className="text-[13px] font-semibold text-foreground">Customize</h2>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Typography, colors, layout & block styles</p>
             </div>
 
             <ScrollArea className="flex-1">
-              <Accordion
-                type="multiple"
-                value={openAccordionValues}
-                onValueChange={setOpenAccordionValues}
-                className="px-3"
-              >
-                {/* ─── Global Settings ─── */}
-                <div className="pt-3 pb-1">
-                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest px-1">Global</span>
+              <div className="px-4 py-2">
+                {/* ─── Global ─── */}
+                <div className="mb-1">
+                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">Global</span>
                 </div>
 
-                <AccordionItem value="typography" className="border-b-0">
-                  <AccordionTrigger className="py-2.5 text-xs hover:no-underline">
-                    <span className="flex items-center gap-2"><Type className="h-3.5 w-3.5 text-muted-foreground" /> Typography</span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3 pb-2">
-                      <TypographyControls local={local} update={update} />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                <SettingsSection title="Typography" icon={Type} defaultOpen>
+                  <FieldRow label="Heading Font">
+                    <FontSelect value={local.headingFont} onChange={(v) => update("headingFont", v)} options={fontOptions} />
+                  </FieldRow>
+                  <FieldRow label="Body Font">
+                    <FontSelect value={local.bodyFont} onChange={(v) => update("bodyFont", v)} options={fontOptions} />
+                  </FieldRow>
+                  <FieldRow label="Code Font">
+                    <FontSelect value={local.codeFont} onChange={(v) => update("codeFont", v)} options={codeFontOptions} />
+                  </FieldRow>
+                  <FieldRow label="Heading Weight">
+                    <WeightSelect value={local.headingWeight} onChange={(v) => update("headingWeight", v)} />
+                  </FieldRow>
+                  <SliderField label="Base Font Size" value={local.baseFontSize} onChange={(v) => update("baseFontSize", v)} min={12} max={20} step={1} />
+                  <SliderField label="Heading Size" value={local.headingFontSize} onChange={(v) => update("headingFontSize", v)} min={14} max={32} step={1} />
+                  <SliderField label="Line Height" value={local.lineHeight} onChange={(v) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} unit="" />
+                </SettingsSection>
 
-                <AccordionItem value="colors" className="border-b-0">
-                  <AccordionTrigger className="py-2.5 text-xs hover:no-underline">
-                    <span className="flex items-center gap-2"><Palette className="h-3.5 w-3.5 text-muted-foreground" /> Colors</span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3 pb-2">
-                      <ColorControls local={local} update={update} />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                <div className="border-t" />
 
-                <AccordionItem value="layout" className="border-b-0">
-                  <AccordionTrigger className="py-2.5 text-xs hover:no-underline">
-                    <span className="flex items-center gap-2"><Layout className="h-3.5 w-3.5 text-muted-foreground" /> Layout</span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3 pb-2">
-                      <LayoutControls local={local} update={update} />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                <SettingsSection title="Colors" icon={Palette}>
+                  <ColorControls local={local} update={update} />
+                </SettingsSection>
 
-                <AccordionItem value="sidebar" className="border-b-0">
-                  <AccordionTrigger className="py-2.5 text-xs hover:no-underline">
-                    <span className="flex items-center gap-2"><Sidebar className="h-3.5 w-3.5 text-muted-foreground" /> Sidebar</span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3 pb-2">
-                      <SidebarControls local={local} update={update} />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                <div className="border-t" />
+
+                <SettingsSection title="Layout" icon={Layout}>
+                  <LayoutControls local={local} update={update} />
+                </SettingsSection>
+
+                <div className="border-t" />
+
+                <SettingsSection title="Sidebar" icon={Sidebar}>
+                  <SidebarControls local={local} update={update} />
+                </SettingsSection>
 
                 {/* ─── Block Styles ─── */}
-                <div className="pt-4 pb-1">
-                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest px-1">Block Styles</span>
+                <div className="mt-5 mb-1">
+                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">Block Styles</span>
                 </div>
 
-                {blockSections.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <AccordionItem key={item.key} value={`block-${item.key}`} className="border-b-0">
-                      <AccordionTrigger className="py-2.5 text-xs hover:no-underline">
-                        <span className="flex items-center gap-2"><Icon className="h-3.5 w-3.5 text-muted-foreground" /> {item.label}</span>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="space-y-3 pb-2">
-                          <BlockControls blockKey={item.key} local={local} updateBlockStyle={updateBlockStyle} update={update} />
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  );
-                })}
-              </Accordion>
-              <div className="h-6" />
+                {blockSections.map((item) => (
+                  <div key={item.key}>
+                    <SettingsSection title={item.label} icon={item.icon}>
+                      <BlockControls blockKey={item.key} local={local} updateBlockStyle={updateBlockStyle} update={update} />
+                    </SettingsSection>
+                    <div className="border-t" />
+                  </div>
+                ))}
+
+                <div className="h-8" />
+              </div>
             </ScrollArea>
           </aside>
         )}
@@ -315,54 +387,6 @@ const DesignSettingsPage = () => {
     </div>
   );
 };
-
-// ─── Typography Controls ─────────────────────────────
-function TypographyControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
-  return (
-    <>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Heading Font</Label>
-        <Select value={local.headingFont} onValueChange={(v) => update("headingFont", v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>{fontOptions.map((f) => <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Body Font</Label>
-        <Select value={local.bodyFont} onValueChange={(v) => update("bodyFont", v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>{fontOptions.map((f) => <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Code Font</Label>
-        <Select value={local.codeFont} onValueChange={(v) => update("codeFont", v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>{codeFontOptions.map((f) => <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Heading Weight</Label>
-        <Select value={local.headingWeight} onValueChange={(v) => update("headingWeight", v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>{weightOptions.map((w) => <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Base Font Size: {local.baseFontSize}px</Label>
-        <Slider value={[local.baseFontSize]} onValueChange={([v]) => update("baseFontSize", v)} min={12} max={20} step={1} />
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Heading Size: {local.headingFontSize}px</Label>
-        <Slider value={[local.headingFontSize]} onValueChange={([v]) => update("headingFontSize", v)} min={14} max={32} step={1} />
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Line Height: {local.lineHeight}</Label>
-        <Slider value={[local.lineHeight]} onValueChange={([v]) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} />
-      </div>
-    </>
-  );
-}
 
 // ─── Color Controls ──────────────────────────────────
 function ColorControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
@@ -394,40 +418,17 @@ function ColorControls({ local, update }: { local: DS; update: <K extends keyof 
 function LayoutControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
   return (
     <>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Content Width: {local.contentMaxWidth}px</Label>
-        <Slider value={[local.contentMaxWidth]} onValueChange={([v]) => update("contentMaxWidth", v)} min={500} max={900} step={10} />
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Sidebar Width: {local.sidebarWidth}px</Label>
-        <Slider value={[local.sidebarWidth]} onValueChange={([v]) => update("sidebarWidth", v)} min={180} max={320} step={10} />
-      </div>
-      <Separator />
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Page Title Size: {local.pageTitleSize}px</Label>
-        <Slider value={[local.pageTitleSize]} onValueChange={([v]) => update("pageTitleSize", v)} min={18} max={42} step={1} />
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Section Spacing: {local.sectionSpacing}px</Label>
-        <Slider value={[local.sectionSpacing]} onValueChange={([v]) => update("sectionSpacing", v)} min={16} max={80} step={4} />
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Paragraph Spacing: {local.paragraphSpacing}px</Label>
-        <Slider value={[local.paragraphSpacing]} onValueChange={([v]) => update("paragraphSpacing", v)} min={8} max={32} step={2} />
-      </div>
-      <Separator />
+      <SliderField label="Content Width" value={local.contentMaxWidth} onChange={(v) => update("contentMaxWidth", v)} min={500} max={900} step={10} />
+      <SliderField label="Sidebar Width" value={local.sidebarWidth} onChange={(v) => update("sidebarWidth", v)} min={180} max={320} step={10} />
+      <SliderField label="Page Title Size" value={local.pageTitleSize} onChange={(v) => update("pageTitleSize", v)} min={18} max={42} step={1} />
+      <SliderField label="Section Spacing" value={local.sectionSpacing} onChange={(v) => update("sectionSpacing", v)} min={16} max={80} step={4} />
+      <SliderField label="Paragraph Spacing" value={local.paragraphSpacing} onChange={(v) => update("paragraphSpacing", v)} min={8} max={32} step={2} />
       <div className="flex items-center justify-between">
-        <Label className="text-[11px] text-muted-foreground">Rounded Images</Label>
+        <Label className="text-[11px] font-medium text-muted-foreground">Rounded Images</Label>
         <Switch checked={local.imageRounded} onCheckedChange={(v) => update("imageRounded", v)} />
       </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Code Border Radius: {local.codeBlockBorderRadius}px</Label>
-        <Slider value={[local.codeBlockBorderRadius]} onValueChange={([v]) => update("codeBlockBorderRadius", v)} min={0} max={16} step={1} />
-      </div>
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Note Border Width: {local.noteBorderWidth}px</Label>
-        <Slider value={[local.noteBorderWidth]} onValueChange={([v]) => update("noteBorderWidth", v)} min={1} max={6} step={1} />
-      </div>
+      <SliderField label="Code Border Radius" value={local.codeBlockBorderRadius} onChange={(v) => update("codeBlockBorderRadius", v)} min={0} max={16} step={1} />
+      <SliderField label="Note Border Width" value={local.noteBorderWidth} onChange={(v) => update("noteBorderWidth", v)} min={1} max={6} step={1} />
     </>
   );
 }
@@ -439,15 +440,8 @@ function SidebarControls({ local, update }: { local: DS; update: <K extends keyo
       <ColorField label="Background" value={local.sidebarBg} onChange={(v) => update("sidebarBg", v)} />
       <ColorField label="Text Color" value={local.sidebarTextColor} onChange={(v) => update("sidebarTextColor", v)} />
       <ColorField label="Active Color" value={local.sidebarActiveColor} onChange={(v) => update("sidebarActiveColor", v)} />
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Font Size: {local.sidebarFontSize}px</Label>
-        <Slider value={[local.sidebarFontSize]} onValueChange={([v]) => update("sidebarFontSize", v)} min={11} max={16} step={1} />
-      </div>
-      <Separator />
-      <div>
-        <Label className="text-[11px] text-muted-foreground mb-1 block">Page Gap: {local.sidebarPageGap}px</Label>
-        <Slider value={[local.sidebarPageGap]} onValueChange={([v]) => update("sidebarPageGap", v)} min={0} max={12} step={1} />
-      </div>
+      <SliderField label="Font Size" value={local.sidebarFontSize} onChange={(v) => update("sidebarFontSize", v)} min={11} max={16} step={1} />
+      <SliderField label="Page Gap" value={local.sidebarPageGap} onChange={(v) => update("sidebarPageGap", v)} min={0} max={12} step={1} />
     </>
   );
 }
@@ -476,11 +470,11 @@ function BlockControls({
   const resolvedSize = bs.fontSize || (blockKey === "heading" ? local.headingFontSize : blockKey === "image" ? local.baseFontSize - 1 : local.baseFontSize);
   const resolvedWeight = bs.fontWeight || (blockKey === "heading" ? local.headingWeight : "400");
   const resolvedRadius = bs.borderRadius ?? (blockKey === "code_block" ? local.codeBlockBorderRadius : 8);
-  const resolvedPadding = bs.padding ?? (["code_block", "note", "callout"].includes(blockKey) ? 16 : ["image", "video", "youtube"].includes(blockKey) ? 0 : 0);
+  const resolvedPadding = bs.padding ?? (["code_block", "note", "callout"].includes(blockKey) ? 16 : 0);
 
   return (
     <>
-      <p className="text-[10px] text-muted-foreground">Customize {label.toLowerCase()} blocks. Leave empty for global defaults.</p>
+      <p className="text-[10px] text-muted-foreground">Override {label.toLowerCase()} styles. Empty = global defaults.</p>
 
       {supportsTextStyle && (
         <ColorField label="Text Color" value={resolvedColor} onChange={(v) => updateBlockStyle(blockKey, "color", v)} />
@@ -493,48 +487,27 @@ function BlockControls({
       )}
 
       {supportsTextStyle && (
-        <div>
-          <Label className="text-[11px] text-muted-foreground mb-1 block">Font</Label>
-          <Select value={resolvedFont} onValueChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {(blockKey === "code_block" ? codeFontOptions : fontOptions).map((f) => (
-                <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <FieldRow label="Font">
+          <FontSelect value={resolvedFont} onChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)} options={blockKey === "code_block" ? codeFontOptions : fontOptions} />
+        </FieldRow>
       )}
 
       {supportsTextStyle && (
-        <div>
-          <Label className="text-[11px] text-muted-foreground mb-1 block">Font Size: {resolvedSize}px</Label>
-          <Slider value={[resolvedSize]} onValueChange={([v]) => updateBlockStyle(blockKey, "fontSize", v)} min={10} max={32} step={1} />
-        </div>
+        <SliderField label="Font Size" value={resolvedSize} onChange={(v) => updateBlockStyle(blockKey, "fontSize", v)} min={10} max={32} step={1} />
       )}
 
       {supportsTextStyle && (
-        <div>
-          <Label className="text-[11px] text-muted-foreground mb-1 block">Font Weight</Label>
-          <Select value={resolvedWeight} onValueChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>{weightOptions.map((w) => <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
+        <FieldRow label="Font Weight">
+          <WeightSelect value={resolvedWeight} onChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)} />
+        </FieldRow>
       )}
 
       {supportsRadius && (
-        <div>
-          <Label className="text-[11px] text-muted-foreground mb-1 block">Border Radius: {resolvedRadius}px</Label>
-          <Slider value={[resolvedRadius]} onValueChange={([v]) => updateBlockStyle(blockKey, "borderRadius", v)} min={0} max={20} step={1} />
-        </div>
+        <SliderField label="Border Radius" value={resolvedRadius} onChange={(v) => updateBlockStyle(blockKey, "borderRadius", v)} min={0} max={20} step={1} />
       )}
 
       {supportsPadding && (
-        <div>
-          <Label className="text-[11px] text-muted-foreground mb-1 block">Padding: {resolvedPadding}px</Label>
-          <Slider value={[resolvedPadding]} onValueChange={([v]) => updateBlockStyle(blockKey, "padding", v)} min={0} max={32} step={2} />
-        </div>
+        <SliderField label="Padding" value={resolvedPadding} onChange={(v) => updateBlockStyle(blockKey, "padding", v)} min={0} max={32} step={2} />
       )}
     </>
   );

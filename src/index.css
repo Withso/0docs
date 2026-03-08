@@ -272,4 +272,13 @@
   .doc-sidebar-sub-link.active {
     @apply text-foreground border-foreground;
   }
+
+  /* ─── Design Settings Panel Controls ─── */
+  .ds-slider [data-orientation="horizontal"] {
+    height: 4px;
+  }
+
+  .ds-slider [role="slider"] {
+    @apply h-4 w-4 border border-border shadow-sm;
+  }
 }
