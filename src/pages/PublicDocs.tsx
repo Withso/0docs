@@ -237,12 +237,24 @@ const PublicDocs = () => {
 };
 
 // Read-only block renderer
-const BlockRenderer = ({ block }: { block: Block }) => {
+const BlockRenderer = ({ block, settings }: { block: Block; settings?: any }) => {
   const { content, type } = block;
+  const ds = settings;
 
   switch (type) {
     case "heading":
-      return <h3 className="text-lg font-semibold text-foreground mb-3">{content.text}</h3>;
+      return (
+        <h3
+          className="mb-3"
+          style={{
+            fontFamily: ds ? `'${ds.headingFont}', sans-serif` : undefined,
+            fontWeight: ds?.headingWeight || "600",
+            fontSize: ds ? `${ds.headingFontSize}px` : undefined,
+          }}
+        >
+          {content.text}
+        </h3>
+      );
 
     case "paragraph":
       return <p className="mb-4">{content.text}</p>;
