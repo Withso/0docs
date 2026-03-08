@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Trash2, ChevronRight, FileText } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import type { Page, Section } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
@@ -25,6 +25,35 @@ const BuilderSidebar = ({
   onDeletePage,
 }: BuilderSidebarProps) => {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!settings.sidebarShowSectionTracker || sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const id = entry.target.id.replace("section-", "");
+            setActiveSectionId(id);
+            break;
+          }
+        }
+      },
+      {
+        rootMargin: "-20% 0px -60% 0px",
+        threshold: 0,
+      }
+    );
+
+    const sectionEls = sections
+      .map((sec) => document.getElementById(`section-${sec.id}`))
+      .filter(Boolean) as HTMLElement[];
+
+    sectionEls.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [sections, settings.sidebarShowSectionTracker]);
 
   return (
     <aside
@@ -37,7 +66,7 @@ const BuilderSidebar = ({
       className="shrink-0 sticky overflow-y-auto py-8 pr-6 hidden lg:block"
     >
       <div
-        className="platform-label mb-3 px-2 flex items-center justify-between"
+        className="platform-label mb-3 px-0 flex items-center justify-between"
         style={{ color: `hsl(${settings.sidebarTextColor})` }}
       >
         <span>Pages</span>
@@ -59,14 +88,10 @@ const BuilderSidebar = ({
           return (
             <div key={page.id}>
               <div className="group flex items-center gap-1">
-                <ChevronRight
-                  className={`h-3 w-3 shrink-0 transition-transform duration-150 ${isActive ? "rotate-90" : ""}`}
-                  style={{ color: `hsl(${settings.mutedForegroundColor})` }}
-                />
                 {editingPageId === page.id ? (
                   <input
                     autoFocus
-                    className="flex-1 px-2 py-1 rounded-md bg-transparent border-b outline-none"
+                    className="flex-1 py-[3px] bg-transparent border-b outline-none"
                     style={{
                       fontSize: `${settings.sidebarFontSize}px`,
                       borderColor: `hsl(${settings.borderColor})`,
@@ -90,14 +115,13 @@ const BuilderSidebar = ({
                   <button
                     onClick={() => onSelectPage(page)}
                     onDoubleClick={() => setEditingPageId(page.id)}
-                    className="flex-1 text-left truncate px-2 py-1.5 rounded-md transition-all duration-150"
+                    className="flex-1 text-left truncate py-[3px] transition-colors"
                     style={{
                       fontSize: `${settings.sidebarFontSize}px`,
                       color: isActive
                         ? `hsl(${settings.sidebarActiveColor})`
                         : `hsl(${settings.sidebarTextColor})`,
                       fontWeight: isActive ? 500 : 400,
-                      backgroundColor: isActive ? `hsl(${settings.accentColor})` : "transparent",
                     }}
                     title="Double-click to rename"
                   >
@@ -115,27 +139,39 @@ const BuilderSidebar = ({
 
               {isActive && pageSections.length > 0 && (
                 <nav
-                  className="ml-4 mt-0.5 mb-1"
+                  className="ml-px mt-px mb-1"
                   style={{
-                    gap: `${settings.sidebarPageGap}px`,
+                    borderLeft: `1px solid hsl(${settings.borderColor} / 0.5)`,
                     display: "flex",
                     flexDirection: "column",
                   }}
                 >
-                  {pageSections.map((section) => (
-                    <a
-                      key={section.id}
-                      href={`#section-${section.id}`}
-                      className="block px-2 py-0.5 rounded-md transition-colors hover:bg-accent/50"
-                      style={{
-                        color: `hsl(${settings.sidebarTextColor})`,
-                        fontSize: `${settings.sidebarFontSize - 2}px`,
-                        fontFamily: `'${settings.bodyFont}', sans-serif`,
-                      }}
-                    >
-                      {section.title}
-                    </a>
-                  ))}
+                  {pageSections.map((section) => {
+                    const isSectionActive = activeSectionId === section.id;
+                    return (
+                      <a
+                        key={section.id}
+                        href={`#section-${section.id}`}
+                        className="block py-[3px] pl-3 transition-colors relative"
+                        style={{
+                          color: isSectionActive
+                            ? `hsl(${settings.sidebarActiveColor})`
+                            : `hsl(${settings.sidebarTextColor} / 0.7)`,
+                          fontSize: `${settings.sidebarFontSize - 1}px`,
+                          fontWeight: isSectionActive ? 500 : 400,
+                          fontFamily: `'${settings.bodyFont}', sans-serif`,
+                        }}
+                      >
+                        {isSectionActive && settings.sidebarShowSectionTracker && (
+                          <span
+                            className="absolute left-[-1px] top-[5px] bottom-[5px] w-[2px] rounded-full"
+                            style={{ backgroundColor: `hsl(${settings.sidebarIndicatorColor})` }}
+                          />
+                        )}
+                        {section.title}
+                      </a>
+                    );
+                  })}
                 </nav>
               )}
             </div>
