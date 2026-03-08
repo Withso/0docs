@@ -18,12 +18,12 @@ export function useVersions(projectId: string | undefined) {
     if (!projectId) { setLoading(false); return; }
     const load = async () => {
       const { data } = await supabase
-        .from("doc_versions" as any)
+        .from("doc_versions")
         .select("*")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
 
-      const rows = (data || []) as unknown as DocVersion[];
+      const rows = (data || []) as DocVersion[];
       setVersions(rows);
       const defaultV = rows.find((v) => v.is_default) || rows[0] || null;
       setActiveVersion(defaultV);
