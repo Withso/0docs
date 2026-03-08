@@ -56,11 +56,14 @@ export function useVersions(projectId: string | undefined) {
   };
 
   const deleteVersion = async (versionId: string) => {
-    await supabase.from("doc_versions" as any).delete().eq("id", versionId);
-    setVersions((v) => v.filter((ver) => ver.id !== versionId));
-    if (activeVersion?.id === versionId) {
-      setActiveVersion(versions.find((v) => v.id !== versionId) || null);
-    }
+    await supabase.from("doc_versions").delete().eq("id", versionId);
+    setVersions((prev) => {
+      const remaining = prev.filter((ver) => ver.id !== versionId);
+      if (activeVersion?.id === versionId) {
+        setActiveVersion(remaining[0] || null);
+      }
+      return remaining;
+    });
   };
 
   return { versions, activeVersion, setActiveVersion, loading, addVersion, setDefault, deleteVersion };
