@@ -1,32 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronRight } from "lucide-react";
 import { useDesignSettings } from "@/hooks/use-design-settings";
-import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
-import DocBlockRenderer from "@/components/docs/DocBlockRenderer";
+import DocContentView from "@/components/docs/DocContentView";
 
-interface Page {
-  id: string;
-  title: string;
-  slug: string;
-  order_index: number;
-}
-
-interface Section {
-  id: string;
-  page_id: string;
-  title: string;
-  order_index: number;
-}
-
-interface Block {
-  id: string;
-  section_id: string;
-  type: string;
-  content: any;
-  order_index: number;
-}
+interface Page { id: string; title: string; slug: string; order_index: number; }
+interface Section { id: string; page_id: string; title: string; order_index: number; }
+interface Block { id: string; section_id: string; type: string; content: any; order_index: number; }
 
 const PublicDocs = () => {
   const { slug, pageSlug } = useParams<{ slug: string; pageSlug?: string }>();
@@ -40,78 +20,40 @@ const PublicDocs = () => {
 
   useEffect(() => {
     const load = async () => {
-      const { data: projects } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("slug", slug!)
-        .limit(1);
-
-      if (!projects || projects.length === 0) {
-        setNotFound(true);
-        setLoading(false);
-        return;
-      }
-
+      const { data: projects } = await supabase.from("projects").select("*").eq("slug", slug!).limit(1);
+      if (!projects || projects.length === 0) { setNotFound(true); setLoading(false); return; }
       const proj = projects[0];
       setProject(proj);
-
-      const { data: pagesData } = await supabase
-        .from("pages")
-        .select("*")
-        .eq("project_id", proj.id)
-        .order("order_index");
-
+      const { data: pagesData } = await supabase.from("pages").select("*").eq("project_id", proj.id).order("order_index");
       if (pagesData) {
         setPages(pagesData);
-        const target = pageSlug
-          ? pagesData.find((p) => p.slug === pageSlug)
-          : pagesData[0];
+        const target = pageSlug ? pagesData.find((p) => p.slug === pageSlug) : pagesData[0];
         setActivePage(target || pagesData[0] || null);
       }
       setLoading(false);
     };
-
     load();
   }, [slug, pageSlug]);
 
   useEffect(() => {
     if (!activePage) return;
-
     const loadContent = async () => {
-      const { data: sectionsData } = await supabase
-        .from("sections")
-        .select("*")
-        .eq("page_id", activePage.id)
-        .order("order_index");
-
-      if (sectionsData) {
-        setSections(sectionsData);
-
-        if (sectionsData.length > 0) {
-          const ids = sectionsData.map((s) => s.id);
-          const { data: blocksData } = await supabase
-            .from("blocks")
-            .select("*")
-            .in("section_id", ids)
-            .order("order_index");
-
-          if (blocksData) setBlocks(blocksData);
-          else setBlocks([]);
-        } else {
-          setBlocks([]);
-        }
+      const { data: secs } = await supabase.from("sections").select("*").eq("page_id", activePage.id).order("order_index");
+      if (secs) {
+        setSections(secs);
+        if (secs.length > 0) {
+          const { data: blks } = await supabase.from("blocks").select("*").in("section_id", secs.map((s) => s.id)).order("order_index");
+          setBlocks(blks || []);
+        } else setBlocks([]);
       }
     };
-
     loadContent();
   }, [activePage]);
 
+  const { settings } = useDesignSettings(project?.id);
+
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
-        Loading...
-      </div>
-    );
+    return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Loading...</div>;
   }
 
   if (notFound) {
@@ -120,123 +62,25 @@ const PublicDocs = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Documentation not found</h1>
           <p className="text-muted-foreground">This documentation doesn't exist or has been removed.</p>
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground mt-4 inline-block">
-            ← Back to home
-          </Link>
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground mt-4 inline-block">← Back to home</Link>
         </div>
       </div>
     );
   }
 
-  const { settings: designSettings } = useDesignSettings(project?.id);
-
   return (
-    <DesignSettingsWrapper settings={designSettings} className="min-h-screen">
-      {/* Header */}
-      <header className="border-b sticky top-0 z-40" style={{ backgroundColor: `hsl(${designSettings.backgroundColor})`, borderColor: `hsl(${designSettings.borderColor})` }}>
-        <div style={{ maxWidth: `${designSettings.contentMaxWidth + designSettings.sidebarWidth + 48}px` }} className="mx-auto px-6 h-12 flex items-center">
-          <span className="font-semibold text-sm">{project?.name}</span>
-        </div>
-      </header>
-
-      <div style={{ maxWidth: `${designSettings.contentMaxWidth + designSettings.sidebarWidth + 48}px` }} className="mx-auto flex px-6">
-        {/* Sidebar */}
-        <aside style={{ width: `${designSettings.sidebarWidth}px` }} className="shrink-0 sticky top-12 h-[calc(100vh-48px)] overflow-y-auto py-10 pr-6 hidden lg:block">
-          <div className="doc-sidebar-group-label">Pages</div>
-          <nav className="space-y-0.5">
-            {pages.map((page) => {
-              const isActive = activePage?.id === page.id;
-              const pageSections = isActive ? sections : [];
-
-              return (
-                <div key={page.id}>
-                  <div className="flex items-center gap-1">
-                    <ChevronRight
-                      className={`h-3 w-3 shrink-0 transition-transform ${isActive ? "rotate-90" : ""}`}
-                      style={{ color: `hsl(${designSettings.mutedForegroundColor})` }}
-                    />
-                    <button
-                      onClick={() => setActivePage(page)}
-                      className={`doc-sidebar-link flex-1 text-left truncate ${isActive ? "active" : ""}`}
-                    >
-                      {page.title}
-                    </button>
-                  </div>
-
-                  {isActive && pageSections.length > 0 && (
-                    <nav className="ml-4 mt-0.5 mb-1 space-y-0.5">
-                      {pageSections.map((section) => (
-                        <a
-                          key={section.id}
-                          href={`#section-${section.id}`}
-                          className="doc-sidebar-sub-link text-xs"
-                        >
-                          {section.title}
-                        </a>
-                      ))}
-                    </nav>
-                  )}
-                </div>
-              );
-            })}
-          </nav>
-        </aside>
-
-        {/* Main content */}
-        <main className="flex-1 min-w-0 py-10 lg:pl-4">
-          {activePage && (
-            <article style={{ maxWidth: `${designSettings.contentMaxWidth}px` }}>
-              <h1
-                className="mb-6"
-                style={{
-                  fontFamily: `'${designSettings.headingFont}', sans-serif`,
-                  fontWeight: designSettings.headingWeight,
-                  fontSize: `${designSettings.headingFontSize + 6}px`,
-                }}
-              >
-                {activePage.title}
-              </h1>
-
-              {sections.map((section) => {
-                const sectionBlocks = blocks
-                  .filter((b) => b.section_id === section.id)
-                  .sort((a, b) => a.order_index - b.order_index);
-
-                return (
-                  <section key={section.id} className="mb-10" id={`section-${section.id}`}>
-                    <h2
-                      className="flex items-center gap-3 mb-4"
-                      style={{
-                        fontFamily: `'${designSettings.headingFont}', sans-serif`,
-                        fontWeight: designSettings.headingWeight,
-                        fontSize: `${designSettings.headingFontSize}px`,
-                      }}
-                    >
-                      {section.title}
-                      <span
-                        className="flex-1 h-px opacity-50"
-                        style={{ backgroundColor: `hsl(${designSettings.sectionLineColor})` }}
-                      />
-                    </h2>
-                    <div>
-                      {sectionBlocks.map((block) => (
-                        <DocBlockRenderer key={block.id} block={block} settings={designSettings} />
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
-
-              {sections.length === 0 && (
-                <p style={{ color: `hsl(${designSettings.mutedForegroundColor})` }}>
-                  This page has no content yet.
-                </p>
-              )}
-            </article>
-          )}
-        </main>
-      </div>
-    </DesignSettingsWrapper>
+    <div className="min-h-screen">
+      <DocContentView
+        settings={settings}
+        projectName={project?.name || ""}
+        pages={pages}
+        activePage={activePage}
+        sections={sections}
+        blocks={blocks}
+        onSelectPage={setActivePage}
+        headerStickyTop={0}
+      />
+    </div>
   );
 };
 
