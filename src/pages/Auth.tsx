@@ -32,6 +32,16 @@ const Auth = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      if (isSignUp) {
+        // Seed demo project for new users
+        try {
+          await supabase.functions.invoke("seed-demo-project", {
+            body: { user_id: (await supabase.auth.getUser()).data.user?.id },
+          });
+        } catch (e) {
+          console.error("Demo seed failed:", e);
+        }
+      }
       navigate("/dashboard");
     }
     setLoading(false);
