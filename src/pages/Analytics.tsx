@@ -168,11 +168,14 @@ const Analytics = () => {
   );
 };
 
-const StatCard = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
-  <div className="rounded-xl border bg-card p-4">
-    <div className="flex items-center gap-2 text-muted-foreground mb-2">{icon}<span className="text-xs">{label}</span></div>
-    <div className="text-2xl font-bold">{value}</div>
-  </div>
+const StatCard = React.forwardRef<HTMLDivElement, { icon: React.ReactNode; label: string; value: string }>(
+  ({ icon, label, value }, ref) => (
+    <div ref={ref} className="rounded-xl border bg-card p-4">
+      <div className="flex items-center gap-2 text-muted-foreground mb-2">{icon}<span className="text-xs">{label}</span></div>
+      <div className="text-2xl font-bold">{value}</div>
+    </div>
+  )
 );
+StatCard.displayName = "StatCard";
 
 export default Analytics;
