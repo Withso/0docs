@@ -14,7 +14,6 @@ interface BlockEditorProps {
 }
 
 const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) => {
-  // Local content state for immediate UI updates
   const [localContent, setLocalContent] = useState(block.content);
 
   useEffect(() => {
@@ -32,16 +31,10 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
   }, [localContent, debouncedSave]);
 
   const bs = settings.blockStyles[block.type as BlockKey] || {};
-  const blockStyle: React.CSSProperties = {
-    color: bs.color ? `hsl(${bs.color})` : undefined,
-    fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : undefined,
-    fontSize: bs.fontSize ? `${bs.fontSize}px` : undefined,
-    fontWeight: bs.fontWeight as any,
-    backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
-    borderColor: bs.borderColor ? `hsl(${bs.borderColor})` : undefined,
-    borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : undefined,
-    padding: bs.padding != null ? `${bs.padding}px` : undefined,
-  };
+
+  // Resolved effective values matching DocBlockRenderer logic
+  const effectiveCodeFont = bs.fontFamily ? `'${bs.fontFamily}', monospace` : `'${settings.codeFont}', monospace`;
+  const effectiveCodeFontSize = bs.fontSize ?? (settings.baseFontSize - 1);
 
   const renderBlock = () => {
     switch (block.type) {
@@ -50,10 +43,11 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
           <input
             className="bg-transparent w-full outline-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1"
             style={{
-              fontFamily: `'${settings.headingFont}', sans-serif`,
-              fontWeight: settings.headingWeight,
-              fontSize: `${settings.headingFontSize}px`,
-              ...blockStyle,
+              fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${settings.headingFont}', sans-serif`,
+              fontWeight: (bs.fontWeight as any) || settings.headingWeight,
+              fontSize: `${bs.fontSize ?? settings.headingFontSize}px`,
+              color: bs.color ? `hsl(${bs.color})` : undefined,
+              marginBottom: "12px",
             }}
             value={localContent.text || ""}
             onChange={(e) => updateContent({ text: e.target.value })}
@@ -66,12 +60,15 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
           <AutoTextarea
             value={localContent.text || ""}
             onChange={(val) => updateContent({ text: val })}
-            className="w-full bg-transparent outline-none leading-relaxed resize-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1"
+            className="w-full bg-transparent outline-none resize-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1"
             placeholder="Start typing..."
             style={{
-              fontSize: `${settings.baseFontSize}px`,
+              fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${settings.bodyFont}', sans-serif`,
+              fontSize: `${bs.fontSize ?? settings.baseFontSize}px`,
+              lineHeight: settings.lineHeight,
               marginBottom: `${settings.paragraphSpacing}px`,
-              ...blockStyle,
+              color: bs.color ? `hsl(${bs.color})` : undefined,
+              fontWeight: (bs.fontWeight as any) || undefined,
             }}
           />
         );
@@ -79,27 +76,34 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
       case "code_block":
         return (
           <div
-            className="mb-4 border"
             style={{
-              backgroundColor: `hsl(${settings.codeBlockBg})`,
-              borderRadius: `${settings.codeBlockBorderRadius}px`,
-              borderColor: `hsl(${settings.borderColor})`,
-              padding: "16px",
-              ...blockStyle,
+              backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${settings.codeBlockBg})`,
+              borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : `${settings.codeBlockBorderRadius}px`,
+              border: `1px solid ${bs.borderColor ? `hsl(${bs.borderColor})` : `hsl(${settings.borderColor})`}`,
+              padding: bs.padding != null ? `${bs.padding}px` : "16px",
+              fontFamily: effectiveCodeFont,
+              fontSize: `${effectiveCodeFontSize}px`,
+              color: bs.color ? `hsl(${bs.color})` : undefined,
+              marginBottom: "16px",
             }}
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between" style={{ marginBottom: "8px" }}>
               <input
-                className="text-xs bg-transparent outline-none"
-                style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+                className="bg-transparent outline-none"
+                style={{ color: `hsl(${settings.mutedForegroundColor})`, fontSize: "12px" }}
                 value={localContent.language || ""}
                 onChange={(e) => updateContent({ language: e.target.value })}
                 placeholder="language"
               />
             </div>
             <textarea
-              className="w-full bg-transparent outline-none text-sm resize-none min-h-[60px]"
-              style={{ fontFamily: `'${settings.codeFont}', monospace` }}
+              className="w-full bg-transparent outline-none resize-none"
+              style={{
+                fontFamily: "inherit",
+                fontSize: "inherit",
+                color: "inherit",
+                minHeight: "60px",
+              }}
               value={localContent.code || ""}
               onChange={(e) => updateContent({ code: e.target.value })}
               placeholder="// Code here..."
@@ -112,19 +116,23 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
         return (
           <div>
             <input
-              className="w-full text-sm bg-transparent outline-none border rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-ring/20"
-              style={{ borderColor: `hsl(${settings.borderColor})`, color: `hsl(${settings.mutedForegroundColor})` }}
+              className="w-full bg-transparent outline-none border px-3 py-2 mb-2 focus:ring-2 focus:ring-ring/20"
+              style={{
+                borderColor: `hsl(${settings.borderColor})`,
+                color: `hsl(${settings.mutedForegroundColor})`,
+                fontSize: `${settings.baseFontSize - 1}px`,
+                borderRadius: `${settings.codeBlockBorderRadius}px`,
+              }}
               value={localContent.url || ""}
               onChange={(e) => updateContent({ url: e.target.value })}
               placeholder="Image URL..."
             />
             {localContent.url && (
               <div
-                className="overflow-hidden border"
+                className="overflow-hidden"
                 style={{
-                  borderRadius: settings.imageRounded ? "8px" : "0",
-                  borderColor: `hsl(${settings.borderColor})`,
-                  ...blockStyle,
+                  borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : (settings.imageRounded ? "8px" : "0"),
+                  border: `1px solid hsl(${bs.borderColor || settings.borderColor})`,
                 }}
               >
                 <img
@@ -136,8 +144,8 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
               </div>
             )}
             <input
-              className="w-full text-xs bg-transparent outline-none mt-1 px-1"
-              style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+              className="w-full bg-transparent outline-none mt-1 px-1"
+              style={{ color: `hsl(${settings.mutedForegroundColor})`, fontSize: "12px" }}
               value={localContent.alt || ""}
               onChange={(e) => updateContent({ alt: e.target.value })}
               placeholder="Alt text / caption"
@@ -149,18 +157,23 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
         return (
           <div>
             <input
-              className="w-full text-sm bg-transparent outline-none border rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-ring/20"
-              style={{ borderColor: `hsl(${settings.borderColor})`, color: `hsl(${settings.mutedForegroundColor})` }}
+              className="w-full bg-transparent outline-none border px-3 py-2 mb-2 focus:ring-2 focus:ring-ring/20"
+              style={{
+                borderColor: `hsl(${settings.borderColor})`,
+                color: `hsl(${settings.mutedForegroundColor})`,
+                fontSize: `${settings.baseFontSize - 1}px`,
+                borderRadius: `${settings.codeBlockBorderRadius}px`,
+              }}
               value={localContent.videoId || ""}
               onChange={(e) => updateContent({ videoId: e.target.value })}
               placeholder="YouTube Video ID (e.g. dQw4w9WgXcQ)"
             />
             {localContent.videoId && (
               <div
-                className="overflow-hidden border aspect-video"
+                className="overflow-hidden aspect-video"
                 style={{
                   borderRadius: `${bs.borderRadius ?? 8}px`,
-                  borderColor: `hsl(${settings.borderColor})`,
+                  border: `1px solid hsl(${bs.borderColor || settings.borderColor})`,
                 }}
               >
                 <iframe
@@ -178,8 +191,13 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
         return (
           <div>
             <input
-              className="w-full text-sm bg-transparent outline-none border rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-ring/20"
-              style={{ borderColor: `hsl(${settings.borderColor})`, color: `hsl(${settings.mutedForegroundColor})` }}
+              className="w-full bg-transparent outline-none border px-3 py-2 mb-2 focus:ring-2 focus:ring-ring/20"
+              style={{
+                borderColor: `hsl(${settings.borderColor})`,
+                color: `hsl(${settings.mutedForegroundColor})`,
+                fontSize: `${settings.baseFontSize - 1}px`,
+                borderRadius: `${settings.codeBlockBorderRadius}px`,
+              }}
               value={localContent.url || ""}
               onChange={(e) => updateContent({ url: e.target.value })}
               placeholder="Video URL..."
@@ -187,10 +205,10 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
             {localContent.url && (
               <video
                 controls
-                className="w-full border"
+                className="w-full"
                 style={{
                   borderRadius: `${bs.borderRadius ?? 8}px`,
-                  borderColor: `hsl(${settings.borderColor})`,
+                  border: `1px solid hsl(${bs.borderColor || settings.borderColor})`,
                 }}
               >
                 <source src={localContent.url} />
@@ -206,54 +224,63 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
             items={localContent.items || []}
             ordered={block.type === "ordered_list"}
             onChange={(items) => updateContent({ items })}
-            style={blockStyle}
             settings={settings}
+            bs={bs}
           />
         );
 
-      case "note":
+      case "note": {
         return (
           <div
-            className="mb-4"
             style={{
-              backgroundColor: `hsl(${settings.noteBg})`,
-              borderLeft: `${settings.noteBorderWidth}px solid hsl(${settings.noteBorderColor})`,
-              borderRadius: "0 8px 8px 0",
-              padding: "12px 16px",
-              fontSize: `${settings.baseFontSize - 1}px`,
-              ...blockStyle,
+              backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${settings.noteBg})`,
+              borderLeft: `${settings.noteBorderWidth}px solid ${bs.borderColor ? `hsl(${bs.borderColor})` : `hsl(${settings.noteBorderColor})`}`,
+              borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : "0 8px 8px 0",
+              padding: bs.padding != null ? `${bs.padding}px` : "12px 16px",
+              fontSize: `${bs.fontSize ?? (settings.baseFontSize - 1)}px`,
+              fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${settings.bodyFont}', sans-serif`,
+              color: bs.color ? `hsl(${bs.color})` : undefined,
+              marginBottom: "16px",
             }}
           >
             <AutoTextarea
               value={localContent.text || ""}
               onChange={(val) => updateContent({ text: val })}
-              className="w-full bg-transparent outline-none text-sm resize-none"
+              className="w-full bg-transparent outline-none resize-none"
               placeholder="Note text..."
+              style={{ fontSize: "inherit", fontFamily: "inherit", color: "inherit" }}
             />
           </div>
         );
+      }
 
-      case "callout":
+      case "callout": {
         return (
           <div
-            className="mb-4 border rounded-lg p-4"
             style={{
-              backgroundColor: `hsl(${settings.accentColor})`,
-              borderColor: `hsl(${settings.borderColor})`,
-              ...blockStyle,
+              backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${settings.accentColor})`,
+              border: `1px solid ${bs.borderColor ? `hsl(${bs.borderColor})` : `hsl(${settings.borderColor})`}`,
+              borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : "8px",
+              padding: bs.padding != null ? `${bs.padding}px` : "16px",
+              fontSize: `${bs.fontSize ?? settings.baseFontSize}px`,
+              fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${settings.bodyFont}', sans-serif`,
+              color: bs.color ? `hsl(${bs.color})` : undefined,
+              marginBottom: "16px",
             }}
           >
             <AutoTextarea
               value={localContent.text || ""}
               onChange={(val) => updateContent({ text: val })}
-              className="w-full bg-transparent outline-none text-sm resize-none"
+              className="w-full bg-transparent outline-none resize-none"
               placeholder="Callout text..."
+              style={{ fontSize: "inherit", fontFamily: "inherit", color: "inherit" }}
             />
           </div>
         );
+      }
 
       default:
-        return <p className="text-muted-foreground text-sm">Unknown block type: {block.type}</p>;
+        return <p style={{ color: `hsl(${settings.mutedForegroundColor})`, fontSize: `${settings.baseFontSize - 1}px` }}>Unknown block type: {block.type}</p>;
     }
   };
 
@@ -314,14 +341,14 @@ const ListEditor = ({
   items,
   ordered,
   onChange,
-  style,
   settings,
+  bs,
 }: {
   items: string[];
   ordered: boolean;
   onChange: (items: string[]) => void;
-  style?: React.CSSProperties;
   settings: DesignSettings;
+  bs: Partial<DesignSettings["blockStyles"]["ordered_list"]>;
 }) => {
   const addItem = () => onChange([...items, ""]);
   const updateItem = (i: number, val: string) => {
@@ -331,18 +358,30 @@ const ListEditor = ({
   };
   const removeItem = (i: number) => onChange(items.filter((_, idx) => idx !== i));
 
+  const listFontSize = bs.fontSize ?? settings.baseFontSize;
+  const listFont = bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${settings.bodyFont}', sans-serif`;
+
   return (
-    <div className="space-y-1" style={style}>
+    <div
+      style={{
+        fontFamily: listFont,
+        fontSize: `${listFontSize}px`,
+        lineHeight: settings.lineHeight,
+        color: bs.color ? `hsl(${bs.color})` : undefined,
+        fontWeight: (bs.fontWeight as any) || undefined,
+      }}
+    >
       {items.map((item, i) => (
-        <div key={i} className="flex items-start gap-2 group/item">
+        <div key={i} className="flex items-start gap-2 group/item" style={{ marginBottom: "4px" }}>
           <span
-            className="text-sm mt-0.5 shrink-0 w-4 text-right"
-            style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+            className="mt-0.5 shrink-0 w-4 text-right"
+            style={{ color: `hsl(${settings.mutedForegroundColor})`, fontSize: "inherit" }}
           >
             {ordered ? `${i + 1}.` : "•"}
           </span>
           <input
-            className="flex-1 bg-transparent outline-none text-sm leading-relaxed focus:ring-2 focus:ring-ring/20 rounded px-1"
+            className="flex-1 bg-transparent outline-none focus:ring-2 focus:ring-ring/20 rounded px-1"
+            style={{ fontSize: "inherit", fontFamily: "inherit", lineHeight: "inherit" }}
             value={item}
             onChange={(e) => updateItem(i, e.target.value)}
             placeholder="List item..."
@@ -358,8 +397,8 @@ const ListEditor = ({
       ))}
       <button
         onClick={addItem}
-        className="text-xs ml-6"
-        style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+        className="ml-6"
+        style={{ color: `hsl(${settings.mutedForegroundColor})`, fontSize: "12px" }}
       >
         + Add item
       </button>
