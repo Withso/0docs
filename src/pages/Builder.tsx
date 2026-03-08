@@ -23,10 +23,12 @@ export interface Section {
   order_index: number;
 }
 
+export type BlockType = "heading" | "paragraph" | "code_block" | "image" | "video" | "youtube" | "ordered_list" | "unordered_list" | "note" | "callout";
+
 export interface Block {
   id: string;
   section_id: string;
-  type: string;
+  type: BlockType;
   content: any;
   order_index: number;
 }
