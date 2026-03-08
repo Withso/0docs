@@ -69,7 +69,15 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
 
     case "paragraph":
       return wrapHighlight(
-        <p className="mb-4" style={{ marginBottom: `${s.paragraphSpacing}px`, ...getBlockStyle() }}>
+        <p
+          style={{
+            marginBottom: `${s.paragraphSpacing}px`,
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            fontSize: `${s.baseFontSize}px`,
+            lineHeight: s.lineHeight,
+            ...getBlockStyle(),
+          }}
+        >
           {content.text}
         </p>
       );
@@ -160,7 +168,16 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
 
     case "ordered_list":
       return wrapHighlight(
-        <ol className="mb-4 pl-6" style={{ ...getBlockStyle() }}>
+        <ol
+          className="mb-4 pl-6"
+          style={{
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            fontSize: `${s.baseFontSize}px`,
+            lineHeight: s.lineHeight,
+            listStyleType: "decimal",
+            ...getBlockStyle(),
+          }}
+        >
           {(content.items || []).map((item: string, i: number) => (
             <li key={i} className="mb-1">{item}</li>
           ))}
@@ -169,7 +186,15 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
 
     case "unordered_list":
       return wrapHighlight(
-        <ul className="mb-4 pl-6 list-disc" style={{ ...getBlockStyle() }}>
+        <ul
+          className="mb-4 pl-6 list-disc"
+          style={{
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            fontSize: `${s.baseFontSize}px`,
+            lineHeight: s.lineHeight,
+            ...getBlockStyle(),
+          }}
+        >
           {(content.items || []).map((item: string, i: number) => (
             <li key={i} className="mb-1">{item}</li>
           ))}
@@ -186,6 +211,8 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
             borderRadius: "0 8px 8px 0",
             padding: "12px 16px",
             fontSize: `${s.baseFontSize - 1}px`,
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            lineHeight: s.lineHeight,
             ...getBlockStyle(),
           }}
         >
@@ -200,6 +227,9 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
           style={{
             backgroundColor: `hsl(${s.accentColor})`,
             borderColor: `hsl(${s.borderColor})`,
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            fontSize: `${s.baseFontSize}px`,
+            lineHeight: s.lineHeight,
             ...getBlockStyle(),
           }}
         >

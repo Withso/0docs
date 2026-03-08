@@ -55,6 +55,7 @@ const DocContentView = ({
   headerStickyTop = 0,
 }: DocContentViewProps) => {
   const sidebarTop = headerStickyTop + 48; // 48px = doc header height
+  const frameMaxWidth = s.contentMaxWidth + s.sidebarWidth + 48;
 
   return (
     <DesignSettingsWrapper settings={s} className="min-h-full">
@@ -68,15 +69,20 @@ const DocContentView = ({
         }}
       >
         <div
-          style={{ maxWidth: `${s.contentMaxWidth + s.sidebarWidth + 48}px` }}
+          style={{ maxWidth: `${frameMaxWidth}px` }}
           className="mx-auto px-6 h-12 flex items-center"
         >
-          <span className="font-semibold text-sm">{projectName}</span>
+          <span
+            className="font-semibold text-sm"
+            style={{ fontFamily: `'${s.bodyFont}', sans-serif` }}
+          >
+            {projectName}
+          </span>
         </div>
       </header>
 
       <div
-        style={{ maxWidth: `${s.contentMaxWidth + s.sidebarWidth + 48}px` }}
+        style={{ maxWidth: `${frameMaxWidth}px` }}
         className="mx-auto flex px-6"
       >
         {/* Sidebar */}
@@ -95,7 +101,7 @@ const DocContentView = ({
           >
             Pages
           </div>
-          <nav className="space-y-0.5">
+          <nav style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
             {pages.map((page) => {
               const isActive = activePage?.id === page.id;
               const pageSections = isActive ? sections : [];
@@ -108,27 +114,29 @@ const DocContentView = ({
                     />
                     <button
                       onClick={() => onSelectPage(page)}
-                      className="flex-1 text-left truncate px-2 py-1 rounded text-sm transition-colors"
+                      className="flex-1 text-left truncate px-2 py-1 rounded transition-colors"
                       style={{
                         fontSize: `${s.sidebarFontSize}px`,
                         color: isActive ? `hsl(${s.sidebarActiveColor})` : `hsl(${s.sidebarTextColor})`,
                         fontWeight: isActive ? 500 : 400,
                         backgroundColor: isActive ? `hsl(${s.accentColor})` : "transparent",
+                        fontFamily: `'${s.bodyFont}', sans-serif`,
                       }}
                     >
                       {page.title}
                     </button>
                   </div>
                   {isActive && pageSections.length > 0 && (
-                    <nav className="ml-4 mt-0.5 mb-1 space-y-0.5">
+                    <nav className="ml-4 mt-0.5 mb-1" style={{ gap: `${s.sidebarPageGap}px`, display: "flex", flexDirection: "column" }}>
                       {pageSections.map((section) => (
                         <a
                           key={section.id}
                           href={`#section-${section.id}`}
-                          className="block px-2 py-0.5 text-xs rounded transition-colors"
+                          className="block px-2 py-0.5 rounded transition-colors"
                           style={{
                             color: `hsl(${s.sidebarTextColor})`,
                             fontSize: `${s.sidebarFontSize - 2}px`,
+                            fontFamily: `'${s.bodyFont}', sans-serif`,
                           }}
                         >
                           {section.title}
@@ -147,11 +155,11 @@ const DocContentView = ({
           {activePage ? (
             <article style={{ maxWidth: `${s.contentMaxWidth}px` }}>
               <h1
-                className="mb-6"
                 style={{
                   fontFamily: `'${s.headingFont}', sans-serif`,
                   fontWeight: s.headingWeight,
-                  fontSize: `${s.headingFontSize + 6}px`,
+                  fontSize: `${s.pageTitleSize}px`,
+                  marginBottom: `${s.sectionSpacing * 0.6}px`,
                 }}
               >
                 {activePage.title}
@@ -162,7 +170,11 @@ const DocContentView = ({
                   .filter((b) => b.section_id === section.id)
                   .sort((a, b) => a.order_index - b.order_index);
                 return (
-                  <section key={section.id} className="mb-10" id={`section-${section.id}`}>
+                  <section
+                    key={section.id}
+                    id={`section-${section.id}`}
+                    style={{ marginBottom: `${s.sectionSpacing}px` }}
+                  >
                     <h2
                       className="flex items-center gap-3 mb-4"
                       style={{

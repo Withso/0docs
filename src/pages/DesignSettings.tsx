@@ -463,10 +463,20 @@ function LayoutControls({ local, update }: { local: DS; update: <K extends keyof
         <Label className="text-[11px] text-muted-foreground mb-1 block">Sidebar Width: {local.sidebarWidth}px</Label>
         <Slider value={[local.sidebarWidth]} onValueChange={([v]) => update("sidebarWidth", v)} min={180} max={320} step={10} />
       </div>
+      <Separator />
+      <div>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Page Title Size: {local.pageTitleSize}px</Label>
+        <Slider value={[local.pageTitleSize]} onValueChange={([v]) => update("pageTitleSize", v)} min={18} max={42} step={1} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Section Spacing: {local.sectionSpacing}px</Label>
+        <Slider value={[local.sectionSpacing]} onValueChange={([v]) => update("sectionSpacing", v)} min={16} max={80} step={4} />
+      </div>
       <div>
         <Label className="text-[11px] text-muted-foreground mb-1 block">Paragraph Spacing: {local.paragraphSpacing}px</Label>
         <Slider value={[local.paragraphSpacing]} onValueChange={([v]) => update("paragraphSpacing", v)} min={8} max={32} step={2} />
       </div>
+      <Separator />
       <div className="flex items-center justify-between">
         <Label className="text-[11px] text-muted-foreground">Rounded Images</Label>
         <Switch checked={local.imageRounded} onCheckedChange={(v) => update("imageRounded", v)} />
@@ -494,6 +504,11 @@ function SidebarControls({ local, update }: { local: DS; update: <K extends keyo
       <div>
         <Label className="text-[11px] text-muted-foreground mb-1 block">Font Size: {local.sidebarFontSize}px</Label>
         <Slider value={[local.sidebarFontSize]} onValueChange={([v]) => update("sidebarFontSize", v)} min={11} max={16} step={1} />
+      </div>
+      <Separator />
+      <div>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Page Gap: {local.sidebarPageGap}px</Label>
+        <Slider value={[local.sidebarPageGap]} onValueChange={([v]) => update("sidebarPageGap", v)} min={0} max={12} step={1} />
       </div>
     </>
   );
