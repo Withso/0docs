@@ -36,6 +36,7 @@ interface SearchDialogProps {
   blocks: SearchBlock[];
   onSelectPage: (page: SearchPage) => void;
   onSelectSection?: (sectionId: string, page: SearchPage) => void;
+  onSearch?: (query: string, resultsCount: number) => void;
 }
 
 const SearchDialog = ({
@@ -46,6 +47,7 @@ const SearchDialog = ({
   blocks,
   onSelectPage,
   onSelectSection,
+  onSearch,
 }: SearchDialogProps) => {
   const [query, setQuery] = useState("");
 
