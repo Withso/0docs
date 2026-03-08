@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Trash2, Plus, GripVertical } from "lucide-react";
-import type { Section, Block } from "@/pages/Builder";
+import { useState, useEffect } from "react";
+import { Trash2, Plus } from "lucide-react";
+import type { Section, Block } from "@/hooks/use-builder";
+import { useDebouncedCallback } from "@/hooks/use-debounce";
 import BlockEditor from "./BlockEditor";
 import AddBlockMenu from "./AddBlockMenu";
 
@@ -24,15 +25,28 @@ const SectionEditor = ({
   onDeleteBlock,
 }: SectionEditorProps) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [title, setTitle] = useState(section.title);
+
+  useEffect(() => {
+    setTitle(section.title);
+  }, [section.id, section.title]);
+
+  const debouncedSave = useDebouncedCallback((value: string) => {
+    onUpdateSection(section.id, { title: value });
+  }, 600);
 
   return (
     <section className="mb-10 group/section" id={`section-${section.id}`}>
-      {/* Section title — editable, styled like doc-heading */}
+      {/* Section title — editable with debounce */}
       <div className="flex items-center gap-3 mb-4">
         <input
           className="text-lg font-semibold text-foreground bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1 min-w-0"
-          value={section.title}
-          onChange={(e) => onUpdateSection(section.id, { title: e.target.value })}
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            debouncedSave(e.target.value);
+          }}
+          placeholder="Section title..."
         />
         <div className="flex-1 h-px bg-[hsl(var(--doc-section-line))] opacity-50" />
         <button

@@ -1,220 +1,56 @@
-import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useBuilder } from "@/hooks/use-builder";
 import BuilderSidebar from "@/components/builder/BuilderSidebar";
 import SectionEditor from "@/components/builder/SectionEditor";
 import { Button } from "@/components/ui/button";
 import { Plus, ArrowLeft, Eye } from "lucide-react";
 
-export interface Page {
-  id: string;
-  project_id: string;
-  title: string;
-  slug: string;
-  order_index: number;
-}
-
-export interface Section {
-  id: string;
-  page_id: string;
-  title: string;
-  order_index: number;
-}
-
-export type BlockType = "heading" | "paragraph" | "code_block" | "image" | "video" | "youtube" | "ordered_list" | "unordered_list" | "note" | "callout";
-
-export interface Block {
-  id: string;
-  section_id: string;
-  type: BlockType;
-  content: any;
-  order_index: number;
-}
+// Re-export types for backward compat
+export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
 
 const Builder = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const [project, setProject] = useState<any>(null);
-  const [pages, setPages] = useState<Page[]>([]);
-  const [activePage, setActivePage] = useState<Page | null>(null);
-  const [sections, setSections] = useState<Section[]>([]);
-  const [blocks, setBlocks] = useState<Block[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Load project and pages
-  useEffect(() => {
-    if (!projectId || !user) return;
-
-    const load = async () => {
-      const { data: proj } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("id", projectId)
-        .eq("user_id", user.id)
-        .single();
-
-      if (!proj) {
-        navigate("/dashboard");
-        return;
-      }
-      setProject(proj);
-
-      const { data: pagesData } = await supabase
-        .from("pages")
-        .select("*")
-        .eq("project_id", projectId)
-        .order("order_index");
-
-      if (pagesData) {
-        setPages(pagesData);
-        if (pagesData.length > 0) setActivePage(pagesData[0]);
-      }
-      setLoading(false);
-    };
-
-    load();
-  }, [projectId, user]);
-
-  // Load sections and blocks for active page
-  const loadPageContent = useCallback(async () => {
-    if (!activePage) {
-      setSections([]);
-      setBlocks([]);
-      return;
-    }
-
-    const { data: sectionsData } = await supabase
-      .from("sections")
-      .select("*")
-      .eq("page_id", activePage.id)
-      .order("order_index");
-
-    if (sectionsData) {
-      setSections(sectionsData);
-
-      if (sectionsData.length > 0) {
-        const sectionIds = sectionsData.map((s) => s.id);
-        const { data: blocksData } = await supabase
-          .from("blocks")
-          .select("*")
-          .in("section_id", sectionIds)
-          .order("order_index");
-
-        if (blocksData) setBlocks(blocksData);
-      } else {
-        setBlocks([]);
-      }
-    }
-  }, [activePage]);
-
-  useEffect(() => {
-    loadPageContent();
-  }, [loadPageContent]);
-
-  const addPage = async () => {
-    const title = "New Page";
-    const slug = `page-${Date.now()}`;
-    const { data, error } = await supabase
-      .from("pages")
-      .insert({
-        project_id: projectId!,
-        title,
-        slug,
-        order_index: pages.length,
-      })
-      .select()
-      .single();
-
-    if (data) {
-      setPages((p) => [...p, data]);
-      setActivePage(data);
-    }
-  };
-
-  const updatePage = async (pageId: string, updates: Partial<Page>) => {
-    await supabase.from("pages").update(updates).eq("id", pageId);
-    setPages((p) => p.map((pg) => (pg.id === pageId ? { ...pg, ...updates } : pg)));
-    if (activePage?.id === pageId) setActivePage((prev) => prev ? { ...prev, ...updates } : prev);
-  };
-
-  const deletePage = async (pageId: string) => {
-    await supabase.from("pages").delete().eq("id", pageId);
-    const remaining = pages.filter((p) => p.id !== pageId);
-    setPages(remaining);
-    if (activePage?.id === pageId) {
-      setActivePage(remaining[0] || null);
-    }
-  };
-
-  const addSection = async () => {
-    if (!activePage) return;
-    const { data } = await supabase
-      .from("sections")
-      .insert({
-        page_id: activePage.id,
-        title: "New Section",
-        order_index: sections.length,
-      })
-      .select()
-      .single();
-
-    if (data) setSections((s) => [...s, data]);
-  };
-
-  const updateSection = async (sectionId: string, updates: Partial<Section>) => {
-    await supabase.from("sections").update(updates).eq("id", sectionId);
-    setSections((s) => s.map((sec) => (sec.id === sectionId ? { ...sec, ...updates } : sec)));
-  };
-
-  const deleteSection = async (sectionId: string) => {
-    await supabase.from("sections").delete().eq("id", sectionId);
-    setSections((s) => s.filter((sec) => sec.id !== sectionId));
-    setBlocks((b) => b.filter((bl) => bl.section_id !== sectionId));
-  };
-
-  const addBlock = async (sectionId: string, type: string) => {
-    const sectionBlocks = blocks.filter((b) => b.section_id === sectionId);
-    const defaultContent = getDefaultContent(type);
-
-    const { data } = await supabase
-      .from("blocks")
-      .insert({
-        section_id: sectionId,
-        type: type as any,
-        content: defaultContent,
-        order_index: sectionBlocks.length,
-      })
-      .select()
-      .single();
-
-    if (data) setBlocks((b) => [...b, data]);
-  };
-
-  const updateBlock = async (blockId: string, updates: Partial<Block>) => {
-    const dbUpdates: any = { ...updates };
-    await supabase.from("blocks").update(dbUpdates).eq("id", blockId);
-    setBlocks((b) => b.map((bl) => (bl.id === blockId ? { ...bl, ...updates } : bl)));
-  };
-
-  const deleteBlock = async (blockId: string) => {
-    await supabase.from("blocks").delete().eq("id", blockId);
-    setBlocks((b) => b.filter((bl) => bl.id !== blockId));
-  };
+  const {
+    project,
+    pages,
+    activePage,
+    setActivePage,
+    sections,
+    blocks,
+    loading,
+    addPage,
+    updatePage,
+    deletePage,
+    addSection,
+    updateSection,
+    deleteSection,
+    addBlock,
+    updateBlock,
+    deleteBlock,
+  } = useBuilder(projectId, user?.id);
 
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!project) {
+    navigate("/dashboard");
+    return null;
   }
 
   return (
     <div className="min-h-screen bg-background">
       {/* Builder header */}
       <header className="border-b bg-background sticky top-0 z-50">
-        <div className="max-w-[980px] mx-auto px-6 h-12 flex items-center justify-between">
+        <div className="max-w-[1100px] mx-auto px-6 h-12 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="h-4 w-4" />
@@ -233,8 +69,8 @@ const Builder = () => {
         </div>
       </header>
 
-      {/* Builder body — same layout as docs */}
-      <div className="max-w-[980px] mx-auto flex px-6">
+      {/* Builder body */}
+      <div className="max-w-[1100px] mx-auto flex px-6">
         <BuilderSidebar
           projectName={project?.name || ""}
           pages={pages}
@@ -249,15 +85,10 @@ const Builder = () => {
         <main className="flex-1 min-w-0 py-10 lg:pl-4">
           {activePage ? (
             <article className="max-w-[680px]">
-              {/* Page title — editable */}
-              <input
-                className="text-2xl font-bold text-foreground mb-2 w-full bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1"
-                value={activePage.title}
-                onChange={(e) => updatePage(activePage.id, { title: e.target.value })}
-                onBlur={(e) => {
-                  const slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
-                  updatePage(activePage.id, { slug });
-                }}
+              {/* Page title — editable with debounce */}
+              <PageTitleEditor
+                page={activePage}
+                onUpdate={updatePage}
               />
 
               {/* Sections */}
@@ -296,31 +127,34 @@ const Builder = () => {
   );
 };
 
-function getDefaultContent(type: string): any {
-  switch (type) {
-    case "heading":
-      return { text: "New Heading", level: 2 };
-    case "paragraph":
-      return { text: "Start typing here..." };
-    case "code_block":
-      return { code: "// Your code here", language: "typescript" };
-    case "image":
-      return { url: "", alt: "Image description", caption: "" };
-    case "video":
-      return { url: "" };
-    case "youtube":
-      return { videoId: "", title: "" };
-    case "ordered_list":
-      return { items: ["Item 1", "Item 2", "Item 3"] };
-    case "unordered_list":
-      return { items: ["Item 1", "Item 2", "Item 3"] };
-    case "note":
-      return { text: "Add a note here..." };
-    case "callout":
-      return { text: "Important information...", type: "info" };
-    default:
-      return { text: "" };
-  }
-}
+// Separate component for page title with local state + debounced save
+import { useState, useEffect } from "react";
+import { useDebouncedCallback } from "@/hooks/use-debounce";
+import type { Page } from "@/hooks/use-builder";
+
+const PageTitleEditor = ({ page, onUpdate }: { page: Page; onUpdate: (id: string, updates: Partial<Page>) => void }) => {
+  const [title, setTitle] = useState(page.title);
+
+  useEffect(() => {
+    setTitle(page.title);
+  }, [page.id, page.title]);
+
+  const debouncedSave = useDebouncedCallback((value: string) => {
+    const slug = value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
+    onUpdate(page.id, { title: value, slug });
+  }, 600);
+
+  return (
+    <input
+      className="text-2xl font-bold text-foreground mb-6 w-full bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1"
+      value={title}
+      onChange={(e) => {
+        setTitle(e.target.value);
+        debouncedSave(e.target.value);
+      }}
+      placeholder="Page title..."
+    />
+  );
+};
 
 export default Builder;

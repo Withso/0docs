@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { ChevronRight } from "lucide-react";
 
 interface Page {
   id: string;
@@ -36,7 +37,6 @@ const PublicDocs = () => {
 
   useEffect(() => {
     const load = async () => {
-      // Find project by slug (need to search across all users)
       const { data: projects } = await supabase
         .from("projects")
         .select("*")
@@ -105,7 +105,11 @@ const PublicDocs = () => {
   }, [activePage]);
 
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Loading...
+      </div>
+    );
   }
 
   if (notFound) {
@@ -114,6 +118,9 @@ const PublicDocs = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Documentation not found</h1>
           <p className="text-muted-foreground">This documentation doesn't exist or has been removed.</p>
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground mt-4 inline-block">
+            ← Back to home
+          </Link>
         </div>
       </div>
     );
@@ -121,44 +128,55 @@ const PublicDocs = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[980px] mx-auto flex px-6">
-        {/* Sidebar */}
-        <aside className="w-[220px] shrink-0 sticky top-0 h-screen overflow-y-auto py-10 pr-8 hidden lg:block">
-          <span className="text-foreground font-semibold text-sm mb-8 block">
-            /{project?.name?.toLowerCase().replace(/\s+/g, "-")}
-          </span>
+      {/* Header */}
+      <header className="border-b sticky top-0 bg-background z-40">
+        <div className="max-w-[1100px] mx-auto px-6 h-12 flex items-center">
+          <span className="font-semibold text-foreground text-sm">{project?.name}</span>
+        </div>
+      </header>
 
+      <div className="max-w-[1100px] mx-auto flex px-6">
+        {/* Sidebar */}
+        <aside className="w-[240px] shrink-0 sticky top-12 h-[calc(100vh-48px)] overflow-y-auto py-10 pr-6 hidden lg:block">
           <div className="doc-sidebar-group-label">Pages</div>
           <nav className="space-y-0.5">
-            {pages.map((page) => (
-              <button
-                key={page.id}
-                onClick={() => setActivePage(page)}
-                className={`doc-sidebar-link w-full text-left ${
-                  activePage?.id === page.id ? "active" : ""
-                }`}
-              >
-                {page.title}
-              </button>
-            ))}
-          </nav>
+            {pages.map((page) => {
+              const isActive = activePage?.id === page.id;
+              const pageSections = isActive ? sections : [];
 
-          {activePage && sections.length > 0 && (
-            <>
-              <div className="doc-sidebar-group-label mt-6">On this page</div>
-              <nav className="space-y-0.5">
-                {sections.map((section) => (
-                  <a
-                    key={section.id}
-                    href={`#section-${section.id}`}
-                    className="doc-sidebar-sub-link"
-                  >
-                    {section.title}
-                  </a>
-                ))}
-              </nav>
-            </>
-          )}
+              return (
+                <div key={page.id}>
+                  <div className="flex items-center gap-1">
+                    <ChevronRight
+                      className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${
+                        isActive ? "rotate-90" : ""
+                      }`}
+                    />
+                    <button
+                      onClick={() => setActivePage(page)}
+                      className={`doc-sidebar-link flex-1 text-left truncate ${isActive ? "active" : ""}`}
+                    >
+                      {page.title}
+                    </button>
+                  </div>
+
+                  {isActive && pageSections.length > 0 && (
+                    <nav className="ml-4 mt-0.5 mb-1 space-y-0.5">
+                      {pageSections.map((section) => (
+                        <a
+                          key={section.id}
+                          href={`#section-${section.id}`}
+                          className="doc-sidebar-sub-link text-xs"
+                        >
+                          {section.title}
+                        </a>
+                      ))}
+                    </nav>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
         </aside>
 
         {/* Main content */}
@@ -183,6 +201,10 @@ const PublicDocs = () => {
                   </section>
                 );
               })}
+
+              {sections.length === 0 && (
+                <p className="text-muted-foreground">This page has no content yet.</p>
+              )}
             </article>
           )}
         </main>
