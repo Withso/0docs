@@ -15,6 +15,8 @@ const PublicDocs = () => {
   const [activePage, setActivePage] = useState<Page | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [allSections, setAllSections] = useState<Section[]>([]);
+  const [allBlocks, setAllBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -29,6 +31,20 @@ const PublicDocs = () => {
         setPages(pagesData);
         const target = pageSlug ? pagesData.find((p) => p.slug === pageSlug) : pagesData[0];
         setActivePage(target || pagesData[0] || null);
+
+        // Load all sections & blocks for search
+        const pageIds = pagesData.map((p) => p.id);
+        if (pageIds.length > 0) {
+          const { data: allSecs } = await supabase.from("sections").select("*").in("page_id", pageIds).order("order_index");
+          if (allSecs) {
+            setAllSections(allSecs);
+            const secIds = allSecs.map((s) => s.id);
+            if (secIds.length > 0) {
+              const { data: allBlks } = await supabase.from("blocks").select("*").in("section_id", secIds).order("order_index");
+              setAllBlocks(allBlks || []);
+            }
+          }
+        }
       }
       setLoading(false);
     };
@@ -79,6 +95,8 @@ const PublicDocs = () => {
         blocks={blocks}
         onSelectPage={setActivePage}
         headerStickyTop={0}
+        allSections={allSections}
+        allBlocks={allBlocks}
       />
     </div>
   );
