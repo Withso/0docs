@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useDesignSettings, defaultDesignSettings } from "@/hooks/use-design-settings";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
+import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft, Save, RotateCcw, Type, AlignLeft, Code, ImageIcon,
   Film, Youtube, ListOrdered, List, StickyNote, AlertCircle, Layout, Sidebar, Palette,
+  GripHorizontal, X, ChevronRight, Minimize2, Maximize2, Eye,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -82,16 +84,16 @@ const blockSections: { key: BlockKey; label: string; icon: typeof Type }[] = [
 // ─── Color field ─────────────────────────────────────
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <Label className="text-xs text-muted-foreground shrink-0">{label}</Label>
-      <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between gap-2">
+      <Label className="text-[11px] text-muted-foreground shrink-0">{label}</Label>
+      <div className="flex items-center gap-1.5">
         <input
           type="color"
           value={hslToHex(value)}
           onChange={(e) => onChange(hexToHsl(e.target.value))}
-          className="w-7 h-7 rounded border cursor-pointer bg-transparent shrink-0"
+          className="w-6 h-6 rounded border cursor-pointer bg-transparent shrink-0"
         />
-        <Input value={value} onChange={(e) => onChange(e.target.value)} className="w-[130px] text-xs h-7 font-mono" />
+        <Input value={value} onChange={(e) => onChange(e.target.value)} className="w-[110px] text-[10px] h-6 font-mono" />
       </div>
     </div>
   );
@@ -108,6 +110,43 @@ const navItems: { key: NavSection; label: string; icon: typeof Type; group: stri
   ...blockSections.map((b) => ({ key: b.key as NavSection, label: b.label, icon: b.icon, group: "Blocks" })),
 ];
 
+// ─── Interfaces for doc data ─────────────────────────
+interface DocPage { id: string; title: string; slug: string; order_index: number; }
+interface DocSection { id: string; page_id: string; title: string; order_index: number; }
+interface DocBlock { id: string; section_id: string; type: string; content: any; order_index: number; }
+
+// ─── Draggable floating panel hook ───────────────────
+function useDraggable(initialX: number, initialY: number) {
+  const [pos, setPos] = useState({ x: initialX, y: initialY });
+  const dragging = useRef(false);
+  const offset = useRef({ x: 0, y: 0 });
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    dragging.current = true;
+    offset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+    e.preventDefault();
+  }, [pos]);
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragging.current) return;
+      setPos({
+        x: Math.max(0, Math.min(window.innerWidth - 100, e.clientX - offset.current.x)),
+        y: Math.max(0, Math.min(window.innerHeight - 100, e.clientY - offset.current.y)),
+      });
+    };
+    const onMouseUp = () => { dragging.current = false; };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  return { pos, onMouseDown };
+}
+
 // ─── Main Page ───────────────────────────────────────
 const DesignSettingsPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -115,21 +154,58 @@ const DesignSettingsPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { settings, loading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
+  const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
   const [local, setLocal] = useState<DS>(defaultDesignSettings);
   const [activeNav, setActiveNav] = useState<NavSection>("global");
-  const [projectName, setProjectName] = useState("");
+  const [projectData, setProjectData] = useState<any>(null);
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Real documentation data
+  const [pages, setPages] = useState<DocPage[]>([]);
+  const [activePage, setActivePage] = useState<DocPage | null>(null);
+  const [sections, setSections] = useState<DocSection[]>([]);
+  const [blocks, setBlocks] = useState<DocBlock[]>([]);
+  const [docLoading, setDocLoading] = useState(true);
+
+  const { pos, onMouseDown } = useDraggable(window.innerWidth - 420, 80);
 
   useEffect(() => {
-    if (!loading) setLocal(settings);
-  }, [settings, loading]);
+    if (!settingsLoading) setLocal(settings);
+  }, [settings, settingsLoading]);
 
+  // Load project + pages
   useEffect(() => {
     if (!projectId) return;
-    supabase.from("projects").select("name").eq("id", projectId).single().then(({ data }) => {
-      if (data) setProjectName(data.name);
-    });
+    const load = async () => {
+      const { data: proj } = await supabase.from("projects").select("*").eq("id", projectId).single();
+      if (proj) {
+        setProjectData(proj);
+        const { data: pagesData } = await supabase.from("pages").select("*").eq("project_id", projectId).order("order_index");
+        if (pagesData && pagesData.length > 0) {
+          setPages(pagesData);
+          setActivePage(pagesData[0]);
+        }
+      }
+      setDocLoading(false);
+    };
+    load();
   }, [projectId]);
+
+  // Load sections/blocks for active page
+  useEffect(() => {
+    if (!activePage) { setSections([]); setBlocks([]); return; }
+    const load = async () => {
+      const { data: secs } = await supabase.from("sections").select("*").eq("page_id", activePage.id).order("order_index");
+      if (secs) {
+        setSections(secs);
+        if (secs.length > 0) {
+          const { data: blks } = await supabase.from("blocks").select("*").in("section_id", secs.map(s => s.id)).order("order_index");
+          setBlocks(blks || []);
+        } else setBlocks([]);
+      }
+    };
+    load();
+  }, [activePage]);
 
   const update = <K extends keyof DS>(key: K, value: DS[K]) => {
     setLocal((prev) => ({ ...prev, [key]: value }));
@@ -138,10 +214,7 @@ const DesignSettingsPage = () => {
   const updateBlockStyle = (block: BlockKey, key: keyof BlockStyleSettings, value: any) => {
     setLocal((prev) => ({
       ...prev,
-      blockStyles: {
-        ...prev.blockStyles,
-        [block]: { ...prev.blockStyles[block], [key]: value },
-      },
+      blockStyles: { ...prev.blockStyles, [block]: { ...prev.blockStyles[block], [key]: value } },
     }));
   };
 
@@ -158,147 +231,413 @@ const DesignSettingsPage = () => {
     toast({ title: "Design settings reset to defaults" });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
-        Loading...
-      </div>
-    );
+  if (settingsLoading || docLoading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b bg-background sticky top-0 z-50 shrink-0">
-        <div className="max-w-[1400px] mx-auto px-6 h-12 flex items-center justify-between">
+    <div className="min-h-screen flex flex-col bg-muted/30">
+      {/* Thin header bar */}
+      <header className="border-b bg-background sticky top-0 z-[60] shrink-0">
+        <div className="px-6 h-11 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(`/builder/${projectId}`)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/builder/${projectId}`)}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <span className="font-semibold text-foreground text-sm">{projectName}</span>
-            <span className="text-muted-foreground text-sm">/ Design Settings</span>
+            <span className="font-semibold text-foreground text-sm">{projectData?.name}</span>
+            <span className="text-muted-foreground text-xs">/ Design Settings</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleReset}>
-              <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Reset
+            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleReset}>
+              <RotateCcw className="h-3 w-3 mr-1" /> Reset
             </Button>
-            <Button size="sm" disabled={!hasChanges || saving} onClick={handleSave}>
-              <Save className="h-3.5 w-3.5 mr-1.5" /> {saving ? "Saving..." : "Save Changes"}
+            <Button size="sm" className="h-7 text-xs" disabled={!hasChanges || saving} onClick={handleSave}>
+              <Save className="h-3 w-3 mr-1" /> {saving ? "Saving..." : "Save"}
+            </Button>
+            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => window.open(`/docs/${projectData?.slug}`, "_blank")}>
+              <Eye className="h-3 w-3 mr-1" /> Preview
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="flex flex-1 max-w-[1400px] mx-auto w-full">
-        {/* Left nav */}
-        <aside className="w-[220px] shrink-0 border-r py-6 px-4 overflow-y-auto">
-          {["Global", "Blocks"].map((group) => (
-            <div key={group} className="mb-4">
-              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 px-2">
-                {group}
+      {/* Full-page live documentation preview */}
+      <div className="flex-1 overflow-auto">
+        <DesignSettingsWrapper settings={local} className="min-h-full">
+          {/* Doc header */}
+          <header
+            className="border-b sticky top-11 z-40"
+            style={{ backgroundColor: `hsl(${local.backgroundColor})`, borderColor: `hsl(${local.borderColor})` }}
+          >
+            <div
+              style={{ maxWidth: `${local.contentMaxWidth + local.sidebarWidth + 48}px` }}
+              className="mx-auto px-6 h-12 flex items-center"
+            >
+              <span className="font-semibold text-sm">{projectData?.name}</span>
+            </div>
+          </header>
+
+          <div
+            style={{ maxWidth: `${local.contentMaxWidth + local.sidebarWidth + 48}px` }}
+            className="mx-auto flex px-6"
+          >
+            {/* Sidebar */}
+            <aside
+              style={{ width: `${local.sidebarWidth}px`, backgroundColor: `hsl(${local.sidebarBg})` }}
+              className="shrink-0 sticky top-[92px] h-[calc(100vh-92px)] overflow-y-auto py-10 pr-6 hidden lg:block"
+            >
+              <div
+                className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-2"
+                style={{ color: `hsl(${local.sidebarTextColor})` }}
+              >
+                Pages
               </div>
               <nav className="space-y-0.5">
-                {navItems
-                  .filter((n) => n.group === group)
-                  .map((item) => {
-                    const Icon = item.icon;
-                    const isActive = activeNav === item.key;
+                {pages.map((page) => {
+                  const isActive = activePage?.id === page.id;
+                  const pageSections = isActive ? sections : [];
+                  return (
+                    <div key={page.id}>
+                      <div className="flex items-center gap-1">
+                        <ChevronRight
+                          className={`h-3 w-3 shrink-0 transition-transform ${isActive ? "rotate-90" : ""}`}
+                          style={{ color: `hsl(${local.mutedForegroundColor})` }}
+                        />
+                        <button
+                          onClick={() => setActivePage(page)}
+                          className="flex-1 text-left truncate px-2 py-1 rounded text-sm transition-colors"
+                          style={{
+                            fontSize: `${local.sidebarFontSize}px`,
+                            color: isActive ? `hsl(${local.sidebarActiveColor})` : `hsl(${local.sidebarTextColor})`,
+                            fontWeight: isActive ? 500 : 400,
+                            backgroundColor: isActive ? `hsl(${local.accentColor})` : "transparent",
+                          }}
+                        >
+                          {page.title}
+                        </button>
+                      </div>
+                      {isActive && pageSections.length > 0 && (
+                        <nav className="ml-4 mt-0.5 mb-1 space-y-0.5">
+                          {pageSections.map((section) => (
+                            <a
+                              key={section.id}
+                              href={`#section-${section.id}`}
+                              className="block px-2 py-0.5 text-xs rounded transition-colors"
+                              style={{ color: `hsl(${local.sidebarTextColor})`, fontSize: `${local.sidebarFontSize - 2}px` }}
+                            >
+                              {section.title}
+                            </a>
+                          ))}
+                        </nav>
+                      )}
+                    </div>
+                  );
+                })}
+              </nav>
+            </aside>
+
+            {/* Main content — real documentation */}
+            <main className="flex-1 min-w-0 py-10 lg:pl-4">
+              {activePage ? (
+                <article style={{ maxWidth: `${local.contentMaxWidth}px` }}>
+                  <h1
+                    className="mb-6"
+                    style={{
+                      fontFamily: `'${local.headingFont}', sans-serif`,
+                      fontWeight: local.headingWeight,
+                      fontSize: `${local.headingFontSize + 6}px`,
+                    }}
+                  >
+                    {activePage.title}
+                  </h1>
+
+                  {sections.map((section) => {
+                    const sectionBlocks = blocks
+                      .filter((b) => b.section_id === section.id)
+                      .sort((a, b) => a.order_index - b.order_index);
                     return (
-                      <button
-                        key={item.key}
-                        onClick={() => setActiveNav(item.key)}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors ${
-                          isActive
-                            ? "bg-secondary text-foreground font-medium"
-                            : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                        }`}
-                      >
-                        <Icon className="h-3.5 w-3.5 shrink-0" />
-                        {item.label}
-                      </button>
+                      <section key={section.id} className="mb-10" id={`section-${section.id}`}>
+                        <h2
+                          className="flex items-center gap-3 mb-4"
+                          style={{
+                            fontFamily: `'${local.headingFont}', sans-serif`,
+                            fontWeight: local.headingWeight,
+                            fontSize: `${local.headingFontSize}px`,
+                          }}
+                        >
+                          {section.title}
+                          <span
+                            className="flex-1 h-px opacity-50"
+                            style={{ backgroundColor: `hsl(${local.sectionLineColor})` }}
+                          />
+                        </h2>
+                        <div>
+                          {sectionBlocks.map((block) => (
+                            <LiveBlockRenderer key={block.id} block={block} settings={local} />
+                          ))}
+                        </div>
+                      </section>
                     );
                   })}
-              </nav>
-            </div>
-          ))}
-        </aside>
 
-        {/* Controls */}
-        <div className="w-[360px] shrink-0 border-r overflow-y-auto">
-          <ScrollArea className="h-[calc(100vh-48px)]">
-            <div className="p-6 space-y-5">
-              {activeNav === "global" && <TypographyControls local={local} update={update} />}
-              {activeNav === "colors" && <ColorControls local={local} update={update} />}
-              {activeNav === "layout" && <LayoutControls local={local} update={update} />}
-              {activeNav === "sidebar" && <SidebarControls local={local} update={update} />}
-              {blockSections.some((b) => b.key === activeNav) && (
-                <BlockControls
-                  blockKey={activeNav as BlockKey}
-                  local={local}
-                  updateBlockStyle={updateBlockStyle}
-                  update={update}
-                />
+                  {sections.length === 0 && (
+                    <p style={{ color: `hsl(${local.mutedForegroundColor})` }}>This page has no content yet.</p>
+                  )}
+                </article>
+              ) : (
+                <p style={{ color: `hsl(${local.mutedForegroundColor})` }}>No pages in this project yet.</p>
               )}
-            </div>
-          </ScrollArea>
+            </main>
+          </div>
+        </DesignSettingsWrapper>
+      </div>
+
+      {/* ─── Floating Settings Panel ─── */}
+      <div
+        className="fixed z-[70] bg-background border rounded-xl shadow-2xl flex flex-col"
+        style={{
+          left: pos.x,
+          top: pos.y,
+          width: collapsed ? 220 : 380,
+          maxHeight: collapsed ? "auto" : "min(80vh, 700px)",
+        }}
+      >
+        {/* Drag handle / header */}
+        <div
+          onMouseDown={onMouseDown}
+          className="flex items-center justify-between px-3 py-2 border-b cursor-grab active:cursor-grabbing select-none bg-muted/50 rounded-t-xl"
+        >
+          <div className="flex items-center gap-2">
+            <GripHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-semibold text-foreground">Design Settings</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setCollapsed(!collapsed)} className="p-1 rounded hover:bg-secondary transition-colors">
+              {collapsed ? <Maximize2 className="h-3 w-3 text-muted-foreground" /> : <Minimize2 className="h-3 w-3 text-muted-foreground" />}
+            </button>
+          </div>
         </div>
 
-        {/* Live preview */}
-        <div className="flex-1 overflow-y-auto">
-          <ScrollArea className="h-[calc(100vh-48px)]">
-            <div className="p-8">
-              <LivePreview settings={local} activeSection={activeNav} />
+        {!collapsed && (
+          <>
+            {/* Nav tabs */}
+            <div className="border-b px-2 py-1.5 flex flex-wrap gap-0.5 max-h-[140px] overflow-y-auto">
+              {["Global", "Blocks"].map((group) => (
+                <div key={group} className="w-full">
+                  <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest px-1 py-0.5">
+                    {group}
+                  </div>
+                  <div className="flex flex-wrap gap-0.5">
+                    {navItems
+                      .filter((n) => n.group === group)
+                      .map((item) => {
+                        const Icon = item.icon;
+                        const isActive = activeNav === item.key;
+                        return (
+                          <button
+                            key={item.key}
+                            onClick={() => setActiveNav(item.key)}
+                            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
+                              isActive
+                                ? "bg-primary text-primary-foreground font-medium"
+                                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                            }`}
+                          >
+                            <Icon className="h-3 w-3" />
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              ))}
             </div>
-          </ScrollArea>
-        </div>
+
+            {/* Controls area */}
+            <ScrollArea className="flex-1">
+              <div className="p-4 space-y-4">
+                {activeNav === "global" && <TypographyControls local={local} update={update} />}
+                {activeNav === "colors" && <ColorControls local={local} update={update} />}
+                {activeNav === "layout" && <LayoutControls local={local} update={update} />}
+                {activeNav === "sidebar" && <SidebarControls local={local} update={update} />}
+                {blockSections.some((b) => b.key === activeNav) && (
+                  <BlockControls blockKey={activeNav as BlockKey} local={local} updateBlockStyle={updateBlockStyle} update={update} />
+                )}
+              </div>
+            </ScrollArea>
+          </>
+        )}
       </div>
     </div>
   );
 };
 
+// ─── Live Block Renderer (uses design settings for styling) ──
+function LiveBlockRenderer({ block, settings: s }: { block: DocBlock; settings: DS }) {
+  const { content, type } = block;
+  const bs = s.blockStyles[type as BlockKey] || {};
+
+  const getStyle = (): React.CSSProperties => ({
+    color: bs.color ? `hsl(${bs.color})` : undefined,
+    fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : undefined,
+    fontSize: bs.fontSize ? `${bs.fontSize}px` : undefined,
+    fontWeight: (bs.fontWeight as any) || undefined,
+    backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
+    borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : undefined,
+    padding: bs.padding != null ? `${bs.padding}px` : undefined,
+    borderColor: bs.borderColor ? `hsl(${bs.borderColor})` : undefined,
+  });
+
+  switch (type) {
+    case "heading":
+      return (
+        <h3
+          className="mb-3"
+          style={{
+            fontFamily: `'${s.headingFont}', sans-serif`,
+            fontWeight: s.headingWeight,
+            fontSize: `${s.headingFontSize}px`,
+            ...getStyle(),
+          }}
+        >
+          {content.text}
+        </h3>
+      );
+    case "paragraph":
+      return <p className="mb-4" style={{ marginBottom: `${s.paragraphSpacing}px`, ...getStyle() }}>{content.text}</p>;
+    case "code_block":
+      return (
+        <div
+          className="mb-4"
+          style={{
+            backgroundColor: `hsl(${s.codeBlockBg})`,
+            borderRadius: `${s.codeBlockBorderRadius}px`,
+            border: `1px solid hsl(${s.borderColor})`,
+            padding: "16px",
+            fontFamily: `'${s.codeFont}', monospace`,
+            fontSize: `${s.baseFontSize - 1}px`,
+            ...getStyle(),
+          }}
+        >
+          {content.language && (
+            <div className="text-xs mb-2" style={{ color: `hsl(${s.mutedForegroundColor})` }}>{content.language}</div>
+          )}
+          <pre className="m-0 whitespace-pre-wrap text-sm"><code>{content.code}</code></pre>
+        </div>
+      );
+    case "image":
+      return content.url ? (
+        <div className="mb-4">
+          <div
+            className="overflow-hidden border"
+            style={{ borderRadius: s.imageRounded ? "8px" : "0", borderColor: `hsl(${s.borderColor})`, ...getStyle() }}
+          >
+            <img src={content.url} alt={content.alt || ""} className="w-full h-auto" loading="lazy" />
+          </div>
+          {content.alt && <p className="text-sm mt-1" style={{ color: `hsl(${s.mutedForegroundColor})` }}>{content.alt}</p>}
+        </div>
+      ) : null;
+    case "youtube":
+      return content.videoId ? (
+        <div className="mb-4 overflow-hidden border aspect-video" style={{ borderRadius: `${bs.borderRadius ?? 8}px`, borderColor: `hsl(${s.borderColor})` }}>
+          <iframe src={`https://www.youtube.com/embed/${content.videoId}`} className="w-full h-full" allowFullScreen title={content.title || "Video"} />
+        </div>
+      ) : null;
+    case "video":
+      return content.url ? (
+        <video controls className="w-full mb-4 border" style={{ borderRadius: `${bs.borderRadius ?? 8}px`, borderColor: `hsl(${s.borderColor})` }}>
+          <source src={content.url} />
+        </video>
+      ) : null;
+    case "ordered_list":
+      return (
+        <ol className="mb-4 pl-6" style={{ ...getStyle() }}>
+          {(content.items || []).map((item: string, i: number) => <li key={i} className="mb-1">{item}</li>)}
+        </ol>
+      );
+    case "unordered_list":
+      return (
+        <ul className="mb-4 pl-6 list-disc" style={{ ...getStyle() }}>
+          {(content.items || []).map((item: string, i: number) => <li key={i} className="mb-1">{item}</li>)}
+        </ul>
+      );
+    case "note":
+      return (
+        <div
+          className="mb-4"
+          style={{
+            backgroundColor: `hsl(${s.noteBg})`,
+            borderLeft: `${s.noteBorderWidth}px solid hsl(${s.noteBorderColor})`,
+            borderRadius: "0 8px 8px 0",
+            padding: "12px 16px",
+            fontSize: `${s.baseFontSize - 1}px`,
+            ...getStyle(),
+          }}
+        >
+          {content.text}
+        </div>
+      );
+    case "callout":
+      return (
+        <div
+          className="mb-4 border rounded-lg p-4"
+          style={{
+            backgroundColor: `hsl(${s.accentColor})`,
+            borderColor: `hsl(${s.borderColor})`,
+            ...getStyle(),
+          }}
+        >
+          {content.text}
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
 // ─── Typography Controls ─────────────────────────────
 function TypographyControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
   return (
     <>
-      <h3 className="text-sm font-semibold text-foreground">Typography</h3>
+      <h3 className="text-xs font-semibold text-foreground">Typography</h3>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Heading Font</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Heading Font</Label>
         <Select value={local.headingFont} onValueChange={(v) => update("headingFont", v)}>
-          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{fontOptions.map((f) => <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>)}</SelectContent>
         </Select>
       </div>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Body Font</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Body Font</Label>
         <Select value={local.bodyFont} onValueChange={(v) => update("bodyFont", v)}>
-          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{fontOptions.map((f) => <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>)}</SelectContent>
         </Select>
       </div>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Code Font</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Code Font</Label>
         <Select value={local.codeFont} onValueChange={(v) => update("codeFont", v)}>
-          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{codeFontOptions.map((f) => <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>)}</SelectContent>
         </Select>
       </div>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Heading Weight</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Heading Weight</Label>
         <Select value={local.headingWeight} onValueChange={(v) => update("headingWeight", v)}>
-          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{weightOptions.map((w) => <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>)}</SelectContent>
         </Select>
       </div>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Base Font Size: {local.baseFontSize}px</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Base Font Size: {local.baseFontSize}px</Label>
         <Slider value={[local.baseFontSize]} onValueChange={([v]) => update("baseFontSize", v)} min={12} max={20} step={1} />
       </div>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Heading Size: {local.headingFontSize}px</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Heading Size: {local.headingFontSize}px</Label>
         <Slider value={[local.headingFontSize]} onValueChange={([v]) => update("headingFontSize", v)} min={14} max={32} step={1} />
       </div>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Line Height: {local.lineHeight}</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Line Height: {local.lineHeight}</Label>
         <Slider value={[local.lineHeight]} onValueChange={([v]) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} />
       </div>
     </>
@@ -324,7 +663,7 @@ function ColorControls({ local, update }: { local: DS; update: <K extends keyof 
   ];
   return (
     <>
-      <h3 className="text-sm font-semibold text-foreground">Colors</h3>
+      <h3 className="text-xs font-semibold text-foreground">Colors</h3>
       {colors.map((c) => (
         <ColorField key={c.key} label={c.label} value={local[c.key] as string} onChange={(v) => update(c.key, v as any)} />
       ))}
@@ -336,29 +675,29 @@ function ColorControls({ local, update }: { local: DS; update: <K extends keyof 
 function LayoutControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
   return (
     <>
-      <h3 className="text-sm font-semibold text-foreground">Layout</h3>
+      <h3 className="text-xs font-semibold text-foreground">Layout</h3>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Content Width: {local.contentMaxWidth}px</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Content Width: {local.contentMaxWidth}px</Label>
         <Slider value={[local.contentMaxWidth]} onValueChange={([v]) => update("contentMaxWidth", v)} min={500} max={900} step={10} />
       </div>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Sidebar Width: {local.sidebarWidth}px</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Sidebar Width: {local.sidebarWidth}px</Label>
         <Slider value={[local.sidebarWidth]} onValueChange={([v]) => update("sidebarWidth", v)} min={180} max={320} step={10} />
       </div>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Paragraph Spacing: {local.paragraphSpacing}px</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Paragraph Spacing: {local.paragraphSpacing}px</Label>
         <Slider value={[local.paragraphSpacing]} onValueChange={([v]) => update("paragraphSpacing", v)} min={8} max={32} step={2} />
       </div>
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-muted-foreground">Rounded Images</Label>
+        <Label className="text-[11px] text-muted-foreground">Rounded Images</Label>
         <Switch checked={local.imageRounded} onCheckedChange={(v) => update("imageRounded", v)} />
       </div>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Code Border Radius: {local.codeBlockBorderRadius}px</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Code Border Radius: {local.codeBlockBorderRadius}px</Label>
         <Slider value={[local.codeBlockBorderRadius]} onValueChange={([v]) => update("codeBlockBorderRadius", v)} min={0} max={16} step={1} />
       </div>
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Note Border Width: {local.noteBorderWidth}px</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Note Border Width: {local.noteBorderWidth}px</Label>
         <Slider value={[local.noteBorderWidth]} onValueChange={([v]) => update("noteBorderWidth", v)} min={1} max={6} step={1} />
       </div>
     </>
@@ -369,12 +708,12 @@ function LayoutControls({ local, update }: { local: DS; update: <K extends keyof
 function SidebarControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
   return (
     <>
-      <h3 className="text-sm font-semibold text-foreground">Sidebar</h3>
+      <h3 className="text-xs font-semibold text-foreground">Sidebar</h3>
       <ColorField label="Background" value={local.sidebarBg} onChange={(v) => update("sidebarBg", v)} />
       <ColorField label="Text Color" value={local.sidebarTextColor} onChange={(v) => update("sidebarTextColor", v)} />
       <ColorField label="Active Color" value={local.sidebarActiveColor} onChange={(v) => update("sidebarActiveColor", v)} />
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Font Size: {local.sidebarFontSize}px</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Font Size: {local.sidebarFontSize}px</Label>
         <Slider value={[local.sidebarFontSize]} onValueChange={([v]) => update("sidebarFontSize", v)} min={11} max={16} step={1} />
       </div>
     </>
@@ -383,13 +722,9 @@ function SidebarControls({ local, update }: { local: DS; update: <K extends keyo
 
 // ─── Block Controls ──────────────────────────────────
 function BlockControls({
-  blockKey,
-  local,
-  updateBlockStyle,
-  update,
+  blockKey, local, updateBlockStyle, update,
 }: {
-  blockKey: BlockKey;
-  local: DS;
+  blockKey: BlockKey; local: DS;
   updateBlockStyle: (block: BlockKey, key: keyof BlockStyleSettings, value: any) => void;
   update: <K extends keyof DS>(k: K, v: DS[K]) => void;
 }) {
@@ -407,24 +742,20 @@ function BlockControls({
 
   return (
     <>
-      <h3 className="text-sm font-semibold text-foreground">{label} Block</h3>
-      <p className="text-xs text-muted-foreground">Customize how {label.toLowerCase()} blocks appear. Leave empty to use global defaults.</p>
+      <h3 className="text-xs font-semibold text-foreground">{label} Block</h3>
+      <p className="text-[10px] text-muted-foreground">Customize {label.toLowerCase()} blocks. Leave empty for global defaults.</p>
       <Separator />
-
       <ColorField label="Text Color" value={resolvedColor} onChange={(v) => updateBlockStyle(blockKey, "color", v)} />
-
       {["code_block", "note", "callout"].includes(blockKey) && (
         <ColorField label="Background" value={resolvedBg} onChange={(v) => updateBlockStyle(blockKey, "backgroundColor", v)} />
       )}
-
       {["note", "callout", "code_block"].includes(blockKey) && (
         <ColorField label="Border" value={resolvedBorder} onChange={(v) => updateBlockStyle(blockKey, "borderColor", v)} />
       )}
-
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Font</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Font</Label>
         <Select value={resolvedFont} onValueChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)}>
-          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             {(blockKey === "code_block" ? codeFontOptions : fontOptions).map((f) => (
               <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>
@@ -432,302 +763,30 @@ function BlockControls({
           </SelectContent>
         </Select>
       </div>
-
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Font Size: {resolvedSize}px</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Font Size: {resolvedSize}px</Label>
         <Slider value={[resolvedSize]} onValueChange={([v]) => updateBlockStyle(blockKey, "fontSize", v)} min={10} max={32} step={1} />
       </div>
-
       <div>
-        <Label className="text-xs text-muted-foreground mb-1.5 block">Font Weight</Label>
+        <Label className="text-[11px] text-muted-foreground mb-1 block">Font Weight</Label>
         <Select value={resolvedWeight} onValueChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)}>
-          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{weightOptions.map((w) => <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-
       {["code_block", "note", "callout", "image", "video", "youtube"].includes(blockKey) && (
         <div>
-          <Label className="text-xs text-muted-foreground mb-1.5 block">Border Radius: {resolvedRadius}px</Label>
+          <Label className="text-[11px] text-muted-foreground mb-1 block">Border Radius: {resolvedRadius}px</Label>
           <Slider value={[resolvedRadius]} onValueChange={([v]) => updateBlockStyle(blockKey, "borderRadius", v)} min={0} max={20} step={1} />
         </div>
       )}
-
       {["code_block", "note", "callout"].includes(blockKey) && (
         <div>
-          <Label className="text-xs text-muted-foreground mb-1.5 block">Padding: {resolvedPadding}px</Label>
+          <Label className="text-[11px] text-muted-foreground mb-1 block">Padding: {resolvedPadding}px</Label>
           <Slider value={[resolvedPadding]} onValueChange={([v]) => updateBlockStyle(blockKey, "padding", v)} min={4} max={32} step={2} />
         </div>
       )}
     </>
-  );
-}
-
-// ─── Live Preview ────────────────────────────────────
-function LivePreview({ settings: s, activeSection }: { settings: DS; activeSection: NavSection }) {
-  const containerStyle: React.CSSProperties = {
-    maxWidth: `${s.contentMaxWidth}px`,
-    fontFamily: `'${s.bodyFont}', -apple-system, BlinkMacSystemFont, sans-serif`,
-    fontSize: `${s.baseFontSize}px`,
-    lineHeight: s.lineHeight,
-    color: `hsl(${s.foregroundColor})`,
-    backgroundColor: `hsl(${s.backgroundColor})`,
-    borderRadius: "12px",
-    border: `1px solid hsl(${s.borderColor})`,
-    overflow: "hidden",
-  };
-
-  const getBlockStyle = (key: BlockKey): React.CSSProperties => {
-    const bs = s.blockStyles[key];
-    return {
-      color: bs.color ? `hsl(${bs.color})` : undefined,
-      backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
-      fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : undefined,
-      fontSize: bs.fontSize ? `${bs.fontSize}px` : undefined,
-      fontWeight: (bs.fontWeight as any) || undefined,
-      borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : undefined,
-      padding: bs.padding != null ? `${bs.padding}px` : undefined,
-      borderColor: bs.borderColor ? `hsl(${bs.borderColor})` : undefined,
-    };
-  };
-
-  const headingStyle: React.CSSProperties = {
-    fontFamily: `'${s.headingFont}', sans-serif`,
-    fontWeight: s.headingWeight as any,
-    fontSize: `${s.headingFontSize + 6}px`,
-    marginBottom: "8px",
-    ...getBlockStyle("heading"),
-  };
-
-  const sectionHeadingStyle: React.CSSProperties = {
-    fontFamily: `'${s.headingFont}', sans-serif`,
-    fontWeight: s.headingWeight as any,
-    fontSize: `${s.headingFontSize}px`,
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    marginBottom: "16px",
-    ...getBlockStyle("heading"),
-  };
-
-  const highlight = (key: NavSection) =>
-    activeSection === key ? { outline: `2px solid hsl(${s.linkColor})`, outlineOffset: "4px", borderRadius: "6px" } : {};
-
-  return (
-    <div style={containerStyle}>
-      {/* Mock header */}
-      <div style={{ borderBottom: `1px solid hsl(${s.borderColor})`, padding: "12px 24px" }}>
-        <span style={{ fontWeight: 600, fontSize: "14px" }}>My Documentation</span>
-      </div>
-
-      <div style={{ display: "flex" }}>
-        {/* Mock sidebar */}
-        <div
-          style={{
-            width: `${s.sidebarWidth}px`,
-            padding: "24px 16px",
-            borderRight: `1px solid hsl(${s.borderColor})`,
-            backgroundColor: `hsl(${s.sidebarBg})`,
-            flexShrink: 0,
-            ...highlight("sidebar"),
-          }}
-        >
-          <div style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: `hsl(${s.sidebarTextColor})`, marginBottom: "8px" }}>
-            Pages
-          </div>
-          {["Getting Started", "Installation", "Configuration", "API Reference"].map((page, i) => (
-            <div
-              key={page}
-              style={{
-                fontSize: `${s.sidebarFontSize}px`,
-                padding: "4px 8px",
-                borderRadius: "4px",
-                color: i === 0 ? `hsl(${s.sidebarActiveColor})` : `hsl(${s.sidebarTextColor})`,
-                fontWeight: i === 0 ? 500 : 400,
-                backgroundColor: i === 0 ? `hsl(${s.accentColor})` : "transparent",
-                cursor: "pointer",
-                marginBottom: "2px",
-              }}
-            >
-              {page}
-            </div>
-          ))}
-        </div>
-
-        {/* Mock content */}
-        <div style={{ flex: 1, padding: "32px", maxWidth: `${s.contentMaxWidth}px` }}>
-          {/* Page title */}
-          <div style={{ ...headingStyle, ...highlight("global") }}>
-            Getting Started
-          </div>
-          <p style={{ color: `hsl(${s.mutedForegroundColor})`, marginBottom: `${s.paragraphSpacing}px`, fontSize: `${s.baseFontSize}px` }}>
-            Learn how to set up and configure your documentation project.
-          </p>
-
-          {/* Heading block */}
-          <div style={{ ...sectionHeadingStyle, marginTop: "24px", ...highlight("heading") }}>
-            Overview
-            <span style={{ flex: 1, height: "1px", backgroundColor: `hsl(${s.sectionLineColor})`, opacity: 0.5 }} />
-          </div>
-
-          {/* Paragraph block */}
-          <p style={{ marginBottom: `${s.paragraphSpacing}px`, ...getBlockStyle("paragraph"), ...highlight("paragraph") }}>
-            Welcome to the documentation builder. This platform lets you create beautiful, customizable documentation sites. 
-            You can add various types of content blocks including text, code snippets, images, videos, and more. 
-            Each block is fully customizable through the design settings.
-          </p>
-
-          {/* Code block */}
-          <div
-            style={{
-              backgroundColor: `hsl(${s.codeBlockBg})`,
-              borderRadius: `${s.codeBlockBorderRadius}px`,
-              border: `1px solid hsl(${s.borderColor})`,
-              padding: "16px",
-              marginBottom: `${s.paragraphSpacing}px`,
-              fontFamily: `'${s.codeFont}', monospace`,
-              fontSize: `${s.baseFontSize - 1}px`,
-              ...getBlockStyle("code_block"),
-              ...highlight("code_block"),
-            }}
-          >
-            <div style={{ fontSize: "11px", color: `hsl(${s.mutedForegroundColor})`, marginBottom: "8px" }}>typescript</div>
-            <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{`import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)`}</pre>
-          </div>
-
-          {/* Note block */}
-          <div
-            style={{
-              backgroundColor: `hsl(${s.noteBg})`,
-              borderLeft: `${s.noteBorderWidth}px solid hsl(${s.noteBorderColor})`,
-              borderRadius: "0 8px 8px 0",
-              padding: "12px 16px",
-              marginBottom: `${s.paragraphSpacing}px`,
-              fontSize: `${s.baseFontSize - 1}px`,
-              ...getBlockStyle("note"),
-              ...highlight("note"),
-            }}
-          >
-            📝 Make sure to keep your API keys secure. Never expose them in client-side code.
-          </div>
-
-          {/* Callout block */}
-          <div
-            style={{
-              backgroundColor: `hsl(${s.accentColor})`,
-              border: `1px solid hsl(${s.borderColor})`,
-              borderRadius: "8px",
-              padding: "16px",
-              marginBottom: `${s.paragraphSpacing}px`,
-              fontSize: `${s.baseFontSize}px`,
-              ...getBlockStyle("callout"),
-              ...highlight("callout"),
-            }}
-          >
-            ⚡ Pro tip: Use environment variables to manage different configurations for development and production.
-          </div>
-
-          {/* Ordered list */}
-          <div style={{ marginBottom: `${s.paragraphSpacing}px`, ...highlight("ordered_list") }}>
-            <div style={{ ...sectionHeadingStyle, fontSize: `${s.headingFontSize - 2}px` }}>
-              Installation Steps
-              <span style={{ flex: 1, height: "1px", backgroundColor: `hsl(${s.sectionLineColor})`, opacity: 0.5 }} />
-            </div>
-            <ol style={{ margin: 0, paddingLeft: "24px", ...getBlockStyle("ordered_list") }}>
-              <li style={{ marginBottom: "6px" }}>Clone the repository from GitHub</li>
-              <li style={{ marginBottom: "6px" }}>Install dependencies with npm install</li>
-              <li style={{ marginBottom: "6px" }}>Configure your environment variables</li>
-              <li style={{ marginBottom: "6px" }}>Start the development server</li>
-            </ol>
-          </div>
-
-          {/* Unordered list */}
-          <div style={{ marginBottom: `${s.paragraphSpacing}px`, ...highlight("unordered_list") }}>
-            <div style={{ ...sectionHeadingStyle, fontSize: `${s.headingFontSize - 2}px` }}>
-              Features
-              <span style={{ flex: 1, height: "1px", backgroundColor: `hsl(${s.sectionLineColor})`, opacity: 0.5 }} />
-            </div>
-            <ul style={{ margin: 0, paddingLeft: "24px", listStyleType: "disc", ...getBlockStyle("unordered_list") }}>
-              <li style={{ marginBottom: "6px" }}>Visual documentation builder</li>
-              <li style={{ marginBottom: "6px" }}>Customizable design system</li>
-              <li style={{ marginBottom: "6px" }}>Real-time collaboration</li>
-              <li style={{ marginBottom: "6px" }}>SEO-friendly output</li>
-            </ul>
-          </div>
-
-          {/* Image block */}
-          <div style={{ marginBottom: `${s.paragraphSpacing}px`, ...highlight("image") }}>
-            <div
-              style={{
-                borderRadius: s.imageRounded ? "8px" : "0",
-                border: `1px solid hsl(${s.borderColor})`,
-                overflow: "hidden",
-                backgroundColor: `hsl(${s.mutedColor})`,
-                height: "160px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                ...getBlockStyle("image"),
-              }}
-            >
-              <ImageIcon style={{ width: "32px", height: "32px", color: `hsl(${s.mutedForegroundColor})` }} />
-            </div>
-            <p style={{ fontSize: "12px", color: `hsl(${s.mutedForegroundColor})`, marginTop: "4px" }}>
-              Example image with caption
-            </p>
-          </div>
-
-          {/* Video / YouTube block */}
-          <div style={{ marginBottom: `${s.paragraphSpacing}px`, ...highlight("youtube") }}>
-            <div
-              style={{
-                borderRadius: `${s.blockStyles.youtube?.borderRadius ?? 8}px`,
-                border: `1px solid hsl(${s.borderColor})`,
-                overflow: "hidden",
-                backgroundColor: `hsl(${s.mutedColor})`,
-                aspectRatio: "16/9",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                ...getBlockStyle("youtube"),
-              }}
-            >
-              <div style={{ textAlign: "center" }}>
-                <Youtube style={{ width: "40px", height: "40px", color: `hsl(${s.mutedForegroundColor})`, marginBottom: "8px" }} />
-                <p style={{ fontSize: "12px", color: `hsl(${s.mutedForegroundColor})` }}>YouTube Video Embed</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Video block */}
-          <div style={{ marginBottom: `${s.paragraphSpacing}px`, ...highlight("video") }}>
-            <div
-              style={{
-                borderRadius: `${s.blockStyles.video?.borderRadius ?? 8}px`,
-                border: `1px solid hsl(${s.borderColor})`,
-                overflow: "hidden",
-                backgroundColor: `hsl(${s.mutedColor})`,
-                height: "120px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                ...getBlockStyle("video"),
-              }}
-            >
-              <Film style={{ width: "32px", height: "32px", color: `hsl(${s.mutedForegroundColor})` }} />
-            </div>
-            <p style={{ fontSize: "12px", color: `hsl(${s.mutedForegroundColor})`, marginTop: "4px" }}>
-              Video player placeholder
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 
