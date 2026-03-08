@@ -274,6 +274,7 @@ const DesignSettingsPage = () => {
           onSelectPage={setActivePage}
           highlightType={highlightedBlockType}
           headerStickyTop={44}
+          hideHeader
         />
       </div>
 
