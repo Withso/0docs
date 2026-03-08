@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Plus, Trash2, ChevronRight } from "lucide-react";
 import type { Page, Section } from "@/hooks/use-builder";
+import type { DesignSettings } from "@/hooks/use-design-settings";
 
 interface BuilderSidebarProps {
-  projectName: string;
+  settings: DesignSettings;
   pages: Page[];
   activePage: Page | null;
   sections: Section[];
@@ -14,7 +15,7 @@ interface BuilderSidebarProps {
 }
 
 const BuilderSidebar = ({
-  projectName,
+  settings,
   pages,
   activePage,
   sections,
@@ -26,16 +27,24 @@ const BuilderSidebar = ({
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
 
   return (
-    <aside className="w-[240px] shrink-0 sticky top-12 h-[calc(100vh-48px)] overflow-y-auto py-10 pr-6 hidden lg:block">
-      <span className="text-foreground font-semibold text-sm mb-6 block">
-        /{projectName.toLowerCase().replace(/\s+/g, "-")}
-      </span>
-
-      <div className="doc-sidebar-group-label flex items-center justify-between">
+    <aside
+      style={{
+        width: `${settings.sidebarWidth}px`,
+        backgroundColor: `hsl(${settings.sidebarBg})`,
+        top: "48px",
+        height: "calc(100vh - 48px)",
+      }}
+      className="shrink-0 sticky overflow-y-auto py-10 pr-6 hidden lg:block"
+    >
+      <div
+        className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-2 flex items-center justify-between"
+        style={{ color: `hsl(${settings.sidebarTextColor})` }}
+      >
         <span>Pages</span>
         <button
           onClick={onAddPage}
-          className="text-muted-foreground hover:text-foreground transition-colors"
+          className="transition-colors"
+          style={{ color: `hsl(${settings.sidebarTextColor})` }}
           title="Add page"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -51,14 +60,18 @@ const BuilderSidebar = ({
             <div key={page.id}>
               <div className="group flex items-center gap-1">
                 <ChevronRight
-                  className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${
-                    isActive ? "rotate-90" : ""
-                  }`}
+                  className={`h-3 w-3 shrink-0 transition-transform ${isActive ? "rotate-90" : ""}`}
+                  style={{ color: `hsl(${settings.mutedForegroundColor})` }}
                 />
                 {editingPageId === page.id ? (
                   <input
                     autoFocus
-                    className="flex-1 py-1 text-sm bg-transparent border-b border-foreground/20 outline-none text-foreground"
+                    className="flex-1 px-2 py-1 rounded bg-transparent border-b outline-none"
+                    style={{
+                      fontSize: `${settings.sidebarFontSize}px`,
+                      borderColor: `hsl(${settings.borderColor})`,
+                      color: `hsl(${settings.sidebarActiveColor})`,
+                    }}
                     defaultValue={page.title}
                     onBlur={(e) => {
                       const val = e.target.value.trim() || "Untitled";
@@ -77,7 +90,15 @@ const BuilderSidebar = ({
                   <button
                     onClick={() => onSelectPage(page)}
                     onDoubleClick={() => setEditingPageId(page.id)}
-                    className={`doc-sidebar-link flex-1 text-left truncate ${isActive ? "active" : ""}`}
+                    className="flex-1 text-left truncate px-2 py-1 rounded transition-colors"
+                    style={{
+                      fontSize: `${settings.sidebarFontSize}px`,
+                      color: isActive
+                        ? `hsl(${settings.sidebarActiveColor})`
+                        : `hsl(${settings.sidebarTextColor})`,
+                      fontWeight: isActive ? 500 : 400,
+                      backgroundColor: isActive ? `hsl(${settings.accentColor})` : "transparent",
+                    }}
                     title="Double-click to rename"
                   >
                     {page.title}
@@ -85,20 +106,24 @@ const BuilderSidebar = ({
                 )}
                 <button
                   onClick={() => onDeletePage(page.id)}
-                  className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  style={{ color: `hsl(${settings.mutedForegroundColor})` }}
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
               </div>
 
-              {/* Nested sections under active page */}
               {isActive && pageSections.length > 0 && (
                 <nav className="ml-4 mt-0.5 mb-1 space-y-0.5">
                   {pageSections.map((section) => (
                     <a
                       key={section.id}
                       href={`#section-${section.id}`}
-                      className="doc-sidebar-sub-link text-xs"
+                      className="block px-2 py-0.5 text-xs rounded transition-colors"
+                      style={{
+                        color: `hsl(${settings.sidebarTextColor})`,
+                        fontSize: `${settings.sidebarFontSize - 2}px`,
+                      }}
                     >
                       {section.title}
                     </a>
