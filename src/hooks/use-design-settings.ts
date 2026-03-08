@@ -95,6 +95,15 @@ const emptyBlockStyles: DesignSettings["blockStyles"] = {
   unordered_list: {},
   note: {},
   callout: {},
+  tabs: {},
+  accordion: {},
+  card: {},
+  steps: {},
+  table: {},
+  divider: {},
+  quote: {},
+  api_endpoint: {},
+  code_tabs: {},
 };
 
 export const defaultDesignSettings: DesignSettings = {
