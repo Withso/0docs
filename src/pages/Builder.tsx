@@ -33,7 +33,6 @@ const Builder = () => {
     deleteBlock,
   } = useBuilder(projectId, user?.id);
 
-  const { settings: designSettings, saving: designSaving, saveSettings, resetSettings } = useDesignSettings(projectId);
 
   if (loading) {
     return (
