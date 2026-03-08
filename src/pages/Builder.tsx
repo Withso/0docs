@@ -129,6 +129,14 @@ const Builder = () => {
               variant="outline"
               size="sm"
               className="h-8 text-xs"
+              onClick={() => setOpenApiOpen(true)}
+            >
+              <FileJson className="h-3.5 w-3.5 mr-1.5" /> Import API
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
               onClick={() => navigate(`/builder/${projectId}/design`)}
             >
               <Palette className="h-3.5 w-3.5 mr-1.5" /> Design
