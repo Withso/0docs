@@ -47,6 +47,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        doc: {
+          link: "hsl(var(--doc-link))",
+          section: "hsl(var(--doc-section-line))",
+          code: "hsl(var(--doc-code-bg))",
+          note: "hsl(var(--doc-note-bg))",
+          "note-border": "hsl(var(--doc-note-border))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
