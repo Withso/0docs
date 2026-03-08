@@ -9,7 +9,7 @@ import SectionEditor from "@/components/builder/SectionEditor";
 import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Eye, Palette, FileText, FileJson } from "lucide-react";
+import { Plus, ArrowLeft, Eye, Palette, FileText, FileJson, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
