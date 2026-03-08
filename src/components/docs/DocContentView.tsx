@@ -37,6 +37,8 @@ interface DocContentViewProps {
   highlightType?: string | null;
   /** Extra sticky offset for the doc header (e.g. when design settings header is above) */
   headerStickyTop?: number;
+  /** Hide the doc header (useful when parent already shows a header) */
+  hideHeader?: boolean;
 }
 
 /**
@@ -53,8 +55,10 @@ const DocContentView = ({
   onSelectPage,
   highlightType,
   headerStickyTop = 0,
+  hideHeader = false,
 }: DocContentViewProps) => {
-  const sidebarTop = headerStickyTop + 48; // 48px = doc header height
+  const headerHeight = hideHeader ? 0 : 48;
+  const sidebarTop = headerStickyTop + headerHeight;
   const frameMaxWidth = s.contentMaxWidth + s.sidebarWidth + 48;
 
   return (
