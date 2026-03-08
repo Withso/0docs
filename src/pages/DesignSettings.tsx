@@ -4,8 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useDesignSettings, defaultDesignSettings } from "@/hooks/use-design-settings";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
-import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
-import DocBlockRenderer from "@/components/docs/DocBlockRenderer";
+import DocContentView from "@/components/docs/DocContentView";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft, Save, RotateCcw, Type, AlignLeft, Code, ImageIcon,
   Film, Youtube, ListOrdered, List, StickyNote, AlertCircle, Layout, Sidebar, Palette,
-  GripHorizontal, Minimize2, Maximize2, Eye, ChevronRight,
+  GripHorizontal, Minimize2, Maximize2, Eye,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -153,16 +152,10 @@ function useDraggableResizable(
         }));
       }
     };
-    const onMouseUp = () => {
-      dragging.current = false;
-      resizing.current = false;
-    };
+    const onMouseUp = () => { dragging.current = false; resizing.current = false; };
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
+    return () => { window.removeEventListener("mousemove", onMouseMove); window.removeEventListener("mouseup", onMouseUp); };
   }, [minW, minH]);
 
   return { pos, size, onDragStart, onResizeStart };
@@ -192,12 +185,9 @@ const DesignSettingsPage = () => {
     Math.max(0, window.innerWidth - 420), 80, 380, 560, 300, 300
   );
 
-  // Determine highlighted block type — only when a block section is active
   const highlightedBlockType = blockSections.some((b) => b.key === activeNav) ? (activeNav as string) : null;
 
-  useEffect(() => {
-    if (!settingsLoading) setLocal(settings);
-  }, [settings, settingsLoading]);
+  useEffect(() => { if (!settingsLoading) setLocal(settings); }, [settings, settingsLoading]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -206,10 +196,7 @@ const DesignSettingsPage = () => {
       if (proj) {
         setProjectData(proj);
         const { data: pagesData } = await supabase.from("pages").select("*").eq("project_id", projectId).order("order_index");
-        if (pagesData && pagesData.length > 0) {
-          setPages(pagesData);
-          setActivePage(pagesData[0]);
-        }
+        if (pagesData && pagesData.length > 0) { setPages(pagesData); setActivePage(pagesData[0]); }
       }
       setDocLoading(false);
     };
@@ -231,9 +218,7 @@ const DesignSettingsPage = () => {
     load();
   }, [activePage]);
 
-  const update = <K extends keyof DS>(key: K, value: DS[K]) => {
-    setLocal((prev) => ({ ...prev, [key]: value }));
-  };
+  const update = <K extends keyof DS>(key: K, value: DS[K]) => setLocal((prev) => ({ ...prev, [key]: value }));
 
   const updateBlockStyle = (block: BlockKey, key: keyof BlockStyleSettings, value: any) => {
     setLocal((prev) => ({
@@ -244,24 +229,16 @@ const DesignSettingsPage = () => {
 
   const hasChanges = JSON.stringify(local) !== JSON.stringify(settings);
 
-  const handleSave = async () => {
-    await saveSettings(local);
-    toast({ title: "Design settings saved" });
-  };
-
-  const handleReset = () => {
-    setLocal(defaultDesignSettings);
-    resetSettings();
-    toast({ title: "Design settings reset to defaults" });
-  };
+  const handleSave = async () => { await saveSettings(local); toast({ title: "Design settings saved" }); };
+  const handleReset = () => { setLocal(defaultDesignSettings); resetSettings(); toast({ title: "Design settings reset to defaults" }); };
 
   if (settingsLoading || docLoading) {
     return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/30">
-      {/* Header */}
+    <div className="min-h-screen flex flex-col">
+      {/* Design settings header bar */}
       <header className="border-b bg-background sticky top-0 z-[60] shrink-0">
         <div className="px-6 h-11 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -285,139 +262,19 @@ const DesignSettingsPage = () => {
         </div>
       </header>
 
-      {/* Full-page live documentation — identical to PublicDocs */}
+      {/* Full-page live documentation — uses the exact same shared component as PublicDocs */}
       <div className="flex-1 overflow-auto">
-        <DesignSettingsWrapper settings={local} className="min-h-full">
-          <header
-            className="border-b sticky top-11 z-40"
-            style={{ backgroundColor: `hsl(${local.backgroundColor})`, borderColor: `hsl(${local.borderColor})` }}
-          >
-            <div
-              style={{ maxWidth: `${local.contentMaxWidth + local.sidebarWidth + 48}px` }}
-              className="mx-auto px-6 h-12 flex items-center"
-            >
-              <span className="font-semibold text-sm">{projectData?.name}</span>
-            </div>
-          </header>
-
-          <div
-            style={{ maxWidth: `${local.contentMaxWidth + local.sidebarWidth + 48}px` }}
-            className="mx-auto flex px-6"
-          >
-            {/* Sidebar — same as PublicDocs */}
-            <aside
-              style={{ width: `${local.sidebarWidth}px`, backgroundColor: `hsl(${local.sidebarBg})` }}
-              className="shrink-0 sticky top-[92px] h-[calc(100vh-92px)] overflow-y-auto py-10 pr-6 hidden lg:block"
-            >
-              <div
-                className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-2"
-                style={{ color: `hsl(${local.sidebarTextColor})` }}
-              >
-                Pages
-              </div>
-              <nav className="space-y-0.5">
-                {pages.map((page) => {
-                  const isActive = activePage?.id === page.id;
-                  const pageSections = isActive ? sections : [];
-                  return (
-                    <div key={page.id}>
-                      <div className="flex items-center gap-1">
-                        <ChevronRight
-                          className={`h-3 w-3 shrink-0 transition-transform ${isActive ? "rotate-90" : ""}`}
-                          style={{ color: `hsl(${local.mutedForegroundColor})` }}
-                        />
-                        <button
-                          onClick={() => setActivePage(page)}
-                          className="flex-1 text-left truncate px-2 py-1 rounded text-sm transition-colors"
-                          style={{
-                            fontSize: `${local.sidebarFontSize}px`,
-                            color: isActive ? `hsl(${local.sidebarActiveColor})` : `hsl(${local.sidebarTextColor})`,
-                            fontWeight: isActive ? 500 : 400,
-                            backgroundColor: isActive ? `hsl(${local.accentColor})` : "transparent",
-                          }}
-                        >
-                          {page.title}
-                        </button>
-                      </div>
-                      {isActive && pageSections.length > 0 && (
-                        <nav className="ml-4 mt-0.5 mb-1 space-y-0.5">
-                          {pageSections.map((section) => (
-                            <a
-                              key={section.id}
-                              href={`#section-${section.id}`}
-                              className="block px-2 py-0.5 text-xs rounded transition-colors"
-                              style={{ color: `hsl(${local.sidebarTextColor})`, fontSize: `${local.sidebarFontSize - 2}px` }}
-                            >
-                              {section.title}
-                            </a>
-                          ))}
-                        </nav>
-                      )}
-                    </div>
-                  );
-                })}
-              </nav>
-            </aside>
-
-            {/* Main content — real documentation with highlight support */}
-            <main className="flex-1 min-w-0 py-10 lg:pl-4">
-              {activePage ? (
-                <article style={{ maxWidth: `${local.contentMaxWidth}px` }}>
-                  <h1
-                    className="mb-6"
-                    style={{
-                      fontFamily: `'${local.headingFont}', sans-serif`,
-                      fontWeight: local.headingWeight,
-                      fontSize: `${local.headingFontSize + 6}px`,
-                    }}
-                  >
-                    {activePage.title}
-                  </h1>
-
-                  {sections.map((section) => {
-                    const sectionBlocks = blocks
-                      .filter((b) => b.section_id === section.id)
-                      .sort((a, b) => a.order_index - b.order_index);
-                    return (
-                      <section key={section.id} className="mb-10" id={`section-${section.id}`}>
-                        <h2
-                          className="flex items-center gap-3 mb-4"
-                          style={{
-                            fontFamily: `'${local.headingFont}', sans-serif`,
-                            fontWeight: local.headingWeight,
-                            fontSize: `${local.headingFontSize}px`,
-                          }}
-                        >
-                          {section.title}
-                          <span
-                            className="flex-1 h-px opacity-50"
-                            style={{ backgroundColor: `hsl(${local.sectionLineColor})` }}
-                          />
-                        </h2>
-                        <div>
-                          {sectionBlocks.map((block) => (
-                            <DocBlockRenderer
-                              key={block.id}
-                              block={block}
-                              settings={local}
-                              highlightType={highlightedBlockType}
-                            />
-                          ))}
-                        </div>
-                      </section>
-                    );
-                  })}
-
-                  {sections.length === 0 && (
-                    <p style={{ color: `hsl(${local.mutedForegroundColor})` }}>This page has no content yet.</p>
-                  )}
-                </article>
-              ) : (
-                <p style={{ color: `hsl(${local.mutedForegroundColor})` }}>No pages in this project yet.</p>
-              )}
-            </main>
-          </div>
-        </DesignSettingsWrapper>
+        <DocContentView
+          settings={local}
+          projectName={projectData?.name || ""}
+          pages={pages}
+          activePage={activePage}
+          sections={sections}
+          blocks={blocks}
+          onSelectPage={setActivePage}
+          highlightType={highlightedBlockType}
+          headerStickyTop={44}
+        />
       </div>
 
       {/* ─── Floating Resizable Settings Panel ─── */}
@@ -458,13 +315,10 @@ const DesignSettingsPage = () => {
                       key={item.key}
                       onClick={() => setActiveNav(item.key)}
                       className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
-                        isActive
-                          ? "bg-primary text-primary-foreground font-medium"
-                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                        isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                       }`}
                     >
-                      <Icon className="h-3 w-3" />
-                      {item.label}
+                      <Icon className="h-3 w-3" /> {item.label}
                     </button>
                   );
                 })}
@@ -479,13 +333,10 @@ const DesignSettingsPage = () => {
                       key={item.key}
                       onClick={() => setActiveNav(item.key)}
                       className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
-                        isActive
-                          ? "bg-primary text-primary-foreground font-medium"
-                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                        isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                       }`}
                     >
-                      <Icon className="h-3 w-3" />
-                      {item.label}
+                      <Icon className="h-3 w-3" /> {item.label}
                     </button>
                   );
                 })}
