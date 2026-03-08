@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, LogOut, ExternalLink, Trash2 } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Trash2, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
