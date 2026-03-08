@@ -49,6 +49,9 @@ interface DocContentViewProps {
   showFeedback?: boolean;
   pageId?: string;
   projectId?: string;
+  versions?: DocVersion[];
+  activeVersion?: DocVersion | null;
+  onSelectVersion?: (version: DocVersion) => void;
 }
 
 const DocContentView = ({
@@ -67,6 +70,9 @@ const DocContentView = ({
   showFeedback = false,
   pageId,
   projectId,
+  versions = [],
+  activeVersion,
+  onSelectVersion,
 }: DocContentViewProps) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const headerHeight = hideHeader ? 0 : 48;
