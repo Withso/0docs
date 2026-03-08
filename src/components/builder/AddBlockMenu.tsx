@@ -1,0 +1,60 @@
+import {
+  Type,
+  AlignLeft,
+  Code,
+  ImageIcon,
+  Film,
+  Youtube,
+  ListOrdered,
+  List,
+  StickyNote,
+  AlertCircle,
+  X,
+} from "lucide-react";
+
+const blockTypes = [
+  { type: "heading", label: "Heading", icon: Type },
+  { type: "paragraph", label: "Paragraph", icon: AlignLeft },
+  { type: "code_block", label: "Code Block", icon: Code },
+  { type: "image", label: "Image", icon: ImageIcon },
+  { type: "video", label: "Video", icon: Film },
+  { type: "youtube", label: "YouTube", icon: Youtube },
+  { type: "ordered_list", label: "Numbered List", icon: ListOrdered },
+  { type: "unordered_list", label: "Bullet List", icon: List },
+  { type: "note", label: "Note", icon: StickyNote },
+  { type: "callout", label: "Callout", icon: AlertCircle },
+];
+
+interface AddBlockMenuProps {
+  onSelect: (type: string) => void;
+  onClose: () => void;
+}
+
+const AddBlockMenu = ({ onSelect, onClose }: AddBlockMenuProps) => {
+  return (
+    <div className="border rounded-lg bg-background shadow-lg p-2">
+      <div className="flex items-center justify-between px-2 pb-2 mb-1 border-b">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Add Block
+        </span>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-1">
+        {blockTypes.map(({ type, label, icon: Icon }) => (
+          <button
+            key={type}
+            onClick={() => onSelect(type)}
+            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-left"
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default AddBlockMenu;
