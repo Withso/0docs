@@ -320,8 +320,12 @@ const Dashboard = () => {
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.open(`/docs/${project.slug}`, "_blank"); }}>
                             <ExternalLink className="h-4 w-4 mr-2" /> View Docs
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/builder/${project.id}/settings`); }}>
+                            <Settings className="h-4 w-4 mr-2" /> Settings
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={(e) => deleteProject(project.id, e as any)}
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(project); }}
                             className="text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" /> Delete
