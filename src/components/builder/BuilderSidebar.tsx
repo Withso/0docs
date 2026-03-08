@@ -51,7 +51,7 @@ const BuilderSidebar = ({
         </button>
       </div>
 
-      <nav className="space-y-0.5">
+      <nav style={{ gap: `${settings.sidebarPageGap}px` }} className="flex flex-col">
         {pages.map((page) => {
           const isActive = activePage?.id === page.id;
           const pageSections = isActive ? sections : [];
