@@ -95,10 +95,15 @@ const Dashboard = () => {
     setCreating(false);
   };
 
-  const deleteProject = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+
+  const deleteProject = async (id: string) => {
     const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (!error) setProjects((p) => p.filter((proj) => proj.id !== id));
+    if (!error) {
+      setProjects((p) => p.filter((proj) => proj.id !== id));
+      toast({ title: "Project deleted" });
+    }
+    setDeleteTarget(null);
   };
 
   const seedDemo = async () => {
