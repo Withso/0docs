@@ -62,6 +62,12 @@ const Builder = () => {
             <span className="font-semibold text-foreground text-sm">{project?.name}</span>
           </div>
           <div className="flex items-center gap-2">
+            <DesignSettingsPanel
+              settings={designSettings}
+              saving={designSaving}
+              onSave={saveSettings}
+              onReset={resetSettings}
+            />
             <Button
               variant="outline"
               size="sm"
