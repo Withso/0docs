@@ -94,7 +94,7 @@ const SectionEditor = ({
         ) : (
           <button
             onClick={() => setShowAddMenu(true)}
-            className="w-full border border-dashed rounded-lg py-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors flex items-center justify-center gap-1.5"
+            className="w-full border border-dashed rounded-xl py-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all duration-150 flex items-center justify-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" /> Add Block
           </button>
