@@ -243,7 +243,7 @@ const PageTitleEditor = ({
 
   useEffect(() => {
     setTitle(page.title);
-    setMetaDesc((page as any).meta_description || "");
+    setMetaDesc(page.meta_description || "");
   }, [page.id, page.title]);
 
   const debouncedSave = useDebouncedCallback((value: string) => {
