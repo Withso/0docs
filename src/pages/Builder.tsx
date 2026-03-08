@@ -252,7 +252,7 @@ const PageTitleEditor = ({
   }, 600);
 
   const debouncedMetaSave = useDebouncedCallback((value: string) => {
-    supabase.from("pages").update({ meta_description: value } as any).eq("id", page.id).then(() => {});
+    supabase.from("pages").update({ meta_description: value }).eq("id", page.id).then(() => {});
   }, 800);
 
   return (

@@ -49,9 +49,9 @@ export function useVersions(projectId: string | undefined) {
   const setDefault = async (versionId: string) => {
     if (!projectId) return;
     // Unset all defaults
-    await supabase.from("doc_versions" as any).update({ is_default: false }).eq("project_id", projectId);
+    await supabase.from("doc_versions").update({ is_default: false }).eq("project_id", projectId);
     // Set new default
-    await supabase.from("doc_versions" as any).update({ is_default: true }).eq("id", versionId);
+    await supabase.from("doc_versions").update({ is_default: true }).eq("id", versionId);
     setVersions((v) => v.map((ver) => ({ ...ver, is_default: ver.id === versionId })));
   };
 

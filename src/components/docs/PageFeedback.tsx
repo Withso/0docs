@@ -24,7 +24,7 @@ const PageFeedback = ({ pageId, settings: s }: PageFeedbackProps) => {
 
   const submitFeedback = async (isHelpful: boolean, feedbackComment?: string) => {
     setSelectedHelpful(isHelpful);
-    await supabase.from("page_feedback" as any).insert({
+    await supabase.from("page_feedback").insert({
       page_id: pageId,
       is_helpful: isHelpful,
       comment: feedbackComment || null,

@@ -94,7 +94,7 @@ const DocContentView = ({
   // Track search queries
   const handleSearch = useCallback((query: string, resultsCount: number) => {
     if (!projectId || !query.trim()) return;
-    supabase.from("search_queries" as any).insert({
+    supabase.from("search_queries").insert({
       project_id: projectId,
       query: query.trim(),
       results_count: resultsCount,

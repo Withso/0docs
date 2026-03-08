@@ -94,8 +94,8 @@ const AskDocsChat = ({ projectId, settings: s }: AskDocsChatProps) => {
               });
             }
           } catch {
-            buffer = line + "\n" + buffer;
-            break;
+            // Skip malformed JSON lines instead of re-buffering (prevents infinite loop)
+            console.warn("Skipping malformed SSE data:", jsonStr);
           }
         }
       }

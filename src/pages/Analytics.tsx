@@ -42,8 +42,8 @@ const Analytics = () => {
         setAnalytics((an || []) as AnalyticsRow[]);
       }
 
-      const { data: sq } = await supabase.from("search_queries" as any).select("*").eq("project_id", projectId).order("created_at", { ascending: false }).limit(50);
-      setSearches((sq || []) as unknown as SearchRow[]);
+      const { data: sq } = await supabase.from("search_queries").select("*").eq("project_id", projectId).order("created_at", { ascending: false }).limit(50);
+      setSearches((sq || []) as SearchRow[]);
 
       setLoading(false);
     };

@@ -75,19 +75,19 @@ const PublicDocs = () => {
     if (!activePage || !project) return;
     const trackView = async () => {
       const { data: existing } = await supabase
-        .from("page_analytics" as any)
+        .from("page_analytics")
         .select("id, view_count")
         .eq("page_id", activePage.id)
         .limit(1);
 
-      const rows = (existing || []) as unknown as { id: string; view_count: number }[];
+      const rows = existing || [];
       if (rows.length > 0) {
-        await supabase.from("page_analytics" as any).update({
+        await supabase.from("page_analytics").update({
           view_count: rows[0].view_count + 1,
           last_viewed_at: new Date().toISOString(),
-        }).eq("id", rows[0].id);
+        } as any).eq("id", rows[0].id);
       } else {
-        await supabase.from("page_analytics" as any).insert({
+        await supabase.from("page_analytics").insert({
           page_id: activePage.id,
           project_id: project.id,
           view_count: 1,
