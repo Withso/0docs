@@ -440,8 +440,13 @@ function SidebarControls({ local, update }: { local: DS; update: <K extends keyo
       <ColorField label="Background" value={local.sidebarBg} onChange={(v) => update("sidebarBg", v)} />
       <ColorField label="Text Color" value={local.sidebarTextColor} onChange={(v) => update("sidebarTextColor", v)} />
       <ColorField label="Active Color" value={local.sidebarActiveColor} onChange={(v) => update("sidebarActiveColor", v)} />
+      <ColorField label="Indicator Color" value={local.sidebarIndicatorColor} onChange={(v) => update("sidebarIndicatorColor", v)} />
       <SliderField label="Font Size" value={local.sidebarFontSize} onChange={(v) => update("sidebarFontSize", v)} min={11} max={16} step={1} />
       <SliderField label="Page Gap" value={local.sidebarPageGap} onChange={(v) => update("sidebarPageGap", v)} min={0} max={12} step={1} />
+      <div className="flex items-center justify-between">
+        <Label className="text-[11px] font-medium text-muted-foreground">Section Scroll Tracker</Label>
+        <Switch checked={local.sidebarShowSectionTracker} onCheckedChange={(v) => update("sidebarShowSectionTracker", v)} />
+      </div>
     </>
   );
 }
