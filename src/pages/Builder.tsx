@@ -4,9 +4,7 @@ import { useBuilder } from "@/hooks/use-builder";
 import BuilderSidebar from "@/components/builder/BuilderSidebar";
 import SectionEditor from "@/components/builder/SectionEditor";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Eye } from "lucide-react";
-import { useDesignSettings } from "@/hooks/use-design-settings";
-import DesignSettingsPanel from "@/components/builder/DesignSettingsPanel";
+import { Plus, ArrowLeft, Eye, Palette } from "lucide-react";
 
 // Re-export types for backward compat
 export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
@@ -35,7 +33,6 @@ const Builder = () => {
     deleteBlock,
   } = useBuilder(projectId, user?.id);
 
-  const { settings: designSettings, saving: designSaving, saveSettings, resetSettings } = useDesignSettings(projectId);
 
   if (loading) {
     return (
@@ -62,12 +59,13 @@ const Builder = () => {
             <span className="font-semibold text-foreground text-sm">{project?.name}</span>
           </div>
           <div className="flex items-center gap-2">
-            <DesignSettingsPanel
-              settings={designSettings}
-              saving={designSaving}
-              onSave={saveSettings}
-              onReset={resetSettings}
-            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/builder/${projectId}/design`)}
+            >
+              <Palette className="h-3.5 w-3.5 mr-1.5" /> Design
+            </Button>
             <Button
               variant="outline"
               size="sm"
