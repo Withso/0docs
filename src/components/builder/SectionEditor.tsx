@@ -39,7 +39,7 @@ const SectionEditor = ({
   }, 600);
 
   return (
-    <section className="group/section" id={`section-${section.id}`} style={{ marginBottom: `${settings.sectionSpacing}px` }}>
+    <section className="group/section animate-fade-in" id={`section-${section.id}`} style={{ marginBottom: `${settings.sectionSpacing}px` }}>
       {/* Section title — editable with debounce */}
       <div className="flex items-center gap-3 mb-4">
         <input
