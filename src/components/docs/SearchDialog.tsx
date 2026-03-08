@@ -88,6 +88,11 @@ const SearchDialog = ({
   const getSectionForBlock = (blockSectionId: string) => sections.find((s) => s.id === blockSectionId);
 
   const handleSelect = (page: SearchPage, sectionId?: string) => {
+    // Track search analytics
+    if (query.trim() && onSearch) {
+      const total = results.pages.length + results.sections.length + results.blocks.length;
+      onSearch(query, total);
+    }
     onSelectPage(page);
     if (sectionId && onSelectSection) {
       onSelectSection(sectionId, page);
