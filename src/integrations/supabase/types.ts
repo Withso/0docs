@@ -233,6 +233,15 @@ export type Database = {
         | "unordered_list"
         | "note"
         | "callout"
+        | "tabs"
+        | "accordion"
+        | "card"
+        | "steps"
+        | "table"
+        | "divider"
+        | "quote"
+        | "api_endpoint"
+        | "code_tabs"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -371,6 +380,15 @@ export const Constants = {
         "unordered_list",
         "note",
         "callout",
+        "tabs",
+        "accordion",
+        "card",
+        "steps",
+        "table",
+        "divider",
+        "quote",
+        "api_endpoint",
+        "code_tabs",
       ],
     },
   },

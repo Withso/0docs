@@ -72,6 +72,15 @@ export interface DesignSettings {
     unordered_list: Partial<BlockStyleSettings>;
     note: Partial<BlockStyleSettings>;
     callout: Partial<BlockStyleSettings>;
+    tabs: Partial<BlockStyleSettings>;
+    accordion: Partial<BlockStyleSettings>;
+    card: Partial<BlockStyleSettings>;
+    steps: Partial<BlockStyleSettings>;
+    table: Partial<BlockStyleSettings>;
+    divider: Partial<BlockStyleSettings>;
+    quote: Partial<BlockStyleSettings>;
+    api_endpoint: Partial<BlockStyleSettings>;
+    code_tabs: Partial<BlockStyleSettings>;
   };
 }
 
@@ -86,6 +95,15 @@ const emptyBlockStyles: DesignSettings["blockStyles"] = {
   unordered_list: {},
   note: {},
   callout: {},
+  tabs: {},
+  accordion: {},
+  card: {},
+  steps: {},
+  table: {},
+  divider: {},
+  quote: {},
+  api_endpoint: {},
+  code_tabs: {},
 };
 
 export const defaultDesignSettings: DesignSettings = {

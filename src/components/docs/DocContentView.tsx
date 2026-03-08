@@ -1,7 +1,11 @@
+import { useState, useEffect, useCallback } from "react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import DesignSettingsWrapper from "./DesignSettingsWrapper";
 import DocBlockRenderer from "./DocBlockRenderer";
 import DocSidebarNav from "./DocSidebarNav";
+import TableOfContents from "./TableOfContents";
+import SearchDialog from "./SearchDialog";
+import { Search } from "lucide-react";
 
 interface DocPage {
   id: string;
@@ -36,6 +40,8 @@ interface DocContentViewProps {
   highlightType?: string | null;
   headerStickyTop?: number;
   hideHeader?: boolean;
+  allSections?: DocSection[];
+  allBlocks?: DocBlock[];
 }
 
 const DocContentView = ({
@@ -49,10 +55,25 @@ const DocContentView = ({
   highlightType,
   headerStickyTop = 0,
   hideHeader = false,
+  allSections,
+  allBlocks,
 }: DocContentViewProps) => {
+  const [searchOpen, setSearchOpen] = useState(false);
   const headerHeight = hideHeader ? 0 : 48;
   const sidebarTop = headerStickyTop + headerHeight;
-  const frameMaxWidth = s.contentMaxWidth + s.sidebarWidth + 48;
+  const frameMaxWidth = s.contentMaxWidth + s.sidebarWidth + 200 + 48;
+
+  // Cmd+K handler
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   return (
     <DesignSettingsWrapper settings={s} className="min-h-full">
@@ -75,6 +96,22 @@ const DocContentView = ({
             >
               {projectName}
             </span>
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors hover:bg-accent"
+              style={{
+                borderColor: `hsl(${s.borderColor})`,
+                color: `hsl(${s.mutedForegroundColor})`,
+                fontSize: "13px",
+                fontFamily: `'${s.bodyFont}', sans-serif`,
+              }}
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span>Search</span>
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]" style={{ borderColor: `hsl(${s.borderColor})` }}>
+                ⌘K
+              </kbd>
+            </button>
           </div>
         </header>
       )}
@@ -155,7 +192,22 @@ const DocContentView = ({
             </p>
           )}
         </main>
+
+        <TableOfContents
+          sections={sections}
+          settings={s}
+          stickyTop={sidebarTop}
+        />
       </div>
+
+      <SearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        pages={pages}
+        sections={allSections || sections}
+        blocks={allBlocks || blocks}
+        onSelectPage={onSelectPage}
+      />
     </DesignSettingsWrapper>
   );
 };

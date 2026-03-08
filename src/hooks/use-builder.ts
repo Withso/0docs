@@ -16,7 +16,7 @@ export interface Section {
   order_index: number;
 }
 
-export type BlockType = "heading" | "paragraph" | "code_block" | "image" | "video" | "youtube" | "ordered_list" | "unordered_list" | "note" | "callout";
+export type BlockType = "heading" | "paragraph" | "code_block" | "image" | "video" | "youtube" | "ordered_list" | "unordered_list" | "note" | "callout" | "tabs" | "accordion" | "card" | "steps" | "table" | "divider" | "quote" | "api_endpoint" | "code_tabs";
 
 export interface Block {
   id: string;
@@ -230,6 +230,24 @@ function getDefaultContent(type: string): any {
       return { text: "Add a note here..." };
     case "callout":
       return { text: "Important information...", type: "info" };
+    case "tabs":
+      return { tabs: [{ label: "Tab 1", content: "Content for tab 1" }, { label: "Tab 2", content: "Content for tab 2" }] };
+    case "accordion":
+      return { items: [{ title: "Accordion Item", content: "Content goes here..." }] };
+    case "card":
+      return { title: "Card Title", description: "Card description", link: "" };
+    case "steps":
+      return { items: [{ title: "Step 1", description: "Description..." }, { title: "Step 2", description: "Description..." }] };
+    case "table":
+      return { headers: ["Column 1", "Column 2", "Column 3"], rows: [["Cell 1", "Cell 2", "Cell 3"]] };
+    case "divider":
+      return {};
+    case "quote":
+      return { text: "Quote text here...", attribution: "" };
+    case "api_endpoint":
+      return { method: "GET", path: "/api/endpoint", description: "", parameters: [], response: "" };
+    case "code_tabs":
+      return { tabs: [{ label: "JavaScript", language: "javascript", code: "// JS code" }, { label: "Python", language: "python", code: "# Python code" }] };
     default:
       return { text: "" };
   }
