@@ -13,8 +13,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Project {
   id: string;
@@ -84,10 +89,15 @@ const Dashboard = () => {
     setCreating(false);
   };
 
-  const deleteProject = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+
+  const deleteProject = async (id: string) => {
     const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (!error) setProjects((p) => p.filter((proj) => proj.id !== id));
+    if (!error) {
+      setProjects((p) => p.filter((proj) => proj.id !== id));
+      toast({ title: "Project deleted" });
+    }
+    setDeleteTarget(null);
   };
 
   const seedDemo = async () => {
@@ -310,8 +320,12 @@ const Dashboard = () => {
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.open(`/docs/${project.slug}`, "_blank"); }}>
                             <ExternalLink className="h-4 w-4 mr-2" /> View Docs
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/builder/${project.id}/settings`); }}>
+                            <Settings className="h-4 w-4 mr-2" /> Settings
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={(e) => deleteProject(project.id, e as any)}
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(project); }}
                             className="text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" /> Delete
@@ -335,6 +349,23 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{deleteTarget?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all pages, content, analytics, and feedback. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteTarget && deleteProject(deleteTarget.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { FileText, Layers, Eye, ArrowRight, Palette, Sparkles } from "lucide-react";
+import {
+  FileText, Layers, ArrowRight, Palette, Sparkles,
+  Search, MessageCircle, BarChart3, Globe, Code, Tag,
+} from "lucide-react";
 
 const Index = () => {
   const { user } = useAuth();
@@ -30,17 +33,18 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-24">
+      <main className="max-w-4xl mx-auto px-6 py-24">
+        {/* Hero */}
         <div className="text-center mb-20 animate-fade-in">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border bg-accent text-xs text-muted-foreground mb-6">
-            <Sparkles className="h-3 w-3" /> Visual documentation builder
+            <Sparkles className="h-3 w-3" /> AI-powered documentation builder
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-5 tracking-tight leading-[1.15]">
-            Build beautiful<br />documentation
+            Build beautiful docs<br />without writing code
           </h1>
-          <p className="text-base text-muted-foreground max-w-md mx-auto leading-relaxed">
-            A visual, no-code documentation builder. Create clean, structured docs 
-            with a WYSIWYG editor — what you see is what your readers get.
+          <p className="text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
+            A visual documentation builder with AI-powered search, analytics, 
+            API docs, versioning, and everything you need for production-ready documentation.
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
             <Button asChild size="lg" className="h-11 px-6">
@@ -56,22 +60,53 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-3 gap-4 animate-fade-in">
+        {/* Feature grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
           {[
             {
-              icon: FileText,
-              title: "Pages & Sections",
-              desc: "Organize content into pages with multiple sections, each with any type of block.",
+              icon: Layers,
+              title: "19 Block Types",
+              desc: "Headings, code blocks, tabs, accordions, API endpoints, tables, steps, cards, and more.",
             },
             {
-              icon: Layers,
-              title: "Rich Blocks",
-              desc: "Headings, paragraphs, code blocks, images, videos, lists, notes, and callouts.",
+              icon: Search,
+              title: "Global Search",
+              desc: "⌘K powered full-text search across all pages, sections, and content blocks.",
+            },
+            {
+              icon: MessageCircle,
+              title: "AI Assistant",
+              desc: "Built-in Ask Docs chat widget powered by AI that answers questions from your documentation.",
+            },
+            {
+              icon: Code,
+              title: "API Documentation",
+              desc: "Import OpenAPI specs to auto-generate API reference pages with endpoint details.",
+            },
+            {
+              icon: BarChart3,
+              title: "Analytics & Feedback",
+              desc: "Track page views, search queries, and collect user feedback with thumbs up/down.",
             },
             {
               icon: Palette,
-              title: "Design Tokens",
-              desc: "Customize typography, colors, spacing, and per-block styles with a visual inspector.",
+              title: "Full Customization",
+              desc: "Design tokens for typography, colors, spacing — plus per-block styling overrides.",
+            },
+            {
+              icon: Tag,
+              title: "Versioning",
+              desc: "Multiple documentation versions with a public version selector for readers.",
+            },
+            {
+              icon: Globe,
+              title: "SEO Optimized",
+              desc: "Auto-generated meta tags, JSON-LD structured data, and canonical URLs.",
+            },
+            {
+              icon: FileText,
+              title: "Visual Builder",
+              desc: "WYSIWYG editor — what you see is exactly what your readers get. No YAML or MDX.",
             },
           ].map(({ icon: Icon, title, desc }) => (
             <div key={title} className="platform-card">
@@ -82,6 +117,18 @@ const Index = () => {
               <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
             </div>
           ))}
+        </div>
+
+        {/* CTA */}
+        <div className="text-center mt-20 animate-fade-in">
+          <p className="text-sm text-muted-foreground mb-4">
+            The visual documentation builder for teams who want beautiful docs without writing code.
+          </p>
+          <Button asChild size="sm">
+            <Link to={user ? "/dashboard" : "/auth"}>
+              Start Building <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+            </Link>
+          </Button>
         </div>
       </main>
     </div>

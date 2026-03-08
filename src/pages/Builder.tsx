@@ -10,13 +10,16 @@ import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import VersionManager from "@/components/builder/VersionManager";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Eye, Palette, FileText, FileJson, BarChart3 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, ArrowLeft, Eye, Palette, FileText, FileJson, BarChart3, Settings, MoreHorizontal, Tag, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { ParsedOpenAPI } from "@/lib/openapi-parser";
 
-// Re-export types for backward compat
 export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
 
 const Builder = () => {
@@ -35,18 +38,14 @@ const Builder = () => {
 
   const handleOpenAPIImport = useCallback(async (parsed: ParsedOpenAPI) => {
     if (!projectId) return;
-
-    // Group endpoints by tag → one page per tag
     const tagGroups = new Map<string, typeof parsed.endpoints>();
     for (const ep of parsed.endpoints) {
       const tag = ep.tags[0] || "Default";
       if (!tagGroups.has(tag)) tagGroups.set(tag, []);
       tagGroups.get(tag)!.push(ep);
     }
-
     let pageIndex = pages.length;
     for (const [tag, endpoints] of tagGroups) {
-      // Create page
       const slug = `api-${tag.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
       const { data: page } = await supabase
         .from("pages")
@@ -54,8 +53,6 @@ const Builder = () => {
         .select()
         .single();
       if (!page) continue;
-
-      // Create one section per endpoint
       for (let i = 0; i < endpoints.length; i++) {
         const ep = endpoints[i];
         const { data: section } = await supabase
@@ -64,24 +61,14 @@ const Builder = () => {
           .select()
           .single();
         if (!section) continue;
-
-        // Add api_endpoint block
         await supabase.from("blocks").insert({
           section_id: section.id,
           type: "api_endpoint" as any,
-          content: {
-            method: ep.method,
-            path: ep.path,
-            description: ep.description,
-            parameters: ep.parameters,
-            response: ep.response,
-          },
+          content: { method: ep.method, path: ep.path, description: ep.description, parameters: ep.parameters, response: ep.response },
           order_index: 0,
         });
       }
     }
-
-    // Reload by navigating
     window.location.reload();
   }, [projectId, pages.length]);
 
@@ -102,72 +89,56 @@ const Builder = () => {
 
   return (
     <DesignSettingsWrapper settings={settings} className="min-h-screen">
-      {/* Builder header */}
       <header
         className="border-b sticky top-0 z-50"
-        style={{
-          backgroundColor: `hsl(${settings.backgroundColor})`,
-          borderColor: `hsl(${settings.borderColor})`,
-        }}
+        style={{ backgroundColor: `hsl(${settings.backgroundColor})`, borderColor: `hsl(${settings.borderColor})` }}
       >
-        <div
-          style={{ maxWidth: `${frameMaxWidth}px` }}
-          className="mx-auto px-6 h-12 flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/dashboard")}>
+        <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto px-6 h-12 flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded-md bg-accent flex items-center justify-center">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div className="h-6 w-6 rounded-md bg-accent flex items-center justify-center shrink-0">
                 <FileText className="h-3 w-3 text-muted-foreground" />
               </div>
-              <span className="font-semibold text-foreground text-sm">{project?.name}</span>
+              <span className="font-semibold text-foreground text-sm truncate">{project?.name}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-              onClick={() => setOpenApiOpen(true)}
-            >
-              <FileJson className="h-3.5 w-3.5 mr-1.5" /> Import API
-            </Button>
-            {projectId && <VersionManager projectId={projectId} />}
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-              onClick={() => navigate(`/builder/${projectId}/design`)}
-            >
+            <Button variant="outline" size="sm" className="h-8 text-xs hidden sm:flex" onClick={() => navigate(`/builder/${projectId}/design`)}>
               <Palette className="h-3.5 w-3.5 mr-1.5" /> Design
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-              onClick={() => navigate(`/builder/${projectId}/analytics`)}
-            >
-              <BarChart3 className="h-3.5 w-3.5 mr-1.5" /> Analytics
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => window.open(`/docs/${project?.slug}`, "_blank")}>
+              <Eye className="h-3.5 w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Preview</span>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-              onClick={() => window.open(`/docs/${project?.slug}`, "_blank")}
-            >
-              <Eye className="h-3.5 w-3.5 mr-1.5" /> Preview
-            </Button>
+
+            {/* More menu for secondary actions */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => navigate(`/builder/${projectId}/analytics`)}>
+                  <BarChart3 className="h-4 w-4 mr-2" /> Analytics
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setOpenApiOpen(true)}>
+                  <FileJson className="h-4 w-4 mr-2" /> Import API
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate(`/builder/${projectId}/settings`)}>
+                  <Settings className="h-4 w-4 mr-2" /> Project Settings
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
 
-      {/* Builder body */}
-      <div
-        style={{ maxWidth: `${frameMaxWidth}px` }}
-        className="mx-auto flex px-6"
-      >
+      <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
         <BuilderSidebar
           settings={settings}
           pages={pages}
@@ -182,11 +153,7 @@ const Builder = () => {
         <main className="flex-1 min-w-0 py-10 lg:pl-4">
           {activePage ? (
             <article style={{ maxWidth: `${settings.contentMaxWidth}px` }} className="animate-fade-in">
-              <PageTitleEditor
-                page={activePage}
-                onUpdate={updatePage}
-                settings={settings}
-              />
+              <PageTitleEditor page={activePage} onUpdate={updatePage} settings={settings} />
 
               {sections.map((section) => (
                 <SectionEditor
@@ -227,11 +194,8 @@ const Builder = () => {
   );
 };
 
-// Page title editor component with meta description
 const PageTitleEditor = ({
-  page,
-  onUpdate,
-  settings,
+  page, onUpdate, settings,
 }: {
   page: Page;
   onUpdate: (id: string, updates: Partial<Page>) => void;
@@ -265,18 +229,15 @@ const PageTitleEditor = ({
           fontSize: `${settings.pageTitleSize}px`,
         }}
         value={title}
-        onChange={(e) => {
-          setTitle(e.target.value);
-          debouncedSave(e.target.value);
-        }}
+        onChange={(e) => { setTitle(e.target.value); debouncedSave(e.target.value); }}
         placeholder="Page title..."
       />
       <button
         onClick={() => setShowMeta(!showMeta)}
-        className="text-xs mt-1 px-1 transition-colors"
+        className="text-xs mt-1 px-1 transition-colors hover:opacity-80"
         style={{ color: `hsl(${settings.mutedForegroundColor})` }}
       >
-        {showMeta ? "Hide SEO" : "SEO Settings ↓"}
+        {showMeta ? "Hide SEO ↑" : "SEO Settings ↓"}
       </button>
       {showMeta && (
         <div className="mt-2 animate-fade-in">
@@ -292,10 +253,7 @@ const PageTitleEditor = ({
             }}
             rows={2}
             value={metaDesc}
-            onChange={(e) => {
-              setMetaDesc(e.target.value);
-              debouncedMetaSave(e.target.value);
-            }}
+            onChange={(e) => { setMetaDesc(e.target.value); debouncedMetaSave(e.target.value); }}
             placeholder="Brief page description for search engines (max 160 chars)..."
             maxLength={160}
           />
