@@ -70,7 +70,7 @@ const DocContentView = ({
       >
         <div
           style={{ maxWidth: `${frameMaxWidth}px` }}
-          className="mx-auto px-6 h-12 flex items-center"
+          className="mx-auto px-6 h-12 flex items-center justify-between"
         >
           <span
             className="font-semibold text-sm"
