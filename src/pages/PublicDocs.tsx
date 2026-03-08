@@ -64,7 +64,7 @@ const PublicDocs = () => {
   // SEO
   useSEOHead({
     title: activePage?.title,
-    description: (activePage as any)?.meta_description,
+    description: activePage?.meta_description ?? undefined,
     projectName: project?.name,
     pageSlug: activePage?.slug,
     projectSlug: slug,
