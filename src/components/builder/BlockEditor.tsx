@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Trash2 } from "lucide-react";
-import type { Block } from "@/pages/Builder";
+import type { Block } from "@/hooks/use-builder";
+import { useDebouncedCallback } from "@/hooks/use-debounce";
 
 interface BlockEditorProps {
   block: Block;
@@ -9,9 +10,22 @@ interface BlockEditorProps {
 }
 
 const BlockEditor = ({ block, onUpdate, onDelete }: BlockEditorProps) => {
-  const updateContent = (updates: any) => {
-    onUpdate(block.id, { content: { ...block.content, ...updates } });
-  };
+  // Local content state for immediate UI updates
+  const [localContent, setLocalContent] = useState(block.content);
+
+  useEffect(() => {
+    setLocalContent(block.content);
+  }, [block.id]);
+
+  const debouncedSave = useDebouncedCallback((content: any) => {
+    onUpdate(block.id, { content });
+  }, 500);
+
+  const updateContent = useCallback((updates: any) => {
+    const newContent = { ...localContent, ...updates };
+    setLocalContent(newContent);
+    debouncedSave(newContent);
+  }, [localContent, debouncedSave]);
 
   const renderBlock = () => {
     switch (block.type) {
@@ -19,7 +33,7 @@ const BlockEditor = ({ block, onUpdate, onDelete }: BlockEditorProps) => {
         return (
           <input
             className="text-xl font-semibold text-foreground bg-transparent w-full outline-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1"
-            value={block.content.text || ""}
+            value={localContent.text || ""}
             onChange={(e) => updateContent({ text: e.target.value })}
             placeholder="Heading..."
           />
@@ -28,7 +42,7 @@ const BlockEditor = ({ block, onUpdate, onDelete }: BlockEditorProps) => {
       case "paragraph":
         return (
           <AutoTextarea
-            value={block.content.text || ""}
+            value={localContent.text || ""}
             onChange={(val) => updateContent({ text: val })}
             className="w-full bg-transparent outline-none text-foreground leading-relaxed resize-none focus:ring-2 focus:ring-ring/20 rounded px-1 -ml-1"
             placeholder="Start typing..."
@@ -42,17 +56,17 @@ const BlockEditor = ({ block, onUpdate, onDelete }: BlockEditorProps) => {
             <div className="flex items-center justify-between mb-2">
               <input
                 className="text-xs text-muted-foreground bg-transparent outline-none"
-                value={block.content.language || ""}
+                value={localContent.language || ""}
                 onChange={(e) => updateContent({ language: e.target.value })}
                 placeholder="language"
               />
             </div>
             <textarea
               className="w-full bg-transparent outline-none text-sm font-mono resize-none text-foreground min-h-[60px]"
-              value={block.content.code || ""}
+              value={localContent.code || ""}
               onChange={(e) => updateContent({ code: e.target.value })}
               placeholder="// Code here..."
-              rows={Math.max(3, (block.content.code || "").split("\n").length)}
+              rows={Math.max(3, (localContent.code || "").split("\n").length)}
             />
           </div>
         );
@@ -62,15 +76,15 @@ const BlockEditor = ({ block, onUpdate, onDelete }: BlockEditorProps) => {
           <div>
             <input
               className="w-full text-sm bg-transparent outline-none border rounded-lg px-3 py-2 mb-2 text-muted-foreground focus:ring-2 focus:ring-ring/20"
-              value={block.content.url || ""}
+              value={localContent.url || ""}
               onChange={(e) => updateContent({ url: e.target.value })}
               placeholder="Image URL..."
             />
-            {block.content.url && (
+            {localContent.url && (
               <div className="rounded-lg overflow-hidden border">
                 <img
-                  src={block.content.url}
-                  alt={block.content.alt || ""}
+                  src={localContent.url}
+                  alt={localContent.alt || ""}
                   className="w-full h-auto"
                   loading="lazy"
                 />
@@ -78,7 +92,7 @@ const BlockEditor = ({ block, onUpdate, onDelete }: BlockEditorProps) => {
             )}
             <input
               className="w-full text-xs text-muted-foreground bg-transparent outline-none mt-1 px-1"
-              value={block.content.alt || ""}
+              value={localContent.alt || ""}
               onChange={(e) => updateContent({ alt: e.target.value })}
               placeholder="Alt text / caption"
             />
@@ -90,17 +104,17 @@ const BlockEditor = ({ block, onUpdate, onDelete }: BlockEditorProps) => {
           <div>
             <input
               className="w-full text-sm bg-transparent outline-none border rounded-lg px-3 py-2 mb-2 text-muted-foreground focus:ring-2 focus:ring-ring/20"
-              value={block.content.videoId || ""}
+              value={localContent.videoId || ""}
               onChange={(e) => updateContent({ videoId: e.target.value })}
               placeholder="YouTube Video ID (e.g. dQw4w9WgXcQ)"
             />
-            {block.content.videoId && (
+            {localContent.videoId && (
               <div className="rounded-lg overflow-hidden border aspect-video">
                 <iframe
-                  src={`https://www.youtube.com/embed/${block.content.videoId}`}
+                  src={`https://www.youtube.com/embed/${localContent.videoId}`}
                   className="w-full h-full"
                   allowFullScreen
-                  title={block.content.title || "Video"}
+                  title={localContent.title || "Video"}
                 />
               </div>
             )}
@@ -112,13 +126,13 @@ const BlockEditor = ({ block, onUpdate, onDelete }: BlockEditorProps) => {
           <div>
             <input
               className="w-full text-sm bg-transparent outline-none border rounded-lg px-3 py-2 mb-2 text-muted-foreground focus:ring-2 focus:ring-ring/20"
-              value={block.content.url || ""}
+              value={localContent.url || ""}
               onChange={(e) => updateContent({ url: e.target.value })}
               placeholder="Video URL..."
             />
-            {block.content.url && (
+            {localContent.url && (
               <video controls className="w-full rounded-lg border">
-                <source src={block.content.url} />
+                <source src={localContent.url} />
               </video>
             )}
           </div>
@@ -128,7 +142,7 @@ const BlockEditor = ({ block, onUpdate, onDelete }: BlockEditorProps) => {
       case "unordered_list":
         return (
           <ListEditor
-            items={block.content.items || []}
+            items={localContent.items || []}
             ordered={block.type === "ordered_list"}
             onChange={(items) => updateContent({ items })}
           />
@@ -138,7 +152,7 @@ const BlockEditor = ({ block, onUpdate, onDelete }: BlockEditorProps) => {
         return (
           <div className="doc-note">
             <AutoTextarea
-              value={block.content.text || ""}
+              value={localContent.text || ""}
               onChange={(val) => updateContent({ text: val })}
               className="w-full bg-transparent outline-none text-sm resize-none"
               placeholder="Note text..."
@@ -150,7 +164,7 @@ const BlockEditor = ({ block, onUpdate, onDelete }: BlockEditorProps) => {
         return (
           <div className="border rounded-lg p-4 bg-secondary/50">
             <AutoTextarea
-              value={block.content.text || ""}
+              value={localContent.text || ""}
               onChange={(val) => updateContent({ text: val })}
               className="w-full bg-transparent outline-none text-sm resize-none"
               placeholder="Callout text..."
