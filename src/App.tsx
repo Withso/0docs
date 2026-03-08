@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Builder from "./pages/Builder";
 import DesignSettingsPage from "./pages/DesignSettings";
 import ProfileSettings from "./pages/ProfileSettings";
+import ProjectSettings from "./pages/ProjectSettings";
 import PublicDocs from "./pages/PublicDocs";
 import Analytics from "./pages/Analytics";
 import Index from "./pages/Index";
@@ -56,6 +57,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Analytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/builder/:projectId/settings"
+              element={
+                <ProtectedRoute>
+                  <ProjectSettings />
                 </ProtectedRoute>
               }
             />
