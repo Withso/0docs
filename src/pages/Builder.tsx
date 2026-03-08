@@ -9,7 +9,7 @@ import SectionEditor from "@/components/builder/SectionEditor";
 import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Eye, Palette, FileText, FileJson } from "lucide-react";
+import { Plus, ArrowLeft, Eye, Palette, FileText, FileJson, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -140,6 +140,14 @@ const Builder = () => {
               onClick={() => navigate(`/builder/${projectId}/design`)}
             >
               <Palette className="h-3.5 w-3.5 mr-1.5" /> Design
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => navigate(`/builder/${projectId}/analytics`)}
+            >
+              <BarChart3 className="h-3.5 w-3.5 mr-1.5" /> Analytics
             </Button>
             <Button
               variant="outline"

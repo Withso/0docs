@@ -36,6 +36,7 @@ interface SearchDialogProps {
   blocks: SearchBlock[];
   onSelectPage: (page: SearchPage) => void;
   onSelectSection?: (sectionId: string, page: SearchPage) => void;
+  onSearch?: (query: string, resultsCount: number) => void;
 }
 
 const SearchDialog = ({
@@ -46,6 +47,7 @@ const SearchDialog = ({
   blocks,
   onSelectPage,
   onSelectSection,
+  onSearch,
 }: SearchDialogProps) => {
   const [query, setQuery] = useState("");
 
@@ -86,6 +88,11 @@ const SearchDialog = ({
   const getSectionForBlock = (blockSectionId: string) => sections.find((s) => s.id === blockSectionId);
 
   const handleSelect = (page: SearchPage, sectionId?: string) => {
+    // Track search analytics
+    if (query.trim() && onSearch) {
+      const total = results.pages.length + results.sections.length + results.blocks.length;
+      onSearch(query, total);
+    }
     onSelectPage(page);
     if (sectionId && onSelectSection) {
       onSelectSection(sectionId, page);

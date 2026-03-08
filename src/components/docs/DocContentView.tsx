@@ -5,7 +5,9 @@ import DocBlockRenderer from "./DocBlockRenderer";
 import DocSidebarNav from "./DocSidebarNav";
 import TableOfContents from "./TableOfContents";
 import SearchDialog from "./SearchDialog";
+import PageFeedback from "./PageFeedback";
 import { Search } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DocPage {
   id: string;
@@ -42,6 +44,9 @@ interface DocContentViewProps {
   hideHeader?: boolean;
   allSections?: DocSection[];
   allBlocks?: DocBlock[];
+  showFeedback?: boolean;
+  pageId?: string;
+  projectId?: string;
 }
 
 const DocContentView = ({
@@ -57,6 +62,9 @@ const DocContentView = ({
   hideHeader = false,
   allSections,
   allBlocks,
+  showFeedback = false,
+  pageId,
+  projectId,
 }: DocContentViewProps) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const headerHeight = hideHeader ? 0 : 48;
@@ -74,6 +82,16 @@ const DocContentView = ({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  // Track search queries
+  const handleSearch = useCallback((query: string, resultsCount: number) => {
+    if (!projectId || !query.trim()) return;
+    supabase.from("search_queries" as any).insert({
+      project_id: projectId,
+      query: query.trim(),
+      results_count: resultsCount,
+    }).then(() => {});
+  }, [projectId]);
 
   return (
     <DesignSettingsWrapper settings={s} className="min-h-full">
@@ -185,6 +203,10 @@ const DocContentView = ({
                   This page has no content yet.
                 </p>
               )}
+
+              {showFeedback && activePage?.id && (
+                <PageFeedback pageId={activePage.id} settings={s} />
+              )}
             </article>
           ) : (
             <p style={{ color: `hsl(${s.mutedForegroundColor})` }}>
@@ -207,6 +229,7 @@ const DocContentView = ({
         sections={allSections || sections}
         blocks={allBlocks || blocks}
         onSelectPage={onSelectPage}
+        onSearch={handleSearch}
       />
     </DesignSettingsWrapper>
   );
