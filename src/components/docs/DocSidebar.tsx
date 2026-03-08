@@ -16,33 +16,39 @@ const navigation: NavGroup[] = [
   {
     items: [
       { title: "Overview", path: "/" },
-      { title: "Getting Started", path: "/getting-started" },
-      { title: "Installation", path: "/installation" },
+      { title: "Install", path: "/installation" },
       {
         title: "Features",
         path: "/components",
         children: [
-          { title: "Buttons", path: "/components/buttons" },
-          { title: "Cards", path: "/components/cards" },
-          { title: "Forms", path: "/components/forms" },
+          { title: "Annotation Modes", path: "/components/buttons" },
+          { title: "Toolbar Controls", path: "/components/cards" },
+          { title: "Marker Types", path: "/components/forms" },
+          { title: "Smart Identification", path: "/components/smart-id" },
+          { title: "Computed Styles", path: "/components/computed-styles" },
+          { title: "React Detection", path: "/components/react-detection" },
+          { title: "Keyboard Shortcuts", path: "/components/keyboard-shortcuts" },
+          { title: "Agent Sync", path: "/components/agent-sync" },
+          { title: "Settings", path: "/components/settings" },
         ],
       },
-      { title: "Configuration", path: "/configuration" },
-      { title: "Architecture", path: "/architecture", badge: "v1.0" },
+      { title: "Output", path: "/configuration" },
+      { title: "Schema", path: "/architecture", badge: "v1.0" },
     ],
   },
   {
-    label: "Guides",
+    label: "Tools",
     items: [
-      { title: "Theming", path: "/theming" },
-      { title: "API Reference", path: "/api" },
+      { title: "MCP", path: "/theming" },
+      { title: "API", path: "/api" },
+      { title: "Webhooks", path: "/examples" },
     ],
   },
   {
     label: "Resources",
     items: [
       { title: "Changelog", path: "/changelog" },
-      { title: "Examples", path: "/examples" },
+      { title: "Blog", path: "/getting-started" },
       { title: "FAQ", path: "/faq" },
     ],
   },
@@ -57,29 +63,29 @@ const DocSidebar = () => {
     isActive(item.path) || item.children?.some((c) => isActive(c.path));
 
   return (
-    <aside className="w-[220px] shrink-0 sticky top-0 h-screen overflow-y-auto py-8 pr-8 hidden lg:block">
+    <aside className="w-[220px] shrink-0 sticky top-0 h-screen overflow-y-auto py-8 pr-6 hidden lg:block">
       {/* Brand */}
-      <Link to="/" className="text-foreground font-semibold text-[15px] mb-8 block">
+      <Link to="/" className="text-foreground font-semibold text-base mb-7 block">
         /agentation
       </Link>
 
-      <nav className="space-y-6">
+      <nav className="space-y-5">
         {navigation.map((group, gi) => (
           <div key={gi}>
             {group.label && (
-              <div className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider mb-2">
+              <div className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-1.5">
                 {group.label}
               </div>
             )}
-            <ul className="space-y-0.5">
+            <ul className="space-y-px">
               {group.items.map((item) => (
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    className={`block py-1 text-[13px] transition-colors ${
+                    className={`block py-[3px] text-[13.5px] transition-colors ${
                       isActive(item.path) || (item.children && isParentActive(item) && !item.children.some(c => isActive(c.path)))
-                        ? "text-foreground font-semibold"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground/70 hover:text-foreground"
                     }`}
                   >
                     {item.title}
@@ -90,17 +96,17 @@ const DocSidebar = () => {
                     )}
                   </Link>
 
-                  {/* Nested children with left border */}
-                  {item.children && isParentActive(item) && (
-                    <ul className="mt-0.5 mb-1 ml-0.5 border-l border-border">
+                  {/* Children — always visible when they exist */}
+                  {item.children && (
+                    <ul className="mt-px mb-1 ml-px border-l border-border/60">
                       {item.children.map((child) => (
                         <li key={child.path}>
                           <Link
                             to={child.path}
-                            className={`block py-1 pl-3.5 text-[13px] transition-colors relative ${
+                            className={`block py-[3px] pl-3 text-[13px] transition-colors relative ${
                               isActive(child.path)
-                                ? "text-foreground font-semibold before:absolute before:left-[-1px] before:top-1 before:bottom-1 before:w-[2px] before:bg-foreground before:rounded-full"
-                                : "text-muted-foreground hover:text-foreground"
+                                ? "text-foreground font-medium before:absolute before:left-[-1px] before:top-[5px] before:bottom-[5px] before:w-[2px] before:bg-foreground before:rounded-full"
+                                : "text-muted-foreground/60 hover:text-foreground"
                             }`}
                           >
                             {child.title}
@@ -117,8 +123,8 @@ const DocSidebar = () => {
       </nav>
 
       {/* Version footer */}
-      <div className="mt-10 text-[12px] text-muted-foreground/50 flex items-center gap-1.5">
-        <span className="underline underline-offset-2">v2.3.0</span>
+      <div className="mt-10 text-[12px] text-muted-foreground/40 flex items-center gap-1.5">
+        <span className="underline underline-offset-2 decoration-dotted">v2.3.0</span>
         <span>·</span>
         <a href="https://github.com" className="hover:text-foreground transition-colors" aria-label="GitHub">
           <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor">
