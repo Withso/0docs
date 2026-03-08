@@ -227,7 +227,7 @@ const Builder = () => {
   );
 };
 
-// Page title editor component
+// Page title editor component with meta description
 const PageTitleEditor = ({
   page,
   onUpdate,
@@ -238,9 +238,12 @@ const PageTitleEditor = ({
   settings: DesignSettings;
 }) => {
   const [title, setTitle] = useState(page.title);
+  const [metaDesc, setMetaDesc] = useState((page as any).meta_description || "");
+  const [showMeta, setShowMeta] = useState(false);
 
   useEffect(() => {
     setTitle(page.title);
+    setMetaDesc((page as any).meta_description || "");
   }, [page.id, page.title]);
 
   const debouncedSave = useDebouncedCallback((value: string) => {
@@ -248,22 +251,60 @@ const PageTitleEditor = ({
     onUpdate(page.id, { title: value, slug });
   }, 600);
 
+  const debouncedMetaSave = useDebouncedCallback((value: string) => {
+    supabase.from("pages").update({ meta_description: value } as any).eq("id", page.id).then(() => {});
+  }, 800);
+
   return (
-    <input
-      className="w-full bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded-lg px-1 -ml-1"
-      style={{
-        fontFamily: `'${settings.headingFont}', sans-serif`,
-        fontWeight: settings.headingWeight,
-        fontSize: `${settings.pageTitleSize}px`,
-        marginBottom: `${settings.sectionSpacing * 0.6}px`,
-      }}
-      value={title}
-      onChange={(e) => {
-        setTitle(e.target.value);
-        debouncedSave(e.target.value);
-      }}
-      placeholder="Page title..."
-    />
+    <div style={{ marginBottom: `${settings.sectionSpacing * 0.6}px` }}>
+      <input
+        className="w-full bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded-lg px-1 -ml-1"
+        style={{
+          fontFamily: `'${settings.headingFont}', sans-serif`,
+          fontWeight: settings.headingWeight,
+          fontSize: `${settings.pageTitleSize}px`,
+        }}
+        value={title}
+        onChange={(e) => {
+          setTitle(e.target.value);
+          debouncedSave(e.target.value);
+        }}
+        placeholder="Page title..."
+      />
+      <button
+        onClick={() => setShowMeta(!showMeta)}
+        className="text-xs mt-1 px-1 transition-colors"
+        style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+      >
+        {showMeta ? "Hide SEO" : "SEO Settings ↓"}
+      </button>
+      {showMeta && (
+        <div className="mt-2 animate-fade-in">
+          <label className="text-xs font-medium" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
+            Meta Description
+          </label>
+          <textarea
+            className="w-full mt-1 bg-transparent border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/20 resize-none"
+            style={{
+              borderColor: `hsl(${settings.borderColor})`,
+              fontSize: `${settings.baseFontSize - 2}px`,
+              color: `hsl(${settings.mutedForegroundColor})`,
+            }}
+            rows={2}
+            value={metaDesc}
+            onChange={(e) => {
+              setMetaDesc(e.target.value);
+              debouncedMetaSave(e.target.value);
+            }}
+            placeholder="Brief page description for search engines (max 160 chars)..."
+            maxLength={160}
+          />
+          <div className="text-right text-[10px] mt-0.5" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
+            {metaDesc.length}/160
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
