@@ -4,9 +4,7 @@ import { useBuilder } from "@/hooks/use-builder";
 import BuilderSidebar from "@/components/builder/BuilderSidebar";
 import SectionEditor from "@/components/builder/SectionEditor";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Eye } from "lucide-react";
-import { useDesignSettings } from "@/hooks/use-design-settings";
-import DesignSettingsPanel from "@/components/builder/DesignSettingsPanel";
+import { Plus, ArrowLeft, Eye, Palette } from "lucide-react";
 
 // Re-export types for backward compat
 export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
