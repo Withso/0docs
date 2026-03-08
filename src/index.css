@@ -2,55 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    /* ─── Platform Design Tokens ─── */
-    --background: 0 0% 99%;
-    --foreground: 220 14% 10%;
+    /* ─── Refined Platform Tokens ─── */
+    --background: 0 0% 98%;
+    --foreground: 225 15% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 14% 10%;
+    --card-foreground: 225 15% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 14% 10%;
+    --popover-foreground: 225 15% 12%;
 
-    --primary: 220 14% 10%;
-    --primary-foreground: 0 0% 99%;
+    --primary: 250 65% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 10% 96%;
-    --secondary-foreground: 220 14% 10%;
+    --secondary: 225 12% 96%;
+    --secondary-foreground: 225 15% 12%;
 
-    --muted: 220 10% 96%;
-    --muted-foreground: 220 8% 52%;
+    --muted: 225 12% 96%;
+    --muted-foreground: 225 8% 50%;
 
-    --accent: 220 10% 94%;
-    --accent-foreground: 220 14% 10%;
+    --accent: 225 12% 94%;
+    --accent-foreground: 225 15% 12%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 10% 92%;
-    --input: 220 10% 92%;
-    --ring: 220 14% 10%;
+    --border: 225 12% 91%;
+    --input: 225 12% 91%;
+    --ring: 250 65% 55%;
 
     --radius: 0.625rem;
 
     /* ─── Platform-specific tokens ─── */
-    --platform-accent: 250 75% 60%;
+    --platform-accent: 250 65% 55%;
+    --platform-accent-soft: 250 65% 97%;
     --platform-accent-foreground: 0 0% 100%;
-    --platform-success: 142 70% 45%;
+    --platform-success: 152 60% 42%;
+    --platform-success-soft: 152 50% 95%;
     --platform-warning: 38 92% 50%;
+    --platform-warning-soft: 38 80% 95%;
     --platform-info: 214 100% 50%;
 
     --platform-surface: 0 0% 100%;
-    --platform-surface-hover: 220 10% 98%;
-    --platform-surface-active: 220 10% 96%;
+    --platform-surface-hover: 225 14% 97%;
+    --platform-surface-active: 225 14% 95%;
     --platform-surface-elevated: 0 0% 100%;
 
-    --platform-header-height: 48px;
+    --platform-header-height: 52px;
     --platform-sidebar-width: 260px;
+
+    /* ─── Gradient tokens ─── */
+    --gradient-primary: linear-gradient(135deg, hsl(250 65% 55%), hsl(280 60% 55%));
+    --gradient-hero: linear-gradient(135deg, hsl(250 65% 55%) 0%, hsl(280 60% 55%) 50%, hsl(320 55% 55%) 100%);
 
     /* ─── Doc-specific tokens (unchanged for docs output) ─── */
     --doc-link: 214 100% 50%;
@@ -62,63 +69,66 @@
     --doc-note-border: 40 60% 85%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 8% 52%;
-    --sidebar-primary: 220 14% 10%;
+    --sidebar-foreground: 225 8% 50%;
+    --sidebar-primary: 225 15% 12%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 10% 96%;
-    --sidebar-accent-foreground: 220 14% 10%;
-    --sidebar-border: 220 10% 92%;
-    --sidebar-ring: 250 75% 60%;
+    --sidebar-accent: 250 65% 97%;
+    --sidebar-accent-foreground: 250 65% 40%;
+    --sidebar-border: 225 12% 92%;
+    --sidebar-ring: 250 65% 55%;
   }
 
   .dark {
-    --background: 220 16% 8%;
-    --foreground: 220 10% 92%;
+    --background: 228 16% 7%;
+    --foreground: 225 10% 92%;
 
-    --card: 220 14% 11%;
-    --card-foreground: 220 10% 92%;
+    --card: 228 14% 10%;
+    --card-foreground: 225 10% 92%;
 
-    --popover: 220 14% 11%;
-    --popover-foreground: 220 10% 92%;
+    --popover: 228 14% 10%;
+    --popover-foreground: 225 10% 92%;
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 220 16% 8%;
+    --primary: 250 65% 62%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 14%;
-    --secondary-foreground: 220 10% 85%;
+    --secondary: 228 14% 13%;
+    --secondary-foreground: 225 10% 85%;
 
-    --muted: 220 14% 14%;
-    --muted-foreground: 220 8% 52%;
+    --muted: 228 14% 13%;
+    --muted-foreground: 225 8% 48%;
 
-    --accent: 220 14% 16%;
-    --accent-foreground: 220 10% 92%;
+    --accent: 228 14% 15%;
+    --accent-foreground: 225 10% 92%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 14% 16%;
-    --input: 220 14% 16%;
-    --ring: 220 10% 85%;
+    --border: 228 14% 15%;
+    --input: 228 14% 15%;
+    --ring: 250 65% 62%;
 
-    --platform-accent: 250 75% 65%;
+    --platform-accent: 250 65% 62%;
+    --platform-accent-soft: 250 30% 15%;
     --platform-accent-foreground: 0 0% 100%;
-    --platform-success: 142 70% 45%;
+    --platform-success: 152 60% 42%;
+    --platform-success-soft: 152 30% 15%;
     --platform-warning: 38 92% 50%;
+    --platform-warning-soft: 38 30% 15%;
     --platform-info: 214 100% 60%;
 
-    --platform-surface: 220 14% 11%;
-    --platform-surface-hover: 220 14% 14%;
-    --platform-surface-active: 220 14% 16%;
-    --platform-surface-elevated: 220 14% 13%;
+    --platform-surface: 228 14% 10%;
+    --platform-surface-hover: 228 14% 13%;
+    --platform-surface-active: 228 14% 15%;
+    --platform-surface-elevated: 228 14% 12%;
 
-    --sidebar-background: 220 16% 8%;
-    --sidebar-foreground: 220 8% 52%;
-    --sidebar-primary: 220 10% 92%;
-    --sidebar-primary-foreground: 220 16% 8%;
-    --sidebar-accent: 220 14% 14%;
-    --sidebar-accent-foreground: 220 10% 92%;
-    --sidebar-border: 220 14% 16%;
-    --sidebar-ring: 250 75% 65%;
+    --sidebar-background: 228 16% 7%;
+    --sidebar-foreground: 225 8% 48%;
+    --sidebar-primary: 225 10% 92%;
+    --sidebar-primary-foreground: 228 16% 7%;
+    --sidebar-accent: 250 30% 15%;
+    --sidebar-accent-foreground: 250 65% 80%;
+    --sidebar-border: 228 14% 15%;
+    --sidebar-ring: 250 65% 62%;
   }
 }
 
@@ -129,8 +139,9 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    letter-spacing: -0.01em;
   }
 
   code, pre {
@@ -142,12 +153,12 @@
 @layer components {
   /* Platform header */
   .platform-header {
-    @apply h-12 border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50;
+    @apply h-[52px] border-b bg-background/80 backdrop-blur-xl sticky top-0 z-50;
   }
 
   /* Platform sidebar nav item */
   .platform-nav-item {
-    @apply flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground 
+    @apply flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] text-muted-foreground 
            transition-all duration-150 cursor-pointer select-none;
   }
 
@@ -156,7 +167,9 @@
   }
 
   .platform-nav-item.active {
-    @apply bg-accent text-foreground font-medium;
+    background: hsl(var(--platform-accent-soft));
+    color: hsl(var(--platform-accent));
+    @apply font-medium;
   }
 
   /* Platform card */
@@ -165,7 +178,7 @@
   }
 
   .platform-card:hover {
-    @apply border-foreground/15 shadow-sm;
+    @apply shadow-platform-md;
   }
 
   /* Platform section label */
@@ -175,7 +188,16 @@
 
   /* Platform avatar */
   .platform-avatar {
-    @apply rounded-full bg-accent flex items-center justify-center text-xs font-medium text-accent-foreground;
+    @apply rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-xs font-medium text-primary-foreground;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply bg-card border rounded-xl p-4 transition-all duration-200;
+  }
+
+  .stat-card:hover {
+    @apply shadow-platform-sm border-primary/20;
   }
 
   /* ─── Doc-specific typography (unchanged) ─── */
