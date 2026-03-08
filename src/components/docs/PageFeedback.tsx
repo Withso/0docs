@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ThumbsUp, ThumbsDown, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { DesignSettings } from "@/hooks/use-design-settings";
