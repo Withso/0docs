@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBuilder } from "@/hooks/use-builder";
 import { useDesignSettings } from "@/hooks/use-design-settings";
@@ -7,10 +7,13 @@ import { useDebouncedCallback } from "@/hooks/use-debounce";
 import BuilderSidebar from "@/components/builder/BuilderSidebar";
 import SectionEditor from "@/components/builder/SectionEditor";
 import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
+import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Eye, Palette, FileText } from "lucide-react";
+import { Plus, ArrowLeft, Eye, Palette, FileText, FileJson } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
+import type { ParsedOpenAPI } from "@/lib/openapi-parser";
 
 // Re-export types for backward compat
 export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
@@ -19,6 +22,7 @@ const Builder = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [openApiOpen, setOpenApiOpen] = useState(false);
 
   const {
     project, pages, activePage, setActivePage, sections, blocks, loading,
@@ -27,6 +31,58 @@ const Builder = () => {
   } = useBuilder(projectId, user?.id);
 
   const { settings, loading: settingsLoading } = useDesignSettings(projectId);
+
+  const handleOpenAPIImport = useCallback(async (parsed: ParsedOpenAPI) => {
+    if (!projectId) return;
+
+    // Group endpoints by tag → one page per tag
+    const tagGroups = new Map<string, typeof parsed.endpoints>();
+    for (const ep of parsed.endpoints) {
+      const tag = ep.tags[0] || "Default";
+      if (!tagGroups.has(tag)) tagGroups.set(tag, []);
+      tagGroups.get(tag)!.push(ep);
+    }
+
+    let pageIndex = pages.length;
+    for (const [tag, endpoints] of tagGroups) {
+      // Create page
+      const slug = `api-${tag.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+      const { data: page } = await supabase
+        .from("pages")
+        .insert({ project_id: projectId, title: `API: ${tag}`, slug, order_index: pageIndex++ })
+        .select()
+        .single();
+      if (!page) continue;
+
+      // Create one section per endpoint
+      for (let i = 0; i < endpoints.length; i++) {
+        const ep = endpoints[i];
+        const { data: section } = await supabase
+          .from("sections")
+          .insert({ page_id: page.id, title: `${ep.method} ${ep.path}`, order_index: i })
+          .select()
+          .single();
+        if (!section) continue;
+
+        // Add api_endpoint block
+        await supabase.from("blocks").insert({
+          section_id: section.id,
+          type: "api_endpoint" as any,
+          content: {
+            method: ep.method,
+            path: ep.path,
+            description: ep.description,
+            parameters: ep.parameters,
+            response: ep.response,
+          },
+          order_index: 0,
+        });
+      }
+    }
+
+    // Reload by navigating
+    window.location.reload();
+  }, [projectId, pages.length]);
 
   if (loading || settingsLoading) {
     return (
@@ -69,6 +125,14 @@ const Builder = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setOpenApiOpen(true)}
+            >
+              <FileJson className="h-3.5 w-3.5 mr-1.5" /> Import API
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -148,6 +212,7 @@ const Builder = () => {
           )}
         </main>
       </div>
+      <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
     </DesignSettingsWrapper>
   );
 };
