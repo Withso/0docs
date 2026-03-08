@@ -37,6 +37,8 @@ interface DocContentViewProps {
   highlightType?: string | null;
   /** Extra sticky offset for the doc header (e.g. when design settings header is above) */
   headerStickyTop?: number;
+  /** Hide the doc header (useful when parent already shows a header) */
+  hideHeader?: boolean;
 }
 
 /**
@@ -53,33 +55,37 @@ const DocContentView = ({
   onSelectPage,
   highlightType,
   headerStickyTop = 0,
+  hideHeader = false,
 }: DocContentViewProps) => {
-  const sidebarTop = headerStickyTop + 48; // 48px = doc header height
+  const headerHeight = hideHeader ? 0 : 48;
+  const sidebarTop = headerStickyTop + headerHeight;
   const frameMaxWidth = s.contentMaxWidth + s.sidebarWidth + 48;
 
   return (
     <DesignSettingsWrapper settings={s} className="min-h-full">
       {/* Doc header */}
-      <header
-        className="border-b sticky z-40"
-        style={{
-          top: headerStickyTop,
-          backgroundColor: `hsl(${s.backgroundColor})`,
-          borderColor: `hsl(${s.borderColor})`,
-        }}
-      >
-        <div
-          style={{ maxWidth: `${frameMaxWidth}px` }}
-          className="mx-auto px-6 h-12 flex items-center"
+      {!hideHeader && (
+        <header
+          className="border-b sticky z-40"
+          style={{
+            top: headerStickyTop,
+            backgroundColor: `hsl(${s.backgroundColor})`,
+            borderColor: `hsl(${s.borderColor})`,
+          }}
         >
-          <span
-            className="font-semibold text-sm"
-            style={{ fontFamily: `'${s.bodyFont}', sans-serif` }}
+          <div
+            style={{ maxWidth: `${frameMaxWidth}px` }}
+            className="mx-auto px-6 h-12 flex items-center justify-between"
           >
-            {projectName}
-          </span>
-        </div>
-      </header>
+            <span
+              className="font-semibold text-sm"
+              style={{ fontFamily: `'${s.bodyFont}', sans-serif` }}
+            >
+              {projectName}
+            </span>
+          </div>
+        </header>
+      )}
 
       <div
         style={{ maxWidth: `${frameMaxWidth}px` }}
