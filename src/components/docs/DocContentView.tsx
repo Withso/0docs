@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
+import type { DocVersion } from "@/hooks/use-versions";
 import DesignSettingsWrapper from "./DesignSettingsWrapper";
 import DocBlockRenderer from "./DocBlockRenderer";
 import DocSidebarNav from "./DocSidebarNav";
 import TableOfContents from "./TableOfContents";
 import SearchDialog from "./SearchDialog";
 import PageFeedback from "./PageFeedback";
+import VersionSelector from "./VersionSelector";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
