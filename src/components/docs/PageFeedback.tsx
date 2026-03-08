@@ -14,6 +14,14 @@ const PageFeedback = ({ pageId, settings: s }: PageFeedbackProps) => {
   const [comment, setComment] = useState("");
   const [selectedHelpful, setSelectedHelpful] = useState<boolean | null>(null);
 
+  // Reset state when page changes
+  useEffect(() => {
+    setSubmitted(false);
+    setShowComment(false);
+    setComment("");
+    setSelectedHelpful(null);
+  }, [pageId]);
+
   const submitFeedback = async (isHelpful: boolean, feedbackComment?: string) => {
     setSelectedHelpful(isHelpful);
     await supabase.from("page_feedback" as any).insert({
