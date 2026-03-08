@@ -8,6 +8,7 @@ import BuilderSidebar from "@/components/builder/BuilderSidebar";
 import SectionEditor from "@/components/builder/SectionEditor";
 import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
+import VersionManager from "@/components/builder/VersionManager";
 import { Button } from "@/components/ui/button";
 import { Plus, ArrowLeft, Eye, Palette, FileText, FileJson, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
