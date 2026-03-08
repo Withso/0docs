@@ -59,12 +59,13 @@ const Builder = () => {
             <span className="font-semibold text-foreground text-sm">{project?.name}</span>
           </div>
           <div className="flex items-center gap-2">
-            <DesignSettingsPanel
-              settings={designSettings}
-              saving={designSaving}
-              onSave={saveSettings}
-              onReset={resetSettings}
-            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/builder/${projectId}/design`)}
+            >
+              <Palette className="h-3.5 w-3.5 mr-1.5" /> Design
+            </Button>
             <Button
               variant="outline"
               size="sm"
