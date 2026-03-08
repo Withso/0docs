@@ -1,39 +1,32 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
-interface SidebarPage {
+export interface SidebarPageBase {
   id: string;
   title: string;
   slug: string;
   order_index: number;
 }
 
-interface SidebarSection {
+export interface SidebarSection {
   id: string;
   page_id: string;
   title: string;
   order_index: number;
 }
 
-interface DocSidebarNavProps {
+interface DocSidebarNavProps<TPage extends SidebarPageBase = SidebarPageBase> {
   settings: DesignSettings;
-  pages: SidebarPage[];
-  activePage: SidebarPage | null;
+  pages: TPage[];
+  activePage: TPage | null;
   sections: SidebarSection[];
-  onSelectPage: (page: SidebarPage) => void;
-  /** Builder-only: render add/delete/rename controls */
-  renderPageActions?: (page: SidebarPage, isActive: boolean) => React.ReactNode;
-  /** Builder-only: render header-right action (e.g. Add Page button) */
-  headerAction?: React.ReactNode;
-  /** Override sticky top offset (default: 48px for header) */
+  onSelectPage: (page: TPage) => void;
+  renderPageActions?: (page: TPage, isActive: boolean) => ReactNode;
+  headerAction?: ReactNode;
   stickyTop?: number;
 }
 
-/**
- * Shared sidebar navigation component used across Builder, DesignSettings preview, and PublicDocs.
- * Ensures 100% visual consistency of the doc sidebar across all views.
- */
-const DocSidebarNav = ({
+const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
   settings: s,
   pages,
   activePage,
@@ -42,21 +35,19 @@ const DocSidebarNav = ({
   renderPageActions,
   headerAction,
   stickyTop = 48,
-}: DocSidebarNavProps) => {
+}: DocSidebarNavProps<TPage>) => {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
 
-  // Scroll-tracking: IntersectionObserver to highlight the section currently in view
   useEffect(() => {
     if (!s.sidebarShowSectionTracker || sections.length === 0) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const id = entry.target.id.replace("section-", "");
-            setActiveSectionId(id);
-            break;
-          }
+          if (!entry.isIntersecting) continue;
+          const id = entry.target.id.replace("section-", "");
+          setActiveSectionId(id);
+          break;
         }
       },
       { rootMargin: "-20% 0px -60% 0px", threshold: 0 }
@@ -67,6 +58,7 @@ const DocSidebarNav = ({
       .filter(Boolean) as HTMLElement[];
 
     sectionEls.forEach((el) => observer.observe(el));
+
     return () => observer.disconnect();
   }, [sections, s.sidebarShowSectionTracker]);
 
@@ -80,7 +72,6 @@ const DocSidebarNav = ({
       }}
       className="shrink-0 sticky overflow-y-auto py-8 pr-6 hidden lg:block"
     >
-      {/* "Pages" label */}
       <div
         className="text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center justify-between"
         style={{ color: `hsl(${s.sidebarTextColor})` }}
@@ -117,7 +108,6 @@ const DocSidebarNav = ({
                 )}
               </div>
 
-              {/* Section links with scroll-tracking left border indicator */}
               {isActive && pageSections.length > 0 && (
                 <nav
                   className="ml-px mt-px mb-1"
@@ -130,6 +120,7 @@ const DocSidebarNav = ({
                   {pageSections.map((section) => {
                     const isSectionActive =
                       s.sidebarShowSectionTracker && activeSectionId === section.id;
+
                     return (
                       <a
                         key={section.id}
@@ -144,13 +135,10 @@ const DocSidebarNav = ({
                           fontFamily: `'${s.bodyFont}', sans-serif`,
                         }}
                       >
-                        {/* Active indicator line */}
                         {isSectionActive && (
                           <span
                             className="absolute left-[-1px] top-[5px] bottom-[5px] w-[2px] rounded-full"
-                            style={{
-                              backgroundColor: `hsl(${s.sidebarIndicatorColor})`,
-                            }}
+                            style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
                           />
                         )}
                         {section.title}
