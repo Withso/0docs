@@ -433,7 +433,7 @@ const BuilderSidebar = ({
 
               if (isTextType) {
                 return (
-                  <SortableItem key={group.id} id={group.id} handle>
+                  <SortableItem key={group.id} id={group.id}>
                     <div className="group mt-1">
                       <div className="flex items-center gap-1">
                         {editingGroupId === group.id ? (
