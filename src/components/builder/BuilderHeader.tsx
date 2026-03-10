@@ -51,22 +51,16 @@ const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (
   );
 };
 
-const DesignSubToggle = ({ value, onChange }: { value: DesignSubMode; onChange: (v: DesignSubMode) => void }) => (
-  <div className="flex items-center rounded-full bg-muted p-0.5">
-    {([{ label: "Live", value: "live" as const }, { label: "Examples", value: "examples" as const }]).map((opt) => (
-      <button
-        key={opt.value}
-        onClick={() => onChange(opt.value)}
-        className={`px-3 py-0.5 rounded-full text-[11px] font-medium transition-all ${
-          value === opt.value
-            ? "bg-background text-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        {opt.label}
-      </button>
-    ))}
-  </div>
+const DesignSubSelect = ({ value, onChange }: { value: DesignSubMode; onChange: (v: DesignSubMode) => void }) => (
+  <Select value={value} onValueChange={(v) => onChange(v as DesignSubMode)}>
+    <SelectTrigger className="h-7 w-[110px] rounded-full text-[12px] font-medium border-border bg-muted">
+      <SelectValue />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="live" className="text-[12px]">Live</SelectItem>
+      <SelectItem value="examples" className="text-[12px]">Examples</SelectItem>
+    </SelectContent>
+  </Select>
 );
 
 const BuilderHeader = ({
