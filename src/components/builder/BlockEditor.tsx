@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
 import { Trash2, Plus } from "lucide-react";
 import type { Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
 
+const InlineEditorBlock = lazy(() => import("./InlineEditorBlock"));
 type BlockKey = keyof DesignSettings["blockStyles"];
 
 interface BlockEditorProps {
