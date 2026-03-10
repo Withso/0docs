@@ -1,17 +1,19 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Bold, Italic, Underline, LinkIcon, Palette, X } from "lucide-react";
+import { Bold, Italic, Underline, LinkIcon, Palette, X, Check } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
 
 interface InlineRichTextProps {
   value: string;
   onChange: (html: string) => void;
+  onDone?: () => void;
   settings: DesignSettings;
   className?: string;
   style?: React.CSSProperties;
   placeholder?: string;
   tag?: "span" | "div";
   singleLine?: boolean;
+  autoFocus?: boolean;
 }
 
 const PRESET_COLORS = [
@@ -29,12 +31,14 @@ const PRESET_COLORS = [
 const InlineRichText = ({
   value,
   onChange,
+  onDone,
   settings: s,
   className = "",
   style = {},
   placeholder = "",
   tag: _tag = "div",
   singleLine = false,
+  autoFocus = true,
 }: InlineRichTextProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -46,10 +50,26 @@ const InlineRichText = ({
   const [linkUrl, setLinkUrl] = useState("");
   const linkInputRef = useRef<HTMLInputElement>(null);
   const savedSelectionRef = useRef<Range | null>(null);
+  const doneCalledRef = useRef(false);
 
   const debouncedChange = useDebouncedCallback((html: string) => {
     onChange(html);
   }, 400);
+
+  // Auto-focus and select all on mount
+  useEffect(() => {
+    if (autoFocus && ref.current) {
+      ref.current.focus();
+      // Place cursor at end
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(ref.current);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+    doneCalledRef.current = false;
+  }, [autoFocus]);
 
   // Sync value from outside
   useEffect(() => {
@@ -58,26 +78,42 @@ const InlineRichText = ({
     }
   }, [value]);
 
-  const stripToPlainText = (html: string) => {
-    const tmp = document.createElement("div");
-    tmp.innerHTML = html;
-    return tmp.textContent || "";
-  };
-
   const handleInput = useCallback(() => {
     if (!ref.current) return;
     let html = ref.current.innerHTML;
-    // For single-line, strip any block elements
     if (singleLine) {
       html = html.replace(/<br\s*\/?>/gi, "").replace(/<div>|<\/div>/gi, "");
     }
     debouncedChange(html);
   }, [debouncedChange, singleLine]);
 
+  const finishEditing = useCallback(() => {
+    if (doneCalledRef.current) return;
+    doneCalledRef.current = true;
+    // Flush any pending changes immediately
+    if (ref.current) {
+      let html = ref.current.innerHTML;
+      if (singleLine) {
+        html = html.replace(/<br\s*\/?>/gi, "").replace(/<div>|<\/div>/gi, "");
+      }
+      onChange(html);
+    }
+    setShowToolbar(false);
+    setShowLinkInput(false);
+    setShowColorPicker(false);
+    keepOpenRef.current = false;
+    onDone?.();
+  }, [onChange, onDone, singleLine]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (singleLine && e.key === "Enter") {
       e.preventDefault();
-      ref.current?.blur();
+      finishEditing();
+      return;
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      finishEditing();
     }
   };
 
@@ -111,7 +147,6 @@ const InlineRichText = ({
       return;
     }
 
-    // Check selection is within our element
     if (!ref.current.contains(sel.anchorNode)) return;
 
     const range = sel.getRangeAt(0);
@@ -220,27 +255,36 @@ const InlineRichText = ({
   );
 
   return (
-    <div className="inline-rich-text-wrapper relative inline-block w-full">
+    <div className="inline-rich-text-wrapper relative inline-flex items-center w-full gap-1">
       <div
         ref={ref}
         contentEditable
         suppressContentEditableWarning
-        className={`outline-none ${className}`}
+        className={`outline-none flex-1 rounded px-1 -mx-1 ring-2 ring-primary/20 bg-primary/[0.03] ${className}`}
         style={style}
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         onBlur={() => {
           setTimeout(() => {
             if (keepOpenRef.current) return;
-            if (!toolbarRef.current?.contains(document.activeElement)) {
-              setShowToolbar(false);
-              setShowLinkInput(false);
-              setShowColorPicker(false);
-            }
+            if (toolbarRef.current?.contains(document.activeElement)) return;
+            finishEditing();
           }, 250);
         }}
         data-placeholder={placeholder}
       />
+
+      {/* Small confirm button */}
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={finishEditing}
+        className="shrink-0 h-5 w-5 rounded flex items-center justify-center transition-colors hover:bg-primary/10"
+        style={{ color: `hsl(${s.sidebarActiveColor})` }}
+        title="Done (Enter)"
+      >
+        <Check size={12} />
+      </button>
 
       {showToolbar && (
         <div
@@ -272,7 +316,6 @@ const InlineRichText = ({
             <Palette size={13} />
           </ToolBtn>
 
-          {/* Link input row */}
           {showLinkInput && (
             <div
               className="absolute left-0 top-full mt-1 flex items-center gap-1.5 px-2 py-1.5 rounded-lg shadow-xl"
@@ -285,7 +328,10 @@ const InlineRichText = ({
                 onChange={(e) => setLinkUrl(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") applyLink();
-                  if (e.key === "Escape") setShowLinkInput(false);
+                  if (e.key === "Escape") {
+                    setShowLinkInput(false);
+                    keepOpenRef.current = false;
+                  }
                 }}
                 placeholder="https://..."
                 className="flex-1 bg-transparent text-white text-xs outline-none px-1.5 py-1 rounded"
@@ -299,7 +345,7 @@ const InlineRichText = ({
                 Add
               </button>
               <button
-                onClick={() => setShowLinkInput(false)}
+                onClick={() => { setShowLinkInput(false); keepOpenRef.current = false; }}
                 className="p-0.5"
                 style={{ color: "rgba(255,255,255,0.5)" }}
               >
@@ -308,7 +354,6 @@ const InlineRichText = ({
             </div>
           )}
 
-          {/* Color picker */}
           {showColorPicker && (
             <div
               className="absolute left-0 top-full mt-1 flex flex-wrap gap-1.5 p-2 rounded-lg shadow-xl"
