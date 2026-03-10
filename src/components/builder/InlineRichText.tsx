@@ -39,6 +39,7 @@ const InlineRichText = ({
   const ref = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [showToolbar, setShowToolbar] = useState(false);
+  const keepOpenRef = useRef(false);
   const [toolbarPos, setToolbarPos] = useState({ x: 0, y: 0 });
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -98,8 +99,8 @@ const InlineRichText = ({
   const checkSelection = useCallback(() => {
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !ref.current) {
-      // Small delay to allow clicking toolbar buttons
       setTimeout(() => {
+        if (keepOpenRef.current) return;
         const sel2 = window.getSelection();
         if (!sel2 || sel2.isCollapsed) {
           setShowToolbar(false);
@@ -141,9 +142,11 @@ const InlineRichText = ({
   const handleLink = () => {
     if (showLinkInput) {
       setShowLinkInput(false);
+      keepOpenRef.current = false;
       return;
     }
     saveSelection();
+    keepOpenRef.current = true;
     setShowLinkInput(true);
     setShowColorPicker(false);
     setTimeout(() => linkInputRef.current?.focus(), 50);
@@ -154,7 +157,6 @@ const InlineRichText = ({
       restoreSelection();
       ref.current?.focus();
       document.execCommand("createLink", false, linkUrl.trim());
-      // Style links
       const links = ref.current?.querySelectorAll("a");
       links?.forEach((a) => {
         a.style.color = `hsl(${s.linkColor})`;
@@ -165,16 +167,25 @@ const InlineRichText = ({
     }
     setLinkUrl("");
     setShowLinkInput(false);
+    keepOpenRef.current = false;
   };
 
   const handleColor = () => {
-    setShowColorPicker(!showColorPicker);
-    setShowLinkInput(false);
+    if (showColorPicker) {
+      setShowColorPicker(false);
+      keepOpenRef.current = false;
+    } else {
+      saveSelection();
+      keepOpenRef.current = true;
+      setShowColorPicker(true);
+      setShowLinkInput(false);
+    }
   };
 
   const applyColor = (hslColor: string) => {
     execCommand("foreColor", `hsl(${hslColor})`);
     setShowColorPicker(false);
+    keepOpenRef.current = false;
   };
 
   const isActive = (cmd: string) => {
@@ -219,8 +230,8 @@ const InlineRichText = ({
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         onBlur={() => {
-          // Delay hide to allow toolbar clicks
           setTimeout(() => {
+            if (keepOpenRef.current) return;
             if (!toolbarRef.current?.contains(document.activeElement)) {
               setShowToolbar(false);
               setShowLinkInput(false);
