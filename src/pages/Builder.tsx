@@ -70,8 +70,8 @@ const Builder = () => {
         });
       }
     }
-    window.location.reload();
-  }, [projectId, pages.length]);
+    await reloadPages();
+  }, [projectId, pages.length, reloadPages]);
 
   if (loading || settingsLoading) {
     return (
