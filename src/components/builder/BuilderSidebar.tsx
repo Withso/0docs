@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Trash2, Tag, FileText } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Plus, Trash2, Tag, FileText, Pencil } from "lucide-react";
 import type { Page, Section, NavGroup } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import InlineRichText from "./InlineRichText";
@@ -44,17 +44,24 @@ const BuilderSidebar = ({
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
 
+  const stopEditing = useCallback(() => {
+    setEditingPageId(null);
+    setEditingGroupId(null);
+    setEditingSectionId(null);
+  }, []);
+
   // Pages without a nav group
   const ungroupedPages = pages.filter((p) => !p.nav_group_id);
 
   const renderPage = (page: Page) => {
     const isActive = activePage?.id === page.id;
+    const isEditing = editingPageId === page.id;
     const pageSections = isActive ? sections : [];
 
     return (
       <div key={page.id}>
         <div className="group flex items-center gap-1">
-          {editingPageId === page.id ? (
+          {isEditing ? (
             <InlineRichText
               value={page.title}
               onChange={(html) => {
@@ -64,6 +71,7 @@ const BuilderSidebar = ({
                   slug: plainSlug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
                 });
               }}
+              onDone={() => setEditingPageId(null)}
               settings={s}
               singleLine
               placeholder="Page title..."
@@ -77,8 +85,11 @@ const BuilderSidebar = ({
           ) : (
             <button
               onClick={() => onSelectPage(page)}
-              onDoubleClick={() => setEditingPageId(page.id)}
-              className="flex-1 text-left truncate py-[3px] transition-colors"
+              onDoubleClick={() => {
+                stopEditing();
+                setEditingPageId(page.id);
+              }}
+              className="flex-1 text-left truncate py-[3px] transition-colors cursor-pointer select-none"
               style={{
                 fontSize: `${s.sidebarFontSize}px`,
                 color: isActive
@@ -87,17 +98,30 @@ const BuilderSidebar = ({
                 fontWeight: isActive ? 500 : 400,
                 fontFamily: `'${s.bodyFont}', sans-serif`,
               }}
-              title="Double-click to edit with formatting"
               dangerouslySetInnerHTML={{ __html: page.title }}
             />
           )}
-          <button
-            onClick={() => onDeletePage(page.id)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-            style={{ color: `hsl(${s.mutedForegroundColor})` }}
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
+          {!isEditing && (
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+              <button
+                onClick={() => {
+                  stopEditing();
+                  setEditingPageId(page.id);
+                }}
+                style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                title="Rename"
+              >
+                <Pencil className="h-2.5 w-2.5" />
+              </button>
+              <button
+                onClick={() => onDeletePage(page.id)}
+                style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                title="Delete"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          )}
         </div>
 
         {isActive && pageSections.length > 0 && (
@@ -112,28 +136,28 @@ const BuilderSidebar = ({
             {pageSections.map((section) => {
               const isSectionActive =
                 s.sidebarShowSectionTracker && activeSectionId === section.id;
+              const isSectionEditing = editingSectionId === section.id;
 
               return (
-                <div key={section.id} className="relative">
+                <div key={section.id} className="relative group/section">
                   {isSectionActive && (
                     <span
                       className="absolute left-[-1px] top-[5px] bottom-[5px] w-[2px] rounded-full"
                       style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
                     />
                   )}
-                  {editingSectionId === section.id ? (
+                  {isSectionEditing ? (
                     <div className="pl-3 py-[3px]">
                       <InlineRichText
                         value={section.title}
                         onChange={(html) => {
-                          // Section title updates are handled via the main onUpdateSection
-                          // but sidebar doesn't have that prop, so we emit a custom event
                           window.dispatchEvent(
                             new CustomEvent("builder:updateSection", {
                               detail: { id: section.id, updates: { title: html } },
                             })
                           );
                         }}
+                        onDone={() => setEditingSectionId(null)}
                         settings={s}
                         singleLine
                         placeholder="Section title..."
@@ -146,24 +170,37 @@ const BuilderSidebar = ({
                       />
                     </div>
                   ) : (
-                    <a
-                      href={`#section-${section.id}`}
-                      onDoubleClick={(e) => {
-                        e.preventDefault();
-                        setEditingSectionId(section.id);
-                      }}
-                      className="block py-[3px] pl-3 transition-colors"
-                      style={{
-                        color: isSectionActive
-                          ? `hsl(${s.sidebarActiveColor})`
-                          : `hsl(${s.sidebarTextColor} / 0.65)`,
-                        fontSize: `${s.sidebarFontSize - 1}px`,
-                        fontWeight: isSectionActive ? 500 : 400,
-                        fontFamily: `'${s.bodyFont}', sans-serif`,
-                      }}
-                      title="Double-click to edit with formatting"
-                      dangerouslySetInnerHTML={{ __html: section.title }}
-                    />
+                    <div className="flex items-center">
+                      <a
+                        href={`#section-${section.id}`}
+                        onDoubleClick={(e) => {
+                          e.preventDefault();
+                          stopEditing();
+                          setEditingSectionId(section.id);
+                        }}
+                        className="flex-1 block py-[3px] pl-3 transition-colors select-none"
+                        style={{
+                          color: isSectionActive
+                            ? `hsl(${s.sidebarActiveColor})`
+                            : `hsl(${s.sidebarTextColor} / 0.65)`,
+                          fontSize: `${s.sidebarFontSize - 1}px`,
+                          fontWeight: isSectionActive ? 500 : 400,
+                          fontFamily: `'${s.bodyFont}', sans-serif`,
+                        }}
+                        dangerouslySetInnerHTML={{ __html: section.title }}
+                      />
+                      <button
+                        onClick={() => {
+                          stopEditing();
+                          setEditingSectionId(section.id);
+                        }}
+                        className="opacity-0 group-hover/section:opacity-100 transition-opacity shrink-0 mr-1"
+                        style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                        title="Rename"
+                      >
+                        <Pencil className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
                   )}
                 </div>
               );
@@ -182,6 +219,7 @@ const BuilderSidebar = ({
           onChange={(html) => {
             onUpdateNavGroup(group.id, { title: html });
           }}
+          onDone={() => setEditingGroupId(null)}
           settings={s}
           singleLine
           placeholder="Label..."
@@ -197,9 +235,11 @@ const BuilderSidebar = ({
 
     return (
       <span
-        className="cursor-pointer"
-        onDoubleClick={() => setEditingGroupId(group.id)}
-        title="Double-click to edit with formatting"
+        className="cursor-default select-none"
+        onDoubleClick={() => {
+          stopEditing();
+          setEditingGroupId(group.id);
+        }}
         dangerouslySetInnerHTML={{ __html: group.title }}
       />
     );
@@ -244,10 +284,8 @@ const BuilderSidebar = ({
       </div>
 
       <nav style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
-        {/* Ungrouped pages first */}
         {ungroupedPages.map(renderPage)}
 
-        {/* Nav groups with their pages */}
         {navGroups.map((group) => {
           const groupPages = pages.filter((p) => p.nav_group_id === group.id);
 
@@ -258,13 +296,25 @@ const BuilderSidebar = ({
                 style={{ color: `hsl(${s.sidebarTextColor} / 0.5)` }}
               >
                 {renderGroupLabel(group)}
-                <button
-                  onClick={() => onDeleteNavGroup(group.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                  style={{ color: `hsl(${s.mutedForegroundColor})` }}
-                >
-                  <Trash2 className="h-2.5 w-2.5" />
-                </button>
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  <button
+                    onClick={() => {
+                      stopEditing();
+                      setEditingGroupId(group.id);
+                    }}
+                    style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                    title="Rename"
+                  >
+                    <Pencil className="h-2 w-2" />
+                  </button>
+                  <button
+                    onClick={() => onDeleteNavGroup(group.id)}
+                    style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                    title="Delete"
+                  >
+                    <Trash2 className="h-2.5 w-2.5" />
+                  </button>
+                </div>
               </div>
               <div style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
                 {groupPages.map(renderPage)}
