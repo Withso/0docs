@@ -171,27 +171,50 @@ const Index = () => {
 
   return (
     <div className="min-h-screen relative">
-      {/* Auth/Dashboard button floating in doc header */}
-      <div className="fixed top-0 right-0 z-50 p-2 pr-4 flex items-center gap-2" style={{ height: "48px" }}>
-        {user ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-8 text-[13px] rounded-lg gap-1.5"
-            onClick={() => navigate("/dashboard")}
+      {/* Floating top bar: search center-right, dashboard/signin far right */}
+      <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+        <div className="flex items-center justify-end gap-3 px-6 py-3 pointer-events-auto max-w-screen-2xl mx-auto">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border backdrop-blur-md transition-colors hover:bg-accent/80"
+            style={{
+              borderColor: `hsl(${settings.borderColor})`,
+              color: `hsl(${settings.mutedForegroundColor})`,
+              backgroundColor: `hsl(${settings.backgroundColor} / 0.7)`,
+              fontSize: "13px",
+              fontFamily: `'${settings.bodyFont}', sans-serif`,
+              minWidth: "180px",
+            }}
           >
-            <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-8 text-[13px] rounded-lg gap-1.5"
-            onClick={() => navigate("/auth")}
-          >
-            <LogIn className="h-3.5 w-3.5" /> Sign In
-          </Button>
-        )}
+            <Search className="h-3.5 w-3.5" />
+            <span>Search</span>
+            <kbd className="ml-auto hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]" style={{ borderColor: `hsl(${settings.borderColor})` }}>
+              ⌘K
+            </kbd>
+          </button>
+
+          {user ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-[13px] rounded-lg gap-1.5 backdrop-blur-md"
+              style={{ backgroundColor: `hsl(${settings.backgroundColor} / 0.7)` }}
+              onClick={() => navigate("/dashboard")}
+            >
+              <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-[13px] rounded-lg gap-1.5 backdrop-blur-md"
+              style={{ backgroundColor: `hsl(${settings.backgroundColor} / 0.7)` }}
+              onClick={() => navigate("/auth")}
+            >
+              <LogIn className="h-3.5 w-3.5" /> Sign In
+            </Button>
+          )}
+        </div>
       </div>
 
       <DocContentView
@@ -202,6 +225,7 @@ const Index = () => {
         sections={sections}
         blocks={blocks}
         onSelectPage={setActivePage}
+        hideHeader
         headerStickyTop={0}
         allSections={allSections}
         allBlocks={allBlocks}
@@ -211,6 +235,8 @@ const Index = () => {
         versions={versions}
         activeVersion={activeVersion}
         onSelectVersion={setActiveVersion}
+        externalSearchOpen={searchOpen}
+        onExternalSearchOpenChange={setSearchOpen}
       />
       {project?.id && <AskDocsChat projectId={project.id} settings={settings} />}
     </div>

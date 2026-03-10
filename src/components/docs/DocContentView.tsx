@@ -75,8 +75,12 @@ const DocContentView = ({
   versions = [],
   activeVersion,
   onSelectVersion,
+  externalSearchOpen,
+  onExternalSearchOpenChange,
 }: DocContentViewProps) => {
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [internalSearchOpen, setInternalSearchOpen] = useState(false);
+  const searchOpen = externalSearchOpen !== undefined ? externalSearchOpen : internalSearchOpen;
+  const setSearchOpen = onExternalSearchOpenChange || setInternalSearchOpen;
   const headerHeight = hideHeader ? 0 : 48;
   const sidebarTop = headerStickyTop + headerHeight;
   const frameMaxWidth = s.contentMaxWidth + s.sidebarWidth + 200 + 48;
