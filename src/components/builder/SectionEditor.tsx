@@ -224,7 +224,7 @@ const SectionEditor = ({
                     >
                       <GripVertical className="h-3.5 w-3.5" />
                     </span>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 relative">
                       <div className="absolute right-0 top-1 opacity-0 group-hover/block:opacity-100 transition-opacity z-10">
                         <button onClick={() => onDeleteBlock(block.id)} className="p-1" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
                           <Trash2 className="h-3.5 w-3.5" />
@@ -235,7 +235,6 @@ const SectionEditor = ({
                         settings={settings}
                         onUpdate={onUpdateBlock}
                         onDelete={onDeleteBlock}
-                        hideDelete
                       />
                     </div>
                   </div>
