@@ -136,7 +136,15 @@ const Builder = () => {
             <main className="flex-1 min-w-0 py-10 lg:pl-4">
               {activePage ? (
                 <article style={{ maxWidth: `${settings.contentMaxWidth}px` }} className="animate-fade-in">
-                  <PageTitleEditor page={activePage} onUpdate={updatePage} settings={settings} />
+                  <PageTitleEditor
+                    page={activePage}
+                    onUpdate={updatePage}
+                    settings={settings}
+                    onImportOpenAPI={() => {
+                      setOpenApiMode("page");
+                      setOpenApiOpen(true);
+                    }}
+                  />
 
                   {sections.map((section) => (
                     <SectionEditor
@@ -149,7 +157,11 @@ const Builder = () => {
                       onAddBlock={addBlock}
                       onUpdateBlock={updateBlock}
                       onDeleteBlock={deleteBlock}
-                      onImportOpenAPI={() => setOpenApiOpen(true)}
+                      onImportOpenAPI={() => {
+                        setOpenApiMode("block");
+                        setImportTargetSectionId(section.id);
+                        setOpenApiOpen(true);
+                      }}
                     />
                   ))}
 
