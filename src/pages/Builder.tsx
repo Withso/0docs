@@ -121,7 +121,7 @@ const Builder = () => {
   return (
     <div className={`min-h-screen bg-background ${mode === "design" ? "flex flex-col h-screen overflow-hidden" : ""}`}>
       {/* Floating header */}
-      <div className="sticky top-0 z-50 p-1.5">
+      <div className="sticky top-0 z-50 p-1.5 backdrop-blur-xl" style={{ backgroundColor: `hsl(${settings.backgroundColor} / 0.5)` }}>
         <header
           className="border rounded-2xl backdrop-blur-xl shadow-sm"
           style={{ backgroundColor: `hsl(${settings.backgroundColor} / 0.85)`, borderColor: `hsl(${settings.borderColor})` }}
