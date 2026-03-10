@@ -81,7 +81,7 @@ const Builder = () => {
     addPage, updatePage, deletePage, addSection, updateSection, deleteSection,
     addBlock, updateBlock, deleteBlock, reloadPages, loadPageContent,
     navGroups, addNavGroup, updateNavGroup, deleteNavGroup,
-    reorderPages, reorderNavGroups, reorderSections,
+    reorderPages, reorderNavGroups, reorderSections, reorderBlocks,
   } = useBuilder(projectId, user?.id);
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
