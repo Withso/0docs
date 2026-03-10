@@ -10,8 +10,9 @@ import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import DesignPanel from "@/components/builder/DesignPanel";
 import DocContentView from "@/components/docs/DocContentView";
+import BuilderHeader from "@/components/builder/BuilderHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, FileText, FileJson, BarChart3, Settings, ChevronRight } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -20,32 +21,6 @@ import type { ParsedOpenAPI } from "@/lib/openapi-parser";
 export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
 
 type BuilderMode = "editor" | "design" | "preview";
-
-const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
-  const options: { label: string; value: BuilderMode }[] = [
-    { label: "Editor", value: "editor" },
-    { label: "Design", value: "design" },
-    { label: "Preview", value: "preview" },
-  ];
-
-  return (
-    <div className="flex items-center rounded-full bg-muted p-0.5">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          className={`px-4 py-1 rounded-full text-[12px] font-medium transition-all ${
-            value === opt.value
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-};
 
 const Builder = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -116,66 +91,14 @@ const Builder = () => {
 
   return (
     <div className={`min-h-screen bg-background ${mode === "design" ? "flex flex-col h-screen overflow-hidden" : ""}`}>
-      {/* Floating header */}
-      <div className="sticky top-0 z-50 p-1.5 backdrop-blur-xl" style={{ backgroundColor: `hsl(${settings.backgroundColor} / 0.5)` }}>
-        <header
-          className="border rounded-2xl backdrop-blur-xl shadow-sm"
-          style={{ backgroundColor: `hsl(${settings.backgroundColor} / 0.85)`, borderColor: `hsl(${settings.borderColor})` }}
-        >
-          <div className="px-4 h-[48px] flex items-center justify-between">
-            {/* Left */}
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-lg" onClick={() => navigate("/dashboard")}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="h-6 w-6 rounded-lg bg-platform-accent-soft flex items-center justify-center shrink-0">
-                  <FileText className="h-3 w-3 text-primary" />
-                </div>
-                <span className="font-semibold text-foreground text-[13px] truncate">{project?.name}</span>
-                <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                <span className="text-[12px] text-muted-foreground truncate">{activePage?.title || "No page"}</span>
-              </div>
-            </div>
-
-            {/* Center - Segmented Control */}
-            <div className="flex items-center justify-center">
-              <SegmentedControl value={mode} onChange={setMode} />
-            </div>
-
-            {/* Right - icon nav */}
-            <div className="flex items-center gap-1 flex-1 justify-end">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`h-8 w-8 rounded-lg`}
-                title="Analytics"
-                onClick={() => navigate(`/builder/${projectId}/analytics`)}
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`h-8 w-8 rounded-lg`}
-                title="Import API"
-                onClick={() => setOpenApiOpen(true)}
-              >
-                <FileJson className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`h-8 w-8 rounded-lg`}
-                title="Project Settings"
-                onClick={() => navigate(`/builder/${projectId}/settings`)}
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </header>
-      </div>
+      <BuilderHeader
+        projectId={projectId!}
+        projectName={project?.name || ""}
+        activePageTitle={activePage?.title || "No page"}
+        mode={mode}
+        onModeChange={setMode}
+        onImportAPI={() => setOpenApiOpen(true)}
+      />
 
       {/* Mode: Editor */}
       {mode === "editor" && (

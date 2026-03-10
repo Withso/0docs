@@ -6,14 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import BuilderHeader from "@/components/builder/BuilderHeader";
+import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  ArrowLeft, Save, Globe, Trash2,
-  Copy, Check, Settings, BarChart3, Palette,
+  Save, Globe, Trash2,
+  Copy, Check, BarChart3, Palette,
 } from "lucide-react";
 
 const ProjectSettings = () => {
@@ -29,6 +31,7 @@ const ProjectSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [openApiOpen, setOpenApiOpen] = useState(false);
 
   useEffect(() => {
     if (!projectId || !user) return;
@@ -95,21 +98,12 @@ const ProjectSettings = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="platform-header">
-        <div className="h-full max-w-3xl mx-auto px-6 flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => navigate(`/builder/${projectId}`)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-platform-accent-soft flex items-center justify-center">
-              <Settings className="h-3.5 w-3.5 text-primary" />
-            </div>
-            <span className="text-[14px] font-semibold text-foreground">{project?.name}</span>
-            <span className="text-muted-foreground text-xs">/</span>
-            <span className="text-[13px] text-muted-foreground">Settings</span>
-          </div>
-        </div>
-      </header>
+      <BuilderHeader
+        projectId={projectId!}
+        projectName={project?.name || ""}
+        activeTool="settings"
+        onImportAPI={() => setOpenApiOpen(true)}
+      />
 
       <main className="max-w-3xl mx-auto px-6 py-10 animate-fade-in">
         <div className="mb-8">
@@ -209,6 +203,7 @@ const ProjectSettings = () => {
           </AlertDialog>
         </div>
       </main>
+      <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={async () => { window.location.reload(); }} />
     </div>
   );
 };
