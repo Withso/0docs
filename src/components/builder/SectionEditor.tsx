@@ -15,6 +15,7 @@ interface SectionEditorProps {
   onAddBlock: (sectionId: string, type: string) => void;
   onUpdateBlock: (id: string, updates: Partial<Block>) => void;
   onDeleteBlock: (id: string) => void;
+  onImportOpenAPI?: () => void;
 }
 
 const SectionEditor = ({
