@@ -2,15 +2,14 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, BarChart3, Settings, ChevronRight } from "lucide-react";
 
-type BuilderMode = "editor" | "design" | "preview";
+export type BuilderMode = "editor" | "design" | "preview" | "analytics" | "settings";
 
 interface BuilderHeaderProps {
   projectId: string;
   projectName: string;
   activePageTitle?: string;
-  mode?: BuilderMode;
-  onModeChange?: (mode: BuilderMode) => void;
-  activeTool?: "analytics" | "settings" | null;
+  mode: BuilderMode;
+  onModeChange: (mode: BuilderMode) => void;
 }
 
 const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
@@ -20,6 +19,9 @@ const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (
     { label: "Preview", value: "preview" },
   ];
 
+  // Map analytics/settings to no active segment in the toggle
+  const activeValue = ["editor", "design", "preview"].includes(value) ? value : null;
+
   return (
     <div className="flex items-center rounded-full bg-muted p-0.5">
       {options.map((opt) => (
@@ -27,7 +29,7 @@ const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={`px-4 py-1 rounded-full text-[12px] font-medium transition-all ${
-            value === opt.value
+            activeValue === opt.value
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
@@ -45,7 +47,6 @@ const BuilderHeader = ({
   activePageTitle,
   mode,
   onModeChange,
-  activeTool,
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
 
@@ -66,7 +67,7 @@ const BuilderHeader = ({
                 <FileText className="h-3 w-3 text-primary" />
               </div>
               <span className="font-semibold text-foreground text-[13px] truncate">{projectName}</span>
-              {activePageTitle && (
+              {activePageTitle && mode !== "analytics" && mode !== "settings" && (
                 <>
                   <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
                   <span className="text-[12px] text-muted-foreground truncate">{activePageTitle}</span>
@@ -75,38 +76,36 @@ const BuilderHeader = ({
             </div>
           </div>
 
-          {/* Center - Segmented Control (only in builder modes) */}
+          {/* Center - Segmented Control (always visible) */}
           <div className="flex items-center justify-center">
-            {mode && onModeChange ? (
-              <SegmentedControl value={mode} onChange={onModeChange} />
-            ) : null}
+            <SegmentedControl value={mode} onChange={onModeChange} />
           </div>
 
           {/* Right - icon nav */}
           <div className="flex items-center gap-0.5 flex-1 justify-end">
             <button
               className={`h-8 rounded-lg px-2 flex items-center gap-1.5 text-[12px] font-medium transition-all ${
-                activeTool === "analytics"
+                mode === "analytics"
                   ? "bg-muted text-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
               title="Analytics"
-              onClick={() => navigate(`/builder/${projectId}/analytics`)}
+              onClick={() => onModeChange("analytics")}
             >
               <BarChart3 className="h-4 w-4" />
-              {activeTool === "analytics" && <span>Analytics</span>}
+              {mode === "analytics" && <span>Analytics</span>}
             </button>
             <button
               className={`h-8 rounded-lg px-2 flex items-center gap-1.5 text-[12px] font-medium transition-all ${
-                activeTool === "settings"
+                mode === "settings"
                   ? "bg-muted text-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
               title="Project Settings"
-              onClick={() => navigate(`/builder/${projectId}/settings`)}
+              onClick={() => onModeChange("settings")}
             >
               <Settings className="h-4 w-4" />
-              {activeTool === "settings" && <span>Settings</span>}
+              {mode === "settings" && <span>Settings</span>}
             </button>
           </div>
         </div>

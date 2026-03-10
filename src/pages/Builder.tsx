@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBuilder } from "@/hooks/use-builder";
@@ -11,12 +11,15 @@ import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import DesignPanel from "@/components/builder/DesignPanel";
 import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
+import SettingsContent from "@/components/builder/SettingsContent";
+import AnalyticsContent from "@/components/builder/AnalyticsContent";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { ParsedOpenAPI } from "@/lib/openapi-parser";
+import type { BuilderMode } from "@/components/builder/BuilderHeader";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,16 +29,35 @@ import {
 
 export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
 
-type BuilderMode = "editor" | "design" | "preview";
-
 const Builder = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [openApiOpen, setOpenApiOpen] = useState(false);
   const [openApiMode, setOpenApiMode] = useState<"block" | "page">("block");
   const [importTargetSectionId, setImportTargetSectionId] = useState<string | null>(null);
-  const [mode, setMode] = useState<BuilderMode>("editor");
+
+  // Derive initial mode from URL path
+  const getInitialMode = (): BuilderMode => {
+    if (location.pathname.endsWith("/analytics")) return "analytics";
+    if (location.pathname.endsWith("/settings")) return "settings";
+    if (location.pathname.endsWith("/design")) return "design";
+    return "editor";
+  };
+
+  const [mode, setMode] = useState<BuilderMode>(getInitialMode);
+
+  // Sync URL when mode changes
+  const handleModeChange = useCallback((newMode: BuilderMode) => {
+    setMode(newMode);
+    if (!projectId) return;
+    const base = `/builder/${projectId}`;
+    if (newMode === "analytics") navigate(`${base}/analytics`, { replace: true });
+    else if (newMode === "settings") navigate(`${base}/settings`, { replace: true });
+    else if (newMode === "design") navigate(`${base}/design`, { replace: true });
+    else navigate(base, { replace: true });
+  }, [projectId, navigate]);
 
   const {
     project, pages, activePage, setActivePage, sections, blocks, loading,
@@ -45,7 +67,7 @@ const Builder = () => {
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
 
-  // Block-level import: adds endpoints as api_endpoint blocks within the target section
+  // Block-level import
   const handleBlockLevelImport = useCallback(async (parsed: ParsedOpenAPI) => {
     if (!importTargetSectionId) return;
     const existingBlocks = blocks.filter((b) => b.section_id === importTargetSectionId);
@@ -63,7 +85,7 @@ const Builder = () => {
     await loadPageContent();
   }, [importTargetSectionId, blocks, loadPageContent]);
 
-  // Page-level import: each endpoint becomes a section with an api_endpoint block
+  // Page-level import
   const handlePageLevelImport = useCallback(async (parsed: ParsedOpenAPI) => {
     if (!activePage) return;
     let sectionIndex = sections.length;
@@ -115,7 +137,7 @@ const Builder = () => {
         projectName={project?.name || ""}
         activePageTitle={activePage?.title || "No page"}
         mode={mode}
-        onModeChange={setMode}
+        onModeChange={handleModeChange}
       />
 
       {/* Mode: Editor */}
@@ -218,6 +240,16 @@ const Builder = () => {
             hideHeader
           />
         </div>
+      )}
+
+      {/* Mode: Analytics */}
+      {mode === "analytics" && (
+        <AnalyticsContent projectId={projectId!} userId={user?.id || ""} />
+      )}
+
+      {/* Mode: Settings */}
+      {mode === "settings" && (
+        <SettingsContent projectId={projectId!} project={project} />
       )}
 
       <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
