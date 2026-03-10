@@ -136,7 +136,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                       style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
                     />
                   )}
-                  {section.title}
+                  <span dangerouslySetInnerHTML={{ __html: section.title }} />
                 </a>
               );
             })}
