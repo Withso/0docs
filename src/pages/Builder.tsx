@@ -33,6 +33,8 @@ const Builder = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [openApiOpen, setOpenApiOpen] = useState(false);
+  const [openApiMode, setOpenApiMode] = useState<"block" | "page">("block");
+  const [importTargetSectionId, setImportTargetSectionId] = useState<string | null>(null);
   const [mode, setMode] = useState<BuilderMode>("editor");
 
   const {
