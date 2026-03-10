@@ -10,8 +10,9 @@ import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import DesignPanel from "@/components/builder/DesignPanel";
 import DocContentView from "@/components/docs/DocContentView";
+import BuilderHeader from "@/components/builder/BuilderHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, FileText, FileJson, BarChart3, Settings, ChevronRight } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -20,32 +21,6 @@ import type { ParsedOpenAPI } from "@/lib/openapi-parser";
 export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
 
 type BuilderMode = "editor" | "design" | "preview";
-
-const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
-  const options: { label: string; value: BuilderMode }[] = [
-    { label: "Editor", value: "editor" },
-    { label: "Design", value: "design" },
-    { label: "Preview", value: "preview" },
-  ];
-
-  return (
-    <div className="flex items-center rounded-full bg-muted p-0.5">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          className={`px-4 py-1 rounded-full text-[12px] font-medium transition-all ${
-            value === opt.value
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-};
 
 const Builder = () => {
   const { projectId } = useParams<{ projectId: string }>();
