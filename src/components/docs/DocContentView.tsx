@@ -177,6 +177,8 @@ const DocContentView = ({
           sections={sections}
           onSelectPage={onSelectPage}
           stickyTop={sidebarTop}
+          navGroups={navGroups}
+          hideHeaderLabel={hideHeaderLabel}
         />
 
         <main className="flex-1 min-w-0 py-10 lg:pl-4">

@@ -247,6 +247,8 @@ const Builder = () => {
             }}
             headerStickyTop={0}
             hideHeader
+            navGroups={navGroups}
+            hideHeaderLabel
           />
         </div>
       )}
