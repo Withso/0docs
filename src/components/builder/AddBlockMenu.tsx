@@ -2,7 +2,7 @@ import {
   Type, AlignLeft, Code, ImageIcon, Film, Youtube,
   ListOrdered, List, StickyNote, AlertCircle, X,
   Columns, ChevronDown, CreditCard, Footprints,
-  Table2, Minus, Quote, Globe, CodeXml,
+  Table2, Minus, Quote, Globe, CodeXml, FileJson,
 } from "lucide-react";
 
 const blockTypes = [
@@ -25,6 +25,7 @@ const blockTypes = [
   { type: "divider", label: "Divider", icon: Minus },
   { type: "quote", label: "Quote", icon: Quote },
   { type: "api_endpoint", label: "API Endpoint", icon: Globe },
+  { type: "import_openapi", label: "Import OpenAPI", icon: FileJson },
 ];
 
 interface AddBlockMenuProps {

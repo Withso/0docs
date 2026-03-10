@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, FileJson, BarChart3, Settings, ChevronRight } from "lucide-react";
+import { ArrowLeft, FileText, BarChart3, Settings, ChevronRight } from "lucide-react";
 
 type BuilderMode = "editor" | "design" | "preview";
 
@@ -11,7 +11,6 @@ interface BuilderHeaderProps {
   mode?: BuilderMode;
   onModeChange?: (mode: BuilderMode) => void;
   activeTool?: "analytics" | "settings" | null;
-  onImportAPI?: () => void;
 }
 
 const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
@@ -47,7 +46,6 @@ const BuilderHeader = ({
   mode,
   onModeChange,
   activeTool,
-  onImportAPI,
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
 
@@ -97,13 +95,6 @@ const BuilderHeader = ({
             >
               <BarChart3 className="h-4 w-4" />
               {activeTool === "analytics" && <span>Analytics</span>}
-            </button>
-            <button
-              className="h-8 rounded-lg px-2 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-              title="Import API"
-              onClick={onImportAPI}
-            >
-              <FileJson className="h-4 w-4" />
             </button>
             <button
               className={`h-8 rounded-lg px-2 flex items-center gap-1.5 text-[12px] font-medium transition-all ${

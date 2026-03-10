@@ -97,7 +97,6 @@ const Builder = () => {
         activePageTitle={activePage?.title || "No page"}
         mode={mode}
         onModeChange={setMode}
-        onImportAPI={() => setOpenApiOpen(true)}
       />
 
       {/* Mode: Editor */}
@@ -131,6 +130,7 @@ const Builder = () => {
                       onAddBlock={addBlock}
                       onUpdateBlock={updateBlock}
                       onDeleteBlock={deleteBlock}
+                      onImportOpenAPI={() => setOpenApiOpen(true)}
                     />
                   ))}
 

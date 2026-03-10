@@ -15,6 +15,7 @@ interface SectionEditorProps {
   onAddBlock: (sectionId: string, type: string) => void;
   onUpdateBlock: (id: string, updates: Partial<Block>) => void;
   onDeleteBlock: (id: string) => void;
+  onImportOpenAPI?: () => void;
 }
 
 const SectionEditor = ({
@@ -26,6 +27,7 @@ const SectionEditor = ({
   onAddBlock,
   onUpdateBlock,
   onDeleteBlock,
+  onImportOpenAPI,
 }: SectionEditorProps) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [title, setTitle] = useState(section.title);
@@ -86,6 +88,11 @@ const SectionEditor = ({
         {showAddMenu ? (
           <AddBlockMenu
             onSelect={(type) => {
+              if (type === "import_openapi") {
+                onImportOpenAPI?.();
+                setShowAddMenu(false);
+                return;
+              }
               onAddBlock(section.id, type);
               setShowAddMenu(false);
             }}
