@@ -144,6 +144,7 @@ const PublicDocs = () => {
         settings={settings}
         projectName={project?.name || ""}
         pages={filteredPages}
+        navGroups={navGroups}
         activePage={activePage}
         sections={sections}
         blocks={blocks}
