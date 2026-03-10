@@ -142,9 +142,11 @@ const InlineRichText = ({
   const handleLink = () => {
     if (showLinkInput) {
       setShowLinkInput(false);
+      keepOpenRef.current = false;
       return;
     }
     saveSelection();
+    keepOpenRef.current = true;
     setShowLinkInput(true);
     setShowColorPicker(false);
     setTimeout(() => linkInputRef.current?.focus(), 50);
