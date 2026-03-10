@@ -10,6 +10,7 @@ export interface Page {
   meta_description?: string | null;
   version_id?: string | null;
   nav_group_id?: string | null;
+  nav_title?: string | null;
 }
 
 export interface Section {
