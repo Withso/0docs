@@ -65,6 +65,7 @@ const Builder = () => {
     addPage, updatePage, deletePage, addSection, updateSection, deleteSection,
     addBlock, updateBlock, deleteBlock, reloadPages, loadPageContent,
     navGroups, addNavGroup, updateNavGroup, deleteNavGroup,
+    reorderPages, reorderNavGroups, reorderSections,
   } = useBuilder(projectId, user?.id);
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
@@ -171,6 +172,9 @@ const Builder = () => {
               onAddNavGroup={addNavGroup}
               onUpdateNavGroup={updateNavGroup}
               onDeleteNavGroup={deleteNavGroup}
+              onReorderPages={reorderPages}
+              onReorderNavGroups={reorderNavGroups}
+              onReorderSections={reorderSections}
             />
 
             <main className="flex-1 min-w-0 py-10 lg:pl-4">
