@@ -84,41 +84,6 @@ export type Database = {
           },
         ]
       }
-      nav_groups: {
-        Row: {
-          created_at: string
-          id: string
-          order_index: number
-          project_id: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          order_index?: number
-          project_id: string
-          title?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          order_index?: number
-          project_id?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nav_groups_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       page_analytics: {
         Row: {
           avg_time_seconds: number | null
@@ -201,7 +166,6 @@ export type Database = {
           created_at: string
           id: string
           meta_description: string | null
-          nav_group_id: string | null
           order_index: number
           project_id: string
           slug: string
@@ -213,7 +177,6 @@ export type Database = {
           created_at?: string
           id?: string
           meta_description?: string | null
-          nav_group_id?: string | null
           order_index?: number
           project_id: string
           slug: string
@@ -225,7 +188,6 @@ export type Database = {
           created_at?: string
           id?: string
           meta_description?: string | null
-          nav_group_id?: string | null
           order_index?: number
           project_id?: string
           slug?: string
@@ -234,13 +196,6 @@ export type Database = {
           version_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "pages_nav_group_id_fkey"
-            columns: ["nav_group_id"]
-            isOneToOne: false
-            referencedRelation: "nav_groups"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "pages_project_id_fkey"
             columns: ["project_id"]
