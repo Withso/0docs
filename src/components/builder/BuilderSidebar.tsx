@@ -13,9 +13,6 @@ import {
   type DragEndEvent,
   type DragOverEvent,
   DragOverlay,
-  pointerWithin,
-  rectIntersection,
-  type CollisionDetection,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -49,6 +46,14 @@ interface BuilderSidebarProps {
   onReorderSections: (sections: Section[]) => void;
 }
 
+/* ─── ID prefix helpers ─── */
+const NAVGROUP_PREFIX = "navgroup::";
+const toNavGroupSortId = (id: string) => `${NAVGROUP_PREFIX}${id}`;
+const isNavGroupSortId = (id: string) => id.startsWith(NAVGROUP_PREFIX);
+const fromNavGroupSortId = (id: string) => id.slice(NAVGROUP_PREFIX.length);
+
+const UNGROUPED_CONTAINER = "__ungrouped__";
+
 /* ─── Sortable wrapper ─── */
 const SortableItem = ({
   id,
@@ -79,14 +84,11 @@ const SortableItem = ({
 const DroppableContainer = ({
   id,
   children,
-  isOver,
 }: {
   id: string;
   children: React.ReactNode;
-  isOver?: boolean;
 }) => {
-  const { setNodeRef, isOver: droppableIsOver } = useDroppable({ id });
-  const active = isOver ?? droppableIsOver;
+  const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
     <div
@@ -95,15 +97,13 @@ const DroppableContainer = ({
         minHeight: "4px",
         borderRadius: "4px",
         transition: "background-color 150ms ease",
-        backgroundColor: active ? "hsl(var(--accent) / 0.15)" : undefined,
+        backgroundColor: isOver ? "hsl(var(--accent) / 0.15)" : undefined,
       }}
     >
       {children}
     </div>
   );
 };
-
-const UNGROUPED_CONTAINER = "__ungrouped__";
 
 const BuilderSidebar = ({
   settings: s,
@@ -126,7 +126,7 @@ const BuilderSidebar = ({
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
-  const [dragActivePageId, setDragActivePageId] = useState<string | null>(null);
+  const [dragActiveId, setDragActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -154,41 +154,55 @@ const BuilderSidebar = ({
     [sections]
   );
 
-  /* ─── All page IDs for single DndContext ─── */
-  const allPageIds = useMemo(() => pages.map((p) => p.id), [pages]);
+  /* ─── Build a flat list of all sortable IDs: ungrouped pages, then (navgroup + its pages) interleaved ─── */
+  const allSortableIds = useMemo(() => {
+    const ids: string[] = [];
+    // ungrouped pages
+    ungroupedPages.forEach((p) => ids.push(p.id));
+    // nav groups with their pages
+    sortedNavGroups.forEach((g) => {
+      ids.push(toNavGroupSortId(g.id));
+      if (g.type === "label") {
+        pages
+          .filter((p) => p.nav_group_id === g.id)
+          .sort((a, b) => a.order_index - b.order_index)
+          .forEach((p) => ids.push(p.id));
+      }
+    });
+    return ids;
+  }, [ungroupedPages, sortedNavGroups, pages]);
 
-  /* ─── Find which container (group) a page belongs to ─── */
-  const getContainerForPage = useCallback(
-    (pageId: string): string => {
-      const page = pages.find((p) => p.id === pageId);
-      return page?.nav_group_id || UNGROUPED_CONTAINER;
-    },
+  /* ─── Helpers ─── */
+  const isPageId = useCallback(
+    (id: string) => pages.some((p) => p.id === id),
     [pages]
   );
 
-  /* ─── Find container from an ID (could be page id or container id) ─── */
-  const findContainer = useCallback(
-    (id: string): string | null => {
-      // Check if id is a container directly
+  const findContainerForPage = useCallback(
+    (id: string): string => {
       if (id === UNGROUPED_CONTAINER) return UNGROUPED_CONTAINER;
-      if (navGroups.some((g) => g.id === id && g.type === "label")) return id;
-      // Check if it's a page
+      // Is it a droppable container id (group)?
+      if (navGroups.some((g) => g.id === id)) return id;
       const page = pages.find((p) => p.id === id);
-      if (page) return page.nav_group_id || UNGROUPED_CONTAINER;
-      return null;
+      return page?.nav_group_id || UNGROUPED_CONTAINER;
     },
     [pages, navGroups]
   );
 
-  /* ─── Unified page drag handlers ─── */
-  const handlePageDragStart = useCallback((event: any) => {
-    const { active } = event;
-    if (pages.some((p) => p.id === active.id)) {
-      setDragActivePageId(active.id as string);
-    }
-  }, [pages]);
+  const getGroupPages = useCallback(
+    (groupId: string) =>
+      pages
+        .filter((p) => (p.nav_group_id || UNGROUPED_CONTAINER) === groupId)
+        .sort((a, b) => a.order_index - b.order_index),
+    [pages]
+  );
 
-  const handlePageDragOver = useCallback(
+  /* ─── Unified drag handlers ─── */
+  const handleDragStart = useCallback((event: any) => {
+    setDragActiveId(event.active.id as string);
+  }, []);
+
+  const handleDragOver = useCallback(
     (event: DragOverEvent) => {
       const { active, over } = event;
       if (!over) return;
@@ -196,73 +210,80 @@ const BuilderSidebar = ({
       const activeId = active.id as string;
       const overId = over.id as string;
 
-      // Only handle page drags
-      if (!pages.some((p) => p.id === activeId)) return;
+      // Only handle page cross-container moves
+      if (!isPageId(activeId)) return;
+      if (isNavGroupSortId(overId)) return; // Don't drop pages onto nav group sort handles
 
-      const activeContainer = findContainer(activeId);
-      const overContainer = findContainer(overId);
+      const activeContainer = findContainerForPage(activeId);
+      const overContainer = findContainerForPage(overId);
 
       if (!activeContainer || !overContainer || activeContainer === overContainer) return;
 
       // Move page to new container
       const targetGroupId = overContainer === UNGROUPED_CONTAINER ? null : overContainer;
-      const targetPages = pages
+      const targetContainerPages = pages
         .filter((p) => (p.nav_group_id || UNGROUPED_CONTAINER) === overContainer && p.id !== activeId)
         .sort((a, b) => a.order_index - b.order_index);
 
-      // Find insertion index
-      const overIndex = targetPages.findIndex((p) => p.id === overId);
-      const insertAt = overIndex >= 0 ? overIndex : targetPages.length;
+      const overIndex = targetContainerPages.findIndex((p) => p.id === overId);
+      const insertAt = overIndex >= 0 ? overIndex + 1 : targetContainerPages.length;
 
-      // Build new pages array
+      // Re-index all affected containers
+      const oldContainerPages = pages
+        .filter((p) => (p.nav_group_id || UNGROUPED_CONTAINER) === activeContainer && p.id !== activeId)
+        .sort((a, b) => a.order_index - b.order_index);
+
+      const newContainerPages = [...targetContainerPages];
+      newContainerPages.splice(insertAt, 0, pages.find((p) => p.id === activeId)!);
+
       const updatedPages = pages.map((p) => {
         if (p.id === activeId) {
           return { ...p, nav_group_id: targetGroupId, order_index: insertAt };
         }
-        // Re-index pages in old container
-        const oldContainerPages = pages
-          .filter((pg) => (pg.nav_group_id || UNGROUPED_CONTAINER) === activeContainer && pg.id !== activeId)
-          .sort((a, b) => a.order_index - b.order_index);
         const oldIdx = oldContainerPages.findIndex((pg) => pg.id === p.id);
         if (oldIdx >= 0) return { ...p, order_index: oldIdx };
-
-        // Re-index pages in new container
-        const newArr = [...targetPages];
-        newArr.splice(insertAt, 0, { ...pages.find((pg) => pg.id === activeId)!, nav_group_id: targetGroupId, order_index: insertAt });
-        const newIdx = newArr.findIndex((pg) => pg.id === p.id);
+        const newIdx = newContainerPages.findIndex((pg) => pg.id === p.id);
         if (newIdx >= 0) return { ...p, order_index: newIdx };
-
         return p;
       });
 
       onReorderPages(updatedPages);
     },
-    [pages, findContainer, onReorderPages]
+    [pages, isPageId, findContainerForPage, onReorderPages]
   );
 
-  const handlePageDragEnd = useCallback(
+  const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      setDragActivePageId(null);
+      setDragActiveId(null);
       const { active, over } = event;
       if (!over || active.id === over.id) return;
 
       const activeId = active.id as string;
       const overId = over.id as string;
 
-      // Only handle page drags
-      if (!pages.some((p) => p.id === activeId)) return;
+      // ─── Nav group reordering ───
+      if (isNavGroupSortId(activeId) && isNavGroupSortId(overId)) {
+        const realActiveId = fromNavGroupSortId(activeId);
+        const realOverId = fromNavGroupSortId(overId);
 
-      const activeContainer = findContainer(activeId);
-      const overContainer = findContainer(overId);
+        const oldIndex = sortedNavGroups.findIndex((g) => g.id === realActiveId);
+        const newIndex = sortedNavGroups.findIndex((g) => g.id === realOverId);
+        if (oldIndex === -1 || newIndex === -1) return;
 
-      if (!activeContainer || !overContainer) return;
+        const reordered = [...sortedNavGroups];
+        const [moved] = reordered.splice(oldIndex, 1);
+        reordered.splice(newIndex, 0, moved);
+        onReorderNavGroups(reordered.map((g, i) => ({ ...g, order_index: i })));
+        return;
+      }
 
-      if (activeContainer === overContainer) {
-        // Same container reorder
-        const containerPages = pages
-          .filter((p) => (p.nav_group_id || UNGROUPED_CONTAINER) === activeContainer)
-          .sort((a, b) => a.order_index - b.order_index);
+      // ─── Page reordering (same container) ───
+      if (isPageId(activeId) && isPageId(overId)) {
+        const activeContainer = findContainerForPage(activeId);
+        const overContainer = findContainerForPage(overId);
+        if (activeContainer !== overContainer) return; // cross-container handled in onDragOver
 
+        const containerPages = getGroupPages(activeContainer);
         const oldIndex = containerPages.findIndex((p) => p.id === activeId);
         const newIndex = containerPages.findIndex((p) => p.id === overId);
         if (oldIndex === -1 || newIndex === -1) return;
@@ -278,28 +299,22 @@ const BuilderSidebar = ({
         });
 
         onReorderPages(updatedAll);
+        return;
       }
-      // Cross-container case already handled in onDragOver
+
+      // ─── Page dropped on droppable container (empty group) ───
+      if (isPageId(activeId) && !isPageId(overId) && !isNavGroupSortId(overId)) {
+        const targetGroupId = overId === UNGROUPED_CONTAINER ? null : overId;
+        if (navGroups.some((g) => g.id === overId) || overId === UNGROUPED_CONTAINER) {
+          const updatedPages = pages.map((p) => {
+            if (p.id === activeId) return { ...p, nav_group_id: targetGroupId, order_index: 0 };
+            return p;
+          });
+          onReorderPages(updatedPages);
+        }
+      }
     },
-    [pages, findContainer, onReorderPages]
-  );
-
-  const handleNavGroupDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-      if (!over || active.id === over.id) return;
-
-      const oldIndex = sortedNavGroups.findIndex((g) => g.id === active.id);
-      const newIndex = sortedNavGroups.findIndex((g) => g.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      const reordered = [...sortedNavGroups];
-      const [moved] = reordered.splice(oldIndex, 1);
-      reordered.splice(newIndex, 0, moved);
-
-      onReorderNavGroups(reordered.map((g, i) => ({ ...g, order_index: i })));
-    },
-    [sortedNavGroups, onReorderNavGroups]
+    [pages, sortedNavGroups, isPageId, findContainerForPage, getGroupPages, onReorderPages, onReorderNavGroups, navGroups]
   );
 
   const handleSectionDragEnd = useCallback(
@@ -505,16 +520,40 @@ const BuilderSidebar = ({
     );
   };
 
-  /* ─── Get pages for a specific group ─── */
-  const getGroupPages = useCallback(
-    (groupId: string) =>
-      pages
-        .filter((p) => (p.nav_group_id || UNGROUPED_CONTAINER) === groupId)
-        .sort((a, b) => a.order_index - b.order_index),
-    [pages]
-  );
-
-  const dragActivePage = dragActivePageId ? pages.find((p) => p.id === dragActivePageId) : null;
+  /* ─── Drag overlay content ─── */
+  const dragOverlayContent = useMemo(() => {
+    if (!dragActiveId) return null;
+    if (isNavGroupSortId(dragActiveId)) {
+      const group = navGroups.find((g) => g.id === fromNavGroupSortId(dragActiveId));
+      if (!group) return null;
+      return (
+        <div
+          className="rounded px-2 py-1 shadow-md text-[10px] font-semibold uppercase tracking-widest"
+          style={{
+            backgroundColor: `hsl(${s.sidebarBg})`,
+            border: `1px solid hsl(${s.borderColor})`,
+            color: `hsl(${s.sidebarTextColor})`,
+          }}
+          dangerouslySetInnerHTML={{ __html: group.title }}
+        />
+      );
+    }
+    const page = pages.find((p) => p.id === dragActiveId);
+    if (!page) return null;
+    return (
+      <div
+        className="rounded px-2 py-1 shadow-md"
+        style={{
+          backgroundColor: `hsl(${s.sidebarBg})`,
+          border: `1px solid hsl(${s.borderColor})`,
+          fontSize: `${s.sidebarFontSize}px`,
+          fontFamily: `'${s.bodyFont}', sans-serif`,
+          color: `hsl(${s.sidebarTextColor})`,
+        }}
+        dangerouslySetInnerHTML={{ __html: page.title }}
+      />
+    );
+  }, [dragActiveId, pages, navGroups, s]);
 
   return (
     <aside
@@ -558,18 +597,18 @@ const BuilderSidebar = ({
         </DropdownMenu>
       </div>
 
-      {/* Single DndContext for ALL pages — enables cross-group drag */}
+      {/* Single DndContext for ALL pages + nav groups */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
-        onDragStart={handlePageDragStart}
-        onDragOver={handlePageDragOver}
-        onDragEnd={handlePageDragEnd}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
       >
-        <nav style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
-          {/* Ungrouped pages */}
-          <DroppableContainer id={UNGROUPED_CONTAINER}>
-            <SortableContext items={ungroupedPages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={allSortableIds} strategy={verticalListSortingStrategy}>
+          <nav style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
+            {/* Ungrouped pages */}
+            <DroppableContainer id={UNGROUPED_CONTAINER}>
               <div style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
                 {ungroupedPages.map((page) => (
                   <SortableItem key={page.id} id={page.id}>
@@ -577,84 +616,50 @@ const BuilderSidebar = ({
                   </SortableItem>
                 ))}
               </div>
-            </SortableContext>
-          </DroppableContainer>
+            </DroppableContainer>
 
-          {/* Nav groups (labels + text) — sortable among themselves */}
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleNavGroupDragEnd}>
-            <SortableContext items={sortedNavGroups.map((g) => g.id)} strategy={verticalListSortingStrategy}>
-              {sortedNavGroups.map((group) => {
-                const isTextType = group.type === "text";
-                const groupPages = getGroupPages(group.id);
+            {/* Nav groups — sortable via prefixed IDs */}
+            {sortedNavGroups.map((group) => {
+              const isTextType = group.type === "text";
+              const groupPages = getGroupPages(group.id);
 
-                if (isTextType) {
-                  return (
-                    <SortableItem key={group.id} id={group.id}>
-                      <div className="group mt-1">
-                        <div className="flex items-center gap-1">
-                          {editingGroupId === group.id ? (
-                            <InlineRichText
-                              value={group.title}
-                              onChange={(html) => onUpdateNavGroup(group.id, { title: html })}
-                              onDone={() => setEditingGroupId(null)}
-                              settings={s}
-                              singleLine
-                              placeholder="Text..."
-                              className="flex-1 min-w-0"
-                              style={{
-                                fontSize: `${s.sidebarFontSize}px`,
-                                color: `hsl(${s.sidebarTextColor} / 0.6)`,
-                                fontFamily: `'${s.bodyFont}', sans-serif`,
-                              }}
-                            />
-                          ) : (
-                            <span
-                              className="flex-1 py-[3px] select-none cursor-default"
-                              onDoubleClick={() => { stopEditing(); setEditingGroupId(group.id); }}
-                              style={{
-                                fontSize: `${s.sidebarFontSize}px`,
-                                color: `hsl(${s.sidebarTextColor} / 0.6)`,
-                                fontFamily: `'${s.bodyFont}', sans-serif`,
-                              }}
-                              dangerouslySetInnerHTML={{ __html: group.title }}
-                            />
-                          )}
-                          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button
-                              onClick={() => { stopEditing(); setEditingGroupId(group.id); }}
-                              style={{ color: `hsl(${s.mutedForegroundColor})` }}
-                              title="Edit"
-                            >
-                              <Pencil className="h-2 w-2" />
-                            </button>
-                            <button
-                              onClick={() => onDeleteNavGroup(group.id)}
-                              style={{ color: `hsl(${s.mutedForegroundColor})` }}
-                              title="Delete"
-                            >
-                              <Trash2 className="h-2.5 w-2.5" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </SortableItem>
-                  );
-                }
-
-                // Label type — contains droppable zone for pages
+              if (isTextType) {
                 return (
-                  <SortableItem key={group.id} id={group.id}>
-                    <div className="mt-3">
-                      <div
-                        className="group text-[10px] font-semibold uppercase tracking-widest mb-1.5 flex items-center justify-between"
-                        style={{ color: `hsl(${s.sidebarTextColor} / 0.5)` }}
-                      >
-                        {renderGroupLabel(group)}
+                  <SortableItem key={group.id} id={toNavGroupSortId(group.id)}>
+                    <div className="group mt-1">
+                      <div className="flex items-center gap-1">
+                        {editingGroupId === group.id ? (
+                          <InlineRichText
+                            value={group.title}
+                            onChange={(html) => onUpdateNavGroup(group.id, { title: html })}
+                            onDone={() => setEditingGroupId(null)}
+                            settings={s}
+                            singleLine
+                            placeholder="Text..."
+                            className="flex-1 min-w-0"
+                            style={{
+                              fontSize: `${s.sidebarFontSize}px`,
+                              color: `hsl(${s.sidebarTextColor} / 0.6)`,
+                              fontFamily: `'${s.bodyFont}', sans-serif`,
+                            }}
+                          />
+                        ) : (
+                          <span
+                            className="flex-1 py-[3px] select-none cursor-default"
+                            onDoubleClick={() => { stopEditing(); setEditingGroupId(group.id); }}
+                            style={{
+                              fontSize: `${s.sidebarFontSize}px`,
+                              color: `hsl(${s.sidebarTextColor} / 0.6)`,
+                              fontFamily: `'${s.bodyFont}', sans-serif`,
+                            }}
+                            dangerouslySetInnerHTML={{ __html: group.title }}
+                          />
+                        )}
                         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                           <button
                             onClick={() => { stopEditing(); setEditingGroupId(group.id); }}
                             style={{ color: `hsl(${s.mutedForegroundColor})` }}
-                            title="Rename"
+                            title="Edit"
                           >
                             <Pencil className="h-2 w-2" />
                           </button>
@@ -667,43 +672,56 @@ const BuilderSidebar = ({
                           </button>
                         </div>
                       </div>
-
-                      {/* Droppable zone for this group's pages */}
-                      <DroppableContainer id={group.id}>
-                        <SortableContext items={groupPages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-                          <div style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
-                            {groupPages.map((page) => (
-                              <SortableItem key={page.id} id={page.id}>
-                                {renderPageContent(page)}
-                              </SortableItem>
-                            ))}
-                          </div>
-                        </SortableContext>
-                      </DroppableContainer>
                     </div>
                   </SortableItem>
                 );
-              })}
-            </SortableContext>
-          </DndContext>
-        </nav>
+              }
 
-        {/* Drag overlay for smoother visual feedback */}
-        <DragOverlay>
-          {dragActivePage ? (
-            <div
-              className="rounded px-2 py-1 shadow-md"
-              style={{
-                backgroundColor: `hsl(${s.sidebarBg})`,
-                border: `1px solid hsl(${s.borderColor})`,
-                fontSize: `${s.sidebarFontSize}px`,
-                fontFamily: `'${s.bodyFont}', sans-serif`,
-                color: `hsl(${s.sidebarTextColor})`,
-              }}
-              dangerouslySetInnerHTML={{ __html: dragActivePage.title }}
-            />
-          ) : null}
-        </DragOverlay>
+              // Label type — contains droppable zone for pages
+              return (
+                <SortableItem key={group.id} id={toNavGroupSortId(group.id)}>
+                  <div className="mt-3">
+                    <div
+                      className="group text-[10px] font-semibold uppercase tracking-widest mb-1.5 flex items-center justify-between"
+                      style={{ color: `hsl(${s.sidebarTextColor} / 0.5)` }}
+                    >
+                      {renderGroupLabel(group)}
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button
+                          onClick={() => { stopEditing(); setEditingGroupId(group.id); }}
+                          style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                          title="Rename"
+                        >
+                          <Pencil className="h-2 w-2" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteNavGroup(group.id)}
+                          style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Droppable zone for this group's pages */}
+                    <DroppableContainer id={group.id}>
+                      <div style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
+                        {groupPages.map((page) => (
+                          <SortableItem key={page.id} id={page.id}>
+                            {renderPageContent(page)}
+                          </SortableItem>
+                        ))}
+                      </div>
+                    </DroppableContainer>
+                  </div>
+                </SortableItem>
+              );
+            })}
+          </nav>
+        </SortableContext>
+
+        <DragOverlay>{dragOverlayContent}</DragOverlay>
       </DndContext>
     </aside>
   );
