@@ -216,7 +216,7 @@ const Dashboard = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
-                <Settings className="h-4 w-4 mr-2" /> Settings
+                <User className="h-4 w-4 mr-2" /> Profile
               </DropdownMenuItem>
               <DropdownMenuItem onClick={signOut} className="text-destructive">
                 <LogOut className="h-4 w-4 mr-2" /> Sign Out
