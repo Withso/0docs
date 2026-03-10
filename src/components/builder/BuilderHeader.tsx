@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, BarChart3, Settings, ChevronRight } from "lucide-react";
 
 export type BuilderMode = "editor" | "design" | "preview" | "analytics" | "settings";
+export type DesignSubMode = "live" | "examples";
 
 interface BuilderHeaderProps {
   projectId: string;
@@ -10,6 +11,8 @@ interface BuilderHeaderProps {
   activePageTitle?: string;
   mode: BuilderMode;
   onModeChange: (mode: BuilderMode) => void;
+  designSubMode?: DesignSubMode;
+  onDesignSubModeChange?: (sub: DesignSubMode) => void;
 }
 
 const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
