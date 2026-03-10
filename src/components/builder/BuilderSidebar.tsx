@@ -337,18 +337,18 @@ const BuilderSidebar = ({
                         {isSectionEditing ? (
                           <div className="pl-3 py-[3px]">
                             <InlineRichText
-                              value={section.title}
+                              value={section.nav_title || section.title}
                               onChange={(html) => {
                                 window.dispatchEvent(
                                   new CustomEvent("builder:updateSection", {
-                                    detail: { id: section.id, updates: { title: html } },
+                                    detail: { id: section.id, updates: { nav_title: html } },
                                   })
                                 );
                               }}
                               onDone={() => setEditingSectionId(null)}
                               settings={s}
                               singleLine
-                              placeholder="Section title..."
+                              placeholder="Nav title..."
                               className="min-w-0"
                               style={{
                                 color: `hsl(${s.sidebarActiveColor})`,
@@ -375,7 +375,7 @@ const BuilderSidebar = ({
                                 fontWeight: isSectionActive ? 500 : 400,
                                 fontFamily: `'${s.bodyFont}', sans-serif`,
                               }}
-                              dangerouslySetInnerHTML={{ __html: section.title }}
+                              dangerouslySetInnerHTML={{ __html: section.nav_title || section.title }}
                             />
                             <button
                               onClick={() => { stopEditing(); setEditingSectionId(section.id); }}
