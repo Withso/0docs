@@ -2,6 +2,9 @@ import { ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { FileText, FolderOpen, LogOut, User } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -17,6 +20,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     || "U";
 
   const isProjectsActive = location.pathname === "/dashboard";
+  const isProfileActive = location.pathname === "/settings/profile";
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -40,9 +44,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <FolderOpen className="h-4 w-4" />
               <span>Projects</span>
             </div>
+            <div
+              className={`platform-nav-item ${isProfileActive ? "active" : ""} cursor-pointer`}
+              onClick={() => navigate("/settings/profile")}
+            >
+              <User className="h-4 w-4" />
+              <span>Profile</span>
+            </div>
           </nav>
 
-          {/* User section */}
+          {/* User section — sign out only */}
           <div className="p-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -59,10 +70,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
-                  <User className="h-4 w-4 mr-2" /> Profile Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut} className="text-destructive">
                   <LogOut className="h-4 w-4 mr-2" /> Sign Out
                 </DropdownMenuItem>
