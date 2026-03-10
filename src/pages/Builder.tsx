@@ -208,7 +208,7 @@ const Builder = () => {
                     <FileText className="h-7 w-7 text-muted-foreground" />
                   </div>
                   <p className="mb-5 text-[14px]">No pages yet. Add a page to get started.</p>
-                  <Button onClick={addPage} className="rounded-lg">
+                  <Button onClick={() => addPage()} className="rounded-lg">
                     <Plus className="h-4 w-4 mr-2" /> Add Page
                   </Button>
                 </div>
