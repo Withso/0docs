@@ -40,7 +40,7 @@ const InlineEditorBlock = ({ content, settings, onUpdate }: InlineEditorBlockPro
   // Sync external content changes
   useEffect(() => {
     if (editor && content.html !== editor.getHTML()) {
-      editor.commands.setContent(content.html || "<p></p>", false);
+      editor.commands.setContent(content.html || "<p></p>", { emitUpdate: false });
     }
   }, [content.html]);
 
