@@ -224,6 +224,29 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     }
   }, [projectId]);
 
+  const addNavGroup = async () => {
+    if (!projectId) return;
+    const { data } = await supabase
+      .from("nav_groups")
+      .insert({ project_id: projectId, title: "New Label", order_index: navGroups.length })
+      .select()
+      .single();
+    if (data) setNavGroups((g) => [...g, data]);
+  };
+
+  const updateNavGroup = async (groupId: string, updates: Partial<NavGroup>) => {
+    await supabase.from("nav_groups").update(updates).eq("id", groupId);
+    setNavGroups((g) => g.map((ng) => (ng.id === groupId ? { ...ng, ...updates } : ng)));
+  };
+
+  const deleteNavGroup = async (groupId: string) => {
+    // Unassign pages from this group first
+    await supabase.from("pages").update({ nav_group_id: null }).eq("nav_group_id", groupId);
+    setPages((p) => p.map((pg) => (pg.nav_group_id === groupId ? { ...pg, nav_group_id: null } : pg)));
+    await supabase.from("nav_groups").delete().eq("id", groupId);
+    setNavGroups((g) => g.filter((ng) => ng.id !== groupId));
+  };
+
   return {
     project,
     pages,
@@ -231,6 +254,7 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     setActivePage,
     sections,
     blocks,
+    navGroups,
     loading,
     addPage,
     updatePage,
@@ -241,6 +265,9 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     addBlock,
     updateBlock,
     deleteBlock,
+    addNavGroup,
+    updateNavGroup,
+    deleteNavGroup,
     reloadPages,
     loadPageContent,
   };
