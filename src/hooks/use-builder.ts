@@ -73,6 +73,15 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
         setPages(pagesData);
         if (pagesData.length > 0) setActivePage(pagesData[0]);
       }
+
+      const { data: groupsData } = await supabase
+        .from("nav_groups")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("order_index");
+
+      if (groupsData) setNavGroups(groupsData);
+
       setLoading(false);
     };
 
