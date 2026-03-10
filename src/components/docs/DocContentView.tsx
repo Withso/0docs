@@ -61,6 +61,8 @@ interface DocContentViewProps {
   onSelectVersion?: (version: DocVersion) => void;
   externalSearchOpen?: boolean;
   onExternalSearchOpenChange?: (open: boolean) => void;
+  navGroups?: DocNavGroup[];
+  hideHeaderLabel?: boolean;
 }
 
 const DocContentView = ({
