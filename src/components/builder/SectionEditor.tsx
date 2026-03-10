@@ -27,6 +27,7 @@ const SectionEditor = ({
   onAddBlock,
   onUpdateBlock,
   onDeleteBlock,
+  onImportOpenAPI,
 }: SectionEditorProps) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [title, setTitle] = useState(section.title);
