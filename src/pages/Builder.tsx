@@ -226,11 +226,12 @@ const Builder = () => {
 };
 
 const PageTitleEditor = ({
-  page, onUpdate, settings,
+  page, onUpdate, settings, onImportOpenAPI,
 }: {
   page: Page;
   onUpdate: (id: string, updates: Partial<Page>) => void;
   settings: DesignSettings;
+  onImportOpenAPI?: () => void;
 }) => {
   const [title, setTitle] = useState(page.title);
   const [metaDesc, setMetaDesc] = useState(page.meta_description || "");
@@ -252,17 +253,32 @@ const PageTitleEditor = ({
 
   return (
     <div style={{ marginBottom: `${settings.sectionSpacing * 0.6}px` }}>
-      <input
-        className="w-full bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded-lg px-1 -ml-1"
-        style={{
-          fontFamily: `'${settings.headingFont}', sans-serif`,
-          fontWeight: settings.headingWeight,
-          fontSize: `${settings.pageTitleSize}px`,
-        }}
-        value={title}
-        onChange={(e) => { setTitle(e.target.value); debouncedSave(e.target.value); }}
-        placeholder="Page title..."
-      />
+      <div className="flex items-center gap-2">
+        <input
+          className="flex-1 bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded-lg px-1 -ml-1"
+          style={{
+            fontFamily: `'${settings.headingFont}', sans-serif`,
+            fontWeight: settings.headingWeight,
+            fontSize: `${settings.pageTitleSize}px`,
+          }}
+          value={title}
+          onChange={(e) => { setTitle(e.target.value); debouncedSave(e.target.value); }}
+          placeholder="Page title..."
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="shrink-0 h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <Plus className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[180px]">
+            <DropdownMenuItem onClick={onImportOpenAPI} className="gap-2">
+              <FileJson className="h-4 w-4" />
+              Import OpenAPI
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       <button
         onClick={() => setShowMeta(!showMeta)}
         className="text-[12px] mt-1.5 px-1 transition-colors hover:text-primary"
