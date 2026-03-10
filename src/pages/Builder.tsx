@@ -11,11 +11,7 @@ import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import DesignPanel from "@/components/builder/DesignPanel";
 import DocContentView from "@/components/docs/DocContentView";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Plus, ArrowLeft, FileText, FileJson, BarChart3, Settings, MoreHorizontal, ChevronRight } from "lucide-react";
+import { Plus, ArrowLeft, FileText, FileJson, BarChart3, Settings, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
