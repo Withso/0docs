@@ -11,11 +11,7 @@ import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import DesignPanel from "@/components/builder/DesignPanel";
 import DocContentView from "@/components/docs/DocContentView";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Plus, ArrowLeft, FileText, FileJson, BarChart3, Settings, MoreHorizontal, ChevronRight } from "lucide-react";
+import { Plus, ArrowLeft, FileText, FileJson, BarChart3, Settings, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -147,27 +143,35 @@ const Builder = () => {
               <SegmentedControl value={mode} onChange={setMode} />
             </div>
 
-            {/* Right */}
+            {/* Right - icon nav */}
             <div className="flex items-center gap-1 flex-1 justify-end">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => navigate(`/builder/${projectId}/analytics`)}>
-                    <BarChart3 className="h-4 w-4 mr-2" /> Analytics
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setOpenApiOpen(true)}>
-                    <FileJson className="h-4 w-4 mr-2" /> Import API
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate(`/builder/${projectId}/settings`)}>
-                    <Settings className="h-4 w-4 mr-2" /> Project Settings
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-8 w-8 rounded-lg`}
+                title="Analytics"
+                onClick={() => navigate(`/builder/${projectId}/analytics`)}
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-8 w-8 rounded-lg`}
+                title="Import API"
+                onClick={() => setOpenApiOpen(true)}
+              >
+                <FileJson className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-8 w-8 rounded-lg`}
+                title="Project Settings"
+                onClick={() => navigate(`/builder/${projectId}/settings`)}
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </header>
