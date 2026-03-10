@@ -214,7 +214,7 @@ const DocContentView = ({
                         fontSize: `${s.headingFontSize}px`,
                       }}
                     >
-                      {section.title}
+                      <span dangerouslySetInnerHTML={{ __html: section.title }} />
                       <span
                         className="flex-1 h-px opacity-50"
                         style={{ backgroundColor: `hsl(${s.sectionLineColor})` }}
