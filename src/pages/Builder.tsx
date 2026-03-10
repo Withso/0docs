@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { ParsedOpenAPI } from "@/lib/openapi-parser";
-import type { BuilderMode } from "@/components/builder/BuilderHeader";
+import type { BuilderMode, DesignSubMode } from "@/components/builder/BuilderHeader";
 import {
   DropdownMenu,
   DropdownMenuContent,
