@@ -157,7 +157,6 @@ const InlineRichText = ({
       restoreSelection();
       ref.current?.focus();
       document.execCommand("createLink", false, linkUrl.trim());
-      // Style links
       const links = ref.current?.querySelectorAll("a");
       links?.forEach((a) => {
         a.style.color = `hsl(${s.linkColor})`;
@@ -168,16 +167,25 @@ const InlineRichText = ({
     }
     setLinkUrl("");
     setShowLinkInput(false);
+    keepOpenRef.current = false;
   };
 
   const handleColor = () => {
-    setShowColorPicker(!showColorPicker);
-    setShowLinkInput(false);
+    if (showColorPicker) {
+      setShowColorPicker(false);
+      keepOpenRef.current = false;
+    } else {
+      saveSelection();
+      keepOpenRef.current = true;
+      setShowColorPicker(true);
+      setShowLinkInput(false);
+    }
   };
 
   const applyColor = (hslColor: string) => {
     execCommand("foreColor", `hsl(${hslColor})`);
     setShowColorPicker(false);
+    keepOpenRef.current = false;
   };
 
   const isActive = (cmd: string) => {
