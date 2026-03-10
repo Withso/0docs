@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Pencil } from "lucide-react";
 import type { Section, Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import BlockEditor from "./BlockEditor";
 import AddBlockMenu from "./AddBlockMenu";
 import InlineRichText from "./InlineRichText";
+import { useDebouncedCallback } from "@/hooks/use-debounce";
 
 interface SectionEditorProps {
   section: Section;
@@ -30,24 +31,50 @@ const SectionEditor = ({
   onImportOpenAPI,
 }: SectionEditorProps) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
 
   return (
     <section className="group/section animate-fade-in" id={`section-${section.id}`} style={{ marginBottom: `${settings.sectionSpacing}px` }}>
-      {/* Section title — rich text editable */}
+      {/* Section title */}
       <div className="flex items-center gap-3 mb-4">
-        <InlineRichText
-          value={section.title}
-          onChange={(html) => onUpdateSection(section.id, { title: html })}
-          settings={settings}
-          singleLine
-          placeholder="Section title..."
-          className="min-w-0 px-1 -ml-1 rounded-md focus-within:ring-2 focus-within:ring-ring/20"
-          style={{
-            fontFamily: `'${settings.headingFont}', sans-serif`,
-            fontWeight: settings.headingWeight,
-            fontSize: `${settings.headingFontSize}px`,
-          }}
-        />
+        {isEditingTitle ? (
+          <InlineRichText
+            value={section.title}
+            onChange={(html) => onUpdateSection(section.id, { title: html })}
+            onDone={() => setIsEditingTitle(false)}
+            settings={settings}
+            singleLine
+            placeholder="Section title..."
+            className="min-w-0"
+            style={{
+              fontFamily: `'${settings.headingFont}', sans-serif`,
+              fontWeight: settings.headingWeight,
+              fontSize: `${settings.headingFontSize}px`,
+            }}
+          />
+        ) : (
+          <div
+            className="group/title flex items-center gap-2 min-w-0 cursor-default select-none"
+            onDoubleClick={() => setIsEditingTitle(true)}
+          >
+            <span
+              style={{
+                fontFamily: `'${settings.headingFont}', sans-serif`,
+                fontWeight: settings.headingWeight,
+                fontSize: `${settings.headingFontSize}px`,
+              }}
+              dangerouslySetInnerHTML={{ __html: section.title }}
+            />
+            <button
+              onClick={() => setIsEditingTitle(true)}
+              className="opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0"
+              style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+              title="Edit title"
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+          </div>
+        )}
         <div className="flex-1 h-px opacity-50" style={{ backgroundColor: `hsl(${settings.sectionLineColor})` }} />
         <button
           onClick={() => onDeleteSection(section.id)}
