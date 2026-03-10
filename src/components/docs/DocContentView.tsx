@@ -16,6 +16,13 @@ interface DocPage {
   title: string;
   slug: string;
   order_index: number;
+  nav_group_id?: string | null;
+}
+
+interface DocNavGroup {
+  id: string;
+  title: string;
+  order_index: number;
 }
 
 interface DocSection {
