@@ -115,14 +115,11 @@ const InlineRichText = ({
 
     const range = sel.getRangeAt(0);
     const rect = range.getBoundingClientRect();
-    const containerRect = ref.current.closest(".inline-rich-text-wrapper")?.getBoundingClientRect();
 
-    if (containerRect) {
-      setToolbarPos({
-        x: rect.left - containerRect.left + rect.width / 2,
-        y: rect.top - containerRect.top - 8,
-      });
-    }
+    setToolbarPos({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 8,
+    });
 
     saveSelection();
     setShowToolbar(true);
@@ -237,7 +234,7 @@ const InlineRichText = ({
       {showToolbar && (
         <div
           ref={toolbarRef}
-          className="absolute z-[100] flex items-center gap-0.5 px-1.5 py-1 rounded-lg shadow-xl animate-fade-in"
+          className="fixed z-[9999] flex items-center gap-0.5 px-1.5 py-1 rounded-lg shadow-xl animate-fade-in"
           style={{
             left: `${toolbarPos.x}px`,
             top: `${toolbarPos.y}px`,
