@@ -293,7 +293,7 @@ const Dashboard = () => {
               </div>
             )}
           </div>
-        </main>
+        )}
       </div>
       {/* Delete confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
@@ -312,7 +312,7 @@ const Dashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </DashboardLayout>
   );
 };
 
