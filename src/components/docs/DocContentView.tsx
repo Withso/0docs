@@ -16,13 +16,6 @@ interface DocPage {
   title: string;
   slug: string;
   order_index: number;
-  nav_group_id?: string | null;
-}
-
-interface DocNavGroup {
-  id: string;
-  title: string;
-  order_index: number;
 }
 
 interface DocSection {
@@ -44,7 +37,6 @@ interface DocContentViewProps {
   settings: DesignSettings;
   projectName: string;
   pages: DocPage[];
-  navGroups?: DocNavGroup[];
   activePage: DocPage | null;
   sections: DocSection[];
   blocks: DocBlock[];
@@ -68,7 +60,6 @@ const DocContentView = ({
   settings: s,
   projectName,
   pages,
-  navGroups = [],
   activePage,
   sections,
   blocks,
@@ -171,7 +162,6 @@ const DocContentView = ({
         <DocSidebarNav
           settings={s}
           pages={pages}
-          navGroups={navGroups}
           activePage={activePage}
           sections={sections}
           onSelectPage={onSelectPage}

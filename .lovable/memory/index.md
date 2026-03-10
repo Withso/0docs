@@ -5,26 +5,22 @@ Updated: now
 
 ### Architecture
 - Auth: email/password with auto-confirm, profiles table auto-created on signup
-- Database: projects → nav_groups + pages → sections → blocks (all with RLS)
-- nav_groups: sidebar section groupings for pages (title, order_index, project_id)
-- pages have optional nav_group_id for grouping
+- Database: projects → pages → sections → blocks (all with RLS)
 - Public docs accessible at /docs/:slug
 - Builder at /builder/:projectId (WYSIWYG, same layout as public docs)
+- **Homepage = documentation**: The `/` route renders a special `is_homepage=true` project using DocContentView
+- Homepage project is admin-only (hidden from non-admin dashboard)
+- Admin role: user_roles table with app_role enum, has_role() security definer function
+- Admin user: arunrajkumar@withso.com (860124be-ecff-48a2-90e4-22371b860166)
+- Homepage project ID: 4a705271-9c84-49cf-8e84-7c1b019e4c85, slug: docbuilder-home
 
 ### Block Types
-heading, paragraph, code_block, image, video, youtube, ordered_list, unordered_list, note, callout
+heading, paragraph, code_block, image, video, youtube, ordered_list, unordered_list, note, callout, tabs, accordion, card, steps, table, divider, quote, api_endpoint, code_tabs
 
 ### Design
 - Uses existing doc styles (doc-heading, doc-prose, doc-note, doc-code-block, doc-sidebar-link etc.)
 - Builder mirrors exact doc layout for WYSIWYG feel
 - Monochrome palette with semantic tokens from index.css
-
-### Sidebar Navigation
-- Builder sidebar label: "Side Nav" (builder reference only, not shown in preview/public)
-- + button opens dropdown: "Add Section" (nav group) or "Add Page" (ungrouped)
-- Nav groups are collapsible, double-click to rename titles
-- Pages inside groups also double-click to rename
-- Public docs sidebar shows groups as category labels
 
 ### Design Settings Sync
 - DesignSettings type in use-design-settings.ts is the single source of truth
@@ -34,7 +30,3 @@ heading, paragraph, code_block, image, video, youtube, ordered_list, unordered_l
 - BuilderSidebar, SectionEditor, BlockEditor all accept `settings` prop
 - DocContentView is shared renderer for PublicDocs and DesignSettings preview
 - DocBlockRenderer explicitly applies bodyFont, lineHeight, baseFontSize to paragraph/list/note/callout blocks
-
-### Design Mode Toggle
-- Select box (not toggle) switches between "Live" and "Examples" sub-modes
-- Examples view: DesignExamplesView with left sidebar categories and collapsible block controls
