@@ -154,23 +154,16 @@ const BuilderSidebar = ({
     [sections]
   );
 
-  /* ─── Build a flat list of all sortable IDs: ungrouped pages, then (navgroup + its pages) interleaved ─── */
-  const allSortableIds = useMemo(() => {
-    const ids: string[] = [];
-    // ungrouped pages
-    ungroupedPages.forEach((p) => ids.push(p.id));
-    // nav groups with their pages
-    sortedNavGroups.forEach((g) => {
-      ids.push(toNavGroupSortId(g.id));
-      if (g.type === "label") {
-        pages
-          .filter((p) => p.nav_group_id === g.id)
-          .sort((a, b) => a.order_index - b.order_index)
-          .forEach((p) => ids.push(p.id));
-      }
-    });
-    return ids;
-  }, [ungroupedPages, sortedNavGroups, pages]);
+  /* ─── Sortable ID lists per container ─── */
+  const navGroupSortIds = useMemo(
+    () => sortedNavGroups.map((g) => toNavGroupSortId(g.id)),
+    [sortedNavGroups]
+  );
+
+  const ungroupedPageIds = useMemo(
+    () => ungroupedPages.map((p) => p.id),
+    [ungroupedPages]
+  );
 
   /* ─── Helpers ─── */
   const isPageId = useCallback(
