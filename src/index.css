@@ -303,7 +303,6 @@
   .ds-slider [role="slider"] {
     @apply h-4 w-4 border border-border shadow-sm;
   }
-  }
 
   /* ─── Inline Editor (TipTap) ─── */
   .inline-editor-content .tiptap {
