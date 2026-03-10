@@ -303,4 +303,106 @@
   .ds-slider [role="slider"] {
     @apply h-4 w-4 border border-border shadow-sm;
   }
+  }
+
+  /* ─── Inline Editor (TipTap) ─── */
+  .inline-editor-content .tiptap {
+    outline: none;
+    min-height: 80px;
+  }
+
+  .inline-editor-content .tiptap p {
+    margin-bottom: 0.75em;
+  }
+
+  .inline-editor-content .tiptap h1,
+  .inline-editor-content .tiptap h2,
+  .inline-editor-content .tiptap h3 {
+    font-weight: 600;
+    margin-bottom: 0.5em;
+    margin-top: 1em;
+  }
+
+  .inline-editor-content .tiptap h1 { font-size: 1.75em; }
+  .inline-editor-content .tiptap h2 { font-size: 1.4em; }
+  .inline-editor-content .tiptap h3 { font-size: 1.15em; }
+
+  .inline-editor-content .tiptap ul,
+  .inline-editor-content .tiptap ol {
+    padding-left: 1.5em;
+    margin-bottom: 0.75em;
+  }
+
+  .inline-editor-content .tiptap ul { list-style-type: disc; }
+  .inline-editor-content .tiptap ol { list-style-type: decimal; }
+
+  .inline-editor-content .tiptap blockquote {
+    border-left: 3px solid hsl(var(--border));
+    padding-left: 1em;
+    margin-left: 0;
+    margin-bottom: 0.75em;
+    font-style: italic;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .inline-editor-content .tiptap code {
+    background: hsl(var(--accent));
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+
+  .inline-editor-content .tiptap pre {
+    background: hsl(var(--accent));
+    padding: 0.75em 1em;
+    border-radius: 6px;
+    margin-bottom: 0.75em;
+    overflow-x: auto;
+  }
+
+  .inline-editor-content .tiptap pre code {
+    background: none;
+    padding: 0;
+  }
+
+  .inline-editor-content .tiptap img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    margin: 0.75em 0;
+  }
+
+  .inline-editor-content .tiptap hr {
+    border: none;
+    border-top: 1px solid hsl(var(--border));
+    margin: 1.5em 0;
+  }
+
+  .inline-editor-link,
+  .inline-editor-content a {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .inline-editor-content .tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+    height: 0;
+  }
+
+  /* Readonly mode: same styles apply via the class on the wrapper */
+  .inline-editor-readonly h1 { font-size: 1.75em; font-weight: 600; margin-bottom: 0.5em; }
+  .inline-editor-readonly h2 { font-size: 1.4em; font-weight: 600; margin-bottom: 0.5em; }
+  .inline-editor-readonly h3 { font-size: 1.15em; font-weight: 600; margin-bottom: 0.5em; }
+  .inline-editor-readonly p { margin-bottom: 0.75em; }
+  .inline-editor-readonly ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; }
+  .inline-editor-readonly ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 0.75em; }
+  .inline-editor-readonly blockquote { border-left: 3px solid hsl(var(--border)); padding-left: 1em; font-style: italic; color: hsl(var(--muted-foreground)); margin-bottom: 0.75em; }
+  .inline-editor-readonly code { background: hsl(var(--accent)); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; }
+  .inline-editor-readonly img { max-width: 100%; height: auto; border-radius: 6px; margin: 0.75em 0; }
+  .inline-editor-readonly hr { border: none; border-top: 1px solid hsl(var(--border)); margin: 1.5em 0; }
+  .inline-editor-readonly a { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 2px; }
 }
