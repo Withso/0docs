@@ -56,7 +56,7 @@ const SortableItem = ({
     useSortable({ id });
 
   const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
     opacity: isDragging ? 0.4 : 1,
     zIndex: isDragging ? 50 : undefined,
