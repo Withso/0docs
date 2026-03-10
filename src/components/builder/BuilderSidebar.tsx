@@ -517,7 +517,7 @@ const BuilderSidebar = ({
                       <SortableContext items={groupPages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
                         <div style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
                           {groupPages.map((page) => (
-                            <SortableItem key={page.id} id={page.id} handle>
+                            <SortableItem key={page.id} id={page.id}>
                               {renderPageContent(page)}
                             </SortableItem>
                           ))}
