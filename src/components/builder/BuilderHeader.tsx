@@ -46,7 +46,6 @@ const BuilderHeader = ({
   mode,
   onModeChange,
   activeTool,
-  onImportAPI,
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
 
