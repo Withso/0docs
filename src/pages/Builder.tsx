@@ -297,6 +297,153 @@ const Builder = () => {
   );
 };
 
+/* ─── Sortable section wrapper ─── */
+const SortableSection = ({
+  id,
+  children,
+}: {
+  id: string;
+  children: (props: { handleProps: Record<string, any> }) => React.ReactNode;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+
+  const style: React.CSSProperties = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transition,
+    opacity: isDragging ? 0.25 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({ handleProps: { ...attributes, ...listeners } })}
+    </div>
+  );
+};
+
+/* ─── Sections DnD wrapper ─── */
+const SectionsDndWrapper = ({
+  sections,
+  blocks,
+  settings,
+  onUpdateSection,
+  onDeleteSection,
+  onAddBlock,
+  onUpdateBlock,
+  onDeleteBlock,
+  onReorderSections,
+  onReorderBlocks,
+  onImportOpenAPI,
+}: {
+  sections: Section[];
+  blocks: import("@/hooks/use-builder").Block[];
+  settings: DesignSettings;
+  onUpdateSection: (id: string, updates: Partial<Section>) => void;
+  onDeleteSection: (id: string) => void;
+  onAddBlock: (sectionId: string, type: string) => void;
+  onUpdateBlock: (id: string, updates: Partial<import("@/hooks/use-builder").Block>) => void;
+  onDeleteBlock: (id: string) => void;
+  onReorderSections: (sections: Section[]) => void;
+  onReorderBlocks: (blocks: import("@/hooks/use-builder").Block[]) => void;
+  onImportOpenAPI: (sectionId: string) => void;
+}) => {
+  const [dragActiveSectionId, setDragActiveSectionId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const sortedSections = useMemo(
+    () => [...sections].sort((a, b) => a.order_index - b.order_index),
+    [sections]
+  );
+
+  const sectionIds = useMemo(() => sortedSections.map((s) => s.id), [sortedSections]);
+
+  const handleSectionDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setDragActiveSectionId(null);
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = sortedSections.findIndex((s) => s.id === active.id);
+      const newIndex = sortedSections.findIndex((s) => s.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const reordered = [...sortedSections];
+      const [moved] = reordered.splice(oldIndex, 1);
+      reordered.splice(newIndex, 0, moved);
+      onReorderSections(reordered.map((s, i) => ({ ...s, order_index: i })));
+    },
+    [sortedSections, onReorderSections]
+  );
+
+  const dragOverlaySection = useMemo(() => {
+    if (!dragActiveSectionId) return null;
+    const section = sortedSections.find((s) => s.id === dragActiveSectionId);
+    if (!section) return null;
+    const sectionBlocks = blocks.filter((b) => b.section_id === section.id);
+    return (
+      <div
+        className="rounded-lg px-4 py-3 shadow-lg"
+        style={{
+          backgroundColor: `hsl(${settings.backgroundColor})`,
+          border: `2px solid hsl(${settings.primaryColor} / 0.3)`,
+          maxWidth: "400px",
+        }}
+      >
+        <div
+          className="font-semibold mb-1"
+          style={{
+            fontFamily: `'${settings.headingFont}', sans-serif`,
+            fontSize: `${settings.headingFontSize * 0.7}px`,
+          }}
+          dangerouslySetInnerHTML={{ __html: section.title }}
+        />
+        <div className="text-xs" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
+          {sectionBlocks.length} block{sectionBlocks.length !== 1 ? "s" : ""}
+        </div>
+      </div>
+    );
+  }, [dragActiveSectionId, sortedSections, blocks, settings]);
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={(e) => setDragActiveSectionId(e.active.id as string)}
+      onDragEnd={handleSectionDragEnd}
+    >
+      <SortableContext items={sectionIds} strategy={verticalListSortingStrategy}>
+        {sortedSections.map((section) => (
+          <SortableSection key={section.id} id={section.id}>
+            {({ handleProps }) => (
+              <SectionEditor
+                section={section}
+                blocks={blocks.filter((b) => b.section_id === section.id)}
+                settings={settings}
+                onUpdateSection={onUpdateSection}
+                onDeleteSection={onDeleteSection}
+                onAddBlock={onAddBlock}
+                onUpdateBlock={onUpdateBlock}
+                onDeleteBlock={onDeleteBlock}
+                onReorderBlocks={onReorderBlocks}
+                sectionDragHandleProps={handleProps}
+                onImportOpenAPI={() => onImportOpenAPI(section.id)}
+              />
+            )}
+          </SortableSection>
+        ))}
+      </SortableContext>
+
+      <DragOverlay dropAnimation={{ duration: 200, easing: "ease" }}>
+        {dragOverlaySection}
+      </DragOverlay>
+    </DndContext>
+  );
+};
+
 const PageTitleEditor = ({
   page, onUpdate, settings, onImportOpenAPI,
 }: {
