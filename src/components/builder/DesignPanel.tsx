@@ -295,10 +295,22 @@ interface DesignPanelProps {
 }
 
 // ─── Main Panel ──────────────────────────────────────
-const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, resetSettings }: DesignPanelProps) => {
+const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, resetSettings, designSubMode }: DesignPanelProps) => {
   const { toast } = useToast();
   const [local, setLocal] = useState<DS>(defaultDesignSettings);
   const [panelOpen, setPanelOpen] = useState(true);
+
+  // If in "examples" mode, delegate to the examples view
+  if (designSubMode === "examples") {
+    return (
+      <DesignExamplesView
+        settings={settings}
+        saving={saving}
+        saveSettings={saveSettings}
+        resetSettings={resetSettings}
+      />
+    );
+  }
 
   const [pages, setPages] = useState<DocPage[]>([]);
   const [activePage, setActivePage] = useState<DocPage | null>(null);
