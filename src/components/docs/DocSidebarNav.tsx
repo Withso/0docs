@@ -101,7 +101,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                 fontFamily: `'${s.bodyFont}', sans-serif`,
               }}
             >
-              <span dangerouslySetInnerHTML={{ __html: page.title }} />
+              <span dangerouslySetInnerHTML={{ __html: page.nav_title || page.title }} />
             </button>
           )}
         </div>
