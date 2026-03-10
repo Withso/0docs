@@ -34,6 +34,7 @@ export interface NavGroup {
   project_id: string;
   title: string;
   order_index: number;
+  type: "label" | "text";
 }
 
 export function useBuilder(projectId: string | undefined, userId: string | undefined) {
