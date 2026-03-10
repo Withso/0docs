@@ -149,59 +149,54 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="w-[var(--platform-sidebar-width)] border-r bg-card hidden md:flex flex-col shrink-0">
-        {/* Logo */}
-        <div className="h-[52px] flex items-center gap-2.5 px-5 border-b">
-          <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center shadow-platform-sm">
-            <FileText className="h-4 w-4 text-primary-foreground" />
+      {/* Floating Sidebar */}
+      <div className="hidden md:flex p-1.5 shrink-0">
+        <aside className="w-[var(--platform-sidebar-width)] bg-card rounded-2xl border shadow-sm flex flex-col overflow-hidden">
+          {/* Logo */}
+          <div className="h-[52px] flex items-center gap-2.5 px-5">
+            <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center shadow-platform-sm">
+              <FileText className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="font-semibold text-[15px] tracking-tight text-foreground">DocBuilder</span>
           </div>
-          <span className="font-semibold text-[15px] tracking-tight text-foreground">DocBuilder</span>
-        </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-3 space-y-0.5">
-          <div className="platform-nav-item active">
-            <FolderOpen className="h-4 w-4" />
-            <span>Projects</span>
-          </div>
-          <div
-            className="platform-nav-item"
-            onClick={() => navigate("/settings/profile")}
-          >
-            <Settings className="h-4 w-4" />
-            <span>Settings</span>
-          </div>
-        </nav>
+          {/* Nav */}
+          <nav className="flex-1 px-3 py-1 space-y-0.5">
+            <div className="platform-nav-item active">
+              <FolderOpen className="h-4 w-4" />
+              <span>Projects</span>
+            </div>
+          </nav>
 
-        {/* User section */}
-        <div className="p-3 border-t">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-accent transition-colors">
-                <div className="h-8 w-8 platform-avatar text-[11px]">
-                  {userInitial}
-                </div>
-                <div className="flex-1 text-left min-w-0">
-                  <p className="text-[13px] font-medium text-foreground truncate">
-                    {user?.user_metadata?.display_name || "User"}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
-                </div>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
-                <User className="h-4 w-4 mr-2" /> Profile Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut} className="text-destructive">
-                <LogOut className="h-4 w-4 mr-2" /> Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </aside>
+          {/* User section */}
+          <div className="p-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-accent transition-colors">
+                  <div className="h-8 w-8 platform-avatar text-[11px]">
+                    {userInitial}
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-[13px] font-medium text-foreground truncate">
+                      {user?.user_metadata?.display_name || "User"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
+                  <User className="h-4 w-4 mr-2" /> Profile Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut} className="text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" /> Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </aside>
+      </div>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -221,7 +216,7 @@ const Dashboard = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
-                <Settings className="h-4 w-4 mr-2" /> Settings
+                <User className="h-4 w-4 mr-2" /> Profile
               </DropdownMenuItem>
               <DropdownMenuItem onClick={signOut} className="text-destructive">
                 <LogOut className="h-4 w-4 mr-2" /> Sign Out
