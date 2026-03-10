@@ -283,6 +283,7 @@ function BlockControls({
 interface DocPage { id: string; title: string; slug: string; order_index: number; }
 interface DocSection { id: string; page_id: string; title: string; order_index: number; }
 interface DocBlock { id: string; section_id: string; type: string; content: any; order_index: number; }
+interface DocNavGroup { id: string; title: string; order_index: number; }
 
 interface DesignPanelProps {
   projectId: string;
