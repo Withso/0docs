@@ -303,7 +303,6 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     reorderNavGroups,
     reorderSections,
   };
-  };
 }
 
 function getDefaultContent(type: string): any {
