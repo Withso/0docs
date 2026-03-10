@@ -8,11 +8,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Builder from "./pages/Builder";
-import DesignSettingsPage from "./pages/DesignSettings";
 import ProfileSettings from "./pages/ProfileSettings";
-import ProjectSettings from "./pages/ProjectSettings";
 import PublicDocs from "./pages/PublicDocs";
-import Analytics from "./pages/Analytics";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -48,7 +45,7 @@ const App = () => (
               path="/builder/:projectId/design"
               element={
                 <ProtectedRoute>
-                  <DesignSettingsPage />
+                  <Builder />
                 </ProtectedRoute>
               }
             />
@@ -56,7 +53,7 @@ const App = () => (
               path="/builder/:projectId/analytics"
               element={
                 <ProtectedRoute>
-                  <Analytics />
+                  <Builder />
                 </ProtectedRoute>
               }
             />
@@ -64,7 +61,7 @@ const App = () => (
               path="/builder/:projectId/settings"
               element={
                 <ProtectedRoute>
-                  <ProjectSettings />
+                  <Builder />
                 </ProtectedRoute>
               }
             />
