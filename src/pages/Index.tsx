@@ -8,7 +8,7 @@ import DocContentView from "@/components/docs/DocContentView";
 import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
 import { Button } from "@/components/ui/button";
-import { LogIn, LayoutDashboard } from "lucide-react";
+import { LogIn, LayoutDashboard, Search } from "lucide-react";
 
 interface Page { id: string; title: string; slug: string; order_index: number; meta_description?: string | null; version_id?: string | null; }
 interface Section { id: string; page_id: string; title: string; order_index: number; }
