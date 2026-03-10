@@ -139,6 +139,8 @@ const Builder = () => {
         activePageTitle={activePage?.title || "No page"}
         mode={mode}
         onModeChange={handleModeChange}
+        designSubMode={designSubMode}
+        onDesignSubModeChange={setDesignSubMode}
       />
 
       {/* Mode: Editor */}
