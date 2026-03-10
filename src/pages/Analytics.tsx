@@ -3,7 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BarChart3, ThumbsUp, ThumbsDown, Search, Eye, FileText, TrendingUp } from "lucide-react";
+import BuilderHeader from "@/components/builder/BuilderHeader";
+import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
+import { ThumbsUp, ThumbsDown, Search, Eye, FileText, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 interface FeedbackRow { id: string; page_id: string; is_helpful: boolean; comment: string | null; created_at: string; }
