@@ -172,6 +172,9 @@ const Builder = () => {
               onAddNavGroup={addNavGroup}
               onUpdateNavGroup={updateNavGroup}
               onDeleteNavGroup={deleteNavGroup}
+              onReorderPages={reorderPages}
+              onReorderNavGroups={reorderNavGroups}
+              onReorderSections={reorderSections}
             />
 
             <main className="flex-1 min-w-0 py-10 lg:pl-4">
