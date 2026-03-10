@@ -34,6 +34,7 @@ export interface NavGroup {
   project_id: string;
   title: string;
   order_index: number;
+  type: "label" | "text";
 }
 
 export function useBuilder(projectId: string | undefined, userId: string | undefined) {
@@ -81,7 +82,7 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
         .eq("project_id", projectId)
         .order("order_index");
 
-      if (groupsData) setNavGroups(groupsData);
+      if (groupsData) setNavGroups(groupsData as unknown as NavGroup[]);
 
       setLoading(false);
     };
@@ -227,14 +228,15 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     }
   }, [projectId]);
 
-  const addNavGroup = async () => {
+  const addNavGroup = async (type: "label" | "text" = "label") => {
     if (!projectId) return;
+    const title = type === "text" ? "Static text" : "New Label";
     const { data } = await supabase
       .from("nav_groups")
-      .insert({ project_id: projectId, title: "New Label", order_index: navGroups.length })
+      .insert({ project_id: projectId, title, order_index: navGroups.length, type } as any)
       .select()
       .single();
-    if (data) setNavGroups((g) => [...g, data]);
+    if (data) setNavGroups((g) => [...g, data as any]);
   };
 
   const updateNavGroup = async (groupId: string, updates: Partial<NavGroup>) => {

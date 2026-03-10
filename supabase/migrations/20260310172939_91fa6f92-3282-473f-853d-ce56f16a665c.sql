@@ -1,0 +1,1 @@
+ALTER TABLE public.nav_groups ADD COLUMN IF NOT EXISTS type text NOT NULL DEFAULT 'label';

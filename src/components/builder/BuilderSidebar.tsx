@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Plus, Trash2, Tag, FileText, Pencil } from "lucide-react";
+import { Plus, Trash2, Tag, FileText, Pencil, Type } from "lucide-react";
 import type { Page, Section, NavGroup } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import InlineRichText from "./InlineRichText";
@@ -20,7 +20,7 @@ interface BuilderSidebarProps {
   onAddPage: (navGroupId?: string) => void;
   onUpdatePage: (pageId: string, updates: Partial<Page>) => void;
   onDeletePage: (pageId: string) => void;
-  onAddNavGroup: () => void;
+  onAddNavGroup: (type?: "label" | "text") => void;
   onUpdateNavGroup: (groupId: string, updates: Partial<NavGroup>) => void;
   onDeleteNavGroup: (groupId: string) => void;
 }
@@ -275,9 +275,13 @@ const BuilderSidebar = ({
               <FileText className="h-3.5 w-3.5" />
               Page
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onAddNavGroup} className="gap-2 text-[13px]">
+            <DropdownMenuItem onClick={() => onAddNavGroup("label")} className="gap-2 text-[13px]">
               <Tag className="h-3.5 w-3.5" />
               Label
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onAddNavGroup("text")} className="gap-2 text-[13px]">
+              <Type className="h-3.5 w-3.5" />
+              Text
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -287,8 +291,66 @@ const BuilderSidebar = ({
         {ungroupedPages.map(renderPage)}
 
         {navGroups.map((group) => {
+          const isTextType = group.type === "text";
           const groupPages = pages.filter((p) => p.nav_group_id === group.id);
 
+          if (isTextType) {
+            // Text type: plain static text, no pages underneath
+            return (
+              <div key={group.id} className="group mt-1">
+                <div className="flex items-center gap-1">
+                  {editingGroupId === group.id ? (
+                    <InlineRichText
+                      value={group.title}
+                      onChange={(html) => onUpdateNavGroup(group.id, { title: html })}
+                      onDone={() => setEditingGroupId(null)}
+                      settings={s}
+                      singleLine
+                      placeholder="Text..."
+                      className="flex-1 min-w-0"
+                      style={{
+                        fontSize: `${s.sidebarFontSize}px`,
+                        color: `hsl(${s.sidebarTextColor} / 0.6)`,
+                        fontFamily: `'${s.bodyFont}', sans-serif`,
+                      }}
+                    />
+                  ) : (
+                    <span
+                      className="flex-1 py-[3px] select-none cursor-default"
+                      onDoubleClick={() => {
+                        stopEditing();
+                        setEditingGroupId(group.id);
+                      }}
+                      style={{
+                        fontSize: `${s.sidebarFontSize}px`,
+                        color: `hsl(${s.sidebarTextColor} / 0.6)`,
+                        fontFamily: `'${s.bodyFont}', sans-serif`,
+                      }}
+                      dangerouslySetInnerHTML={{ __html: group.title }}
+                    />
+                  )}
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <button
+                      onClick={() => { stopEditing(); setEditingGroupId(group.id); }}
+                      style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                      title="Edit"
+                    >
+                      <Pencil className="h-2 w-2" />
+                    </button>
+                    <button
+                      onClick={() => onDeleteNavGroup(group.id)}
+                      style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                      title="Delete"
+                    >
+                      <Trash2 className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Label type (existing behavior)
           return (
             <div key={group.id} className="mt-3">
               <div
@@ -298,10 +360,7 @@ const BuilderSidebar = ({
                 {renderGroupLabel(group)}
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button
-                    onClick={() => {
-                      stopEditing();
-                      setEditingGroupId(group.id);
-                    }}
+                    onClick={() => { stopEditing(); setEditingGroupId(group.id); }}
                     style={{ color: `hsl(${s.mutedForegroundColor})` }}
                     title="Rename"
                   >
