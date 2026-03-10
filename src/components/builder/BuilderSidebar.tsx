@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Plus, Trash2, Tag, FileText, Pencil } from "lucide-react";
+import { Plus, Trash2, Tag, FileText, Pencil, Type } from "lucide-react";
 import type { Page, Section, NavGroup } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import InlineRichText from "./InlineRichText";
