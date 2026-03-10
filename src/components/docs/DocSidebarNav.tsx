@@ -7,6 +7,7 @@ export interface SidebarPageBase {
   slug: string;
   order_index: number;
   nav_group_id?: string | null;
+  nav_title?: string | null;
 }
 
 export interface SidebarSection {
@@ -14,6 +15,7 @@ export interface SidebarSection {
   page_id: string;
   title: string;
   order_index: number;
+  nav_title?: string | null;
 }
 
 export interface SidebarNavGroup {
