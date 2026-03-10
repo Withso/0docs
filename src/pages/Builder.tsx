@@ -174,6 +174,13 @@ const Builder = () => {
       {/* Mode: Editor */}
       {mode === "editor" && (
         <DesignSettingsWrapper settings={settings} className="">
+          {/* Floating SEO panel — fixed top-left, to the left of the sidebar */}
+          {activePage && (
+            <SeoFloatingPanel
+              page={activePage}
+              settings={settings}
+            />
+          )}
           <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
             <BuilderSidebar
               settings={settings}
