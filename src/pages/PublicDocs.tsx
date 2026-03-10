@@ -7,7 +7,8 @@ import DocContentView from "@/components/docs/DocContentView";
 import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
 
-interface Page { id: string; title: string; slug: string; order_index: number; meta_description?: string | null; version_id?: string | null; }
+interface NavGroup { id: string; title: string; order_index: number; project_id: string; }
+interface Page { id: string; title: string; slug: string; order_index: number; meta_description?: string | null; version_id?: string | null; nav_group_id?: string | null; }
 interface Section { id: string; page_id: string; title: string; order_index: number; }
 interface Block { id: string; section_id: string; type: string; content: any; order_index: number; }
 
