@@ -239,6 +239,13 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
       case "code_tabs":
         return <CodeTabsEditor content={localContent} onChange={updateContent} settings={settings} bs={bs} />;
 
+      case "inline_editor":
+        return (
+          <Suspense fallback={<div style={{ padding: "16px", color: `hsl(${settings.mutedForegroundColor})` }}>Loading editor...</div>}>
+            <InlineEditorBlock content={localContent} settings={settings} onUpdate={updateContent} />
+          </Suspense>
+        );
+
       default:
         return <p style={{ color: `hsl(${settings.mutedForegroundColor})`, fontSize: `${settings.baseFontSize - 1}px` }}>Unknown block type: {block.type}</p>;
     }
