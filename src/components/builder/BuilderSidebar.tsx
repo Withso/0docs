@@ -266,7 +266,7 @@ const BuilderSidebar = ({
                   const isSectionEditing = editingSectionId === section.id;
 
                   return (
-                    <SortableItem key={section.id} id={section.id} handle>
+                    <SortableItem key={section.id} id={section.id}>
                       <div className="relative group/section">
                         {isSectionActive && (
                           <span
