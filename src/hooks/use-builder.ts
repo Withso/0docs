@@ -64,12 +64,12 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
       }
       setProject(proj);
 
-      const { data: pagesData } = await supabase
-        .from("pages")
-        .select("*")
-        .eq("project_id", projectId)
-        .order("order_index");
+      const [{ data: groupsData }, { data: pagesData }] = await Promise.all([
+        supabase.from("nav_groups").select("*").eq("project_id", projectId).order("order_index"),
+        supabase.from("pages").select("*").eq("project_id", projectId).order("order_index"),
+      ]);
 
+      if (groupsData) setNavGroups(groupsData);
       if (pagesData) {
         setPages(pagesData);
         if (pagesData.length > 0) setActivePage(pagesData[0]);
