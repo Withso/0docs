@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Plus, LogOut, ExternalLink, Trash2, BookOpen, Search,
-  FileText, Settings, MoreHorizontal, FolderOpen, User, Clock,
+  FileText, Settings, MoreHorizontal, FolderOpen, User, Clock, Home,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
