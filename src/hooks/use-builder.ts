@@ -190,6 +190,23 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     setBlocks((b) => b.filter((bl) => bl.id !== blockId));
   };
 
+  const reloadPages = useCallback(async () => {
+    if (!projectId) return;
+    const { data: pagesData } = await supabase
+      .from("pages")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("order_index");
+
+    if (pagesData) {
+      setPages(pagesData);
+      // Set active page to the last one (likely the newly imported one)
+      if (pagesData.length > 0) {
+        setActivePage(pagesData[pagesData.length - 1]);
+      }
+    }
+  }, [projectId]);
+
   return {
     project,
     pages,
@@ -207,6 +224,7 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     addBlock,
     updateBlock,
     deleteBlock,
+    reloadPages,
   };
 }
 
