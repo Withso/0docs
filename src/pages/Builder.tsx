@@ -45,28 +45,23 @@ const Builder = () => {
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
 
-  // Block-level import: adds endpoints as blocks within the target section
+  // Block-level import: adds endpoints as api_endpoint blocks within the target section
   const handleBlockLevelImport = useCallback(async (parsed: ParsedOpenAPI) => {
     if (!importTargetSectionId) return;
     const existingBlocks = blocks.filter((b) => b.section_id === importTargetSectionId);
     let orderIndex = existingBlocks.length;
     for (const ep of parsed.endpoints) {
-      await addBlock(importTargetSectionId, "api_endpoint");
-      // Update the last added block with the parsed content
-      const { data } = await supabase
+      await supabase
         .from("blocks")
         .insert({
           section_id: importTargetSectionId,
           type: "api_endpoint" as any,
           content: { method: ep.method, path: ep.path, description: ep.description, parameters: ep.parameters, response: ep.response },
           order_index: orderIndex++,
-        })
-        .select()
-        .single();
+        });
     }
-    // Reload page content to reflect new blocks
     await loadPageContent();
-  }, [importTargetSectionId, blocks, addBlock]);
+  }, [importTargetSectionId, blocks, loadPageContent]);
 
   // Page-level import: each endpoint becomes a section with an api_endpoint block
   const handlePageLevelImport = useCallback(async (parsed: ParsedOpenAPI) => {
