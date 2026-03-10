@@ -206,24 +206,23 @@ const Builder = () => {
                     }}
                   />
 
-                  {sections.map((section) => (
-                    <SectionEditor
-                      key={section.id}
-                      section={section}
-                      blocks={blocks.filter((b) => b.section_id === section.id)}
-                      settings={settings}
-                      onUpdateSection={updateSection}
-                      onDeleteSection={deleteSection}
-                      onAddBlock={addBlock}
-                      onUpdateBlock={updateBlock}
-                      onDeleteBlock={deleteBlock}
-                      onImportOpenAPI={() => {
-                        setOpenApiMode("block");
-                        setImportTargetSectionId(section.id);
-                        setOpenApiOpen(true);
-                      }}
-                    />
-                  ))}
+                  <SectionsDndWrapper
+                    sections={sections}
+                    blocks={blocks}
+                    settings={settings}
+                    onUpdateSection={updateSection}
+                    onDeleteSection={deleteSection}
+                    onAddBlock={addBlock}
+                    onUpdateBlock={updateBlock}
+                    onDeleteBlock={deleteBlock}
+                    onReorderSections={reorderSections}
+                    onReorderBlocks={reorderBlocks}
+                    onImportOpenAPI={(sectionId) => {
+                      setOpenApiMode("block");
+                      setImportTargetSectionId(sectionId);
+                      setOpenApiOpen(true);
+                    }}
+                  />
 
                   <button
                     onClick={addSection}
