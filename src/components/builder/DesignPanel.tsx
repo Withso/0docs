@@ -291,6 +291,7 @@ interface DesignPanelProps {
   saving: boolean;
   saveSettings: (s: DS) => Promise<void>;
   resetSettings: () => void;
+  designSubMode: DesignSubMode;
 }
 
 // ─── Main Panel ──────────────────────────────────────
