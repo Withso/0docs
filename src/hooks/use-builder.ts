@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface NavGroup {
+  id: string;
+  project_id: string;
+  title: string;
+  order_index: number;
+}
+
 export interface Page {
   id: string;
   project_id: string;
@@ -9,6 +16,7 @@ export interface Page {
   order_index: number;
   meta_description?: string | null;
   version_id?: string | null;
+  nav_group_id?: string | null;
 }
 
 export interface Section {
