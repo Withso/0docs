@@ -8,13 +8,14 @@ import BuilderSidebar from "@/components/builder/BuilderSidebar";
 import SectionEditor from "@/components/builder/SectionEditor";
 import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
-import VersionManager from "@/components/builder/VersionManager";
+import DesignPanel from "@/components/builder/DesignPanel";
+import DocContentView from "@/components/docs/DocContentView";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, ArrowLeft, Eye, Palette, FileText, FileJson, BarChart3, Settings, MoreHorizontal, Tag, ChevronRight } from "lucide-react";
+import { Plus, ArrowLeft, FileText, FileJson, BarChart3, Settings, MoreHorizontal, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -22,11 +23,40 @@ import type { ParsedOpenAPI } from "@/lib/openapi-parser";
 
 export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
 
+type BuilderMode = "editor" | "design" | "preview";
+
+const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
+  const options: { label: string; value: BuilderMode }[] = [
+    { label: "Editor", value: "editor" },
+    { label: "Design", value: "design" },
+    { label: "Preview", value: "preview" },
+  ];
+
+  return (
+    <div className="flex items-center rounded-full bg-muted p-0.5">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`px-4 py-1 rounded-full text-[12px] font-medium transition-all ${
+            value === opt.value
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
 const Builder = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [openApiOpen, setOpenApiOpen] = useState(false);
+  const [mode, setMode] = useState<BuilderMode>("editor");
 
   const {
     project, pages, activePage, setActivePage, sections, blocks, loading,
@@ -34,7 +64,7 @@ const Builder = () => {
     addBlock, updateBlock, deleteBlock,
   } = useBuilder(projectId, user?.id);
 
-  const { settings, loading: settingsLoading } = useDesignSettings(projectId);
+  const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
 
   const handleOpenAPIImport = useCallback(async (parsed: ParsedOpenAPI) => {
     if (!projectId) return;
@@ -89,14 +119,16 @@ const Builder = () => {
   const frameMaxWidth = settings.contentMaxWidth + settings.sidebarWidth + 48;
 
   return (
-    <DesignSettingsWrapper settings={settings} className="min-h-screen">
+    <div className={`min-h-screen bg-background ${mode === "design" ? "flex flex-col h-screen overflow-hidden" : ""}`}>
+      {/* Floating header */}
       <div className="sticky top-0 z-50 p-1.5">
         <header
           className="border rounded-2xl backdrop-blur-xl shadow-sm"
           style={{ backgroundColor: `hsl(${settings.backgroundColor} / 0.85)`, borderColor: `hsl(${settings.borderColor})` }}
         >
           <div className="px-4 h-[48px] flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
+            {/* Left */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-lg" onClick={() => navigate("/dashboard")}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -109,15 +141,14 @@ const Builder = () => {
                 <span className="text-[12px] text-muted-foreground truncate">{activePage?.title || "No page"}</span>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" className="h-8 text-[12px] hidden sm:flex rounded-lg" onClick={() => navigate(`/builder/${projectId}/design`)}>
-                <Palette className="h-3.5 w-3.5 mr-1.5" /> Design
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 text-[12px] rounded-lg" onClick={() => window.open(`/docs/${project?.slug}`, "_blank")}>
-                <Eye className="h-3.5 w-3.5 sm:mr-1.5" />
-                <span className="hidden sm:inline">Preview</span>
-              </Button>
 
+            {/* Center - Segmented Control */}
+            <div className="flex items-center justify-center">
+              <SegmentedControl value={mode} onChange={setMode} />
+            </div>
+
+            {/* Right */}
+            <div className="flex items-center gap-1 flex-1 justify-end">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
@@ -142,59 +173,97 @@ const Builder = () => {
         </header>
       </div>
 
-      <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
-        <BuilderSidebar
+      {/* Mode: Editor */}
+      {mode === "editor" && (
+        <DesignSettingsWrapper settings={settings} className="">
+          <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
+            <BuilderSidebar
+              settings={settings}
+              pages={pages}
+              activePage={activePage}
+              sections={sections}
+              onSelectPage={setActivePage}
+              onAddPage={addPage}
+              onUpdatePage={updatePage}
+              onDeletePage={deletePage}
+            />
+
+            <main className="flex-1 min-w-0 py-10 lg:pl-4">
+              {activePage ? (
+                <article style={{ maxWidth: `${settings.contentMaxWidth}px` }} className="animate-fade-in">
+                  <PageTitleEditor page={activePage} onUpdate={updatePage} settings={settings} />
+
+                  {sections.map((section) => (
+                    <SectionEditor
+                      key={section.id}
+                      section={section}
+                      blocks={blocks.filter((b) => b.section_id === section.id)}
+                      settings={settings}
+                      onUpdateSection={updateSection}
+                      onDeleteSection={deleteSection}
+                      onAddBlock={addBlock}
+                      onUpdateBlock={updateBlock}
+                      onDeleteBlock={deleteBlock}
+                    />
+                  ))}
+
+                  <button
+                    onClick={addSection}
+                    className="w-full border-2 border-dashed rounded-xl py-6 text-[13px] text-muted-foreground hover:text-primary hover:border-primary/30 transition-all mt-6 flex items-center justify-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" /> Add Section
+                  </button>
+                </article>
+              ) : (
+                <div className="text-center py-20 animate-fade-in" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
+                  <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-5">
+                    <FileText className="h-7 w-7 text-muted-foreground" />
+                  </div>
+                  <p className="mb-5 text-[14px]">No pages yet. Add a page to get started.</p>
+                  <Button onClick={addPage} className="rounded-lg">
+                    <Plus className="h-4 w-4 mr-2" /> Add Page
+                  </Button>
+                </div>
+              )}
+            </main>
+          </div>
+        </DesignSettingsWrapper>
+      )}
+
+      {/* Mode: Design */}
+      {mode === "design" && (
+        <DesignPanel
+          projectId={projectId!}
+          projectName={project?.name || ""}
           settings={settings}
-          pages={pages}
-          activePage={activePage}
-          sections={sections}
-          onSelectPage={setActivePage}
-          onAddPage={addPage}
-          onUpdatePage={updatePage}
-          onDeletePage={deletePage}
+          saving={saving}
+          saveSettings={saveSettings}
+          resetSettings={resetSettings}
         />
+      )}
 
-        <main className="flex-1 min-w-0 py-10 lg:pl-4">
-          {activePage ? (
-            <article style={{ maxWidth: `${settings.contentMaxWidth}px` }} className="animate-fade-in">
-              <PageTitleEditor page={activePage} onUpdate={updatePage} settings={settings} />
+      {/* Mode: Preview */}
+      {mode === "preview" && (
+        <div className="flex-1">
+          <DocContentView
+            settings={settings}
+            projectName={project?.name || ""}
+            pages={pages}
+            activePage={activePage}
+            sections={sections}
+            blocks={blocks}
+            onSelectPage={(p) => {
+              const full = pages.find((pg) => pg.id === p.id);
+              if (full) setActivePage(full);
+            }}
+            headerStickyTop={0}
+            hideHeader
+          />
+        </div>
+      )}
 
-              {sections.map((section) => (
-                <SectionEditor
-                  key={section.id}
-                  section={section}
-                  blocks={blocks.filter((b) => b.section_id === section.id)}
-                  settings={settings}
-                  onUpdateSection={updateSection}
-                  onDeleteSection={deleteSection}
-                  onAddBlock={addBlock}
-                  onUpdateBlock={updateBlock}
-                  onDeleteBlock={deleteBlock}
-                />
-              ))}
-
-              <button
-                onClick={addSection}
-                className="w-full border-2 border-dashed rounded-xl py-6 text-[13px] text-muted-foreground hover:text-primary hover:border-primary/30 transition-all mt-6 flex items-center justify-center gap-2"
-              >
-                <Plus className="h-4 w-4" /> Add Section
-              </button>
-            </article>
-          ) : (
-            <div className="text-center py-20 animate-fade-in" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
-              <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-5">
-                <FileText className="h-7 w-7 text-muted-foreground" />
-              </div>
-              <p className="mb-5 text-[14px]">No pages yet. Add a page to get started.</p>
-              <Button onClick={addPage} className="rounded-lg">
-                <Plus className="h-4 w-4 mr-2" /> Add Page
-              </Button>
-            </div>
-          )}
-        </main>
-      </div>
       <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
-    </DesignSettingsWrapper>
+    </div>
   );
 };
 
