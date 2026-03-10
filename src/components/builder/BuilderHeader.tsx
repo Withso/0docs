@@ -104,7 +104,7 @@ const BuilderHeader = ({
           <div className="flex items-center justify-center gap-3">
             <SegmentedControl value={mode} onChange={onModeChange} />
             {mode === "design" && onDesignSubModeChange && (
-              <DesignSubToggle value={designSubMode} onChange={onDesignSubModeChange} />
+              <DesignSubSelect value={designSubMode} onChange={onDesignSubModeChange} />
             )}
           </div>
 
