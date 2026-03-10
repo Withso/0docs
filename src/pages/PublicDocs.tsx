@@ -15,6 +15,7 @@ interface Block { id: string; section_id: string; type: string; content: any; or
 const PublicDocs = () => {
   const { slug, pageSlug } = useParams<{ slug: string; pageSlug?: string }>();
   const [project, setProject] = useState<any>(null);
+  const [navGroups, setNavGroups] = useState<NavGroup[]>([]);
   const [pages, setPages] = useState<Page[]>([]);
   const [activePage, setActivePage] = useState<Page | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
