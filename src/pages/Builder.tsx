@@ -45,41 +45,57 @@ const Builder = () => {
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
 
-  const handleOpenAPIImport = useCallback(async (parsed: ParsedOpenAPI) => {
-    if (!projectId) return;
-    const tagGroups = new Map<string, typeof parsed.endpoints>();
+  // Block-level import: adds endpoints as blocks within the target section
+  const handleBlockLevelImport = useCallback(async (parsed: ParsedOpenAPI) => {
+    if (!importTargetSectionId) return;
+    const existingBlocks = blocks.filter((b) => b.section_id === importTargetSectionId);
+    let orderIndex = existingBlocks.length;
     for (const ep of parsed.endpoints) {
-      const tag = ep.tags[0] || "Default";
-      if (!tagGroups.has(tag)) tagGroups.set(tag, []);
-      tagGroups.get(tag)!.push(ep);
-    }
-    let pageIndex = pages.length;
-    for (const [tag, endpoints] of tagGroups) {
-      const slug = `api-${tag.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-      const { data: page } = await supabase
-        .from("pages")
-        .insert({ project_id: projectId, title: `API: ${tag}`, slug, order_index: pageIndex++ })
-        .select()
-        .single();
-      if (!page) continue;
-      for (let i = 0; i < endpoints.length; i++) {
-        const ep = endpoints[i];
-        const { data: section } = await supabase
-          .from("sections")
-          .insert({ page_id: page.id, title: `${ep.method} ${ep.path}`, order_index: i })
-          .select()
-          .single();
-        if (!section) continue;
-        await supabase.from("blocks").insert({
-          section_id: section.id,
+      await addBlock(importTargetSectionId, "api_endpoint");
+      // Update the last added block with the parsed content
+      const { data } = await supabase
+        .from("blocks")
+        .insert({
+          section_id: importTargetSectionId,
           type: "api_endpoint" as any,
           content: { method: ep.method, path: ep.path, description: ep.description, parameters: ep.parameters, response: ep.response },
-          order_index: 0,
-        });
-      }
+          order_index: orderIndex++,
+        })
+        .select()
+        .single();
     }
-    await reloadPages();
-  }, [projectId, pages.length, reloadPages]);
+    // Reload page content to reflect new blocks
+    await loadPageContent();
+  }, [importTargetSectionId, blocks, addBlock]);
+
+  // Page-level import: each endpoint becomes a section with an api_endpoint block
+  const handlePageLevelImport = useCallback(async (parsed: ParsedOpenAPI) => {
+    if (!activePage) return;
+    let sectionIndex = sections.length;
+    for (const ep of parsed.endpoints) {
+      const { data: section } = await supabase
+        .from("sections")
+        .insert({ page_id: activePage.id, title: `${ep.method} ${ep.path}`, order_index: sectionIndex++ })
+        .select()
+        .single();
+      if (!section) continue;
+      await supabase.from("blocks").insert({
+        section_id: section.id,
+        type: "api_endpoint" as any,
+        content: { method: ep.method, path: ep.path, description: ep.description, parameters: ep.parameters, response: ep.response },
+        order_index: 0,
+      });
+    }
+    await loadPageContent();
+  }, [activePage, sections.length]);
+
+  const handleOpenAPIImport = useCallback(async (parsed: ParsedOpenAPI) => {
+    if (openApiMode === "block") {
+      await handleBlockLevelImport(parsed);
+    } else {
+      await handlePageLevelImport(parsed);
+    }
+  }, [openApiMode, handleBlockLevelImport, handlePageLevelImport]);
 
   if (loading || settingsLoading) {
     return (
