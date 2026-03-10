@@ -86,6 +86,8 @@ const DocContentView = ({
   onSelectVersion,
   externalSearchOpen,
   onExternalSearchOpenChange,
+  navGroups = [],
+  hideHeaderLabel = false,
 }: DocContentViewProps) => {
   const [internalSearchOpen, setInternalSearchOpen] = useState(false);
   const searchOpen = externalSearchOpen !== undefined ? externalSearchOpen : internalSearchOpen;
