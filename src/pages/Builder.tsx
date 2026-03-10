@@ -64,6 +64,7 @@ const Builder = () => {
     project, pages, activePage, setActivePage, sections, blocks, loading,
     addPage, updatePage, deletePage, addSection, updateSection, deleteSection,
     addBlock, updateBlock, deleteBlock, reloadPages, loadPageContent,
+    navGroups, addNavGroup, updateNavGroup, deleteNavGroup,
   } = useBuilder(projectId, user?.id);
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
@@ -152,10 +153,14 @@ const Builder = () => {
               pages={pages}
               activePage={activePage}
               sections={sections}
+              navGroups={navGroups}
               onSelectPage={setActivePage}
               onAddPage={addPage}
               onUpdatePage={updatePage}
               onDeletePage={deletePage}
+              onAddNavGroup={addNavGroup}
+              onUpdateNavGroup={updateNavGroup}
+              onDeleteNavGroup={deleteNavGroup}
             />
 
             <main className="flex-1 min-w-0 py-10 lg:pl-4">
@@ -203,7 +208,7 @@ const Builder = () => {
                     <FileText className="h-7 w-7 text-muted-foreground" />
                   </div>
                   <p className="mb-5 text-[14px]">No pages yet. Add a page to get started.</p>
-                  <Button onClick={addPage} className="rounded-lg">
+                  <Button onClick={() => addPage()} className="rounded-lg">
                     <Plus className="h-4 w-4 mr-2" /> Add Page
                   </Button>
                 </div>

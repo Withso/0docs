@@ -9,6 +9,7 @@ export interface Page {
   order_index: number;
   meta_description?: string | null;
   version_id?: string | null;
+  nav_group_id?: string | null;
 }
 
 export interface Section {
@@ -28,12 +29,20 @@ export interface Block {
   order_index: number;
 }
 
+export interface NavGroup {
+  id: string;
+  project_id: string;
+  title: string;
+  order_index: number;
+}
+
 export function useBuilder(projectId: string | undefined, userId: string | undefined) {
   const [project, setProject] = useState<any>(null);
   const [pages, setPages] = useState<Page[]>([]);
   const [activePage, setActivePage] = useState<Page | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [navGroups, setNavGroups] = useState<NavGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load project and pages
@@ -65,6 +74,15 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
         setPages(pagesData);
         if (pagesData.length > 0) setActivePage(pagesData[0]);
       }
+
+      const { data: groupsData } = await supabase
+        .from("nav_groups")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("order_index");
+
+      if (groupsData) setNavGroups(groupsData);
+
       setLoading(false);
     };
 
@@ -108,13 +126,15 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     loadPageContent();
   }, [loadPageContent]);
 
-  const addPage = async () => {
+  const addPage = async (navGroupId?: string) => {
     if (!projectId) return;
     const title = "New Page";
     const slug = `page-${Date.now()}`;
+    const insertData: any = { project_id: projectId, title, slug, order_index: pages.length };
+    if (navGroupId) insertData.nav_group_id = navGroupId;
     const { data } = await supabase
       .from("pages")
-      .insert({ project_id: projectId, title, slug, order_index: pages.length })
+      .insert(insertData)
       .select()
       .single();
 
@@ -207,6 +227,29 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     }
   }, [projectId]);
 
+  const addNavGroup = async () => {
+    if (!projectId) return;
+    const { data } = await supabase
+      .from("nav_groups")
+      .insert({ project_id: projectId, title: "New Label", order_index: navGroups.length })
+      .select()
+      .single();
+    if (data) setNavGroups((g) => [...g, data]);
+  };
+
+  const updateNavGroup = async (groupId: string, updates: Partial<NavGroup>) => {
+    await supabase.from("nav_groups").update(updates).eq("id", groupId);
+    setNavGroups((g) => g.map((ng) => (ng.id === groupId ? { ...ng, ...updates } : ng)));
+  };
+
+  const deleteNavGroup = async (groupId: string) => {
+    // Unassign pages from this group first
+    await supabase.from("pages").update({ nav_group_id: null }).eq("nav_group_id", groupId);
+    setPages((p) => p.map((pg) => (pg.nav_group_id === groupId ? { ...pg, nav_group_id: null } : pg)));
+    await supabase.from("nav_groups").delete().eq("id", groupId);
+    setNavGroups((g) => g.filter((ng) => ng.id !== groupId));
+  };
+
   return {
     project,
     pages,
@@ -214,6 +257,7 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     setActivePage,
     sections,
     blocks,
+    navGroups,
     loading,
     addPage,
     updatePage,
@@ -224,6 +268,9 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     addBlock,
     updateBlock,
     deleteBlock,
+    addNavGroup,
+    updateNavGroup,
+    deleteNavGroup,
     reloadPages,
     loadPageContent,
   };
