@@ -20,6 +20,7 @@ export interface SidebarNavGroup {
   id: string;
   title: string;
   order_index: number;
+  type?: "label" | "text";
 }
 
 interface DocSidebarNavProps<TPage extends SidebarPageBase = SidebarPageBase> {
