@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Plus, LogOut, ExternalLink, Trash2, BookOpen, Search,
-  FileText, Settings, MoreHorizontal, FolderOpen, User, Clock, Home,
+  Plus, ExternalLink, Trash2, BookOpen, Search,
+  FileText, Settings, MoreHorizontal, FolderOpen, Clock, Home,
 } from "lucide-react";
+import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
