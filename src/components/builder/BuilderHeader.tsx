@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, FileJson, BarChart3, Settings, ChevronRight } from "lucide-react";
+import { ArrowLeft, FileText, BarChart3, Settings, ChevronRight } from "lucide-react";
 
 type BuilderMode = "editor" | "design" | "preview";
 
