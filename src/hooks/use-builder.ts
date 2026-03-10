@@ -38,6 +38,7 @@ export interface Block {
 
 export function useBuilder(projectId: string | undefined, userId: string | undefined) {
   const [project, setProject] = useState<any>(null);
+  const [navGroups, setNavGroups] = useState<NavGroup[]>([]);
   const [pages, setPages] = useState<Page[]>([]);
   const [activePage, setActivePage] = useState<Page | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
