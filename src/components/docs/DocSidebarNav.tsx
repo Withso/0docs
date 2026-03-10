@@ -98,7 +98,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                 fontFamily: `'${s.bodyFont}', sans-serif`,
               }}
             >
-              {page.title}
+              <span dangerouslySetInnerHTML={{ __html: page.title }} />
             </button>
           )}
         </div>
@@ -136,7 +136,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                       style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
                     />
                   )}
-                  {section.title}
+                  <span dangerouslySetInnerHTML={{ __html: section.title }} />
                 </a>
               );
             })}
@@ -180,7 +180,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                   className="text-[10px] font-semibold uppercase tracking-widest mb-1.5"
                   style={{ color: `hsl(${s.sidebarTextColor} / 0.5)` }}
                 >
-                  {group.title}
+                  <span dangerouslySetInnerHTML={{ __html: group.title }} />
                 </div>
                 <div style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
                   {groupPages.map(renderPage)}

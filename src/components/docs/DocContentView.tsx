@@ -192,7 +192,7 @@ const DocContentView = ({
                   marginBottom: `${s.sectionSpacing * 0.6}px`,
                 }}
               >
-                {activePage.title}
+                <span dangerouslySetInnerHTML={{ __html: activePage.title }} />
               </h1>
 
               {sections.map((section) => {
@@ -214,7 +214,7 @@ const DocContentView = ({
                         fontSize: `${s.headingFontSize}px`,
                       }}
                     >
-                      {section.title}
+                      <span dangerouslySetInnerHTML={{ __html: section.title }} />
                       <span
                         className="flex-1 h-px opacity-50"
                         style={{ backgroundColor: `hsl(${s.sectionLineColor})` }}

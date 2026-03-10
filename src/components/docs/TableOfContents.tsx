@@ -82,7 +82,7 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
                   style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
                 />
               )}
-              {section.title}
+              <span dangerouslySetInnerHTML={{ __html: section.title }} />
             </a>
           );
         })}

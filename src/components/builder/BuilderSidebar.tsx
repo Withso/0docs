@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Trash2, Tag, FileText } from "lucide-react";
 import type { Page, Section, NavGroup } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
+import InlineRichText from "./InlineRichText";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +41,7 @@ const BuilderSidebar = ({
 }: BuilderSidebarProps) => {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
 
   // Pages without a nav group
@@ -53,27 +55,23 @@ const BuilderSidebar = ({
       <div key={page.id}>
         <div className="group flex items-center gap-1">
           {editingPageId === page.id ? (
-            <input
-              autoFocus
-              className="flex-1 py-[3px] bg-transparent border-b outline-none"
+            <InlineRichText
+              value={page.title}
+              onChange={(html) => {
+                const plainSlug = html.replace(/<[^>]*>/g, "").trim() || "untitled";
+                onUpdatePage(page.id, {
+                  title: html,
+                  slug: plainSlug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+                });
+              }}
+              settings={s}
+              singleLine
+              placeholder="Page title..."
+              className="flex-1 py-[3px] min-w-0"
               style={{
                 fontSize: `${s.sidebarFontSize}px`,
-                borderColor: `hsl(${s.borderColor})`,
                 color: `hsl(${s.sidebarActiveColor})`,
                 fontFamily: `'${s.bodyFont}', sans-serif`,
-              }}
-              defaultValue={page.title}
-              onBlur={(e) => {
-                const val = e.target.value.trim() || "Untitled";
-                onUpdatePage(page.id, {
-                  title: val,
-                  slug: val.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-                });
-                setEditingPageId(null);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                if (e.key === "Escape") setEditingPageId(null);
               }}
             />
           ) : (
@@ -89,10 +87,9 @@ const BuilderSidebar = ({
                 fontWeight: isActive ? 500 : 400,
                 fontFamily: `'${s.bodyFont}', sans-serif`,
               }}
-              title="Double-click to rename"
-            >
-              {page.title}
-            </button>
+              title="Double-click to edit with formatting"
+              dangerouslySetInnerHTML={{ __html: page.title }}
+            />
           )}
           <button
             onClick={() => onDeletePage(page.id)}
@@ -117,27 +114,58 @@ const BuilderSidebar = ({
                 s.sidebarShowSectionTracker && activeSectionId === section.id;
 
               return (
-                <a
-                  key={section.id}
-                  href={`#section-${section.id}`}
-                  className="block py-[3px] pl-3 transition-colors relative"
-                  style={{
-                    color: isSectionActive
-                      ? `hsl(${s.sidebarActiveColor})`
-                      : `hsl(${s.sidebarTextColor} / 0.65)`,
-                    fontSize: `${s.sidebarFontSize - 1}px`,
-                    fontWeight: isSectionActive ? 500 : 400,
-                    fontFamily: `'${s.bodyFont}', sans-serif`,
-                  }}
-                >
+                <div key={section.id} className="relative">
                   {isSectionActive && (
                     <span
                       className="absolute left-[-1px] top-[5px] bottom-[5px] w-[2px] rounded-full"
                       style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
                     />
                   )}
-                  {section.title}
-                </a>
+                  {editingSectionId === section.id ? (
+                    <div className="pl-3 py-[3px]">
+                      <InlineRichText
+                        value={section.title}
+                        onChange={(html) => {
+                          // Section title updates are handled via the main onUpdateSection
+                          // but sidebar doesn't have that prop, so we emit a custom event
+                          window.dispatchEvent(
+                            new CustomEvent("builder:updateSection", {
+                              detail: { id: section.id, updates: { title: html } },
+                            })
+                          );
+                        }}
+                        settings={s}
+                        singleLine
+                        placeholder="Section title..."
+                        className="min-w-0"
+                        style={{
+                          color: `hsl(${s.sidebarActiveColor})`,
+                          fontSize: `${s.sidebarFontSize - 1}px`,
+                          fontFamily: `'${s.bodyFont}', sans-serif`,
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <a
+                      href={`#section-${section.id}`}
+                      onDoubleClick={(e) => {
+                        e.preventDefault();
+                        setEditingSectionId(section.id);
+                      }}
+                      className="block py-[3px] pl-3 transition-colors"
+                      style={{
+                        color: isSectionActive
+                          ? `hsl(${s.sidebarActiveColor})`
+                          : `hsl(${s.sidebarTextColor} / 0.65)`,
+                        fontSize: `${s.sidebarFontSize - 1}px`,
+                        fontWeight: isSectionActive ? 500 : 400,
+                        fontFamily: `'${s.bodyFont}', sans-serif`,
+                      }}
+                      title="Double-click to edit with formatting"
+                      dangerouslySetInnerHTML={{ __html: section.title }}
+                    />
+                  )}
+                </div>
               );
             })}
           </nav>
@@ -149,24 +177,19 @@ const BuilderSidebar = ({
   const renderGroupLabel = (group: NavGroup) => {
     if (editingGroupId === group.id) {
       return (
-        <input
-          autoFocus
-          className="flex-1 bg-transparent border-b outline-none uppercase tracking-widest"
+        <InlineRichText
+          value={group.title}
+          onChange={(html) => {
+            onUpdateNavGroup(group.id, { title: html });
+          }}
+          settings={s}
+          singleLine
+          placeholder="Label..."
+          className="flex-1 uppercase tracking-widest"
           style={{
             fontSize: "10px",
             fontWeight: 600,
-            borderColor: `hsl(${s.borderColor})`,
             color: `hsl(${s.sidebarTextColor})`,
-          }}
-          defaultValue={group.title}
-          onBlur={(e) => {
-            const val = e.target.value.trim() || "Untitled";
-            onUpdateNavGroup(group.id, { title: val });
-            setEditingGroupId(null);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-            if (e.key === "Escape") setEditingGroupId(null);
           }}
         />
       );
@@ -176,10 +199,9 @@ const BuilderSidebar = ({
       <span
         className="cursor-pointer"
         onDoubleClick={() => setEditingGroupId(group.id)}
-        title="Double-click to rename"
-      >
-        {group.title}
-      </span>
+        title="Double-click to edit with formatting"
+        dangerouslySetInnerHTML={{ __html: group.title }}
+      />
     );
   };
 
