@@ -313,6 +313,8 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
     const load = async () => {
       const { data: pagesData } = await supabase.from("pages").select("*").eq("project_id", projectId).order("order_index");
       if (pagesData && pagesData.length > 0) { setPages(pagesData); setActivePage(pagesData[0]); }
+      const { data: groupsData } = await supabase.from("nav_groups").select("*").eq("project_id", projectId).order("order_index");
+      if (groupsData) setNavGroups(groupsData);
     };
     load();
   }, [projectId]);
