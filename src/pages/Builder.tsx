@@ -90,55 +90,57 @@ const Builder = () => {
 
   return (
     <DesignSettingsWrapper settings={settings} className="min-h-screen">
-      <header
-        className="border-b sticky top-0 z-50 backdrop-blur-xl"
-        style={{ backgroundColor: `hsl(${settings.backgroundColor} / 0.85)`, borderColor: `hsl(${settings.borderColor})` }}
-      >
-        <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto px-6 h-[52px] flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 rounded-lg" onClick={() => navigate("/dashboard")}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="h-7 w-7 rounded-lg bg-platform-accent-soft flex items-center justify-center shrink-0">
-                <FileText className="h-3.5 w-3.5 text-primary" />
+      <div className="sticky top-0 z-50 p-1.5">
+        <header
+          className="border rounded-2xl backdrop-blur-xl shadow-sm"
+          style={{ backgroundColor: `hsl(${settings.backgroundColor} / 0.85)`, borderColor: `hsl(${settings.borderColor})` }}
+        >
+          <div className="px-4 h-[48px] flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-lg" onClick={() => navigate("/dashboard")}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="h-6 w-6 rounded-lg bg-platform-accent-soft flex items-center justify-center shrink-0">
+                  <FileText className="h-3 w-3 text-primary" />
+                </div>
+                <span className="font-semibold text-foreground text-[13px] truncate">{project?.name}</span>
+                <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                <span className="text-[12px] text-muted-foreground truncate">{activePage?.title || "No page"}</span>
               </div>
-              <span className="font-semibold text-foreground text-[14px] truncate">{project?.name}</span>
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span className="text-[13px] text-muted-foreground truncate">{activePage?.title || "No page"}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" className="h-8 text-[12px] hidden sm:flex rounded-lg" onClick={() => navigate(`/builder/${projectId}/design`)}>
+                <Palette className="h-3.5 w-3.5 mr-1.5" /> Design
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-[12px] rounded-lg" onClick={() => window.open(`/docs/${project?.slug}`, "_blank")}>
+                <Eye className="h-3.5 w-3.5 sm:mr-1.5" />
+                <span className="hidden sm:inline">Preview</span>
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate(`/builder/${projectId}/analytics`)}>
+                    <BarChart3 className="h-4 w-4 mr-2" /> Analytics
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setOpenApiOpen(true)}>
+                    <FileJson className="h-4 w-4 mr-2" /> Import API
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate(`/builder/${projectId}/settings`)}>
+                    <Settings className="h-4 w-4 mr-2" /> Project Settings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Button variant="ghost" size="sm" className="h-9 text-[13px] hidden sm:flex rounded-lg" onClick={() => navigate(`/builder/${projectId}/design`)}>
-              <Palette className="h-3.5 w-3.5 mr-1.5" /> Design
-            </Button>
-            <Button variant="outline" size="sm" className="h-9 text-[13px] rounded-lg" onClick={() => window.open(`/docs/${project?.slug}`, "_blank")}>
-              <Eye className="h-3.5 w-3.5 sm:mr-1.5" />
-              <span className="hidden sm:inline">Preview</span>
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => navigate(`/builder/${projectId}/analytics`)}>
-                  <BarChart3 className="h-4 w-4 mr-2" /> Analytics
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setOpenApiOpen(true)}>
-                  <FileJson className="h-4 w-4 mr-2" /> Import API
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate(`/builder/${projectId}/settings`)}>
-                  <Settings className="h-4 w-4 mr-2" /> Project Settings
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
         <BuilderSidebar
