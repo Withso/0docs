@@ -291,8 +291,66 @@ const BuilderSidebar = ({
         {ungroupedPages.map(renderPage)}
 
         {navGroups.map((group) => {
+          const isTextType = group.type === "text";
           const groupPages = pages.filter((p) => p.nav_group_id === group.id);
 
+          if (isTextType) {
+            // Text type: plain static text, no pages underneath
+            return (
+              <div key={group.id} className="group mt-1">
+                <div className="flex items-center gap-1">
+                  {editingGroupId === group.id ? (
+                    <InlineRichText
+                      value={group.title}
+                      onChange={(html) => onUpdateNavGroup(group.id, { title: html })}
+                      onDone={() => setEditingGroupId(null)}
+                      settings={s}
+                      singleLine
+                      placeholder="Text..."
+                      className="flex-1 min-w-0"
+                      style={{
+                        fontSize: `${s.sidebarFontSize}px`,
+                        color: `hsl(${s.sidebarTextColor} / 0.6)`,
+                        fontFamily: `'${s.bodyFont}', sans-serif`,
+                      }}
+                    />
+                  ) : (
+                    <span
+                      className="flex-1 py-[3px] select-none cursor-default"
+                      onDoubleClick={() => {
+                        stopEditing();
+                        setEditingGroupId(group.id);
+                      }}
+                      style={{
+                        fontSize: `${s.sidebarFontSize}px`,
+                        color: `hsl(${s.sidebarTextColor} / 0.6)`,
+                        fontFamily: `'${s.bodyFont}', sans-serif`,
+                      }}
+                      dangerouslySetInnerHTML={{ __html: group.title }}
+                    />
+                  )}
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <button
+                      onClick={() => { stopEditing(); setEditingGroupId(group.id); }}
+                      style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                      title="Edit"
+                    >
+                      <Pencil className="h-2 w-2" />
+                    </button>
+                    <button
+                      onClick={() => onDeleteNavGroup(group.id)}
+                      style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                      title="Delete"
+                    >
+                      <Trash2 className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Label type (existing behavior)
           return (
             <div key={group.id} className="mt-3">
               <div
@@ -302,10 +360,7 @@ const BuilderSidebar = ({
                 {renderGroupLabel(group)}
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button
-                    onClick={() => {
-                      stopEditing();
-                      setEditingGroupId(group.id);
-                    }}
+                    onClick={() => { stopEditing(); setEditingGroupId(group.id); }}
                     style={{ color: `hsl(${s.mutedForegroundColor})` }}
                     title="Rename"
                   >
