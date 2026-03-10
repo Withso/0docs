@@ -126,13 +126,15 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     loadPageContent();
   }, [loadPageContent]);
 
-  const addPage = async () => {
+  const addPage = async (navGroupId?: string) => {
     if (!projectId) return;
     const title = "New Page";
     const slug = `page-${Date.now()}`;
+    const insertData: any = { project_id: projectId, title, slug, order_index: pages.length };
+    if (navGroupId) insertData.nav_group_id = navGroupId;
     const { data } = await supabase
       .from("pages")
-      .insert({ project_id: projectId, title, slug, order_index: pages.length })
+      .insert(insertData)
       .select()
       .single();
 
