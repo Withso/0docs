@@ -82,7 +82,7 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
         .eq("project_id", projectId)
         .order("order_index");
 
-      if (groupsData) setNavGroups(groupsData);
+      if (groupsData) setNavGroups(groupsData as unknown as NavGroup[]);
 
       setLoading(false);
     };
