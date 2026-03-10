@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, User, Mail, Save, LogOut, Shield } from "lucide-react";
+import DashboardLayout from "@/components/DashboardLayout";
 
 const ProfileSettings = () => {
   const { user, signOut } = useAuth();
@@ -70,34 +71,28 @@ const ProfileSettings = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
-        <span className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
+      <DashboardLayout>
+        <div className="flex-1 flex items-center justify-center py-20">
+          <span className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="platform-header">
-        <div className="h-full max-w-3xl mx-auto px-6 flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-platform-accent-soft flex items-center justify-center">
-              <User className="h-3.5 w-3.5 text-primary" />
-            </div>
-            <span className="text-[14px] font-semibold text-foreground">Settings</span>
-            <span className="text-muted-foreground text-xs">/</span>
-            <span className="text-[13px] text-muted-foreground">Profile</span>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-6 py-10 animate-fade-in">
+    <DashboardLayout>
+      <div className="max-w-3xl mx-auto px-6 py-10 animate-fade-in">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Profile Settings</h1>
-          <p className="text-[14px] text-muted-foreground mt-1.5">Manage your account information</p>
+          <div className="flex items-center gap-3 mb-1.5">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Profile Settings</h1>
+          </div>
+          <p className="text-[14px] text-muted-foreground ml-11">Manage your account information</p>
         </div>
 
         {/* Avatar section */}
@@ -175,8 +170,8 @@ const ProfileSettings = () => {
             </Button>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 

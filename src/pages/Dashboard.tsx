@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Plus, LogOut, ExternalLink, Trash2, BookOpen, Search,
-  FileText, Settings, MoreHorizontal, FolderOpen, User, Clock, Home,
+  Plus, ExternalLink, Trash2, BookOpen, Search,
+  FileText, Settings, MoreHorizontal, FolderOpen, Clock, Home,
 } from "lucide-react";
+import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -148,86 +149,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Floating Sidebar */}
-      <div className="hidden md:flex p-1.5 shrink-0">
-        <aside className="w-[var(--platform-sidebar-width)] bg-card rounded-2xl border shadow-sm flex flex-col overflow-hidden">
-          {/* Logo */}
-          <div className="h-[52px] flex items-center gap-2.5 px-5">
-            <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center shadow-platform-sm">
-              <FileText className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-[15px] tracking-tight text-foreground">DocBuilder</span>
-          </div>
-
-          {/* Nav */}
-          <nav className="flex-1 px-3 py-1 space-y-0.5">
-            <div className="platform-nav-item active">
-              <FolderOpen className="h-4 w-4" />
-              <span>Projects</span>
-            </div>
-          </nav>
-
-          {/* User section */}
-          <div className="p-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-accent transition-colors">
-                  <div className="h-8 w-8 platform-avatar text-[11px]">
-                    {userInitial}
-                  </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="text-[13px] font-medium text-foreground truncate">
-                      {user?.user_metadata?.display_name || "User"}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
-                  <User className="h-4 w-4 mr-2" /> Profile Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut} className="text-destructive">
-                  <LogOut className="h-4 w-4 mr-2" /> Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </aside>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile header */}
-        <header className="md:hidden h-[52px] border-b px-4 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center">
-              <FileText className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-[15px] text-foreground">DocBuilder</span>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="h-9 w-9 platform-avatar text-[11px]">
-                {userInitial}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
-                <User className="h-4 w-4 mr-2" /> Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={signOut} className="text-destructive">
-                <LogOut className="h-4 w-4 mr-2" /> Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </header>
-
-        {/* Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-5xl mx-auto px-6 py-8">
+    <DashboardLayout>
+      <div className="max-w-5xl mx-auto px-6 py-8">
             {/* Header row: Title + Search + Actions */}
             <div className="flex items-center gap-3 mb-6">
               <h1 className="text-[15px] font-semibold text-foreground shrink-0">Projects</h1>
@@ -370,8 +293,6 @@ const Dashboard = () => {
               </div>
             )}
           </div>
-        </main>
-      </div>
       {/* Delete confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
@@ -389,7 +310,7 @@ const Dashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </DashboardLayout>
   );
 };
 
