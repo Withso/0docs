@@ -171,35 +171,39 @@ const Index = () => {
 
   return (
     <div className="min-h-screen relative">
-      {/* Header bar: no border, search centered, action button on the right */}
+      {/* Header bar: no border, aligned with main content */}
       <div
-        className="sticky top-0 z-50 h-12 flex items-center px-6"
+        className="sticky top-0 z-50 h-12"
         style={{ backgroundColor: `hsl(${settings.backgroundColor})` }}
       >
-        {/* Spacer left */}
-        <div className="flex-1" />
-
-        {/* Centered search */}
-        <button
-          onClick={() => setSearchOpen(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors hover:bg-accent/80"
-          style={{
-            borderColor: `hsl(${settings.borderColor})`,
-            color: `hsl(${settings.mutedForegroundColor})`,
-            fontSize: "13px",
-            fontFamily: `'${settings.bodyFont}', sans-serif`,
-            minWidth: "220px",
-          }}
+        <div
+          className="mx-auto h-full flex items-center justify-between px-6"
+          style={{ maxWidth: `${settings.contentMaxWidth + settings.sidebarWidth + 200 + 48}px` }}
         >
-          <Search className="h-3.5 w-3.5" />
-          <span>Search</span>
-          <kbd className="ml-auto hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]" style={{ borderColor: `hsl(${settings.borderColor})` }}>
-            ⌘K
-          </kbd>
-        </button>
+          {/* Search aligned with main content start (after sidebar) */}
+          <div style={{ width: `${settings.sidebarWidth}px`, flexShrink: 0 }} />
+          <div className="flex-1 min-w-0 lg:pl-4">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors hover:bg-accent/80"
+              style={{
+                borderColor: `hsl(${settings.borderColor})`,
+                color: `hsl(${settings.mutedForegroundColor})`,
+                fontSize: "13px",
+                fontFamily: `'${settings.bodyFont}', sans-serif`,
+                minWidth: "220px",
+                maxWidth: "280px",
+              }}
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span>Search</span>
+              <kbd className="ml-auto hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]" style={{ borderColor: `hsl(${settings.borderColor})` }}>
+                ⌘K
+              </kbd>
+            </button>
+          </div>
 
-        {/* Spacer right + action button */}
-        <div className="flex-1 flex justify-end">
+          {/* Action button on the right */}
           {user ? (
             <Button
               size="sm"
