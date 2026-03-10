@@ -283,6 +283,7 @@ function BlockControls({
 interface DocPage { id: string; title: string; slug: string; order_index: number; }
 interface DocSection { id: string; page_id: string; title: string; order_index: number; }
 interface DocBlock { id: string; section_id: string; type: string; content: any; order_index: number; }
+interface DocNavGroup { id: string; title: string; order_index: number; }
 
 interface DesignPanelProps {
   projectId: string;
@@ -303,6 +304,7 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
   const [activePage, setActivePage] = useState<DocPage | null>(null);
   const [sections, setSections] = useState<DocSection[]>([]);
   const [blocks, setBlocks] = useState<DocBlock[]>([]);
+  const [navGroups, setNavGroups] = useState<DocNavGroup[]>([]);
 
   useEffect(() => { setLocal(settings); }, [settings]);
 
@@ -311,6 +313,8 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
     const load = async () => {
       const { data: pagesData } = await supabase.from("pages").select("*").eq("project_id", projectId).order("order_index");
       if (pagesData && pagesData.length > 0) { setPages(pagesData); setActivePage(pagesData[0]); }
+      const { data: groupsData } = await supabase.from("nav_groups").select("*").eq("project_id", projectId).order("order_index");
+      if (groupsData) setNavGroups(groupsData);
     };
     load();
   }, [projectId]);
@@ -368,6 +372,8 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
           onSelectPage={setActivePage}
           headerStickyTop={0}
           hideHeader
+          navGroups={navGroups}
+          hideHeaderLabel
         />
       </div>
 

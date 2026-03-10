@@ -16,6 +16,13 @@ interface DocPage {
   title: string;
   slug: string;
   order_index: number;
+  nav_group_id?: string | null;
+}
+
+interface DocNavGroup {
+  id: string;
+  title: string;
+  order_index: number;
 }
 
 interface DocSection {
@@ -54,6 +61,8 @@ interface DocContentViewProps {
   onSelectVersion?: (version: DocVersion) => void;
   externalSearchOpen?: boolean;
   onExternalSearchOpenChange?: (open: boolean) => void;
+  navGroups?: DocNavGroup[];
+  hideHeaderLabel?: boolean;
 }
 
 const DocContentView = ({
@@ -77,6 +86,8 @@ const DocContentView = ({
   onSelectVersion,
   externalSearchOpen,
   onExternalSearchOpenChange,
+  navGroups = [],
+  hideHeaderLabel = false,
 }: DocContentViewProps) => {
   const [internalSearchOpen, setInternalSearchOpen] = useState(false);
   const searchOpen = externalSearchOpen !== undefined ? externalSearchOpen : internalSearchOpen;
@@ -166,6 +177,8 @@ const DocContentView = ({
           sections={sections}
           onSelectPage={onSelectPage}
           stickyTop={sidebarTop}
+          navGroups={navGroups}
+          hideHeaderLabel={hideHeaderLabel}
         />
 
         <main className="flex-1 min-w-0 py-10 lg:pl-4">
