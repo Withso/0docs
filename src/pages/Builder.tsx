@@ -97,7 +97,6 @@ const Builder = () => {
         activePageTitle={activePage?.title || "No page"}
         mode={mode}
         onModeChange={setMode}
-        onImportAPI={() => setOpenApiOpen(true)}
       />
 
       {/* Mode: Editor */}
