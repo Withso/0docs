@@ -362,7 +362,14 @@ const Dashboard = () => {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    <h3 className="font-semibold text-foreground text-[14px] mb-1">{project.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground text-[14px] mb-1">{project.name}</h3>
+                      {(project as any).is_homepage && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-primary/10 text-primary mb-1">
+                          <Home className="h-2.5 w-2.5" /> Homepage
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[12px] text-muted-foreground line-clamp-2 mb-4">
                       {project.description || "No description"}
                     </p>
