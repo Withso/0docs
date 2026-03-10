@@ -89,25 +89,16 @@ const Analytics = () => {
     );
   }
 
+  const [openApiOpen, setOpenApiOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="platform-header">
-        <div className="max-w-5xl mx-auto px-6 h-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => navigate(`/builder/${projectId}`)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-platform-accent-soft flex items-center justify-center">
-                <BarChart3 className="h-3.5 w-3.5 text-primary" />
-              </div>
-              <span className="font-semibold text-[14px]">{project?.name}</span>
-              <span className="text-muted-foreground text-xs">/</span>
-              <span className="text-[13px] text-muted-foreground">Analytics</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <BuilderHeader
+        projectId={projectId!}
+        projectName={project?.name || ""}
+        activeTool="analytics"
+        onImportAPI={() => setOpenApiOpen(true)}
+      />
 
       <main className="max-w-5xl mx-auto px-6 py-8 animate-fade-in">
         {/* Stats cards */}
