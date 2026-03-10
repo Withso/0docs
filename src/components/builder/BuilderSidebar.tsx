@@ -275,9 +275,13 @@ const BuilderSidebar = ({
               <FileText className="h-3.5 w-3.5" />
               Page
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onAddNavGroup} className="gap-2 text-[13px]">
+            <DropdownMenuItem onClick={() => onAddNavGroup("label")} className="gap-2 text-[13px]">
               <Tag className="h-3.5 w-3.5" />
               Label
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onAddNavGroup("text")} className="gap-2 text-[13px]">
+              <Type className="h-3.5 w-3.5" />
+              Text
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
