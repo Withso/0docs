@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, BarChart3, Settings, ChevronRight } from "lucide-react";
 
 export type BuilderMode = "editor" | "design" | "preview" | "analytics" | "settings";
+export type DesignSubMode = "live" | "examples";
 
 interface BuilderHeaderProps {
   projectId: string;
@@ -10,6 +11,8 @@ interface BuilderHeaderProps {
   activePageTitle?: string;
   mode: BuilderMode;
   onModeChange: (mode: BuilderMode) => void;
+  designSubMode?: DesignSubMode;
+  onDesignSubModeChange?: (sub: DesignSubMode) => void;
 }
 
 const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
@@ -41,12 +44,32 @@ const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (
   );
 };
 
+const DesignSubToggle = ({ value, onChange }: { value: DesignSubMode; onChange: (v: DesignSubMode) => void }) => (
+  <div className="flex items-center rounded-full bg-muted p-0.5">
+    {([{ label: "Live", value: "live" as const }, { label: "Examples", value: "examples" as const }]).map((opt) => (
+      <button
+        key={opt.value}
+        onClick={() => onChange(opt.value)}
+        className={`px-3 py-0.5 rounded-full text-[11px] font-medium transition-all ${
+          value === opt.value
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        {opt.label}
+      </button>
+    ))}
+  </div>
+);
+
 const BuilderHeader = ({
   projectId,
   projectName,
   activePageTitle,
   mode,
   onModeChange,
+  designSubMode = "live",
+  onDesignSubModeChange,
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
 
@@ -77,8 +100,11 @@ const BuilderHeader = ({
           </div>
 
           {/* Center - Segmented Control (always visible) */}
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center gap-3">
             <SegmentedControl value={mode} onChange={onModeChange} />
+            {mode === "design" && onDesignSubModeChange && (
+              <DesignSubToggle value={designSubMode} onChange={onDesignSubModeChange} />
+            )}
           </div>
 
           {/* Right - icon nav */}

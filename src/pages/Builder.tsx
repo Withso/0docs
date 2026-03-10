@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { ParsedOpenAPI } from "@/lib/openapi-parser";
-import type { BuilderMode } from "@/components/builder/BuilderHeader";
+import type { BuilderMode, DesignSubMode } from "@/components/builder/BuilderHeader";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +47,7 @@ const Builder = () => {
   };
 
   const [mode, setMode] = useState<BuilderMode>(getInitialMode);
+  const [designSubMode, setDesignSubMode] = useState<DesignSubMode>("live");
 
   // Sync URL when mode changes
   const handleModeChange = useCallback((newMode: BuilderMode) => {
@@ -138,6 +139,8 @@ const Builder = () => {
         activePageTitle={activePage?.title || "No page"}
         mode={mode}
         onModeChange={handleModeChange}
+        designSubMode={designSubMode}
+        onDesignSubModeChange={setDesignSubMode}
       />
 
       {/* Mode: Editor */}
@@ -219,6 +222,7 @@ const Builder = () => {
           saving={saving}
           saveSettings={saveSettings}
           resetSettings={resetSettings}
+          designSubMode={designSubMode}
         />
       )}
 

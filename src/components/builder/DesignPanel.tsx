@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useDesignSettings, defaultDesignSettings } from "@/hooks/use-design-settings";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
 import DocContentView from "@/components/docs/DocContentView";
+import DesignExamplesView from "@/components/builder/DesignExamplesView";
+import type { DesignSubMode } from "@/components/builder/BuilderHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -289,14 +291,14 @@ interface DesignPanelProps {
   saving: boolean;
   saveSettings: (s: DS) => Promise<void>;
   resetSettings: () => void;
+  designSubMode: DesignSubMode;
 }
 
 // ─── Main Panel ──────────────────────────────────────
-const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, resetSettings }: DesignPanelProps) => {
+const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, resetSettings, designSubMode }: DesignPanelProps) => {
   const { toast } = useToast();
   const [local, setLocal] = useState<DS>(defaultDesignSettings);
   const [panelOpen, setPanelOpen] = useState(true);
-
   const [pages, setPages] = useState<DocPage[]>([]);
   const [activePage, setActivePage] = useState<DocPage | null>(null);
   const [sections, setSections] = useState<DocSection[]>([]);
@@ -339,6 +341,18 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
   const hasChanges = JSON.stringify(local) !== JSON.stringify(settings);
   const handleSave = async () => { await saveSettings(local); toast({ title: "Design settings saved" }); };
   const handleReset = () => { setLocal(defaultDesignSettings); resetSettings(); toast({ title: "Design settings reset to defaults" }); };
+
+  // If in "examples" mode, delegate to the examples view
+  if (designSubMode === "examples") {
+    return (
+      <DesignExamplesView
+        settings={settings}
+        saving={saving}
+        saveSettings={saveSettings}
+        resetSettings={resetSettings}
+      />
+    );
+  }
 
   return (
     <div className="flex-1 flex min-h-0">
