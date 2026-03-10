@@ -252,6 +252,30 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     setNavGroups((g) => g.filter((ng) => ng.id !== groupId));
   };
 
+  const reorderPages = async (reorderedPages: Page[]) => {
+    setPages(reorderedPages);
+    const updates = reorderedPages.map((p, i) => 
+      supabase.from("pages").update({ order_index: i }).eq("id", p.id)
+    );
+    await Promise.all(updates);
+  };
+
+  const reorderNavGroups = async (reorderedGroups: NavGroup[]) => {
+    setNavGroups(reorderedGroups);
+    const updates = reorderedGroups.map((g, i) =>
+      supabase.from("nav_groups").update({ order_index: i }).eq("id", g.id)
+    );
+    await Promise.all(updates);
+  };
+
+  const reorderSections = async (reorderedSections: Section[]) => {
+    setSections(reorderedSections);
+    const updates = reorderedSections.map((s, i) =>
+      supabase.from("sections").update({ order_index: i }).eq("id", s.id)
+    );
+    await Promise.all(updates);
+  };
+
   return {
     project,
     pages,
@@ -275,6 +299,10 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     deleteNavGroup,
     reloadPages,
     loadPageContent,
+    reorderPages,
+    reorderNavGroups,
+    reorderSections,
+  };
   };
 }
 
