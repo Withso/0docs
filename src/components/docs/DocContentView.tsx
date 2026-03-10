@@ -52,6 +52,8 @@ interface DocContentViewProps {
   versions?: DocVersion[];
   activeVersion?: DocVersion | null;
   onSelectVersion?: (version: DocVersion) => void;
+  externalSearchOpen?: boolean;
+  onExternalSearchOpenChange?: (open: boolean) => void;
 }
 
 const DocContentView = ({
