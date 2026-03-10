@@ -24,60 +24,14 @@ const Analytics = () => {
   const [analytics, setAnalytics] = useState<AnalyticsRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "feedback" | "searches">("overview");
+  const [openApiOpen, setOpenApiOpen] = useState(false);
 
   useEffect(() => {
-    if (!projectId || !user) return;
-    const load = async () => {
-      const { data: proj } = await supabase.from("projects").select("*").eq("id", projectId).eq("user_id", user.id).single();
-      if (!proj) { navigate("/dashboard"); return; }
-      setProject(proj);
-
-      const { data: pagesData } = await supabase.from("pages").select("id, title, slug").eq("project_id", projectId).order("order_index");
-      setPages(pagesData || []);
-
-      if (pagesData && pagesData.length > 0) {
-        const pageIds = pagesData.map((p) => p.id);
-        const { data: fb } = await supabase.from("page_feedback").select("*").in("page_id", pageIds).order("created_at", { ascending: false }).limit(50);
-        setFeedback((fb || []) as FeedbackRow[]);
-        const { data: an } = await supabase.from("page_analytics").select("page_id, view_count, last_viewed_at").in("page_id", pageIds);
-        setAnalytics((an || []) as AnalyticsRow[]);
-      }
-
-      const { data: sq } = await supabase.from("search_queries").select("*").eq("project_id", projectId).order("created_at", { ascending: false }).limit(50);
-      setSearches((sq || []) as SearchRow[]);
-      setLoading(false);
-    };
-    load();
+...
   }, [projectId, user]);
 
   const pageName = (id: string) => pages.find((p) => p.id === id)?.title || "Unknown";
-  const totalViews = analytics.reduce((sum, a) => sum + a.view_count, 0);
-  const helpfulCount = feedback.filter((f) => f.is_helpful).length;
-  const unhelpfulCount = feedback.filter((f) => !f.is_helpful).length;
-  const helpfulPct = feedback.length > 0 ? Math.round((helpfulCount / feedback.length) * 100) : 0;
-
-  const viewsChartData = pages
-    .map((page) => ({
-      name: page.title.length > 18 ? page.title.slice(0, 18) + "…" : page.title,
-      views: analytics.find((a) => a.page_id === page.id)?.view_count || 0,
-    }))
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 8);
-
-  const feedbackPieData = feedback.length > 0
-    ? [
-        { name: "Helpful", value: helpfulCount, color: "hsl(var(--platform-success))" },
-        { name: "Not Helpful", value: unhelpfulCount, color: "hsl(var(--destructive))" },
-      ]
-    : [];
-
-  const searchFrequency = new Map<string, number>();
-  searches.forEach((s) => {
-    const q = s.query.toLowerCase();
-    searchFrequency.set(q, (searchFrequency.get(q) || 0) + 1);
-  });
-  const topSearches = [...searchFrequency.entries()]
-    .sort((a, b) => b[1] - a[1])
+...
     .slice(0, 10);
 
   if (loading) {
@@ -88,8 +42,6 @@ const Analytics = () => {
       </div>
     );
   }
-
-  const [openApiOpen, setOpenApiOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
