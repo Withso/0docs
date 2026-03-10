@@ -314,6 +314,7 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     reorderPages,
     reorderNavGroups,
     reorderSections,
+    reorderBlocks,
   };
 }
 
