@@ -47,6 +47,7 @@ const Builder = () => {
   };
 
   const [mode, setMode] = useState<BuilderMode>(getInitialMode);
+  const [designSubMode, setDesignSubMode] = useState<DesignSubMode>("live");
 
   // Sync URL when mode changes
   const handleModeChange = useCallback((newMode: BuilderMode) => {
