@@ -102,7 +102,7 @@ const ProjectSettings = () => {
         projectId={projectId!}
         projectName={project?.name || ""}
         activeTool="settings"
-        onImportAPI={() => setOpenApiOpen(true)}
+        
       />
 
       <main className="max-w-3xl mx-auto px-6 py-10 animate-fade-in">

@@ -96,7 +96,7 @@ const Analytics = () => {
         projectId={projectId!}
         projectName={project?.name || ""}
         activeTool="analytics"
-        onImportAPI={() => setOpenApiOpen(true)}
+        
       />
 
       <main className="max-w-5xl mx-auto px-6 py-8 animate-fade-in">
