@@ -6,14 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import BuilderHeader from "@/components/builder/BuilderHeader";
+import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  ArrowLeft, Save, Globe, Trash2,
-  Copy, Check, Settings, BarChart3, Palette,
+  Save, Globe, Trash2,
+  Copy, Check, BarChart3, Palette,
 } from "lucide-react";
 
 const ProjectSettings = () => {
