@@ -25,6 +25,7 @@ const blockTypes = [
   { type: "divider", label: "Divider", icon: Minus },
   { type: "quote", label: "Quote", icon: Quote },
   { type: "api_endpoint", label: "API Endpoint", icon: Globe },
+  { type: "inline_editor", label: "Inline Editor", icon: AlignLeft },
   { type: "import_openapi", label: "Import OpenAPI", icon: FileJson },
 ];
 

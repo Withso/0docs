@@ -15,7 +15,7 @@ Updated: now
 - Homepage project ID: 4a705271-9c84-49cf-8e84-7c1b019e4c85, slug: docbuilder-home
 
 ### Block Types
-heading, paragraph, code_block, image, video, youtube, ordered_list, unordered_list, note, callout, tabs, accordion, card, steps, table, divider, quote, api_endpoint, code_tabs
+heading, paragraph, code_block, image, video, youtube, ordered_list, unordered_list, note, callout, tabs, accordion, card, steps, table, divider, quote, api_endpoint, code_tabs, inline_editor
 
 ### Design
 - Uses existing doc styles (doc-heading, doc-prose, doc-note, doc-code-block, doc-sidebar-link etc.)
@@ -30,3 +30,10 @@ heading, paragraph, code_block, image, video, youtube, ordered_list, unordered_l
 - BuilderSidebar, SectionEditor, BlockEditor all accept `settings` prop
 - DocContentView is shared renderer for PublicDocs and DesignSettings preview
 - DocBlockRenderer explicitly applies bodyFont, lineHeight, baseFontSize to paragraph/list/note/callout blocks
+
+### Inline Editor Block
+- Uses TipTap (@tiptap/react, starter-kit, link, image, placeholder)
+- Stores HTML in content.html field
+- Builder: full WYSIWYG with toolbar (InlineEditorBlock.tsx, lazy-loaded)
+- Public docs: renders HTML via dangerouslySetInnerHTML with .inline-editor-readonly styles
+- CSS styles for both editor and readonly in index.css

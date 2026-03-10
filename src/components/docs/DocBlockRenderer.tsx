@@ -312,6 +312,21 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
     case "code_tabs":
       return wrapHighlight(<CodeTabsBlock content={content} settings={s} bs={bs} />);
 
+    case "inline_editor":
+      return wrapHighlight(
+        <div
+          className="inline-editor-content inline-editor-readonly"
+          style={{
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            fontSize: `${s.baseFontSize}px`,
+            lineHeight: s.lineHeight,
+            marginBottom: "16px",
+            ...getBlockStyle(),
+          }}
+          dangerouslySetInnerHTML={{ __html: content.html || "" }}
+        />
+      );
+
     default:
       return null;
   }

@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
 import { Trash2, Plus } from "lucide-react";
 import type { Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
 
+const InlineEditorBlock = lazy(() => import("./InlineEditorBlock"));
 type BlockKey = keyof DesignSettings["blockStyles"];
 
 interface BlockEditorProps {
@@ -237,6 +238,13 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
 
       case "code_tabs":
         return <CodeTabsEditor content={localContent} onChange={updateContent} settings={settings} bs={bs} />;
+
+      case "inline_editor":
+        return (
+          <Suspense fallback={<div style={{ padding: "16px", color: `hsl(${settings.mutedForegroundColor})` }}>Loading editor...</div>}>
+            <InlineEditorBlock content={localContent} settings={settings} onUpdate={updateContent} />
+          </Suspense>
+        );
 
       default:
         return <p style={{ color: `hsl(${settings.mutedForegroundColor})`, fontSize: `${settings.baseFontSize - 1}px` }}>Unknown block type: {block.type}</p>;
