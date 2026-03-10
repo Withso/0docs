@@ -153,10 +153,14 @@ const Builder = () => {
               pages={pages}
               activePage={activePage}
               sections={sections}
+              navGroups={navGroups}
               onSelectPage={setActivePage}
               onAddPage={addPage}
               onUpdatePage={updatePage}
               onDeletePage={deletePage}
+              onAddNavGroup={addNavGroup}
+              onUpdateNavGroup={updateNavGroup}
+              onDeleteNavGroup={deleteNavGroup}
             />
 
             <main className="flex-1 min-w-0 py-10 lg:pl-4">
