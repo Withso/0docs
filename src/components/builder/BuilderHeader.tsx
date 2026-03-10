@@ -44,12 +44,32 @@ const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (
   );
 };
 
+const DesignSubToggle = ({ value, onChange }: { value: DesignSubMode; onChange: (v: DesignSubMode) => void }) => (
+  <div className="flex items-center rounded-full bg-muted p-0.5">
+    {([{ label: "Live", value: "live" as const }, { label: "Examples", value: "examples" as const }]).map((opt) => (
+      <button
+        key={opt.value}
+        onClick={() => onChange(opt.value)}
+        className={`px-3 py-0.5 rounded-full text-[11px] font-medium transition-all ${
+          value === opt.value
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        {opt.label}
+      </button>
+    ))}
+  </div>
+);
+
 const BuilderHeader = ({
   projectId,
   projectName,
   activePageTitle,
   mode,
   onModeChange,
+  designSubMode = "live",
+  onDesignSubModeChange,
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
 
