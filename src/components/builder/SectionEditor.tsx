@@ -88,6 +88,11 @@ const SectionEditor = ({
         {showAddMenu ? (
           <AddBlockMenu
             onSelect={(type) => {
+              if (type === "import_openapi") {
+                onImportOpenAPI?.();
+                setShowAddMenu(false);
+                return;
+              }
               onAddBlock(section.id, type);
               setShowAddMenu(false);
             }}

@@ -97,13 +97,6 @@ const BuilderHeader = ({
               {activeTool === "analytics" && <span>Analytics</span>}
             </button>
             <button
-              className="h-8 rounded-lg px-2 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-              title="Import API"
-              onClick={onImportAPI}
-            >
-              <FileJson className="h-4 w-4" />
-            </button>
-            <button
               className={`h-8 rounded-lg px-2 flex items-center gap-1.5 text-[12px] font-medium transition-all ${
                 activeTool === "settings"
                   ? "bg-muted text-foreground"

@@ -130,6 +130,7 @@ const Builder = () => {
                       onAddBlock={addBlock}
                       onUpdateBlock={updateBlock}
                       onDeleteBlock={deleteBlock}
+                      onImportOpenAPI={() => setOpenApiOpen(true)}
                     />
                   ))}
 
