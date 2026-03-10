@@ -56,7 +56,12 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (user) fetchProjects();
+    if (user) {
+      fetchProjects();
+      // Check admin
+      supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle()
+        .then(({ data }) => setIsAdmin(!!data));
+    }
   }, [user]);
 
   const slugify = (text: string) =>
