@@ -99,8 +99,8 @@ const InlineRichText = ({
   const checkSelection = useCallback(() => {
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !ref.current) {
-      // Small delay to allow clicking toolbar buttons
       setTimeout(() => {
+        if (keepOpenRef.current) return;
         const sel2 = window.getSelection();
         if (!sel2 || sel2.isCollapsed) {
           setShowToolbar(false);
