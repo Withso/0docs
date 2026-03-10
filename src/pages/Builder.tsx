@@ -61,7 +61,8 @@ const Builder = () => {
   }, [projectId, navigate]);
 
   const {
-    project, pages, activePage, setActivePage, sections, blocks, loading,
+    project, navGroups, pages, activePage, setActivePage, sections, blocks, loading,
+    addNavGroup, updateNavGroup, deleteNavGroup,
     addPage, updatePage, deletePage, addSection, updateSection, deleteSection,
     addBlock, updateBlock, deleteBlock, reloadPages, loadPageContent,
   } = useBuilder(projectId, user?.id);
