@@ -415,7 +415,7 @@ const BuilderSidebar = ({
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handlePageDragEnd(e)}>
           <SortableContext items={ungroupedPages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
             {ungroupedPages.map((page) => (
-              <SortableItem key={page.id} id={page.id} handle>
+              <SortableItem key={page.id} id={page.id}>
                 {renderPageContent(page)}
               </SortableItem>
             ))}
