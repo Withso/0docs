@@ -469,6 +469,7 @@ export type Database = {
         | "quote"
         | "api_endpoint"
         | "code_tabs"
+        | "inline_editor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -617,6 +618,7 @@ export const Constants = {
         "quote",
         "api_endpoint",
         "code_tabs",
+        "inline_editor",
       ],
     },
   },
