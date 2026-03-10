@@ -205,98 +205,91 @@ const Dashboard = () => {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
-        <header className="platform-header">
-          <div className="h-full px-6 flex items-center justify-between">
-            {/* Mobile logo */}
-            <div className="md:hidden flex items-center gap-2">
-              <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center">
-                <FileText className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="font-semibold text-[15px] text-foreground">DocBuilder</span>
+        {/* Mobile header */}
+        <header className="md:hidden h-[52px] border-b px-4 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center">
+              <FileText className="h-4 w-4 text-primary-foreground" />
             </div>
-
-            <div className="hidden md:flex items-center gap-3">
-              <h1 className="text-[15px] font-semibold text-foreground">Projects</h1>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md">{projects.length}</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {!hasDemoProject && (
-                <Button variant="ghost" size="sm" className="h-9 text-[13px] rounded-lg" onClick={seedDemo}>
-                  <BookOpen className="h-3.5 w-3.5 mr-1.5" /> Demo
-                </Button>
-              )}
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="h-9 text-[13px] rounded-lg shadow-platform-sm">
-                    <Plus className="h-3.5 w-3.5 mr-1.5" /> New Project
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[440px]">
-                  <DialogHeader>
-                    <DialogTitle className="text-lg">Create New Project</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 mt-3">
-                    <div>
-                      <label className="text-[13px] font-medium text-foreground mb-1.5 block">Project Name</label>
-                      <Input
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        placeholder="My Documentation"
-                        className="h-11 rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[13px] font-medium text-foreground mb-1.5 block">Description</label>
-                      <Input
-                        value={newDesc}
-                        onChange={(e) => setNewDesc(e.target.value)}
-                        placeholder="A brief description..."
-                        className="h-11 rounded-lg"
-                      />
-                    </div>
-                    <Button onClick={createProject} disabled={creating || !newName.trim()} className="w-full h-11 rounded-lg">
-                      {creating ? "Creating..." : "Create Project"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              
-              {/* Mobile user menu */}
-              <div className="md:hidden">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="h-9 w-9 platform-avatar text-[11px]">
-                      {userInitial}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
-                      <Settings className="h-4 w-4 mr-2" /> Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={signOut} className="text-destructive">
-                      <LogOut className="h-4 w-4 mr-2" /> Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
+            <span className="font-semibold text-[15px] text-foreground">DocBuilder</span>
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="h-9 w-9 platform-avatar text-[11px]">
+                {userInitial}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
+                <Settings className="h-4 w-4 mr-2" /> Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={signOut} className="text-destructive">
+                <LogOut className="h-4 w-4 mr-2" /> Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
 
         {/* Content */}
         <main className="flex-1 overflow-auto">
           <div className="max-w-5xl mx-auto px-6 py-8">
-            {/* Search */}
-            <div className="relative mb-6">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search projects..."
-                className="pl-10 h-11 max-w-sm rounded-lg"
-              />
+            {/* Header row: Title + Search + Actions */}
+            <div className="flex items-center gap-3 mb-6">
+              <h1 className="text-[15px] font-semibold text-foreground shrink-0">Projects</h1>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md shrink-0">{visibleProjects.length}</span>
+
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search projects..."
+                  className="pl-9 h-9 rounded-lg text-[13px]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 ml-auto shrink-0">
+                {!hasDemoProject && (
+                  <Button variant="ghost" size="sm" className="h-9 text-[13px] rounded-lg" onClick={seedDemo}>
+                    <BookOpen className="h-3.5 w-3.5 mr-1.5" /> Demo
+                  </Button>
+                )}
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="h-9 text-[13px] rounded-lg shadow-platform-sm">
+                      <Plus className="h-3.5 w-3.5 mr-1.5" /> New Project
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[440px]">
+                    <DialogHeader>
+                      <DialogTitle className="text-lg">Create New Project</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-3">
+                      <div>
+                        <label className="text-[13px] font-medium text-foreground mb-1.5 block">Project Name</label>
+                        <Input
+                          value={newName}
+                          onChange={(e) => setNewName(e.target.value)}
+                          placeholder="My Documentation"
+                          className="h-11 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[13px] font-medium text-foreground mb-1.5 block">Description</label>
+                        <Input
+                          value={newDesc}
+                          onChange={(e) => setNewDesc(e.target.value)}
+                          placeholder="A brief description..."
+                          className="h-11 rounded-lg"
+                        />
+                      </div>
+                      <Button onClick={createProject} disabled={creating || !newName.trim()} className="w-full h-11 rounded-lg">
+                        {creating ? "Creating..." : "Create Project"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
             {loading ? (
