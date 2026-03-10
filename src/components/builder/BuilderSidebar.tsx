@@ -1,61 +1,66 @@
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
-import type { Page, Section } from "@/hooks/use-builder";
+import { Plus, Trash2, Tag, FileText } from "lucide-react";
+import type { Page, Section, NavGroup } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
-import DocSidebarNav from "@/components/docs/DocSidebarNav";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface BuilderSidebarProps {
   settings: DesignSettings;
   pages: Page[];
   activePage: Page | null;
   sections: Section[];
+  navGroups: NavGroup[];
   onSelectPage: (page: Page) => void;
-  onAddPage: () => void;
+  onAddPage: (navGroupId?: string) => void;
   onUpdatePage: (pageId: string, updates: Partial<Page>) => void;
   onDeletePage: (pageId: string) => void;
+  onAddNavGroup: () => void;
+  onUpdateNavGroup: (groupId: string, updates: Partial<NavGroup>) => void;
+  onDeleteNavGroup: (groupId: string) => void;
 }
 
 const BuilderSidebar = ({
-  settings,
+  settings: s,
   pages,
   activePage,
   sections,
+  navGroups,
   onSelectPage,
   onAddPage,
   onUpdatePage,
   onDeletePage,
+  onAddNavGroup,
+  onUpdateNavGroup,
+  onDeleteNavGroup,
 }: BuilderSidebarProps) => {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
 
-  return (
-    <DocSidebarNav
-      settings={settings}
-      pages={pages}
-      activePage={activePage}
-      sections={sections}
-      onSelectPage={onSelectPage}
-      stickyTop={48}
-      headerAction={
-        <button
-          onClick={onAddPage}
-          className="transition-colors hover:opacity-80"
-          style={{ color: `hsl(${settings.sidebarTextColor})` }}
-          title="Add page"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
-      }
-      renderPageActions={(page, isActive) => (
-        <>
+  // Pages without a nav group
+  const ungroupedPages = pages.filter((p) => !p.nav_group_id);
+
+  const renderPage = (page: Page) => {
+    const isActive = activePage?.id === page.id;
+    const pageSections = isActive ? sections : [];
+
+    return (
+      <div key={page.id}>
+        <div className="group flex items-center gap-1">
           {editingPageId === page.id ? (
             <input
               autoFocus
               className="flex-1 py-[3px] bg-transparent border-b outline-none"
               style={{
-                fontSize: `${settings.sidebarFontSize}px`,
-                borderColor: `hsl(${settings.borderColor})`,
-                color: `hsl(${settings.sidebarActiveColor})`,
-                fontFamily: `'${settings.bodyFont}', sans-serif`,
+                fontSize: `${s.sidebarFontSize}px`,
+                borderColor: `hsl(${s.borderColor})`,
+                color: `hsl(${s.sidebarActiveColor})`,
+                fontFamily: `'${s.bodyFont}', sans-serif`,
               }}
               defaultValue={page.title}
               onBlur={(e) => {
@@ -77,12 +82,12 @@ const BuilderSidebar = ({
               onDoubleClick={() => setEditingPageId(page.id)}
               className="flex-1 text-left truncate py-[3px] transition-colors"
               style={{
-                fontSize: `${settings.sidebarFontSize}px`,
+                fontSize: `${s.sidebarFontSize}px`,
                 color: isActive
-                  ? `hsl(${settings.sidebarActiveColor})`
-                  : `hsl(${settings.sidebarTextColor})`,
+                  ? `hsl(${s.sidebarActiveColor})`
+                  : `hsl(${s.sidebarTextColor})`,
                 fontWeight: isActive ? 500 : 400,
-                fontFamily: `'${settings.bodyFont}', sans-serif`,
+                fontFamily: `'${s.bodyFont}', sans-serif`,
               }}
               title="Double-click to rename"
             >
@@ -92,13 +97,161 @@ const BuilderSidebar = ({
           <button
             onClick={() => onDeletePage(page.id)}
             className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-            style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+            style={{ color: `hsl(${s.mutedForegroundColor})` }}
           >
             <Trash2 className="h-3 w-3" />
           </button>
-        </>
-      )}
-    />
+        </div>
+
+        {isActive && pageSections.length > 0 && (
+          <nav
+            className="ml-px mt-px mb-1"
+            style={{
+              borderLeft: `1px solid hsl(${s.borderColor} / 0.5)`,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {pageSections.map((section) => {
+              const isSectionActive =
+                s.sidebarShowSectionTracker && activeSectionId === section.id;
+
+              return (
+                <a
+                  key={section.id}
+                  href={`#section-${section.id}`}
+                  className="block py-[3px] pl-3 transition-colors relative"
+                  style={{
+                    color: isSectionActive
+                      ? `hsl(${s.sidebarActiveColor})`
+                      : `hsl(${s.sidebarTextColor} / 0.65)`,
+                    fontSize: `${s.sidebarFontSize - 1}px`,
+                    fontWeight: isSectionActive ? 500 : 400,
+                    fontFamily: `'${s.bodyFont}', sans-serif`,
+                  }}
+                >
+                  {isSectionActive && (
+                    <span
+                      className="absolute left-[-1px] top-[5px] bottom-[5px] w-[2px] rounded-full"
+                      style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
+                    />
+                  )}
+                  {section.title}
+                </a>
+              );
+            })}
+          </nav>
+        )}
+      </div>
+    );
+  };
+
+  const renderGroupLabel = (group: NavGroup) => {
+    if (editingGroupId === group.id) {
+      return (
+        <input
+          autoFocus
+          className="flex-1 bg-transparent border-b outline-none uppercase tracking-widest"
+          style={{
+            fontSize: "10px",
+            fontWeight: 600,
+            borderColor: `hsl(${s.borderColor})`,
+            color: `hsl(${s.sidebarTextColor})`,
+          }}
+          defaultValue={group.title}
+          onBlur={(e) => {
+            const val = e.target.value.trim() || "Untitled";
+            onUpdateNavGroup(group.id, { title: val });
+            setEditingGroupId(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            if (e.key === "Escape") setEditingGroupId(null);
+          }}
+        />
+      );
+    }
+
+    return (
+      <span
+        className="cursor-pointer"
+        onDoubleClick={() => setEditingGroupId(group.id)}
+        title="Double-click to rename"
+      >
+        {group.title}
+      </span>
+    );
+  };
+
+  return (
+    <aside
+      style={{
+        width: `${s.sidebarWidth}px`,
+        backgroundColor: `hsl(${s.sidebarBg})`,
+        top: "48px",
+        height: "calc(100vh - 48px)",
+      }}
+      className="shrink-0 sticky overflow-y-auto py-8 pr-6 hidden lg:block"
+    >
+      <div
+        className="text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center justify-between"
+        style={{ color: `hsl(${s.sidebarTextColor})` }}
+      >
+        <span>Pages</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="transition-colors hover:opacity-80"
+              style={{ color: `hsl(${s.sidebarTextColor})` }}
+              title="Add page or label"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[140px]">
+            <DropdownMenuItem onClick={() => onAddPage()} className="gap-2 text-[13px]">
+              <FileText className="h-3.5 w-3.5" />
+              Page
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onAddNavGroup} className="gap-2 text-[13px]">
+              <Tag className="h-3.5 w-3.5" />
+              Label
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <nav style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
+        {/* Ungrouped pages first */}
+        {ungroupedPages.map(renderPage)}
+
+        {/* Nav groups with their pages */}
+        {navGroups.map((group) => {
+          const groupPages = pages.filter((p) => p.nav_group_id === group.id);
+
+          return (
+            <div key={group.id} className="mt-3">
+              <div
+                className="group text-[10px] font-semibold uppercase tracking-widest mb-1.5 flex items-center justify-between"
+                style={{ color: `hsl(${s.sidebarTextColor} / 0.5)` }}
+              >
+                {renderGroupLabel(group)}
+                <button
+                  onClick={() => onDeleteNavGroup(group.id)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                >
+                  <Trash2 className="h-2.5 w-2.5" />
+                </button>
+              </div>
+              <div style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
+                {groupPages.map(renderPage)}
+              </div>
+            </div>
+          );
+        })}
+      </nav>
+    </aside>
   );
 };
 
