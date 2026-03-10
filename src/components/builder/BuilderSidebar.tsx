@@ -257,18 +257,14 @@ const BuilderSidebar = ({
           </span>
           {isEditing ? (
             <InlineRichText
-              value={page.title}
+              value={page.nav_title || page.title}
               onChange={(html) => {
-                const plainSlug = html.replace(/<[^>]*>/g, "").trim() || "untitled";
-                onUpdatePage(page.id, {
-                  title: html,
-                  slug: plainSlug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-                });
+                onUpdatePage(page.id, { nav_title: html });
               }}
               onDone={() => setEditingPageId(null)}
               settings={s}
               singleLine
-              placeholder="Page title..."
+              placeholder="Nav title..."
               className="flex-1 py-[3px] min-w-0"
               style={{
                 fontSize: `${s.sidebarFontSize}px`,
@@ -290,7 +286,7 @@ const BuilderSidebar = ({
                 fontWeight: isActive ? 500 : 400,
                 fontFamily: `'${s.bodyFont}', sans-serif`,
               }}
-              dangerouslySetInnerHTML={{ __html: page.title }}
+              dangerouslySetInnerHTML={{ __html: page.nav_title || page.title }}
             />
           )}
           {!isEditing && (
