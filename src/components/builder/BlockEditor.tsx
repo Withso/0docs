@@ -252,12 +252,7 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
   };
 
   return (
-    <div className="group/block relative">
-      <div className="absolute -right-8 top-1 opacity-0 group-hover/block:opacity-100 transition-opacity">
-        <button onClick={() => onDelete(block.id)} className="p-1" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </div>
+    <div>
       {renderBlock()}
     </div>
   );
