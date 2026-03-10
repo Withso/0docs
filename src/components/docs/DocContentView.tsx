@@ -171,6 +171,7 @@ const DocContentView = ({
         <DocSidebarNav
           settings={s}
           pages={pages}
+          navGroups={navGroups}
           activePage={activePage}
           sections={sections}
           onSelectPage={onSelectPage}
