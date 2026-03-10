@@ -230,8 +230,8 @@ const InlineRichText = ({
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         onBlur={() => {
-          // Delay hide to allow toolbar clicks
           setTimeout(() => {
+            if (keepOpenRef.current) return;
             if (!toolbarRef.current?.contains(document.activeElement)) {
               setShowToolbar(false);
               setShowLinkInput(false);
