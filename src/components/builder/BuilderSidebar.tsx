@@ -70,7 +70,7 @@ const SortableItem = ({
       {handle ? (
         <div className="flex items-center">
           <div
-            className="cursor-grab active:cursor-grabbing opacity-0 group-hover/drag:opacity-30 hover:!opacity-70 transition-opacity shrink-0 -ml-3.5 w-3.5 flex items-center justify-center"
+            className="cursor-grab active:cursor-grabbing opacity-0 group-hover/drag:opacity-30 hover:!opacity-70 transition-opacity shrink-0 -ml-4 w-4 flex items-center justify-center"
             {...attributes}
             {...listeners}
           >
@@ -398,7 +398,7 @@ const BuilderSidebar = ({
         top: "48px",
         height: "calc(100vh - 48px)",
       }}
-      className="shrink-0 sticky overflow-y-auto py-8 pr-6 hidden lg:block"
+      className="shrink-0 sticky overflow-y-auto py-8 pl-5 pr-6 hidden lg:block"
     >
       <div
         className="text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center justify-between"
