@@ -45,21 +45,15 @@ interface BuilderSidebarProps {
 }
 
 /* ─── Sortable wrapper ─── */
-const DragHandle = ({ attributes, listeners }: { attributes: any; listeners: any }) => (
-  <div
-    className="absolute left-0 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing opacity-0 group-hover/drag:opacity-40 hover:!opacity-80 transition-opacity w-4 flex items-center justify-center"
-    {...attributes}
-    {...listeners}
-  >
-    <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor">
-      <circle cx="1" cy="1" r="0.8" />
-      <circle cx="5" cy="1" r="0.8" />
-      <circle cx="1" cy="5" r="0.8" />
-      <circle cx="5" cy="5" r="0.8" />
-      <circle cx="1" cy="9" r="0.8" />
-      <circle cx="5" cy="9" r="0.8" />
-    </svg>
-  </div>
+const DragDots = () => (
+  <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor" className="shrink-0">
+    <circle cx="1" cy="1" r="0.8" />
+    <circle cx="5" cy="1" r="0.8" />
+    <circle cx="1" cy="5" r="0.8" />
+    <circle cx="5" cy="5" r="0.8" />
+    <circle cx="1" cy="9" r="0.8" />
+    <circle cx="5" cy="9" r="0.8" />
+  </svg>
 );
 
 const SortableItem = ({
@@ -81,10 +75,24 @@ const SortableItem = ({
     zIndex: isDragging ? 50 : "auto" as any,
   };
 
+  if (!handle) {
+    return (
+      <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+        {children}
+      </div>
+    );
+  }
+
   return (
-    <div ref={setNodeRef} style={style} className="group/drag relative" {...(handle ? {} : { ...attributes, ...listeners })}>
-      {handle && <DragHandle attributes={attributes} listeners={listeners} />}
-      {children}
+    <div ref={setNodeRef} style={style} className="group/drag flex items-start gap-0">
+      <div
+        className="shrink-0 w-[14px] pt-[7px] cursor-grab active:cursor-grabbing opacity-0 group-hover/drag:opacity-30 hover:!opacity-70 transition-opacity"
+        {...attributes}
+        {...listeners}
+      >
+        <DragDots />
+      </div>
+      <div className="flex-1 min-w-0">{children}</div>
     </div>
   );
 };
