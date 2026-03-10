@@ -39,6 +39,7 @@ const InlineRichText = ({
   const ref = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [showToolbar, setShowToolbar] = useState(false);
+  const keepOpenRef = useRef(false);
   const [toolbarPos, setToolbarPos] = useState({ x: 0, y: 0 });
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
