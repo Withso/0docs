@@ -487,7 +487,7 @@ const BuilderSidebar = ({
 
               // Label type
               return (
-                <SortableItem key={group.id} id={group.id} handle>
+                <SortableItem key={group.id} id={group.id}>
                   <div className="mt-3">
                     <div
                       className="group text-[10px] font-semibold uppercase tracking-widest mb-1.5 flex items-center justify-between"
