@@ -12,11 +12,17 @@ import DesignPanel from "@/components/builder/DesignPanel";
 import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText } from "lucide-react";
+import { Plus, FileText, FileJson } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { ParsedOpenAPI } from "@/lib/openapi-parser";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
 
@@ -27,51 +33,64 @@ const Builder = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [openApiOpen, setOpenApiOpen] = useState(false);
+  const [openApiMode, setOpenApiMode] = useState<"block" | "page">("block");
+  const [importTargetSectionId, setImportTargetSectionId] = useState<string | null>(null);
   const [mode, setMode] = useState<BuilderMode>("editor");
 
   const {
     project, pages, activePage, setActivePage, sections, blocks, loading,
     addPage, updatePage, deletePage, addSection, updateSection, deleteSection,
-    addBlock, updateBlock, deleteBlock, reloadPages,
+    addBlock, updateBlock, deleteBlock, reloadPages, loadPageContent,
   } = useBuilder(projectId, user?.id);
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
 
-  const handleOpenAPIImport = useCallback(async (parsed: ParsedOpenAPI) => {
-    if (!projectId) return;
-    const tagGroups = new Map<string, typeof parsed.endpoints>();
+  // Block-level import: adds endpoints as api_endpoint blocks within the target section
+  const handleBlockLevelImport = useCallback(async (parsed: ParsedOpenAPI) => {
+    if (!importTargetSectionId) return;
+    const existingBlocks = blocks.filter((b) => b.section_id === importTargetSectionId);
+    let orderIndex = existingBlocks.length;
     for (const ep of parsed.endpoints) {
-      const tag = ep.tags[0] || "Default";
-      if (!tagGroups.has(tag)) tagGroups.set(tag, []);
-      tagGroups.get(tag)!.push(ep);
-    }
-    let pageIndex = pages.length;
-    for (const [tag, endpoints] of tagGroups) {
-      const slug = `api-${tag.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-      const { data: page } = await supabase
-        .from("pages")
-        .insert({ project_id: projectId, title: `API: ${tag}`, slug, order_index: pageIndex++ })
-        .select()
-        .single();
-      if (!page) continue;
-      for (let i = 0; i < endpoints.length; i++) {
-        const ep = endpoints[i];
-        const { data: section } = await supabase
-          .from("sections")
-          .insert({ page_id: page.id, title: `${ep.method} ${ep.path}`, order_index: i })
-          .select()
-          .single();
-        if (!section) continue;
-        await supabase.from("blocks").insert({
-          section_id: section.id,
+      await supabase
+        .from("blocks")
+        .insert({
+          section_id: importTargetSectionId,
           type: "api_endpoint" as any,
           content: { method: ep.method, path: ep.path, description: ep.description, parameters: ep.parameters, response: ep.response },
-          order_index: 0,
+          order_index: orderIndex++,
         });
-      }
     }
-    await reloadPages();
-  }, [projectId, pages.length, reloadPages]);
+    await loadPageContent();
+  }, [importTargetSectionId, blocks, loadPageContent]);
+
+  // Page-level import: each endpoint becomes a section with an api_endpoint block
+  const handlePageLevelImport = useCallback(async (parsed: ParsedOpenAPI) => {
+    if (!activePage) return;
+    let sectionIndex = sections.length;
+    for (const ep of parsed.endpoints) {
+      const { data: section } = await supabase
+        .from("sections")
+        .insert({ page_id: activePage.id, title: `${ep.method} ${ep.path}`, order_index: sectionIndex++ })
+        .select()
+        .single();
+      if (!section) continue;
+      await supabase.from("blocks").insert({
+        section_id: section.id,
+        type: "api_endpoint" as any,
+        content: { method: ep.method, path: ep.path, description: ep.description, parameters: ep.parameters, response: ep.response },
+        order_index: 0,
+      });
+    }
+    await loadPageContent();
+  }, [activePage, sections.length]);
+
+  const handleOpenAPIImport = useCallback(async (parsed: ParsedOpenAPI) => {
+    if (openApiMode === "block") {
+      await handleBlockLevelImport(parsed);
+    } else {
+      await handlePageLevelImport(parsed);
+    }
+  }, [openApiMode, handleBlockLevelImport, handlePageLevelImport]);
 
   if (loading || settingsLoading) {
     return (
@@ -117,7 +136,15 @@ const Builder = () => {
             <main className="flex-1 min-w-0 py-10 lg:pl-4">
               {activePage ? (
                 <article style={{ maxWidth: `${settings.contentMaxWidth}px` }} className="animate-fade-in">
-                  <PageTitleEditor page={activePage} onUpdate={updatePage} settings={settings} />
+                  <PageTitleEditor
+                    page={activePage}
+                    onUpdate={updatePage}
+                    settings={settings}
+                    onImportOpenAPI={() => {
+                      setOpenApiMode("page");
+                      setOpenApiOpen(true);
+                    }}
+                  />
 
                   {sections.map((section) => (
                     <SectionEditor
@@ -130,7 +157,11 @@ const Builder = () => {
                       onAddBlock={addBlock}
                       onUpdateBlock={updateBlock}
                       onDeleteBlock={deleteBlock}
-                      onImportOpenAPI={() => setOpenApiOpen(true)}
+                      onImportOpenAPI={() => {
+                        setOpenApiMode("block");
+                        setImportTargetSectionId(section.id);
+                        setOpenApiOpen(true);
+                      }}
                     />
                   ))}
 
@@ -195,11 +226,12 @@ const Builder = () => {
 };
 
 const PageTitleEditor = ({
-  page, onUpdate, settings,
+  page, onUpdate, settings, onImportOpenAPI,
 }: {
   page: Page;
   onUpdate: (id: string, updates: Partial<Page>) => void;
   settings: DesignSettings;
+  onImportOpenAPI?: () => void;
 }) => {
   const [title, setTitle] = useState(page.title);
   const [metaDesc, setMetaDesc] = useState(page.meta_description || "");
@@ -221,17 +253,32 @@ const PageTitleEditor = ({
 
   return (
     <div style={{ marginBottom: `${settings.sectionSpacing * 0.6}px` }}>
-      <input
-        className="w-full bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded-lg px-1 -ml-1"
-        style={{
-          fontFamily: `'${settings.headingFont}', sans-serif`,
-          fontWeight: settings.headingWeight,
-          fontSize: `${settings.pageTitleSize}px`,
-        }}
-        value={title}
-        onChange={(e) => { setTitle(e.target.value); debouncedSave(e.target.value); }}
-        placeholder="Page title..."
-      />
+      <div className="flex items-center gap-2">
+        <input
+          className="flex-1 bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded-lg px-1 -ml-1"
+          style={{
+            fontFamily: `'${settings.headingFont}', sans-serif`,
+            fontWeight: settings.headingWeight,
+            fontSize: `${settings.pageTitleSize}px`,
+          }}
+          value={title}
+          onChange={(e) => { setTitle(e.target.value); debouncedSave(e.target.value); }}
+          placeholder="Page title..."
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="shrink-0 h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <Plus className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[180px]">
+            <DropdownMenuItem onClick={onImportOpenAPI} className="gap-2">
+              <FileJson className="h-4 w-4" />
+              Import OpenAPI
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       <button
         onClick={() => setShowMeta(!showMeta)}
         className="text-[12px] mt-1.5 px-1 transition-colors hover:text-primary"

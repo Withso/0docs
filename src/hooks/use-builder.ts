@@ -225,6 +225,7 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     updateBlock,
     deleteBlock,
     reloadPages,
+    loadPageContent,
   };
 }
 
