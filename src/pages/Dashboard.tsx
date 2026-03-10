@@ -120,7 +120,12 @@ const Dashboard = () => {
   };
 
   const hasDemoProject = projects.some((p) => p.slug === "agentation-docs-demo");
-  const filteredProjects = projects.filter((p) =>
+  // Hide homepage project from non-admin users
+  const visibleProjects = isAdmin
+    ? projects
+    : projects.filter((p) => !(p as any).is_homepage);
+
+  const filteredProjects = visibleProjects.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
