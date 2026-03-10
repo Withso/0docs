@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Plus, LogOut, ExternalLink, Trash2, BookOpen, Search,
-  FileText, Settings, MoreHorizontal, FolderOpen, User, Clock,
+  FileText, Settings, MoreHorizontal, FolderOpen, User, Clock, Home,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -28,6 +28,7 @@ interface Project {
   description: string;
   created_at: string;
   updated_at: string;
+  is_homepage?: boolean;
 }
 
 const Dashboard = () => {
@@ -35,6 +36,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -54,7 +56,12 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (user) fetchProjects();
+    if (user) {
+      fetchProjects();
+      // Check admin
+      supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle()
+        .then(({ data }) => setIsAdmin(!!data));
+    }
   }, [user]);
 
   const slugify = (text: string) =>
@@ -113,7 +120,12 @@ const Dashboard = () => {
   };
 
   const hasDemoProject = projects.some((p) => p.slug === "agentation-docs-demo");
-  const filteredProjects = projects.filter((p) =>
+  // Hide homepage project from non-admin users
+  const visibleProjects = isAdmin
+    ? projects
+    : projects.filter((p) => !(p as any).is_homepage);
+
+  const filteredProjects = visibleProjects.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -350,7 +362,14 @@ const Dashboard = () => {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    <h3 className="font-semibold text-foreground text-[14px] mb-1">{project.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground text-[14px] mb-1">{project.name}</h3>
+                      {(project as any).is_homepage && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-primary/10 text-primary mb-1">
+                          <Home className="h-2.5 w-2.5" /> Homepage
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[12px] text-muted-foreground line-clamp-2 mb-4">
                       {project.description || "No description"}
                     </p>
