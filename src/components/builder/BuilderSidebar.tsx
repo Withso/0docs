@@ -70,7 +70,7 @@ const SortableItem = ({
       {handle ? (
         <div className="flex items-center">
           <div
-            className="cursor-grab active:cursor-grabbing opacity-0 group-hover/drag:opacity-30 hover:!opacity-70 transition-opacity shrink-0 -ml-3.5 w-3.5 flex items-center justify-center"
+            className="cursor-grab active:cursor-grabbing opacity-0 group-hover/drag:opacity-30 hover:!opacity-70 transition-opacity shrink-0 -ml-4 w-4 flex items-center justify-center"
             {...attributes}
             {...listeners}
           >
