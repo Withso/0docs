@@ -40,7 +40,7 @@ const Builder = () => {
   const {
     project, pages, activePage, setActivePage, sections, blocks, loading,
     addPage, updatePage, deletePage, addSection, updateSection, deleteSection,
-    addBlock, updateBlock, deleteBlock, reloadPages,
+    addBlock, updateBlock, deleteBlock, reloadPages, loadPageContent,
   } = useBuilder(projectId, user?.id);
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
