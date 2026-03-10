@@ -61,7 +61,8 @@ const Builder = () => {
   }, [projectId, navigate]);
 
   const {
-    project, pages, activePage, setActivePage, sections, blocks, loading,
+    project, navGroups, pages, activePage, setActivePage, sections, blocks, loading,
+    addNavGroup, updateNavGroup, deleteNavGroup,
     addPage, updatePage, deletePage, addSection, updateSection, deleteSection,
     addBlock, updateBlock, deleteBlock, reloadPages, loadPageContent,
   } = useBuilder(projectId, user?.id);
@@ -149,10 +150,14 @@ const Builder = () => {
           <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
             <BuilderSidebar
               settings={settings}
+              navGroups={navGroups}
               pages={pages}
               activePage={activePage}
               sections={sections}
               onSelectPage={setActivePage}
+              onAddNavGroup={addNavGroup}
+              onUpdateNavGroup={updateNavGroup}
+              onDeleteNavGroup={deleteNavGroup}
               onAddPage={addPage}
               onUpdatePage={updatePage}
               onDeletePage={deletePage}
@@ -203,7 +208,7 @@ const Builder = () => {
                     <FileText className="h-7 w-7 text-muted-foreground" />
                   </div>
                   <p className="mb-5 text-[14px]">No pages yet. Add a page to get started.</p>
-                  <Button onClick={addPage} className="rounded-lg">
+                  <Button onClick={() => addPage()} className="rounded-lg">
                     <Plus className="h-4 w-4 mr-2" /> Add Page
                   </Button>
                 </div>
@@ -233,6 +238,7 @@ const Builder = () => {
             settings={settings}
             projectName={project?.name || ""}
             pages={pages}
+            navGroups={navGroups}
             activePage={activePage}
             sections={sections}
             blocks={blocks}

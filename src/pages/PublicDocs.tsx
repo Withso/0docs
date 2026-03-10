@@ -7,13 +7,15 @@ import DocContentView from "@/components/docs/DocContentView";
 import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
 
-interface Page { id: string; title: string; slug: string; order_index: number; meta_description?: string | null; version_id?: string | null; }
+interface NavGroup { id: string; title: string; order_index: number; project_id: string; }
+interface Page { id: string; title: string; slug: string; order_index: number; meta_description?: string | null; version_id?: string | null; nav_group_id?: string | null; }
 interface Section { id: string; page_id: string; title: string; order_index: number; }
 interface Block { id: string; section_id: string; type: string; content: any; order_index: number; }
 
 const PublicDocs = () => {
   const { slug, pageSlug } = useParams<{ slug: string; pageSlug?: string }>();
   const [project, setProject] = useState<any>(null);
+  const [navGroups, setNavGroups] = useState<NavGroup[]>([]);
   const [pages, setPages] = useState<Page[]>([]);
   const [activePage, setActivePage] = useState<Page | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
@@ -29,6 +31,11 @@ const PublicDocs = () => {
       if (!projects || projects.length === 0) { setNotFound(true); setLoading(false); return; }
       const proj = projects[0];
       setProject(proj);
+
+      // Load nav groups
+      const { data: groupsData } = await supabase.from("nav_groups").select("*").eq("project_id", proj.id).order("order_index");
+      if (groupsData) setNavGroups(groupsData as NavGroup[]);
+
       const { data: pagesData } = await supabase.from("pages").select("*").eq("project_id", proj.id).order("order_index");
       if (pagesData) {
         setPages(pagesData as Page[]);
@@ -137,6 +144,7 @@ const PublicDocs = () => {
         settings={settings}
         projectName={project?.name || ""}
         pages={filteredPages}
+        navGroups={navGroups}
         activePage={activePage}
         sections={sections}
         blocks={blocks}
