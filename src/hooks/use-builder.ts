@@ -18,6 +18,7 @@ export interface Section {
   page_id: string;
   title: string;
   order_index: number;
+  nav_title?: string | null;
 }
 
 export type BlockType = "heading" | "paragraph" | "code_block" | "image" | "video" | "youtube" | "ordered_list" | "unordered_list" | "note" | "callout" | "tabs" | "accordion" | "card" | "steps" | "table" | "divider" | "quote" | "api_endpoint" | "code_tabs" | "inline_editor";
