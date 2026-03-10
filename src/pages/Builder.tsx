@@ -222,6 +222,7 @@ const Builder = () => {
           saving={saving}
           saveSettings={saveSettings}
           resetSettings={resetSettings}
+          designSubMode={designSubMode}
         />
       )}
 

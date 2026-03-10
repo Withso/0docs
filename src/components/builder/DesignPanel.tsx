@@ -342,6 +342,18 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
   const handleSave = async () => { await saveSettings(local); toast({ title: "Design settings saved" }); };
   const handleReset = () => { setLocal(defaultDesignSettings); resetSettings(); toast({ title: "Design settings reset to defaults" }); };
 
+  // If in "examples" mode, delegate to the examples view
+  if (designSubMode === "examples") {
+    return (
+      <DesignExamplesView
+        settings={settings}
+        saving={saving}
+        saveSettings={saveSettings}
+        resetSettings={resetSettings}
+      />
+    );
+  }
+
   return (
     <div className="flex-1 flex min-h-0">
       {/* Left: Live preview */}
