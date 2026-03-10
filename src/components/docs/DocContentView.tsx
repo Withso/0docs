@@ -17,6 +17,7 @@ interface DocPage {
   slug: string;
   order_index: number;
   nav_group_id?: string | null;
+  nav_title?: string | null;
 }
 
 interface DocNavGroup {
@@ -30,6 +31,7 @@ interface DocSection {
   page_id: string;
   title: string;
   order_index: number;
+  nav_title?: string | null;
 }
 
 interface DocBlock {

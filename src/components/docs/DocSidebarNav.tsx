@@ -7,6 +7,7 @@ export interface SidebarPageBase {
   slug: string;
   order_index: number;
   nav_group_id?: string | null;
+  nav_title?: string | null;
 }
 
 export interface SidebarSection {
@@ -14,6 +15,7 @@ export interface SidebarSection {
   page_id: string;
   title: string;
   order_index: number;
+  nav_title?: string | null;
 }
 
 export interface SidebarNavGroup {
@@ -99,7 +101,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                 fontFamily: `'${s.bodyFont}', sans-serif`,
               }}
             >
-              <span dangerouslySetInnerHTML={{ __html: page.title }} />
+              <span dangerouslySetInnerHTML={{ __html: page.nav_title || page.title }} />
             </button>
           )}
         </div>
@@ -137,7 +139,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                       style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
                     />
                   )}
-                  <span dangerouslySetInnerHTML={{ __html: section.title }} />
+                  <span dangerouslySetInnerHTML={{ __html: section.nav_title || section.title }} />
                 </a>
               );
             })}
