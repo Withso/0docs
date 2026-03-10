@@ -192,7 +192,7 @@ const DocContentView = ({
                   marginBottom: `${s.sectionSpacing * 0.6}px`,
                 }}
               >
-                {activePage.title}
+                <span dangerouslySetInnerHTML={{ __html: activePage.title }} />
               </h1>
 
               {sections.map((section) => {
