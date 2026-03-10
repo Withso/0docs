@@ -28,12 +28,20 @@ export interface Block {
   order_index: number;
 }
 
+export interface NavGroup {
+  id: string;
+  project_id: string;
+  title: string;
+  order_index: number;
+}
+
 export function useBuilder(projectId: string | undefined, userId: string | undefined) {
   const [project, setProject] = useState<any>(null);
   const [pages, setPages] = useState<Page[]>([]);
   const [activePage, setActivePage] = useState<Page | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [navGroups, setNavGroups] = useState<NavGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load project and pages
