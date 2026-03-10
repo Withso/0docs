@@ -248,12 +248,16 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
 
   return {
     project,
+    navGroups,
     pages,
     activePage,
     setActivePage,
     sections,
     blocks,
     loading,
+    addNavGroup,
+    updateNavGroup,
+    deleteNavGroup,
     addPage,
     updatePage,
     deletePage,
