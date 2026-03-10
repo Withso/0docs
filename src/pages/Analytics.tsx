@@ -299,6 +299,7 @@ const Analytics = () => {
           </div>
         )}
       </main>
+      <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={async () => { window.location.reload(); }} />
     </div>
   );
 };
