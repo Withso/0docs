@@ -252,7 +252,10 @@ const Builder = () => {
             activePage={activePage}
             sections={sections}
             blocks={blocks}
-            onSelectPage={setActivePage}
+            onSelectPage={(p) => {
+              const full = pages.find((pg) => pg.id === p.id);
+              if (full) setActivePage(full);
+            }}
             headerStickyTop={0}
             hideHeader
           />
