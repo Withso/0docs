@@ -20,7 +20,7 @@ interface BuilderSidebarProps {
   onAddPage: (navGroupId?: string) => void;
   onUpdatePage: (pageId: string, updates: Partial<Page>) => void;
   onDeletePage: (pageId: string) => void;
-  onAddNavGroup: () => void;
+  onAddNavGroup: (type?: "label" | "text") => void;
   onUpdateNavGroup: (groupId: string, updates: Partial<NavGroup>) => void;
   onDeleteNavGroup: (groupId: string) => void;
 }
