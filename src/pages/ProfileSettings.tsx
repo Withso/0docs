@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, User, Mail, Save, LogOut } from "lucide-react";
+import { ArrowLeft, User, Mail, Save, LogOut, Shield } from "lucide-react";
 
 const ProfileSettings = () => {
   const { user, signOut } = useAuth();
@@ -18,15 +19,17 @@ const ProfileSettings = () => {
   const [bio, setBio] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+      const [{ data }, { data: roleData }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle(),
+      ]);
+
+      setIsAdmin(!!roleData);
 
       if (data) {
         setDisplayName(data.display_name || user.user_metadata?.display_name || "");
@@ -104,7 +107,14 @@ const ProfileSettings = () => {
               {userInitial}
             </div>
             <div>
-              <h3 className="font-semibold text-foreground text-[15px]">{displayName || "User"}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-foreground text-[15px]">{displayName || "User"}</h3>
+                {isAdmin && (
+                  <Badge variant="secondary" className="gap-1 text-[11px] bg-primary/10 text-primary border-primary/20">
+                    <Shield className="h-3 w-3" /> Admin
+                  </Badge>
+                )}
+              </div>
               <p className="text-[13px] text-muted-foreground">{user?.email}</p>
             </div>
           </div>
