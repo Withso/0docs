@@ -598,10 +598,10 @@ const BuilderSidebar = ({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={allSortableIds} strategy={verticalListSortingStrategy}>
-          <nav style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
-            {/* Ungrouped pages */}
-            <DroppableContainer id={UNGROUPED_CONTAINER}>
+        <nav style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
+          {/* Ungrouped pages — own SortableContext */}
+          <DroppableContainer id={UNGROUPED_CONTAINER}>
+            <SortableContext items={ungroupedPageIds} strategy={verticalListSortingStrategy}>
               <div style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
                 {ungroupedPages.map((page) => (
                   <SortableItem key={page.id} id={page.id}>
@@ -609,12 +609,15 @@ const BuilderSidebar = ({
                   </SortableItem>
                 ))}
               </div>
-            </DroppableContainer>
+            </SortableContext>
+          </DroppableContainer>
 
-            {/* Nav groups — sortable via prefixed IDs */}
+          {/* Nav groups — own SortableContext for reordering labels/text */}
+          <SortableContext items={navGroupSortIds} strategy={verticalListSortingStrategy}>
             {sortedNavGroups.map((group) => {
               const isTextType = group.type === "text";
               const groupPages = getGroupPages(group.id);
+              const groupPageIds = groupPages.map((p) => p.id);
 
               if (isTextType) {
                 return (
@@ -670,7 +673,7 @@ const BuilderSidebar = ({
                 );
               }
 
-              // Label type — contains droppable zone for pages
+              // Label type — contains its own SortableContext for pages
               return (
                 <SortableItem key={group.id} id={toNavGroupSortId(group.id)}>
                   <div className="mt-3">
@@ -697,22 +700,24 @@ const BuilderSidebar = ({
                       </div>
                     </div>
 
-                    {/* Droppable zone for this group's pages */}
+                    {/* Droppable zone with its own SortableContext */}
                     <DroppableContainer id={group.id}>
-                      <div style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
-                        {groupPages.map((page) => (
-                          <SortableItem key={page.id} id={page.id}>
-                            {renderPageContent(page)}
-                          </SortableItem>
-                        ))}
-                      </div>
+                      <SortableContext items={groupPageIds} strategy={verticalListSortingStrategy}>
+                        <div style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
+                          {groupPages.map((page) => (
+                            <SortableItem key={page.id} id={page.id}>
+                              {renderPageContent(page)}
+                            </SortableItem>
+                          ))}
+                        </div>
+                      </SortableContext>
                     </DroppableContainer>
                   </div>
                 </SortableItem>
               );
             })}
-          </nav>
-        </SortableContext>
+          </SortableContext>
+        </nav>
 
         <DragOverlay>{dragOverlayContent}</DragOverlay>
       </DndContext>
