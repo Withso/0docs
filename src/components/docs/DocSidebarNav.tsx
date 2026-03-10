@@ -174,6 +174,24 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
         {/* Nav groups with their pages */}
         {hasGroups &&
           navGroups.map((group) => {
+            const isTextType = group.type === "text";
+
+            if (isTextType) {
+              return (
+                <div
+                  key={group.id}
+                  className="mt-1 py-[3px] select-none"
+                  style={{
+                    fontSize: `${s.sidebarFontSize}px`,
+                    color: `hsl(${s.sidebarTextColor} / 0.6)`,
+                    fontFamily: `'${s.bodyFont}', sans-serif`,
+                  }}
+                >
+                  <span dangerouslySetInnerHTML={{ __html: group.title }} />
+                </div>
+              );
+            }
+
             const groupPages = pages.filter((p) => p.nav_group_id === group.id);
             return (
               <div key={group.id} className="mt-3">
