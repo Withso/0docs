@@ -11,7 +11,6 @@ interface BuilderHeaderProps {
   mode?: BuilderMode;
   onModeChange?: (mode: BuilderMode) => void;
   activeTool?: "analytics" | "settings" | null;
-  onImportAPI?: () => void;
 }
 
 const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
