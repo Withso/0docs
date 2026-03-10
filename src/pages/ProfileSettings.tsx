@@ -107,7 +107,14 @@ const ProfileSettings = () => {
               {userInitial}
             </div>
             <div>
-              <h3 className="font-semibold text-foreground text-[15px]">{displayName || "User"}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-foreground text-[15px]">{displayName || "User"}</h3>
+                {isAdmin && (
+                  <Badge variant="secondary" className="gap-1 text-[11px] bg-primary/10 text-primary border-primary/20">
+                    <Shield className="h-3 w-3" /> Admin
+                  </Badge>
+                )}
+              </div>
               <p className="text-[13px] text-muted-foreground">{user?.email}</p>
             </div>
           </div>
