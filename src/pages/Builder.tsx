@@ -460,22 +460,15 @@ const PageTitleEditor = ({
   onImportOpenAPI?: () => void;
 }) => {
   const [title, setTitle] = useState(page.title);
-  const [metaDesc, setMetaDesc] = useState(page.meta_description || "");
-  const [showMeta, setShowMeta] = useState(false);
 
   useEffect(() => {
     setTitle(page.title);
-    setMetaDesc(page.meta_description || "");
   }, [page.id, page.title]);
 
   const debouncedSave = useDebouncedCallback((value: string) => {
     const slug = value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
     onUpdate(page.id, { title: value, slug });
   }, 600);
-
-  const debouncedMetaSave = useDebouncedCallback((value: string) => {
-    supabase.from("pages").update({ meta_description: value }).eq("id", page.id).then(() => {});
-  }, 800);
 
   return (
     <div style={{ marginBottom: `${settings.sectionSpacing * 0.6}px` }}>
@@ -505,32 +498,110 @@ const PageTitleEditor = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+    </div>
+  );
+};
+
+/* ─── Floating SEO Panel ─── */
+const SeoFloatingPanel = ({
+  page,
+  settings,
+}: {
+  page: Page;
+  settings: DesignSettings;
+}) => {
+  const [metaDesc, setMetaDesc] = useState(page.meta_description || "");
+  const [slug, setSlug] = useState(page.slug || "");
+  const [collapsed, setCollapsed] = useState(true);
+
+  useEffect(() => {
+    setMetaDesc(page.meta_description || "");
+    setSlug(page.slug || "");
+  }, [page.id, page.meta_description, page.slug]);
+
+  const debouncedMetaSave = useDebouncedCallback((value: string) => {
+    supabase.from("pages").update({ meta_description: value }).eq("id", page.id).then(() => {});
+  }, 800);
+
+  const debouncedSlugSave = useDebouncedCallback((value: string) => {
+    supabase.from("pages").update({ slug: value }).eq("id", page.id).then(() => {});
+  }, 800);
+
+  return (
+    <div
+      className="fixed z-50 hidden lg:block"
+      style={{
+        top: "56px",
+        left: "8px",
+      }}
+    >
       <button
-        onClick={() => setShowMeta(!showMeta)}
-        className="text-[12px] mt-1.5 px-1 transition-colors hover:text-primary"
-        style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+        onClick={() => setCollapsed(!collapsed)}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors hover:bg-accent/80"
+        style={{
+          backgroundColor: collapsed ? `hsl(${settings.borderColor} / 0.15)` : `hsl(${settings.borderColor} / 0.25)`,
+          color: `hsl(${settings.mutedForegroundColor})`,
+        }}
       >
-        {showMeta ? "Hide SEO ↑" : "SEO Settings ↓"}
+        <FileText className="h-3 w-3" />
+        SEO
+        <span className="text-[9px] opacity-60">{collapsed ? "▼" : "▲"}</span>
       </button>
-      {showMeta && (
-        <div className="mt-2 animate-fade-in">
-          <label className="text-[11px] font-medium" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
-            Meta Description
-          </label>
-          <textarea
-            className="w-full mt-1 bg-transparent border rounded-lg px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-ring/20 resize-none"
-            style={{
-              borderColor: `hsl(${settings.borderColor})`,
-              color: `hsl(${settings.mutedForegroundColor})`,
-            }}
-            rows={2}
-            value={metaDesc}
-            onChange={(e) => { setMetaDesc(e.target.value); debouncedMetaSave(e.target.value); }}
-            placeholder="Brief page description for search engines (max 160 chars)..."
-            maxLength={160}
-          />
-          <div className="text-right text-[10px] mt-0.5" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
-            {metaDesc.length}/160
+
+      {!collapsed && (
+        <div
+          className="mt-1.5 rounded-xl shadow-lg border animate-fade-in"
+          style={{
+            width: "280px",
+            backgroundColor: `hsl(${settings.borderColor} / 0.08)`,
+            borderColor: `hsl(${settings.borderColor} / 0.3)`,
+            padding: "14px 16px",
+          }}
+        >
+          <div className="mb-3">
+            <label
+              className="text-[10px] font-semibold uppercase tracking-wider mb-1.5 block"
+              style={{ color: `hsl(${settings.mutedForegroundColor} / 0.7)` }}
+            >
+              Slug
+            </label>
+            <input
+              className="w-full bg-transparent border rounded-lg px-3 py-1.5 text-[12px] outline-none focus:ring-2 focus:ring-ring/20"
+              style={{
+                borderColor: `hsl(${settings.borderColor} / 0.4)`,
+                color: `hsl(${settings.mutedForegroundColor})`,
+              }}
+              value={slug}
+              onChange={(e) => { setSlug(e.target.value); debouncedSlugSave(e.target.value); }}
+              placeholder="page-slug"
+            />
+          </div>
+
+          <div>
+            <label
+              className="text-[10px] font-semibold uppercase tracking-wider mb-1.5 block"
+              style={{ color: `hsl(${settings.mutedForegroundColor} / 0.7)` }}
+            >
+              Meta Description
+            </label>
+            <textarea
+              className="w-full bg-transparent border rounded-lg px-3 py-2 text-[12px] outline-none focus:ring-2 focus:ring-ring/20 resize-none"
+              style={{
+                borderColor: `hsl(${settings.borderColor} / 0.4)`,
+                color: `hsl(${settings.mutedForegroundColor})`,
+              }}
+              rows={3}
+              value={metaDesc}
+              onChange={(e) => { setMetaDesc(e.target.value); debouncedMetaSave(e.target.value); }}
+              placeholder="Brief page description for search engines..."
+              maxLength={160}
+            />
+            <div
+              className="text-right text-[10px] mt-0.5"
+              style={{ color: `hsl(${settings.mutedForegroundColor} / 0.5)` }}
+            >
+              {metaDesc.length}/160
+            </div>
           </div>
         </div>
       )}
