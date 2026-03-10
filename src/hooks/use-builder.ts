@@ -276,6 +276,18 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     await Promise.all(updates);
   };
 
+  const reorderBlocks = async (updatedBlocks: Block[]) => {
+    setBlocks((prev) => {
+      const updatedIds = new Set(updatedBlocks.map((b) => b.id));
+      const unchanged = prev.filter((b) => !updatedIds.has(b.id));
+      return [...unchanged, ...updatedBlocks];
+    });
+    const updates = updatedBlocks.map((b) =>
+      supabase.from("blocks").update({ order_index: b.order_index, section_id: b.section_id }).eq("id", b.id)
+    );
+    await Promise.all(updates);
+  };
+
   return {
     project,
     pages,
@@ -302,6 +314,7 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     reorderPages,
     reorderNavGroups,
     reorderSections,
+    reorderBlocks,
   };
 }
 
