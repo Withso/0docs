@@ -69,6 +69,16 @@ const Builder = () => {
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
 
+  // Listen for sidebar section title edits and sync to builder state
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { id, updates } = (e as CustomEvent).detail;
+      updateSection(id, updates);
+    };
+    window.addEventListener("builder:updateSection", handler);
+    return () => window.removeEventListener("builder:updateSection", handler);
+  }, [updateSection]);
+
   // Block-level import
   const handleBlockLevelImport = useCallback(async (parsed: ParsedOpenAPI) => {
     if (!importTargetSectionId) return;
