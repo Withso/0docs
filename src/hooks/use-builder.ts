@@ -254,8 +254,8 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
 
   const reorderPages = async (reorderedPages: Page[]) => {
     setPages(reorderedPages);
-    const updates = reorderedPages.map((p, i) => 
-      supabase.from("pages").update({ order_index: i }).eq("id", p.id)
+    const updates = reorderedPages.map((p) => 
+      supabase.from("pages").update({ order_index: p.order_index, nav_group_id: p.nav_group_id ?? null }).eq("id", p.id)
     );
     await Promise.all(updates);
   };
