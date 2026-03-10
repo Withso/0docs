@@ -316,6 +316,8 @@ function getDefaultContent(type: string): any {
       return { method: "GET", path: "/api/endpoint", description: "", parameters: [], response: "" };
     case "code_tabs":
       return { tabs: [{ label: "JavaScript", language: "javascript", code: "// JS code" }, { label: "Python", language: "python", code: "# Python code" }] };
+    case "inline_editor":
+      return { html: "<p>Start writing rich content here...</p>" };
     default:
       return { text: "" };
   }
