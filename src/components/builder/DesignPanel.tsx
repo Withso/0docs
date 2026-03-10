@@ -372,6 +372,8 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
           onSelectPage={setActivePage}
           headerStickyTop={0}
           hideHeader
+          navGroups={navGroups}
+          hideHeaderLabel
         />
       </div>
 
