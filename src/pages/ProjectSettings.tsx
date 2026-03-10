@@ -34,21 +34,58 @@ const ProjectSettings = () => {
   const [openApiOpen, setOpenApiOpen] = useState(false);
 
   useEffect(() => {
-...
+    if (!projectId || !user) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("id", projectId)
+        .eq("user_id", user.id)
+        .single();
+      if (!data) { navigate("/dashboard"); return; }
+      setProject(data);
+      setName(data.name);
+      setDescription(data.description || "");
+      setSlug(data.slug);
+      setLoading(false);
+    };
+    load();
   }, [projectId, user]);
 
   const handleSave = async () => {
-...
+    if (!projectId || !name.trim()) return;
+    setSaving(true);
+    const newSlug = slug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
+    const { error } = await supabase
+      .from("projects")
+      .update({ name: name.trim(), description, slug: newSlug, updated_at: new Date().toISOString() })
+      .eq("id", projectId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setSlug(newSlug);
+      toast({ title: "Project settings saved" });
+    }
+    setSaving(false);
   };
 
   const handleDelete = async () => {
-...
+    if (!projectId) return;
+    const { error } = await supabase.from("projects").delete().eq("id", projectId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Project deleted" });
+      navigate("/dashboard");
+    }
   };
 
   const docsUrl = `${window.location.origin}/docs/${slug}`;
 
   const copyUrl = () => {
-...
+    navigator.clipboard.writeText(docsUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (loading) {
