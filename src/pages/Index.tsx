@@ -137,6 +137,7 @@ const Index = () => {
     : pages;
 
   const { settings } = useDesignSettings(project?.id);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useSEOHead({
     title: activePage?.title,
