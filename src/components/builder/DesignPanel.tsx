@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useDesignSettings, defaultDesignSettings } from "@/hooks/use-design-settings";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
 import DocContentView from "@/components/docs/DocContentView";
+import DesignExamplesView from "@/components/builder/DesignExamplesView";
+import type { DesignSubMode } from "@/components/builder/BuilderHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
