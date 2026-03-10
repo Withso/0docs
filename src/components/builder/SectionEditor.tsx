@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Trash2, Plus } from "lucide-react";
 import type { Section, Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
-import { useDebouncedCallback } from "@/hooks/use-debounce";
 import BlockEditor from "./BlockEditor";
 import AddBlockMenu from "./AddBlockMenu";
+import InlineRichText from "./InlineRichText";
 
 interface SectionEditorProps {
   section: Section;
@@ -30,33 +30,23 @@ const SectionEditor = ({
   onImportOpenAPI,
 }: SectionEditorProps) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
-  const [title, setTitle] = useState(section.title);
-
-  useEffect(() => {
-    setTitle(section.title);
-  }, [section.id, section.title]);
-
-  const debouncedSave = useDebouncedCallback((value: string) => {
-    onUpdateSection(section.id, { title: value });
-  }, 600);
 
   return (
     <section className="group/section animate-fade-in" id={`section-${section.id}`} style={{ marginBottom: `${settings.sectionSpacing}px` }}>
-      {/* Section title — editable with debounce */}
+      {/* Section title — rich text editable */}
       <div className="flex items-center gap-3 mb-4">
-        <input
-          className="bg-transparent border-none outline-none focus:ring-2 focus:ring-ring/20 rounded-md px-1 -ml-1 min-w-0"
+        <InlineRichText
+          value={section.title}
+          onChange={(html) => onUpdateSection(section.id, { title: html })}
+          settings={settings}
+          singleLine
+          placeholder="Section title..."
+          className="min-w-0 px-1 -ml-1 rounded-md focus-within:ring-2 focus-within:ring-ring/20"
           style={{
             fontFamily: `'${settings.headingFont}', sans-serif`,
             fontWeight: settings.headingWeight,
             fontSize: `${settings.headingFontSize}px`,
           }}
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            debouncedSave(e.target.value);
-          }}
-          placeholder="Section title..."
         />
         <div className="flex-1 h-px opacity-50" style={{ backgroundColor: `hsl(${settings.sectionLineColor})` }} />
         <button
