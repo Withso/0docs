@@ -91,6 +91,7 @@ export type Database = {
           order_index: number
           project_id: string
           title: string
+          type: string
           updated_at: string
         }
         Insert: {
@@ -99,6 +100,7 @@ export type Database = {
           order_index?: number
           project_id: string
           title?: string
+          type?: string
           updated_at?: string
         }
         Update: {
@@ -107,6 +109,7 @@ export type Database = {
           order_index?: number
           project_id?: string
           title?: string
+          type?: string
           updated_at?: string
         }
         Relationships: [
