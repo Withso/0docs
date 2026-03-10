@@ -2,7 +2,7 @@ import {
   Type, AlignLeft, Code, ImageIcon, Film, Youtube,
   ListOrdered, List, StickyNote, AlertCircle, X,
   Columns, ChevronDown, CreditCard, Footprints,
-  Table2, Minus, Quote, Globe, CodeXml,
+  Table2, Minus, Quote, Globe, CodeXml, FileJson,
 } from "lucide-react";
 
 const blockTypes = [
