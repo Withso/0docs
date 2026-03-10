@@ -29,10 +29,10 @@ const Index = () => {
   // Load homepage project
   useEffect(() => {
     const load = async () => {
-      const { data: projects } = await supabase
+      const { data: projects } = await (supabase
         .from("projects")
-        .select("*")
-        .eq("is_homepage" as any, true)
+        .select("*") as any)
+        .eq("is_homepage", true)
         .limit(1);
 
       if (!projects || projects.length === 0) {
