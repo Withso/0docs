@@ -31,6 +31,11 @@ const PublicDocs = () => {
       if (!projects || projects.length === 0) { setNotFound(true); setLoading(false); return; }
       const proj = projects[0];
       setProject(proj);
+
+      // Load nav groups
+      const { data: groupsData } = await supabase.from("nav_groups").select("*").eq("project_id", proj.id).order("order_index");
+      if (groupsData) setNavGroups(groupsData as NavGroup[]);
+
       const { data: pagesData } = await supabase.from("pages").select("*").eq("project_id", proj.id).order("order_index");
       if (pagesData) {
         setPages(pagesData as Page[]);
