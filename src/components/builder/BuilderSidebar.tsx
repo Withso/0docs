@@ -60,22 +60,29 @@ const SortableItem = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
     position: "relative" as const,
     zIndex: isDragging ? 50 : "auto" as any,
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...(handle ? {} : { ...attributes, ...listeners })}>
+    <div ref={setNodeRef} style={style} className="group/drag" {...(handle ? {} : { ...attributes, ...listeners })}>
       {handle ? (
-        <div className="flex items-center gap-0">
-          <button
-            className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-40 hover:!opacity-80 transition-opacity shrink-0 -ml-4 p-0.5"
+        <div className="flex items-center">
+          <div
+            className="cursor-grab active:cursor-grabbing opacity-0 group-hover/drag:opacity-30 hover:!opacity-70 transition-opacity shrink-0 -ml-3.5 w-3.5 flex items-center justify-center"
             {...attributes}
             {...listeners}
           >
-            <GripVertical className="h-3 w-3" />
-          </button>
+            <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor" className="text-current">
+              <circle cx="1" cy="1" r="0.8" />
+              <circle cx="5" cy="1" r="0.8" />
+              <circle cx="1" cy="5" r="0.8" />
+              <circle cx="5" cy="5" r="0.8" />
+              <circle cx="1" cy="9" r="0.8" />
+              <circle cx="5" cy="9" r="0.8" />
+            </svg>
+          </div>
           <div className="flex-1 min-w-0">{children}</div>
         </div>
       ) : (
