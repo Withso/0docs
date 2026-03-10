@@ -304,6 +304,7 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
   const [activePage, setActivePage] = useState<DocPage | null>(null);
   const [sections, setSections] = useState<DocSection[]>([]);
   const [blocks, setBlocks] = useState<DocBlock[]>([]);
+  const [navGroups, setNavGroups] = useState<DocNavGroup[]>([]);
 
   useEffect(() => { setLocal(settings); }, [settings]);
 
