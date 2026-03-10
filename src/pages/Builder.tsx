@@ -150,10 +150,14 @@ const Builder = () => {
           <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
             <BuilderSidebar
               settings={settings}
+              navGroups={navGroups}
               pages={pages}
               activePage={activePage}
               sections={sections}
               onSelectPage={setActivePage}
+              onAddNavGroup={addNavGroup}
+              onUpdateNavGroup={updateNavGroup}
+              onDeleteNavGroup={deleteNavGroup}
               onAddPage={addPage}
               onUpdatePage={updatePage}
               onDeletePage={deletePage}
