@@ -238,6 +238,7 @@ const Builder = () => {
             settings={settings}
             projectName={project?.name || ""}
             pages={pages}
+            navGroups={navGroups}
             activePage={activePage}
             sections={sections}
             blocks={blocks}
