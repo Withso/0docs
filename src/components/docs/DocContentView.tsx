@@ -68,6 +68,7 @@ const DocContentView = ({
   settings: s,
   projectName,
   pages,
+  navGroups = [],
   activePage,
   sections,
   blocks,
