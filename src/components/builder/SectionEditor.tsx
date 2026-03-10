@@ -124,7 +124,7 @@ const SectionEditor = ({
       <div
         className="rounded-lg px-3 py-2 shadow-lg text-xs"
         style={{
-          backgroundColor: `hsl(${settings.contentBg || settings.backgroundColor})`,
+          backgroundColor: `hsl(${settings.backgroundColor})`,
           border: `2px solid hsl(${settings.primaryColor} / 0.3)`,
           color: `hsl(${settings.mutedForegroundColor})`,
           maxWidth: "300px",
