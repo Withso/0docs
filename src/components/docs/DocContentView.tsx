@@ -44,6 +44,7 @@ interface DocContentViewProps {
   settings: DesignSettings;
   projectName: string;
   pages: DocPage[];
+  navGroups?: DocNavGroup[];
   activePage: DocPage | null;
   sections: DocSection[];
   blocks: DocBlock[];
