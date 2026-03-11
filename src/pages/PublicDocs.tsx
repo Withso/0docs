@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useDesignSettings } from "@/hooks/use-design-settings";
@@ -22,6 +22,9 @@ const PublicDocs = () => {
   const [allBlocks, setAllBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [publishedDesign, setPublishedDesign] = useState<any>(null);
+  const [navGroups, setNavGroups] = useState<any[]>([]);
+  const [usingPublished, setUsingPublished] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -29,6 +32,46 @@ const PublicDocs = () => {
       if (!projects || projects.length === 0) { setNotFound(true); setLoading(false); return; }
       const proj = projects[0];
       setProject(proj);
+
+      // Check for published version - serve published snapshot if available
+      if (proj.published_version_id) {
+        const { data: published } = await supabase
+          .from("published_versions")
+          .select("*")
+          .eq("id", proj.published_version_id)
+          .single();
+
+        if (published && published.is_active) {
+          // Use published snapshot
+          const snapPages = (published.pages_snapshot || []) as Page[];
+          const snapSections = (published.sections_snapshot || []) as Section[];
+          const snapBlocks = (published.blocks_snapshot || []) as Block[];
+          const snapNavGroups = (published.nav_groups_snapshot || []) as any[];
+
+          setPages(snapPages);
+          setAllSections(snapSections);
+          setAllBlocks(snapBlocks);
+          setNavGroups(snapNavGroups);
+          if (published.design_snapshot) setPublishedDesign(published.design_snapshot);
+          setUsingPublished(true);
+
+          const target = pageSlug ? snapPages.find((p) => p.slug === pageSlug) : snapPages[0];
+          const active = (target || snapPages[0] || null) as Page | null;
+          setActivePage(active);
+
+          if (active) {
+            const pageSecs = snapSections.filter(s => s.page_id === active.id);
+            setSections(pageSecs);
+            const secIds = new Set(pageSecs.map(s => s.id));
+            setBlocks(snapBlocks.filter(b => secIds.has(b.section_id)));
+          }
+
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Fallback to live data if no published version
       const { data: pagesData } = await supabase.from("pages").select("*").eq("project_id", proj.id).order("order_index");
       if (pagesData) {
         setPages(pagesData as Page[]);
@@ -47,6 +90,10 @@ const PublicDocs = () => {
             }
           }
         }
+
+        // Load nav groups
+        const { data: groups } = await supabase.from("nav_groups").select("*").eq("project_id", proj.id).order("order_index");
+        if (groups) setNavGroups(groups);
       }
       setLoading(false);
     };
@@ -98,8 +145,18 @@ const PublicDocs = () => {
     trackView();
   }, [activePage?.id, project?.id]);
 
+  // Load content when switching pages (for published snapshot mode, use snapshot data)
   useEffect(() => {
     if (!activePage) return;
+
+    if (usingPublished) {
+      const pageSecs = allSections.filter(s => s.page_id === activePage.id);
+      setSections(pageSecs);
+      const secIds = new Set(pageSecs.map(s => s.id));
+      setBlocks(allBlocks.filter(b => secIds.has(b.section_id)));
+      return;
+    }
+
     const loadContent = async () => {
       const { data: secs } = await supabase.from("sections").select("*").eq("page_id", activePage.id).order("order_index");
       if (secs) {
@@ -111,9 +168,11 @@ const PublicDocs = () => {
       }
     };
     loadContent();
-  }, [activePage]);
+  }, [activePage, usingPublished, allSections, allBlocks]);
 
-  const { settings } = useDesignSettings(project?.id);
+  const { settings: liveSettings } = useDesignSettings(project?.id);
+  // Use published design if available, otherwise live
+  const settings = publishedDesign || liveSettings;
 
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Loading...</div>;
@@ -150,6 +209,7 @@ const PublicDocs = () => {
         versions={versions}
         activeVersion={activeVersion}
         onSelectVersion={setActiveVersion}
+        navGroups={navGroups}
       />
       {project?.id && <AskDocsChat projectId={project.id} settings={settings} />}
     </div>
