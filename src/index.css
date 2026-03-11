@@ -407,9 +407,15 @@
 }
 
 /* ─── Design Panel Bar Slider ─── */
+.ds-bar-slider {
+  height: 100% !important;
+  cursor: ew-resize;
+}
+
 .ds-bar-slider [data-radix-slider-track] {
   background: transparent !important;
   height: 100% !important;
+  border-radius: 0 !important;
 }
 
 .ds-bar-slider [data-radix-slider-range] {
@@ -417,21 +423,22 @@
 }
 
 .ds-bar-slider [data-radix-slider-thumb] {
-  width: 4px !important;
-  height: 14px !important;
-  border-radius: 2px !important;
-  background: hsl(var(--muted-foreground) / 0.45) !important;
+  width: 3px !important;
+  height: 20px !important;
+  border-radius: 1.5px !important;
+  background: hsl(var(--muted-foreground) / 0.4) !important;
   border: none !important;
   box-shadow: none !important;
   cursor: ew-resize;
-  transition: background 0.15s ease, height 0.15s ease;
+  transition: background 0.15s ease, height 0.1s ease;
 }
 
 .ds-bar-slider [data-radix-slider-thumb]:hover {
-  background: hsl(var(--muted-foreground) / 0.65) !important;
-  height: 16px !important;
+  background: hsl(var(--muted-foreground) / 0.6) !important;
+  height: 24px !important;
 }
 
 .ds-bar-slider [data-radix-slider-thumb]:active {
   background: hsl(var(--foreground) / 0.5) !important;
+  height: 26px !important;
 }
