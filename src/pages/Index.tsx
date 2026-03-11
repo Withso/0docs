@@ -302,7 +302,9 @@ const Index = () => {
             maxWidth: `${settings.contentMaxWidth + settings.sidebarWidth + 200 + 48}px`,
           }}
         >
-          <div style={{ width: `${settings.sidebarWidth}px`, flexShrink: 0 }} />
+          <div className="flex items-center" style={{ width: `${settings.sidebarWidth}px`, flexShrink: 0 }}>
+            <span className="font-semibold text-[15px] tracking-tight text-foreground">0colors</span>
+          </div>
           <div className="flex-1 min-w-0 lg:pl-4">
             <button
               onClick={() => setSearchOpen(true)}
@@ -328,23 +330,19 @@ const Index = () => {
           </div>
 
           {user ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-[13px] rounded-lg gap-1.5"
+            <button
               onClick={() => navigate("/dashboard")}
+              className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
             >
               <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
-            </Button>
+            </button>
           ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-[13px] rounded-lg gap-1.5"
+            <button
               onClick={() => navigate("/auth")}
+              className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
             >
               <LogIn className="h-3.5 w-3.5" /> Sign In
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -370,6 +368,7 @@ const Index = () => {
         externalSearchOpen={searchOpen}
         onExternalSearchOpenChange={setSearchOpen}
         navGroups={navGroups}
+        hideHeaderLabel
       />
       {project?.id && <AskDocsChat projectId={project.id} settings={settings} />}
     </div>

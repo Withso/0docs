@@ -298,6 +298,7 @@ const PublicDocs = () => {
         activeVersion={usingPublished ? undefined : activeVersion}
         onSelectVersion={usingPublished ? undefined : setActiveVersion}
         navGroups={navGroups}
+        hideHeaderLabel
       />
       {project?.id && <AskDocsChat projectId={project.id} settings={settings} />}
     </div>
