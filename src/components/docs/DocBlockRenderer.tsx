@@ -185,121 +185,41 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
       return wrapHighlight(<AccordionBlock content={content} settings={s} bs={bs} />);
 
     case "card":
-      return wrapHighlight(
-        <div style={{
-          border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-          borderRadius: `${bs.borderRadius ?? 8}px`,
-          padding: `${bs.padding ?? 20}px`,
-          backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${s.accentColor})`,
-          marginBottom: "16px",
-        }}>
-          <h4 style={{
-            fontFamily: `'${s.headingFont}', sans-serif`, fontWeight: s.headingWeight,
-            fontSize: `${bs.fontSize ?? s.baseFontSize}px`, marginBottom: "6px",
-            color: bs.color ? `hsl(${bs.color})` : undefined,
-          }}>{content.title}</h4>
-          <p style={{
-            fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize - 1}px`,
-            color: `hsl(${s.mutedForegroundColor})`, lineHeight: s.lineHeight,
-          }}>{content.description}</p>
-          {content.link && (
-            <a href={content.link} target="_blank" rel="noopener noreferrer" style={{
-              color: `hsl(${s.linkColor})`, fontSize: `${s.baseFontSize - 1}px`, marginTop: "8px", display: "inline-block",
-            }}>Learn more →</a>
-          )}
-        </div>
-      );
+      return wrapHighlight(<CardBlock content={content} settings={s} bs={bs} />);
 
     case "steps":
-      return wrapHighlight(
-        <div style={{ marginBottom: "16px" }}>
-          {(content.items || []).map((step: any, i: number) => (
-            <div key={i} className="flex gap-4" style={{ marginBottom: "16px" }}>
-              <div className="flex flex-col items-center shrink-0">
-                <div style={{
-                  width: "28px", height: "28px", borderRadius: "50%",
-                  backgroundColor: `hsl(${s.primaryColor})`, color: `hsl(${s.primaryForegroundColor})`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "13px", fontWeight: 600, fontFamily: `'${s.bodyFont}', sans-serif`,
-                }}>{i + 1}</div>
-                {i < (content.items || []).length - 1 && (
-                  <div style={{ width: "2px", flex: 1, marginTop: "4px", backgroundColor: `hsl(${s.borderColor})` }} />
-                )}
-              </div>
-              <div style={{ paddingBottom: "8px" }}>
-                <h4 style={{
-                  fontFamily: `'${s.headingFont}', sans-serif`, fontWeight: s.headingWeight,
-                  fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
-                  color: bs.color ? `hsl(${bs.color})` : undefined, marginBottom: "4px",
-                }}>{step.title}</h4>
-                <p style={{
-                  fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize - 1}px`,
-                  color: `hsl(${s.mutedForegroundColor})`, lineHeight: s.lineHeight,
-                }}>{step.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      );
+      return wrapHighlight(<StepsBlock content={content} settings={s} bs={bs} />);
 
     case "table":
-      return wrapHighlight(
-        <div style={{
-          border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-          borderRadius: `${bs.borderRadius ?? 8}px`, overflow: "hidden", marginBottom: "16px",
-        }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ backgroundColor: `hsl(${s.accentColor})` }}>
-                {(content.headers || []).map((h: string, i: number) => (
-                  <th key={i} style={{
-                    padding: "10px 14px", textAlign: "left",
-                    fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize - 1}px`,
-                    fontWeight: 600, borderBottom: `1px solid hsl(${s.borderColor})`,
-                    color: bs.color ? `hsl(${bs.color})` : undefined,
-                  }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(content.rows || []).map((row: string[], ri: number) => (
-                <tr key={ri}>
-                  {row.map((cell: string, ci: number) => (
-                    <td key={ci} style={{
-                      padding: "10px 14px",
-                      fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize - 1}px`,
-                      borderBottom: ri < (content.rows || []).length - 1 ? `1px solid hsl(${s.borderColor})` : undefined,
-                      lineHeight: s.lineHeight,
-                    }}>{cell}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
+      return wrapHighlight(<TableBlock content={content} settings={s} bs={bs} />);
 
     case "divider":
       return wrapHighlight(
         <hr style={{
-          border: "none", borderTop: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-          margin: "24px 0",
+          border: "none",
+          borderTop: `${bs.thickness ?? 1}px ${bs.dividerStyle || "solid"} hsl(${bs.borderColor || s.borderColor})`,
+          margin: `${bs.spacing ?? 24}px 0`,
         }} />
       );
 
     case "quote":
       return wrapHighlight(
         <blockquote style={{
-          borderLeft: `3px solid hsl(${bs.borderColor || s.primaryColor})`,
+          borderLeft: `${bs.borderWidth ?? 3}px solid hsl(${bs.borderColor || s.primaryColor})`,
           paddingLeft: "16px", margin: "0 0 16px 0",
           fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
           fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
-          fontStyle: "italic", lineHeight: s.lineHeight,
+          fontStyle: bs.italic !== false ? "italic" : "normal",
+          lineHeight: s.lineHeight,
           color: bs.color ? `hsl(${bs.color})` : undefined,
         }}>
           <p>{content.text}</p>
           {content.attribution && (
-            <footer style={{ fontSize: `${s.baseFontSize - 2}px`, color: `hsl(${s.mutedForegroundColor})`, fontStyle: "normal", marginTop: "8px" }}>
+            <footer style={{
+              fontSize: `${s.baseFontSize - 2}px`,
+              color: `hsl(${bs.attributionColor || s.mutedForegroundColor})`,
+              fontStyle: "normal", marginTop: "8px",
+            }}>
               — {content.attribution}
             </footer>
           )}
@@ -337,26 +257,37 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
 const TabsBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
   const [active, setActive] = useState(0);
   const tabs = content.tabs || [];
+  const activeColor = bs.activeColor ? `hsl(${bs.activeColor})` : `hsl(${s.primaryColor})`;
+  const inactiveColor = bs.inactiveColor ? `hsl(${bs.inactiveColor})` : `hsl(${s.mutedForegroundColor})`;
+  const indicatorColor = bs.indicatorColor ? `hsl(${bs.indicatorColor})` : activeColor;
+  const tabPad = bs.tabPadding ?? 8;
+
   return (
-    <div style={{ marginBottom: "16px" }}>
-      <div className="flex" style={{ borderBottom: `1px solid hsl(${s.borderColor})`, gap: "0" }}>
+    <div style={{
+      marginBottom: "16px",
+      backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
+      borderRadius: `${bs.borderRadius ?? 0}px`,
+      padding: bs.padding != null ? `${bs.padding}px` : undefined,
+    }}>
+      <div className="flex" style={{ borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`, gap: "0" }}>
         {tabs.map((tab: any, i: number) => (
           <button key={i} onClick={() => setActive(i)} style={{
-            padding: "8px 16px",
+            padding: `${tabPad}px 16px`,
             fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
-            fontFamily: `'${s.bodyFont}', sans-serif`,
+            fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
             fontWeight: active === i ? 500 : 400,
-            color: active === i ? `hsl(${s.primaryColor})` : `hsl(${s.mutedForegroundColor})`,
-            borderBottom: active === i ? `2px solid hsl(${s.primaryColor})` : "2px solid transparent",
+            color: active === i ? activeColor : inactiveColor,
+            borderBottom: active === i ? `2px solid ${indicatorColor}` : "2px solid transparent",
             background: "none", cursor: "pointer", transition: "all 0.15s",
           }}>{tab.label}</button>
         ))}
       </div>
       <div style={{
         padding: "12px 0",
-        fontFamily: `'${s.bodyFont}', sans-serif`,
+        fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
         fontSize: `${s.baseFontSize}px`,
         lineHeight: s.lineHeight,
+        color: bs.color ? `hsl(${bs.color})` : undefined,
       }}>
         {tabs[active]?.content}
       </div>
@@ -367,27 +298,169 @@ const TabsBlock = ({ content, settings: s, bs }: { content: any; settings: Desig
 const AccordionBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const items = content.items || [];
+  const headerBg = bs.headerBgAccordion ? `hsl(${bs.headerBgAccordion})` : undefined;
+  const contentBg = bs.contentBg ? `hsl(${bs.contentBg})` : undefined;
+  const iconSz = bs.iconSize ?? 12;
+
   return (
-    <div style={{ marginBottom: "16px", border: `1px solid hsl(${s.borderColor})`, borderRadius: `${bs.borderRadius ?? 8}px`, overflow: "hidden" }}>
+    <div style={{
+      marginBottom: "16px",
+      border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+      borderRadius: `${bs.borderRadius ?? 8}px`,
+      overflow: "hidden",
+      backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
+    }}>
       {items.map((item: any, i: number) => (
-        <div key={i} style={{ borderBottom: i < items.length - 1 ? `1px solid hsl(${s.borderColor})` : undefined }}>
+        <div key={i} style={{ borderBottom: i < items.length - 1 ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined }}>
           <button onClick={() => setOpenIndex(openIndex === i ? null : i)} className="w-full text-left flex items-center justify-between" style={{
-            padding: "12px 16px",
-            fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
-            fontWeight: 500, color: bs.color ? `hsl(${bs.color})` : undefined, background: "none", cursor: "pointer",
+            padding: `${bs.padding ?? 12}px 16px`,
+            fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+            fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
+            fontWeight: bs.fontWeight || 500,
+            color: bs.color ? `hsl(${bs.color})` : undefined,
+            background: headerBg || "none",
+            cursor: "pointer",
           }}>
             {item.title}
-            <span style={{ transform: openIndex === i ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", fontSize: "12px" }}>▼</span>
+            <span style={{ transform: openIndex === i ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", fontSize: `${iconSz}px` }}>▼</span>
           </button>
           {openIndex === i && (
             <div style={{
               padding: "0 16px 12px 16px",
-              fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize - 1}px`,
+              fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+              fontSize: `${s.baseFontSize - 1}px`,
               color: `hsl(${s.mutedForegroundColor})`, lineHeight: s.lineHeight,
+              backgroundColor: contentBg,
             }}>{item.content}</div>
           )}
         </div>
       ))}
+    </div>
+  );
+};
+
+const CardBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
+  const titleSize = bs.titleFontSize ?? s.baseFontSize;
+  const titleWt = bs.titleWeight || s.headingWeight;
+  const showShadow = bs.showShadow === true;
+
+  return (
+    <div style={{
+      border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+      borderRadius: `${bs.borderRadius ?? 8}px`,
+      padding: `${bs.padding ?? 20}px`,
+      backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${s.accentColor})`,
+      marginBottom: "16px",
+      boxShadow: showShadow ? '0 4px 16px -4px hsl(var(--foreground) / 0.1)' : undefined,
+    }}>
+      <h4 style={{
+        fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.headingFont}', sans-serif`,
+        fontWeight: titleWt,
+        fontSize: `${titleSize}px`, marginBottom: "6px",
+        color: bs.color ? `hsl(${bs.color})` : undefined,
+      }}>{content.title}</h4>
+      <p style={{
+        fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize - 1}px`,
+        color: `hsl(${s.mutedForegroundColor})`, lineHeight: s.lineHeight,
+      }}>{content.description}</p>
+      {content.link && (
+        <a href={content.link} target="_blank" rel="noopener noreferrer" style={{
+          color: `hsl(${s.linkColor})`, fontSize: `${s.baseFontSize - 1}px`, marginTop: "8px", display: "inline-block",
+        }}>Learn more →</a>
+      )}
+    </div>
+  );
+};
+
+const StepsBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
+  const circleSize = bs.circleSize ?? 28;
+  const circleBg = bs.circleBg || s.primaryColor;
+  const circleColor = bs.circleColor || s.primaryForegroundColor;
+  const connColor = bs.connectorColor || s.borderColor;
+  const connWidth = bs.connectorWidth ?? 2;
+
+  return (
+    <div style={{ marginBottom: "16px" }}>
+      {(content.items || []).map((step: any, i: number) => (
+        <div key={i} className="flex gap-4" style={{ marginBottom: "16px" }}>
+          <div className="flex flex-col items-center shrink-0">
+            <div style={{
+              width: `${circleSize}px`, height: `${circleSize}px`, borderRadius: "50%",
+              backgroundColor: `hsl(${circleBg})`, color: `hsl(${circleColor})`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: `${Math.max(circleSize * 0.45, 11)}px`, fontWeight: 600,
+              fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+            }}>{i + 1}</div>
+            {i < (content.items || []).length - 1 && (
+              <div style={{ width: `${connWidth}px`, flex: 1, marginTop: "4px", backgroundColor: `hsl(${connColor})` }} />
+            )}
+          </div>
+          <div style={{ paddingBottom: "8px" }}>
+            <h4 style={{
+              fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.headingFont}', sans-serif`,
+              fontWeight: bs.fontWeight || s.headingWeight,
+              fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
+              color: bs.color ? `hsl(${bs.color})` : undefined, marginBottom: "4px",
+            }}>{step.title}</h4>
+            <p style={{
+              fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize - 1}px`,
+              color: `hsl(${s.mutedForegroundColor})`, lineHeight: s.lineHeight,
+            }}>{step.description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const TableBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
+  const headerBg = bs.headerBg || s.accentColor;
+  const headerWeight = bs.headerFontWeight || "600";
+  const cellPad = bs.cellPadding ?? 10;
+  const showBorders = bs.showCellBorders !== false;
+  const striped = bs.stripedRows === true;
+  const stripedBg = bs.stripedRowBg || s.accentColor;
+
+  return (
+    <div style={{
+      border: showBorders ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
+      borderRadius: `${bs.borderRadius ?? 8}px`, overflow: "hidden", marginBottom: "16px",
+    }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ backgroundColor: `hsl(${headerBg})` }}>
+            {(content.headers || []).map((h: string, i: number) => (
+              <th key={i} style={{
+                padding: `${cellPad}px ${cellPad + 4}px`, textAlign: "left",
+                fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+                fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
+                fontWeight: headerWeight,
+                borderBottom: showBorders ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
+                borderRight: showBorders && i < (content.headers || []).length - 1 ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
+                color: bs.color ? `hsl(${bs.color})` : undefined,
+              }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {(content.rows || []).map((row: string[], ri: number) => (
+            <tr key={ri} style={{
+              backgroundColor: striped && ri % 2 === 1 ? `hsl(${stripedBg})` : undefined,
+            }}>
+              {row.map((cell: string, ci: number) => (
+                <td key={ci} style={{
+                  padding: `${cellPad}px ${cellPad + 4}px`,
+                  fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+                  fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
+                  borderBottom: showBorders && ri < (content.rows || []).length - 1 ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
+                  borderRight: showBorders && ci < row.length - 1 ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
+                  lineHeight: s.lineHeight,
+                }}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
@@ -397,29 +470,36 @@ const ApiEndpointBlock = ({ content, settings: s, bs }: { content: any; settings
     GET: "142 76% 36%", POST: "214 100% 50%", PUT: "38 92% 50%", DELETE: "0 84% 60%", PATCH: "270 60% 55%",
   };
   const methodColor = methodColors[content.method?.toUpperCase()] || s.primaryColor;
+  const headerBg = bs.headerBgColor || s.accentColor;
+  const responseBg = bs.responseBg || s.codeBlockBg;
+  const badgeRadius = bs.methodBadgeRadius ?? 4;
+  const paramSize = bs.paramFontSize ?? 13;
+
   return (
     <div style={{
       border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
       borderRadius: `${bs.borderRadius ?? 8}px`, overflow: "hidden", marginBottom: "16px",
     }}>
       <div className="flex items-center gap-3" style={{
-        padding: "12px 16px", backgroundColor: `hsl(${s.accentColor})`,
-        borderBottom: `1px solid hsl(${s.borderColor})`,
+        padding: `${bs.padding ?? 12}px 16px`,
+        backgroundColor: `hsl(${headerBg})`,
+        borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`,
       }}>
         <span style={{
           backgroundColor: `hsl(${methodColor})`, color: "#fff",
-          padding: "2px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: 700,
+          padding: "2px 8px", borderRadius: `${badgeRadius}px`, fontSize: "12px", fontWeight: 700,
           fontFamily: `'${s.codeFont}', monospace`,
         }}>{content.method?.toUpperCase() || "GET"}</span>
         <code style={{
-          fontFamily: `'${s.codeFont}', monospace`, fontSize: `${s.baseFontSize - 1}px`,
+          fontFamily: `'${s.codeFont}', monospace`, fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
           color: bs.color ? `hsl(${bs.color})` : undefined,
         }}>{content.path}</code>
       </div>
       {content.description && (
         <div style={{
           padding: "12px 16px",
-          fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize - 1}px`,
+          fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+          fontSize: `${s.baseFontSize - 1}px`,
           color: `hsl(${s.mutedForegroundColor})`, lineHeight: s.lineHeight,
         }}>{content.description}</div>
       )}
@@ -428,16 +508,16 @@ const ApiEndpointBlock = ({ content, settings: s, bs }: { content: any; settings
           <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "6px", color: `hsl(${s.mutedForegroundColor})` }}>Parameters</div>
           {content.parameters.map((p: any, i: number) => (
             <div key={i} className="flex gap-2 items-baseline" style={{ marginBottom: "4px" }}>
-              <code style={{ fontFamily: `'${s.codeFont}', monospace`, fontSize: "13px" }}>{p.name}</code>
-              <span style={{ fontSize: "12px", color: `hsl(${s.mutedForegroundColor})` }}>{p.type}{p.required ? " · required" : ""}</span>
+              <code style={{ fontFamily: `'${s.codeFont}', monospace`, fontSize: `${paramSize}px` }}>{p.name}</code>
+              <span style={{ fontSize: `${paramSize - 1}px`, color: `hsl(${s.mutedForegroundColor})` }}>{p.type}{p.required ? " · required" : ""}</span>
             </div>
           ))}
         </div>
       )}
       {content.response && (
         <div style={{
-          padding: "12px 16px", borderTop: `1px solid hsl(${s.borderColor})`,
-          backgroundColor: `hsl(${s.codeBlockBg})`,
+          padding: "12px 16px", borderTop: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+          backgroundColor: `hsl(${responseBg})`,
           fontFamily: `'${s.codeFont}', monospace`, fontSize: `${s.baseFontSize - 2}px`,
           whiteSpace: "pre-wrap",
         }}>{content.response}</div>
@@ -451,26 +531,29 @@ const CodeTabsBlock = ({ content, settings: s, bs }: { content: any; settings: D
   const tabs = content.tabs || [];
   const codeFont = bs.fontFamily ? `'${bs.fontFamily}', monospace` : `'${s.codeFont}', monospace`;
   const codeFontSize = bs.fontSize ?? (s.baseFontSize - 1);
+  const tabBarBg = bs.tabBarBg || s.accentColor;
+  const activeTabCol = bs.activeTabColor || s.primaryColor;
+
   return (
     <div style={{
       border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
       borderRadius: `${bs.borderRadius ?? s.codeBlockBorderRadius}px`,
       overflow: "hidden", marginBottom: "16px",
     }}>
-      <div className="flex" style={{ backgroundColor: `hsl(${s.accentColor})`, borderBottom: `1px solid hsl(${s.borderColor})` }}>
+      <div className="flex" style={{ backgroundColor: `hsl(${tabBarBg})`, borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})` }}>
         {tabs.map((tab: any, i: number) => (
           <button key={i} onClick={() => setActive(i)} style={{
             padding: "8px 14px", fontSize: "12px", fontFamily: codeFont,
             fontWeight: active === i ? 600 : 400,
-            color: active === i ? `hsl(${s.primaryColor})` : `hsl(${s.mutedForegroundColor})`,
-            borderBottom: active === i ? `2px solid hsl(${s.primaryColor})` : "2px solid transparent",
+            color: active === i ? `hsl(${activeTabCol})` : `hsl(${s.mutedForegroundColor})`,
+            borderBottom: active === i ? `2px solid hsl(${activeTabCol})` : "2px solid transparent",
             background: "none", cursor: "pointer", transition: "all 0.15s",
           }}>{tab.label}</button>
         ))}
       </div>
       <div style={{
         backgroundColor: `hsl(${bs.backgroundColor || s.codeBlockBg})`,
-        padding: "16px", fontFamily: codeFont, fontSize: `${codeFontSize}px`,
+        padding: `${bs.padding ?? 16}px`, fontFamily: codeFont, fontSize: `${codeFontSize}px`,
         color: bs.color ? `hsl(${bs.color})` : undefined,
       }}>
         <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: "inherit", fontFamily: "inherit", color: "inherit" }}>

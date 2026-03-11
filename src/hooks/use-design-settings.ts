@@ -10,6 +10,58 @@ export interface BlockStyleSettings {
   borderColor: string;
   borderRadius: number;
   padding: number;
+
+  // Table-specific
+  headerBg: string;
+  showCellBorders: boolean;
+  cellPadding: number;
+  headerFontWeight: string;
+  stripedRows: boolean;
+  stripedRowBg: string;
+
+  // API Endpoint-specific
+  methodBadgeRadius: number;
+  headerBgColor: string;
+  responseBg: string;
+  paramFontSize: number;
+
+  // Steps-specific
+  circleSize: number;
+  circleBg: string;
+  circleColor: string;
+  connectorColor: string;
+  connectorWidth: number;
+
+  // Quote-specific
+  borderWidth: number;
+  italic: boolean;
+  attributionColor: string;
+
+  // Divider-specific
+  thickness: number;
+  dividerStyle: string; // solid, dashed, dotted
+  spacing: number;
+
+  // Card-specific
+  titleFontSize: number;
+  titleWeight: string;
+  showShadow: boolean;
+
+  // Accordion-specific
+  headerBgAccordion: string;
+  contentBg: string;
+  iconSize: number;
+
+  // Tabs-specific
+  activeColor: string;
+  inactiveColor: string;
+  indicatorColor: string;
+  tabPadding: number;
+
+  // Code Tabs-specific
+  tabBarBg: string;
+  activeTabColor: string;
+  showLineNumbers: boolean;
 }
 
 export interface DesignSettings {
@@ -81,6 +133,7 @@ export interface DesignSettings {
     quote: Partial<BlockStyleSettings>;
     api_endpoint: Partial<BlockStyleSettings>;
     code_tabs: Partial<BlockStyleSettings>;
+    inline_editor: Partial<BlockStyleSettings>;
   };
 }
 
@@ -104,6 +157,7 @@ const emptyBlockStyles: DesignSettings["blockStyles"] = {
   quote: {},
   api_endpoint: {},
   code_tabs: {},
+  inline_editor: {},
 };
 
 export const defaultDesignSettings: DesignSettings = {
