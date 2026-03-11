@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { Trash2, Plus, Pencil, GripVertical } from "lucide-react";
 import type { Section, Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -83,6 +83,9 @@ const SectionEditor = ({
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [dragActiveBlockId, setDragActiveBlockId] = useState<string | null>(null);
+  const [isSectionFocused, setIsSectionFocused] = useState(false);
+  const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -141,13 +144,34 @@ const SectionEditor = ({
   }, [dragActiveBlockId, sortedBlocks, settings]);
 
   return (
-    <section className="group/section animate-fade-in" id={`section-${section.id}`} style={{ marginBottom: `${settings.sectionSpacing}px` }}>
+    <section
+      ref={sectionRef}
+      className="group/section animate-fade-in relative transition-all duration-200"
+      id={`section-${section.id}`}
+      style={{
+        marginBottom: `${settings.sectionSpacing}px`,
+        backgroundColor: isSectionFocused ? `hsl(${settings.primaryColor} / 0.02)` : "transparent",
+        borderRadius: "16px",
+        padding: isSectionFocused ? "20px 24px 16px" : "20px 24px 16px",
+        marginLeft: "-24px",
+        marginRight: "-24px",
+        borderLeft: isSectionFocused ? `2px solid hsl(${settings.primaryColor} / 0.08)` : "2px solid transparent",
+      }}
+      onFocusCapture={() => setIsSectionFocused(true)}
+      onBlurCapture={(e) => {
+        // Only unfocus if the new focus target is outside this section
+        if (!sectionRef.current?.contains(e.relatedTarget as Node)) {
+          setIsSectionFocused(false);
+          setFocusedBlockId(null);
+        }
+      }}
+    >
       {/* Section title */}
       <div className="flex items-center gap-2 mb-4">
         {/* Section drag handle */}
         {sectionDragHandleProps && (
           <span
-            className="shrink-0 cursor-grab active:cursor-grabbing opacity-0 group-hover/section:opacity-40 transition-opacity -ml-6"
+            className="shrink-0 cursor-grab active:cursor-grabbing opacity-0 group-hover/section:opacity-40 transition-opacity -ml-2"
             style={{ color: `hsl(${settings.mutedForegroundColor})` }}
             {...sectionDragHandleProps}
           >
@@ -210,14 +234,26 @@ const SectionEditor = ({
         onDragEnd={handleBlockDragEnd}
       >
         <SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {sortedBlocks.map((block) => (
               <SortableBlock key={block.id} id={block.id}>
                 {({ handleProps }) => (
-                  <div className="group/block relative flex">
+                  <div
+                    className="group/block relative flex transition-all duration-150"
+                    style={{
+                      backgroundColor: focusedBlockId === block.id ? `hsl(${settings.primaryColor} / 0.03)` : "transparent",
+                      borderRadius: "12px",
+                      padding: "4px 8px",
+                      marginLeft: "-8px",
+                      marginRight: "-8px",
+                      outline: focusedBlockId === block.id ? `1px solid hsl(${settings.primaryColor} / 0.06)` : "1px solid transparent",
+                    }}
+                    onFocusCapture={() => setFocusedBlockId(block.id)}
+                    onClickCapture={() => setFocusedBlockId(block.id)}
+                  >
                     {/* Block drag handle */}
                     <span
-                      className="shrink-0 cursor-grab active:cursor-grabbing opacity-0 group-hover/block:opacity-40 transition-opacity pt-1 -ml-6 pr-1"
+                      className="shrink-0 cursor-grab active:cursor-grabbing opacity-0 group-hover/block:opacity-40 transition-opacity pt-1 pr-1"
                       style={{ color: `hsl(${settings.mutedForegroundColor})` }}
                       {...handleProps}
                     >
@@ -225,7 +261,7 @@ const SectionEditor = ({
                     </span>
                     <div className="flex-1 min-w-0 relative">
                       <div className="absolute right-0 top-1 opacity-0 group-hover/block:opacity-100 transition-opacity z-10">
-                        <button onClick={() => onDeleteBlock(block.id)} className="p-1" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
+                        <button onClick={() => onDeleteBlock(block.id)} className="p-1 rounded-lg hover:bg-destructive/10 transition-colors" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
