@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Type, AlignLeft, Code, ImageIcon, Film, Youtube, ListOrdered, List, StickyNote, AlertCircle, Layout as LayoutIcon, Columns, CreditCard, Footprints, Table2, Minus, Quote, Globe, CodeSquare, FileEdit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
 
@@ -63,16 +63,26 @@ export const weightOptions = [
 export type BlockKey = keyof DS["blockStyles"];
 
 export const blockSections: { key: BlockKey; label: string; icon: any }[] = [
-  { key: "heading", label: "Heading", icon: null },
-  { key: "paragraph", label: "Paragraph", icon: null },
-  { key: "code_block", label: "Code Block", icon: null },
-  { key: "image", label: "Image", icon: null },
-  { key: "video", label: "Video", icon: null },
-  { key: "youtube", label: "YouTube Embed", icon: null },
-  { key: "ordered_list", label: "Numbered List", icon: null },
-  { key: "unordered_list", label: "Bullet List", icon: null },
-  { key: "note", label: "Note", icon: null },
-  { key: "callout", label: "Callout", icon: null },
+  { key: "heading", label: "Heading", icon: Type },
+  { key: "paragraph", label: "Paragraph", icon: AlignLeft },
+  { key: "code_block", label: "Code Block", icon: Code },
+  { key: "image", label: "Image", icon: ImageIcon },
+  { key: "video", label: "Video", icon: Film },
+  { key: "youtube", label: "YouTube", icon: Youtube },
+  { key: "ordered_list", label: "Numbered List", icon: ListOrdered },
+  { key: "unordered_list", label: "Bullet List", icon: List },
+  { key: "note", label: "Note", icon: StickyNote },
+  { key: "callout", label: "Callout", icon: AlertCircle },
+  { key: "tabs", label: "Tabs", icon: Columns },
+  { key: "accordion", label: "Accordion", icon: ChevronDown },
+  { key: "card", label: "Card", icon: CreditCard },
+  { key: "steps", label: "Steps", icon: Footprints },
+  { key: "table", label: "Table", icon: Table2 },
+  { key: "divider", label: "Divider", icon: Minus },
+  { key: "quote", label: "Quote", icon: Quote },
+  { key: "api_endpoint", label: "API Endpoint", icon: Globe },
+  { key: "code_tabs", label: "Code Tabs", icon: CodeSquare },
+  { key: "inline_editor", label: "Inline Editor", icon: FileEdit },
 ];
 
 // ─── Shared Controls ─────────────────────────────────
@@ -372,33 +382,126 @@ export function BlockControls({
   updateBlockStyle: (block: BlockKey, key: keyof BlockStyleSettings, value: any) => void;
 }) {
   const bs = local.blockStyles[blockKey];
-  const label = blockSections.find((b) => b.key === blockKey)?.label || blockKey;
 
-  const supportsTextStyle = ["heading", "paragraph", "code_block", "ordered_list", "unordered_list", "note", "callout", "image"].includes(blockKey);
-  const supportsBackground = ["code_block", "note", "callout", "image", "video", "youtube"].includes(blockKey);
-  const supportsBorder = ["note", "callout", "code_block", "image", "video", "youtube"].includes(blockKey);
-  const supportsRadius = ["code_block", "note", "callout", "image", "video", "youtube"].includes(blockKey);
-  const supportsPadding = ["code_block", "note", "callout", "image", "video", "youtube"].includes(blockKey);
-
+  // Common resolvers
   const resolvedColor = bs.color || local.foregroundColor;
   const resolvedBg = bs.backgroundColor || (blockKey === "code_block" ? local.codeBlockBg : blockKey === "note" ? local.noteBg : blockKey === "callout" ? local.accentColor : "0 0% 100%");
   const resolvedBorder = bs.borderColor || (blockKey === "note" ? local.noteBorderColor : local.borderColor);
-  const resolvedFont = bs.fontFamily || (blockKey === "heading" ? local.headingFont : blockKey === "code_block" ? local.codeFont : local.bodyFont);
-  const resolvedSize = bs.fontSize || (blockKey === "heading" ? local.headingFontSize : blockKey === "image" ? local.baseFontSize - 1 : local.baseFontSize);
+  const resolvedFont = bs.fontFamily || (blockKey === "heading" ? local.headingFont : blockKey === "code_block" || blockKey === "code_tabs" ? local.codeFont : local.bodyFont);
+  const resolvedSize = bs.fontSize || (blockKey === "heading" ? local.headingFontSize : local.baseFontSize);
   const resolvedWeight = bs.fontWeight || (blockKey === "heading" ? local.headingWeight : "400");
-  const resolvedRadius = bs.borderRadius ?? (blockKey === "code_block" ? local.codeBlockBorderRadius : 8);
+  const resolvedRadius = bs.borderRadius ?? (blockKey === "code_block" || blockKey === "code_tabs" ? local.codeBlockBorderRadius : 8);
   const resolvedPadding = bs.padding ?? (["code_block", "note", "callout"].includes(blockKey) ? 16 : 0);
+
+  // What controls each block type supports
+  const commonTextBlocks = ["heading", "paragraph", "code_block", "ordered_list", "unordered_list", "note", "callout", "image", "quote", "card", "steps", "tabs", "accordion", "api_endpoint", "code_tabs", "table", "inline_editor"];
+  const commonBgBlocks = ["code_block", "note", "callout", "image", "video", "youtube", "card", "accordion", "tabs", "table", "api_endpoint", "code_tabs"];
+  const commonBorderBlocks = ["note", "callout", "code_block", "image", "video", "youtube", "card", "accordion", "table", "api_endpoint", "code_tabs", "quote"];
+  const commonRadiusBlocks = ["code_block", "note", "callout", "image", "video", "youtube", "card", "accordion", "table", "api_endpoint", "code_tabs"];
+  const commonPaddingBlocks = ["code_block", "note", "callout", "image", "video", "youtube", "card", "accordion", "table", "api_endpoint", "code_tabs"];
+
+  const supportsText = commonTextBlocks.includes(blockKey);
+  const supportsBg = commonBgBlocks.includes(blockKey);
+  const supportsBorder = commonBorderBlocks.includes(blockKey);
+  const supportsRadius = commonRadiusBlocks.includes(blockKey);
+  const supportsPadding = commonPaddingBlocks.includes(blockKey);
 
   return (
     <>
-      {supportsTextStyle && <ColorField label="Text Color" value={resolvedColor} onChange={(v) => updateBlockStyle(blockKey, "color", v)} />}
-      {supportsBackground && <ColorField label="Background" value={resolvedBg} onChange={(v) => updateBlockStyle(blockKey, "backgroundColor", v)} />}
+      {/* Common controls */}
+      {supportsText && <ColorField label="Text Color" value={resolvedColor} onChange={(v) => updateBlockStyle(blockKey, "color", v)} />}
+      {supportsBg && <ColorField label="Background" value={resolvedBg} onChange={(v) => updateBlockStyle(blockKey, "backgroundColor", v)} />}
       {supportsBorder && <ColorField label="Border" value={resolvedBorder} onChange={(v) => updateBlockStyle(blockKey, "borderColor", v)} />}
-      {supportsTextStyle && <FontSelect label="Font" value={resolvedFont} onChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)} options={blockKey === "code_block" ? codeFontOptions : fontOptions} />}
-      {supportsTextStyle && <SliderField label="Font Size" value={resolvedSize} onChange={(v) => updateBlockStyle(blockKey, "fontSize", v)} min={10} max={32} step={1} />}
-      {supportsTextStyle && <WeightSelect label="Font Weight" value={resolvedWeight} onChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)} />}
+      {supportsText && <FontSelect label="Font" value={resolvedFont} onChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)} options={["code_block", "code_tabs"].includes(blockKey) ? codeFontOptions : fontOptions} />}
+      {supportsText && <SliderField label="Font Size" value={resolvedSize} onChange={(v) => updateBlockStyle(blockKey, "fontSize", v)} min={10} max={32} step={1} />}
+      {supportsText && <WeightSelect label="Font Weight" value={resolvedWeight} onChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)} />}
       {supportsRadius && <SliderField label="Border Radius" value={resolvedRadius} onChange={(v) => updateBlockStyle(blockKey, "borderRadius", v)} min={0} max={20} step={1} />}
       {supportsPadding && <SliderField label="Padding" value={resolvedPadding} onChange={(v) => updateBlockStyle(blockKey, "padding", v)} min={0} max={32} step={2} />}
+
+      {/* ─── Per-block-type specific controls ─── */}
+
+      {blockKey === "table" && (
+        <>
+          <ColorField label="Header Background" value={bs.headerBg || local.accentColor} onChange={(v) => updateBlockStyle(blockKey, "headerBg", v)} />
+          <WeightSelect label="Header Weight" value={bs.headerFontWeight || "600"} onChange={(v) => updateBlockStyle(blockKey, "headerFontWeight", v)} />
+          <SliderField label="Cell Padding" value={bs.cellPadding ?? 10} onChange={(v) => updateBlockStyle(blockKey, "cellPadding", v)} min={4} max={24} step={2} />
+          <ToggleField label="Cell Borders" checked={bs.showCellBorders !== false} onChange={(v) => updateBlockStyle(blockKey, "showCellBorders", v)} />
+          <ToggleField label="Striped Rows" checked={bs.stripedRows === true} onChange={(v) => updateBlockStyle(blockKey, "stripedRows", v)} />
+          {bs.stripedRows && <ColorField label="Stripe Color" value={bs.stripedRowBg || local.accentColor} onChange={(v) => updateBlockStyle(blockKey, "stripedRowBg", v)} />}
+        </>
+      )}
+
+      {blockKey === "api_endpoint" && (
+        <>
+          <ColorField label="Header BG" value={bs.headerBgColor || local.accentColor} onChange={(v) => updateBlockStyle(blockKey, "headerBgColor", v)} />
+          <ColorField label="Response BG" value={bs.responseBg || local.codeBlockBg} onChange={(v) => updateBlockStyle(blockKey, "responseBg", v)} />
+          <SliderField label="Badge Radius" value={bs.methodBadgeRadius ?? 4} onChange={(v) => updateBlockStyle(blockKey, "methodBadgeRadius", v)} min={0} max={12} step={1} />
+          <SliderField label="Param Font Size" value={bs.paramFontSize ?? 13} onChange={(v) => updateBlockStyle(blockKey, "paramFontSize", v)} min={10} max={16} step={1} />
+        </>
+      )}
+
+      {blockKey === "steps" && (
+        <>
+          <SliderField label="Circle Size" value={bs.circleSize ?? 28} onChange={(v) => updateBlockStyle(blockKey, "circleSize", v)} min={20} max={40} step={2} />
+          <ColorField label="Circle BG" value={bs.circleBg || local.primaryColor} onChange={(v) => updateBlockStyle(blockKey, "circleBg", v)} />
+          <ColorField label="Circle Text" value={bs.circleColor || local.primaryForegroundColor} onChange={(v) => updateBlockStyle(blockKey, "circleColor", v)} />
+          <ColorField label="Connector" value={bs.connectorColor || local.borderColor} onChange={(v) => updateBlockStyle(blockKey, "connectorColor", v)} />
+          <SliderField label="Connector Width" value={bs.connectorWidth ?? 2} onChange={(v) => updateBlockStyle(blockKey, "connectorWidth", v)} min={1} max={4} step={1} />
+        </>
+      )}
+
+      {blockKey === "quote" && (
+        <>
+          <SliderField label="Border Width" value={bs.borderWidth ?? 3} onChange={(v) => updateBlockStyle(blockKey, "borderWidth", v)} min={1} max={8} step={1} />
+          <ToggleField label="Italic" checked={bs.italic !== false} onChange={(v) => updateBlockStyle(blockKey, "italic", v)} />
+          <ColorField label="Attribution Color" value={bs.attributionColor || local.mutedForegroundColor} onChange={(v) => updateBlockStyle(blockKey, "attributionColor", v)} />
+        </>
+      )}
+
+      {blockKey === "divider" && (
+        <>
+          <ColorField label="Color" value={bs.borderColor || local.borderColor} onChange={(v) => updateBlockStyle(blockKey, "borderColor", v)} />
+          <SliderField label="Thickness" value={bs.thickness ?? 1} onChange={(v) => updateBlockStyle(blockKey, "thickness", v)} min={1} max={6} step={1} />
+          <InlineSelect label="Style" value={bs.dividerStyle || "solid"} onChange={(v) => updateBlockStyle(blockKey, "dividerStyle", v)} options={[
+            { value: "solid", label: "Solid" },
+            { value: "dashed", label: "Dashed" },
+            { value: "dotted", label: "Dotted" },
+          ]} />
+          <SliderField label="Spacing" value={bs.spacing ?? 24} onChange={(v) => updateBlockStyle(blockKey, "spacing", v)} min={8} max={64} step={4} />
+        </>
+      )}
+
+      {blockKey === "card" && (
+        <>
+          <SliderField label="Title Size" value={bs.titleFontSize ?? local.baseFontSize} onChange={(v) => updateBlockStyle(blockKey, "titleFontSize", v)} min={12} max={24} step={1} />
+          <WeightSelect label="Title Weight" value={bs.titleWeight || local.headingWeight} onChange={(v) => updateBlockStyle(blockKey, "titleWeight", v)} />
+          <ToggleField label="Shadow" checked={bs.showShadow === true} onChange={(v) => updateBlockStyle(blockKey, "showShadow", v)} />
+        </>
+      )}
+
+      {blockKey === "accordion" && (
+        <>
+          <ColorField label="Header BG" value={bs.headerBgAccordion || "0 0% 100%"} onChange={(v) => updateBlockStyle(blockKey, "headerBgAccordion", v)} />
+          <ColorField label="Content BG" value={bs.contentBg || "0 0% 100%"} onChange={(v) => updateBlockStyle(blockKey, "contentBg", v)} />
+          <SliderField label="Icon Size" value={bs.iconSize ?? 12} onChange={(v) => updateBlockStyle(blockKey, "iconSize", v)} min={8} max={18} step={1} />
+        </>
+      )}
+
+      {blockKey === "tabs" && (
+        <>
+          <ColorField label="Active Tab" value={bs.activeColor || local.primaryColor} onChange={(v) => updateBlockStyle(blockKey, "activeColor", v)} />
+          <ColorField label="Inactive Tab" value={bs.inactiveColor || local.mutedForegroundColor} onChange={(v) => updateBlockStyle(blockKey, "inactiveColor", v)} />
+          <ColorField label="Indicator" value={bs.indicatorColor || local.primaryColor} onChange={(v) => updateBlockStyle(blockKey, "indicatorColor", v)} />
+          <SliderField label="Tab Padding" value={bs.tabPadding ?? 8} onChange={(v) => updateBlockStyle(blockKey, "tabPadding", v)} min={4} max={20} step={2} />
+        </>
+      )}
+
+      {blockKey === "code_tabs" && (
+        <>
+          <ColorField label="Tab Bar BG" value={bs.tabBarBg || local.accentColor} onChange={(v) => updateBlockStyle(blockKey, "tabBarBg", v)} />
+          <ColorField label="Active Tab" value={bs.activeTabColor || local.primaryColor} onChange={(v) => updateBlockStyle(blockKey, "activeTabColor", v)} />
+        </>
+      )}
     </>
   );
 }

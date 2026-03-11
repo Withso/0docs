@@ -7,8 +7,7 @@ import type { DesignSubMode } from "@/components/builder/BuilderHeader";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Save, RotateCcw, Type, AlignLeft, Code, ImageIcon,
-  Film, Youtube, ListOrdered, List, StickyNote, AlertCircle, Layout, Sidebar, Palette,
+  Save, RotateCcw, Type, Palette, Layout, Sidebar,
   PanelRightClose, PanelRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -22,12 +21,6 @@ import {
   blockSections, type BlockKey,
 } from "@/components/builder/DesignControls";
 
-// Icon map for block sections
-const blockIconMap: Record<string, any> = {
-  heading: Type, paragraph: AlignLeft, code_block: Code, image: ImageIcon,
-  video: Film, youtube: Youtube, ordered_list: ListOrdered, unordered_list: List,
-  note: StickyNote, callout: AlertCircle,
-};
 
 // ─── Interfaces ──────────────────────────────────────
 interface DocPage { id: string; title: string; slug: string; order_index: number; }
@@ -186,7 +179,7 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
                 </div>
 
                 {blockSections.map((item) => (
-                  <SettingsSection key={item.key} title={item.label} icon={blockIconMap[item.key]}>
+                  <SettingsSection key={item.key} title={item.label} icon={item.icon}>
                     <BlockControls blockKey={item.key} local={local} updateBlockStyle={updateBlockStyle} />
                   </SettingsSection>
                 ))}

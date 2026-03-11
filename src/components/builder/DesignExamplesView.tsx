@@ -4,15 +4,11 @@ import { defaultDesignSettings } from "@/hooks/use-design-settings";
 import DocBlockRenderer from "@/components/docs/DocBlockRenderer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Save, RotateCcw, PanelRightClose, PanelRight } from "lucide-react";
-import {
-  Type, AlignLeft, Code, ImageIcon, Film, Youtube, ListOrdered, List,
-  StickyNote, AlertCircle, Layout, Sidebar, Palette,
-} from "lucide-react";
+import { Save, RotateCcw, PanelRightClose, PanelRight, Palette, Layout, Sidebar } from "lucide-react";
+import { Type } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
-// ─── Shared Controls ─────────────────────────────────
 import {
   SettingsSection, SliderField, ColorField, ToggleField,
   FontSelect, WeightSelect, ColorControls, LayoutControls,
@@ -23,22 +19,25 @@ import {
 // ─── Sample Blocks ───────────────────────────────────
 const sampleBlocks: Record<string, { type: string; content: any }> = {
   heading: { type: "heading", content: { text: "Getting Started with DocBuilder" } },
-  paragraph: { type: "paragraph", content: { text: "DocBuilder is a powerful documentation platform that helps you create beautiful, organized docs for your projects. Customize every aspect of your documentation's appearance using the design settings." } },
+  paragraph: { type: "paragraph", content: { text: "DocBuilder is a powerful documentation platform that helps you create beautiful, organized docs for your projects. Customize every aspect of your documentation's appearance." } },
   code_block: { type: "code_block", content: { language: "typescript", code: `import { createClient } from '@supabase/supabase-js'\n\nconst supabase = createClient(\n  process.env.SUPABASE_URL,\n  process.env.SUPABASE_KEY\n)` } },
   image: { type: "image", content: { url: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=300&fit=crop", alt: "Code on a screen — sample image block" } },
   video: { type: "video", content: { url: "" } },
   youtube: { type: "youtube", content: { videoId: "dQw4w9WgXcQ", title: "Sample YouTube Embed" } },
   ordered_list: { type: "ordered_list", content: { items: ["Install the package from npm", "Configure your project settings", "Start building your documentation"] } },
   unordered_list: { type: "unordered_list", content: { items: ["Fully customizable design system", "Real-time live preview", "OpenAPI import support"] } },
-  note: { type: "note", content: { text: "This is a note block. Use it to highlight important information that readers should pay attention to." } },
-  callout: { type: "callout", content: { text: "Callout blocks are great for tips, warnings, or any content you want to draw special attention to." } },
-};
-
-// Icon map for block sections
-const blockIconMap: Record<string, any> = {
-  heading: Type, paragraph: AlignLeft, code_block: Code, image: ImageIcon,
-  video: Film, youtube: Youtube, ordered_list: ListOrdered, unordered_list: List,
-  note: StickyNote, callout: AlertCircle,
+  note: { type: "note", content: { text: "This is a note block. Use it to highlight important information." } },
+  callout: { type: "callout", content: { text: "Callout blocks are great for tips, warnings, or content you want to highlight." } },
+  tabs: { type: "tabs", content: { tabs: [{ label: "React", content: "Use React for building interactive UIs." }, { label: "Vue", content: "Vue is progressive and versatile." }] } },
+  accordion: { type: "accordion", content: { items: [{ title: "What is DocBuilder?", content: "A documentation platform with full customization." }, { title: "How to get started?", content: "Create a project and start adding pages." }] } },
+  card: { type: "card", content: { title: "Quick Start Guide", description: "Learn how to set up your first documentation project in minutes.", link: "#" } },
+  steps: { type: "steps", content: { items: [{ title: "Install", description: "Add the package to your project." }, { title: "Configure", description: "Set up your config file." }, { title: "Deploy", description: "Push to production." }] } },
+  table: { type: "table", content: { headers: ["Property", "Type", "Default"], rows: [["color", "string", "#000"], ["size", "number", "16"], ["weight", "string", "400"]] } },
+  divider: { type: "divider", content: {} },
+  quote: { type: "quote", content: { text: "The best documentation is the one that doesn't need to exist.", attribution: "Someone wise" } },
+  api_endpoint: { type: "api_endpoint", content: { method: "GET", path: "/api/v1/projects", description: "Retrieve all projects for the authenticated user.", parameters: [{ name: "limit", type: "number", required: false }, { name: "offset", type: "number", required: false }], response: '{\n  "data": [],\n  "total": 0\n}' } },
+  code_tabs: { type: "code_tabs", content: { tabs: [{ label: "JavaScript", code: 'console.log("Hello");' }, { label: "Python", code: 'print("Hello")' }] } },
+  inline_editor: { type: "inline_editor", content: { html: "<p>Rich text content with <strong>bold</strong> and <em>italic</em> formatting.</p>" } },
 };
 
 // ─── Nav items ───────────────────────────────────────
@@ -48,16 +47,7 @@ const navItems: NavItem[] = [
   { id: "colors", label: "Colors", icon: Palette, group: "global" },
   { id: "layout", label: "Layout", icon: Layout, group: "global" },
   { id: "sidebar", label: "Sidebar", icon: Sidebar, group: "global" },
-  { id: "heading", label: "Heading", icon: Type, group: "block" },
-  { id: "paragraph", label: "Paragraph", icon: AlignLeft, group: "block" },
-  { id: "code_block", label: "Code Block", icon: Code, group: "block" },
-  { id: "image", label: "Image", icon: ImageIcon, group: "block" },
-  { id: "video", label: "Video", icon: Film, group: "block" },
-  { id: "youtube", label: "YouTube", icon: Youtube, group: "block" },
-  { id: "ordered_list", label: "Numbered List", icon: ListOrdered, group: "block" },
-  { id: "unordered_list", label: "Bullet List", icon: List, group: "block" },
-  { id: "note", label: "Note", icon: StickyNote, group: "block" },
-  { id: "callout", label: "Callout", icon: AlertCircle, group: "block" },
+  ...blockSections.map((b) => ({ id: b.key, label: b.label, icon: b.icon, group: "block" as const })),
 ];
 
 // ─── Props ───────────────────────────────────────────
@@ -97,7 +87,6 @@ const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: D
     order_index: 0,
   });
 
-  // Render active section content
   const renderActiveContent = () => {
     switch (activeNav) {
       case "typography":
@@ -117,7 +106,7 @@ const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: D
                 Heading Example
               </h3>
               <p style={{ fontFamily: `'${local.bodyFont}', sans-serif`, fontSize: `${local.baseFontSize}px`, lineHeight: local.lineHeight, color: `hsl(${local.foregroundColor})` }}>
-                Body text using your selected font. This shows how paragraph content will appear in your documentation.
+                Body text using your selected font.
               </p>
               <pre style={{ fontFamily: `'${local.codeFont}', monospace`, fontSize: `${local.baseFontSize - 1}px`, backgroundColor: `hsl(${local.codeBlockBg})`, padding: "12px", borderRadius: `${local.codeBlockBorderRadius}px`, marginTop: "12px" }}>
                 <code>{`const example = "inline code font"`}</code>
@@ -176,7 +165,6 @@ const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: D
           </div>
         );
       default: {
-        // Block styles
         const blockKey = activeNav as BlockKey;
         const sample = sampleBlocks[blockKey];
         return (
@@ -197,7 +185,6 @@ const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: D
 
   return (
     <div className="flex-1 flex min-h-0 relative">
-      {/* Main: Preview area with controls */}
       <ScrollArea className="flex-1">
         <div className="max-w-[680px] mx-auto px-8 py-8">
           <h2 className="text-[18px] font-semibold text-foreground mb-6">
@@ -208,7 +195,6 @@ const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: D
         </div>
       </ScrollArea>
 
-      {/* Right: Floating style guide panel */}
       {panelOpen && (
         <div className="shrink-0 p-2 pl-0">
           <aside
@@ -220,7 +206,6 @@ const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: D
               boxShadow: '0 4px 24px -4px hsl(var(--foreground) / 0.08)',
             }}
           >
-            {/* Header */}
             <div className="px-3 py-3 shrink-0 flex items-center justify-between">
               <span className="text-[13px] font-semibold text-foreground">Style Guide</span>
               <div className="flex items-center gap-1">
@@ -275,7 +260,7 @@ const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: D
                     )}
                     style={activeNav === item.id ? { backgroundColor: 'hsl(var(--foreground) / 0.06)' } : undefined}
                   >
-                    <item.icon className="h-3.5 w-3.5 shrink-0" />
+                    {item.icon && <item.icon className="h-3.5 w-3.5 shrink-0" />}
                     {item.label}
                   </button>
                 ))}
@@ -285,7 +270,6 @@ const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: D
         </div>
       )}
 
-      {/* Toggle panel button */}
       <button
         onClick={() => setPanelOpen(!panelOpen)}
         className="fixed bottom-4 right-4 z-50 h-8 w-8 rounded-xl bg-background/90 backdrop-blur-sm shadow-platform-sm flex items-center justify-center hover:bg-muted transition-all hover:shadow-platform-md"
@@ -297,7 +281,6 @@ const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: D
   );
 };
 
-// ─── Preview Card ────────────────────────────────────
 function PreviewCard({ settings, children }: { settings: DS; children: React.ReactNode }) {
   return (
     <div
