@@ -107,8 +107,8 @@ function SettingsSection({ title, icon: Icon, children, defaultOpen = false }: {
 
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-[11px] font-medium text-muted-foreground">{label}</Label>
+    <div className="space-y-1">
+      <Label className="text-[10.5px] font-medium text-muted-foreground">{label}</Label>
       {children}
     </div>
   );
