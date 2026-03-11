@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, BarChart3, Settings, ChevronRight, Upload } from "lucide-react";
 
-export type BuilderMode = "editor" | "design" | "preview" | "analytics" | "settings";
+export type BuilderMode = "editor" | "design" | "preview" | "analytics" | "settings" | "publish";
 export type DesignSubMode = "live" | "examples";
 
 interface BuilderHeaderProps {
