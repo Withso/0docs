@@ -204,6 +204,7 @@ function InlineSelect({ label, value, onChange, options }: {
   label: string; value: string; onChange: (v: string) => void;
   options: { value: string; label: string; style?: React.CSSProperties }[];
 }) {
+  const hasStyles = options.some(o => o.style);
   return (
     <div
       className="relative rounded-xl h-[34px] flex items-center cursor-pointer"
@@ -222,10 +223,24 @@ function InlineSelect({ label, value, onChange, options }: {
           </span>
         </SelectTrigger>
         <SelectContent>
-          {options.map((o) => (
-            <SelectItem key={o.value} value={o.value} className="text-[11px]">
-              <span style={o.style}>{o.label}</span>
-            </SelectItem>
+          {hasStyles ? options.map((o) => (
+            <SelectPrimitive.Item
+              key={o.value}
+              value={o.value}
+              className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-[11px] outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground"
+            >
+              <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                <SelectPrimitive.ItemIndicator>
+                  <Check className="h-4 w-4" />
+                </SelectPrimitive.ItemIndicator>
+              </span>
+              <SelectPrimitive.ItemText>{o.label}</SelectPrimitive.ItemText>
+              <span className="absolute inset-0 flex items-center pl-8 pr-2 pointer-events-none" style={o.style}>
+                {o.label}
+              </span>
+            </SelectPrimitive.Item>
+          )) : options.map((o) => (
+            <SelectItem key={o.value} value={o.value} className="text-[11px]">{o.label}</SelectItem>
           ))}
         </SelectContent>
       </Select>
