@@ -198,33 +198,53 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-function FontSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+function InlineSelect({ label, value, onChange, options }: {
+  label: string; value: string; onChange: (v: string) => void;
+  options: { value: string; label: string; style?: React.CSSProperties }[];
+}) {
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-7 text-[11px] bg-muted/30 border-0 rounded-lg focus:ring-1">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((f) => (
-          <SelectItem key={f} value={f} className="text-[11px]" style={{ fontFamily: f }}>{f}</SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div
+      className="relative rounded-xl h-[34px] flex items-center cursor-pointer"
+      style={{ backgroundColor: 'hsl(var(--foreground) / 0.06)' }}
+    >
+      <span className="absolute left-3.5 text-[11px] font-medium pointer-events-none select-none" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>
+        {label}
+      </span>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-full h-full bg-transparent border-0 shadow-none rounded-xl pl-3.5 pr-3 focus:ring-0 focus-visible:ring-0">
+          <span className="ml-auto text-[11.5px] font-medium" style={{ color: 'hsl(var(--foreground) / 0.7)' }}>
+            <SelectValue />
+          </span>
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value} className="text-[11px]" style={o.style}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 
-function WeightSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function FontSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-7 text-[11px] bg-muted/30 border-0 rounded-lg focus:ring-1">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {weightOptions.map((w) => (
-          <SelectItem key={w.value} value={w.value} className="text-[11px]">{w.label}</SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <InlineSelect
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={options.map((f) => ({ value: f, label: f, style: { fontFamily: f } }))}
+    />
+  );
+}
+
+function WeightSelect({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <InlineSelect
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={weightOptions.map((w) => ({ value: w.value, label: w.label }))}
+    />
   );
 }
 
