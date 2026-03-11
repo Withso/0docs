@@ -305,7 +305,7 @@ const Index = () => {
           }}
         >
           <div className="flex items-center" style={{ width: `${settings.sidebarWidth}px`, flexShrink: 0 }}>
-            <span className="font-semibold text-[15px] tracking-tight text-foreground">0colors</span>
+            <span className="font-semibold text-[15px] tracking-tight text-foreground">0docs</span>
           </div>
           <div className="flex-1 min-w-0 lg:pl-4">
             <button
