@@ -66,6 +66,7 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
 
   const docsUrl = `${window.location.origin}/docs/${slug}`;
 
+  const copyUrl = () => {
     navigator.clipboard.writeText(docsUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
