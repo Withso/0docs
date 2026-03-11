@@ -138,8 +138,8 @@ function SliderField({ label, value, onChange, min, max, step, unit = "px" }: {
       >
         {/* Thin vertical line at right edge of filled area */}
         <div
-          className="absolute right-0 top-[15%] bottom-[15%] w-[2.5px] rounded-full"
-          style={{ backgroundColor: 'hsl(var(--foreground) / 0.25)' }}
+          className="absolute top-[22%] bottom-[22%] w-[2px] rounded-full"
+          style={{ right: '2px', backgroundColor: 'hsl(var(--foreground) / 0.22)' }}
         />
       </div>
       {/* Step dots */}
