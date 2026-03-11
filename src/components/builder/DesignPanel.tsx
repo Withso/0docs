@@ -160,12 +160,12 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
 function FontSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-8 text-xs bg-muted/50 border-0 focus:ring-1">
+      <SelectTrigger className="h-7 text-[11px] bg-muted/30 border-0 rounded-lg focus:ring-1">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
         {options.map((f) => (
-          <SelectItem key={f} value={f} className="text-xs" style={{ fontFamily: f }}>{f}</SelectItem>
+          <SelectItem key={f} value={f} className="text-[11px]" style={{ fontFamily: f }}>{f}</SelectItem>
         ))}
       </SelectContent>
     </Select>
