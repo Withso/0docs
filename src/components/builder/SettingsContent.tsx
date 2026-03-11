@@ -10,7 +10,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Save, Globe, Trash2, Copy, Check, Link2 } from "lucide-react";
+import { Save, Globe, Trash2, Copy, Check } from "lucide-react";
 
 interface SettingsContentProps {
   projectId: string;
