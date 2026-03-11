@@ -92,9 +92,6 @@ const BuilderHeader = ({
           {/* Center - Segmented Control (always visible) */}
           <div className="flex items-center justify-center gap-3">
             <SegmentedControl value={mode} onChange={onModeChange} />
-            {mode === "design" && onDesignSubModeChange && (
-              <DesignSubSelect value={designSubMode} onChange={onDesignSubModeChange} />
-            )}
           </div>
 
           {/* Right - icon nav */}
