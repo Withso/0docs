@@ -278,11 +278,14 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-2">DocBuilder</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">0colors</h1>
           <p className="text-muted-foreground mb-4">Documentation is being set up.</p>
-          <Button onClick={() => navigate("/auth")} variant="outline">
-            <LogIn className="h-4 w-4 mr-2" /> Sign In
-          </Button>
+          <button
+            onClick={() => navigate("/auth")}
+            className="h-10 px-4 rounded-lg inline-flex items-center gap-2 font-medium text-sm border border-border hover:bg-accent transition-colors"
+          >
+            <LogIn className="h-4 w-4" /> Sign In
+          </button>
         </div>
       </div>
     );
