@@ -482,10 +482,10 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
                 </div>
 
                 <SettingsSection title="Typography" icon={Type} defaultOpen>
-                  <FieldRow label="Heading Font"><FontSelect value={local.headingFont} onChange={(v) => update("headingFont", v)} options={fontOptions} /></FieldRow>
-                  <FieldRow label="Body Font"><FontSelect value={local.bodyFont} onChange={(v) => update("bodyFont", v)} options={fontOptions} /></FieldRow>
-                  <FieldRow label="Code Font"><FontSelect value={local.codeFont} onChange={(v) => update("codeFont", v)} options={codeFontOptions} /></FieldRow>
-                  <FieldRow label="Heading Weight"><WeightSelect value={local.headingWeight} onChange={(v) => update("headingWeight", v)} /></FieldRow>
+                  <FontSelect label="Heading Font" value={local.headingFont} onChange={(v) => update("headingFont", v)} options={fontOptions} />
+                  <FontSelect label="Body Font" value={local.bodyFont} onChange={(v) => update("bodyFont", v)} options={fontOptions} />
+                  <FontSelect label="Code Font" value={local.codeFont} onChange={(v) => update("codeFont", v)} options={codeFontOptions} />
+                  <WeightSelect label="Heading Weight" value={local.headingWeight} onChange={(v) => update("headingWeight", v)} />
                   <SliderField label="Base Font Size" value={local.baseFontSize} onChange={(v) => update("baseFontSize", v)} min={12} max={20} step={1} />
                   <SliderField label="Heading Size" value={local.headingFontSize} onChange={(v) => update("headingFontSize", v)} min={14} max={32} step={1} />
                   <SliderField label="Line Height" value={local.lineHeight} onChange={(v) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} unit="" />
