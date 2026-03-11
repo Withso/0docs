@@ -173,29 +173,90 @@ function SliderField({ label, value, onChange, min, max, step, unit = "px" }: {
 }
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const [tempHsl, setTempHsl] = useState(value);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => { setTempHsl(value); }, [value]);
+
+  const hexValue = hslToHex(value);
+
   return (
-    <div className="flex items-center justify-between gap-3">
-      <Label className="text-[10.5px] font-medium text-muted-foreground shrink-0">{label}</Label>
-      <div className="flex items-center gap-1.5">
-        <div className="relative">
-          <input
-            type="color"
-            value={hslToHex(value)}
-            onChange={(e) => onChange(hexToHsl(e.target.value))}
-            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-          />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div
+          className="relative rounded-xl h-[34px] flex items-center px-3.5 cursor-pointer"
+          style={{ backgroundColor: 'hsl(var(--foreground) / 0.06)' }}
+        >
+          <span className="text-[11px] font-medium select-none flex-1" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>
+            {label}
+          </span>
+          <span className="text-[10px] font-mono mr-2.5 tabular-nums" style={{ color: 'hsl(var(--foreground) / 0.35)' }}>
+            {hexValue}
+          </span>
           <div
-            className="w-6 h-6 rounded-full shadow-sm cursor-pointer ring-1 ring-border/50"
-            style={{ backgroundColor: `hsl(${value})` }}
+            className="w-5 h-5 rounded-full shrink-0"
+            style={{
+              backgroundColor: `hsl(${value})`,
+              boxShadow: 'inset 0 0 0 1px hsl(var(--foreground) / 0.08)',
+            }}
           />
         </div>
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-[90px] text-[9.5px] h-6 font-mono bg-muted/30 border-0 rounded-md focus-visible:ring-1"
-        />
-      </div>
-    </div>
+      </PopoverTrigger>
+      <PopoverContent
+        side="left"
+        align="start"
+        sideOffset={8}
+        className="w-[220px] p-3 rounded-2xl border-0 shadow-lg"
+        style={{
+          backgroundColor: 'hsl(var(--background) / 0.95)',
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 8px 40px -8px hsl(var(--foreground) / 0.12), 0 0 0 1px hsl(var(--border) / 0.4)',
+        }}
+      >
+        <div className="space-y-3">
+          {/* Color preview swatch */}
+          <div
+            className="w-full h-10 rounded-xl"
+            style={{
+              backgroundColor: `hsl(${tempHsl})`,
+              boxShadow: 'inset 0 0 0 1px hsl(var(--foreground) / 0.06)',
+            }}
+          />
+          {/* Native color input styled as gradient strip */}
+          <div className="relative rounded-lg overflow-hidden h-8">
+            <input
+              type="color"
+              value={hslToHex(tempHsl)}
+              onChange={(e) => {
+                const newHsl = hexToHsl(e.target.value);
+                setTempHsl(newHsl);
+                onChange(newHsl);
+              }}
+              className="absolute inset-0 w-full h-full cursor-pointer border-0 p-0 bg-transparent [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-lg"
+            />
+          </div>
+          {/* HSL text input */}
+          <div
+            className="flex items-center gap-2 rounded-xl h-[32px] px-3"
+            style={{ backgroundColor: 'hsl(var(--foreground) / 0.05)' }}
+          >
+            <span className="text-[9px] font-medium uppercase tracking-wider shrink-0" style={{ color: 'hsl(var(--foreground) / 0.3)' }}>
+              HSL
+            </span>
+            <input
+              value={tempHsl}
+              onChange={(e) => {
+                setTempHsl(e.target.value);
+                onChange(e.target.value);
+              }}
+              className="flex-1 bg-transparent text-[10.5px] font-mono outline-none text-right"
+              style={{ color: 'hsl(var(--foreground) / 0.7)' }}
+              spellCheck={false}
+            />
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
