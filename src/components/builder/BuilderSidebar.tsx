@@ -585,7 +585,7 @@ const BuilderSidebar = ({
     if (item.type === "label") {
       return (
         <div
-          className="rounded px-2 py-1 shadow-lg text-[10px] font-semibold uppercase tracking-widest"
+          className="rounded-xl px-2 py-1 shadow-xl text-[10px] font-semibold uppercase tracking-widest"
           style={{
             backgroundColor: `hsl(${s.sidebarBg})`,
             border: `2px solid hsl(${s.sidebarActiveColor} / 0.3)`,
