@@ -47,64 +47,22 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left panel - Branding */}
-      <div className="hidden lg:flex lg:w-[480px] xl:w-[560px] relative overflow-hidden flex-col justify-between p-10"
-        style={{ background: "var(--gradient-hero)" }}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12)_0%,transparent_50%)]" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-              <FileText className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-semibold text-lg tracking-tight text-white">DocBuilder</span>
-          </div>
+    <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-[400px] animate-fade-in">
+        <div className="flex items-center gap-2.5 mb-10">
+          <span className="font-semibold text-lg tracking-tight text-foreground">0colors</span>
         </div>
 
-        <div className="relative z-10 space-y-6">
-          <h2 className="text-[2rem] font-bold tracking-tight leading-[1.15] text-white">
-            Build beautiful<br />documentation,<br />visually.
-          </h2>
-          <p className="text-white/70 text-[15px] leading-relaxed max-w-sm">
-            Create clean, structured docs with a WYSIWYG editor. 
-            What you see is what your readers get.
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            {isSignUp ? "Create your account" : "Welcome back"}
+          </h1>
+          <p className="text-[14px] text-muted-foreground mt-2">
+            {isSignUp
+              ? "Start building beautiful documentation today"
+              : "Sign in to continue to your projects"}
           </p>
-          <div className="flex items-center gap-4 pt-2">
-            {["AI Search", "19 Block Types", "API Docs", "Analytics"].map((feature) => (
-              <div key={feature} className="flex items-center gap-1.5 text-xs text-white/50">
-                <Sparkles className="h-3 w-3" />
-                {feature}
-              </div>
-            ))}
-          </div>
         </div>
-
-        <p className="relative z-10 text-xs text-white/30">
-          © {new Date().getFullYear()} DocBuilder
-        </p>
-      </div>
-
-      {/* Right panel - Form */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-[400px] animate-fade-in">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2.5 mb-10">
-            <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center shadow-platform-sm">
-              <FileText className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-lg tracking-tight text-foreground">DocBuilder</span>
-          </div>
-
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              {isSignUp ? "Create your account" : "Welcome back"}
-            </h1>
-            <p className="text-[14px] text-muted-foreground mt-2">
-              {isSignUp
-                ? "Start building beautiful documentation today"
-                : "Sign in to continue to your projects"}
-            </p>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
