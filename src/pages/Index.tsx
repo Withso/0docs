@@ -43,36 +43,49 @@ const Index = () => {
       const proj = projects[0];
       setProject(proj);
 
+      // Fetch pages in parallel with first-page content
       const { data: pagesData } = await supabase
         .from("pages")
         .select("*")
         .eq("project_id", proj.id)
         .order("order_index");
 
-      if (pagesData) {
+      if (pagesData && pagesData.length > 0) {
         setPages(pagesData as Page[]);
-        setActivePage((pagesData[0] || null) as Page | null);
+        const firstPage = pagesData[0] as Page;
+        setActivePage(firstPage);
 
         const pageIds = pagesData.map((p) => p.id);
-        if (pageIds.length > 0) {
-          const { data: allSecs } = await supabase
-            .from("sections")
-            .select("*")
-            .in("page_id", pageIds)
-            .order("order_index");
-          if (allSecs) {
-            setAllSections(allSecs);
-            const secIds = allSecs.map((s) => s.id);
-            if (secIds.length > 0) {
-              const { data: allBlks } = await supabase
-                .from("blocks")
-                .select("*")
-                .in("section_id", secIds)
-                .order("order_index");
-              setAllBlocks(allBlks || []);
-            }
-          }
+
+        // Fetch all sections, first-page sections, and first-page analytics in parallel
+        const [allSecsRes, firstPageSecsRes] = await Promise.all([
+          supabase.from("sections").select("*").in("page_id", pageIds).order("order_index"),
+          supabase.from("sections").select("*").eq("page_id", firstPage.id).order("order_index"),
+        ]);
+
+        const allSecs = allSecsRes.data || [];
+        setAllSections(allSecs);
+
+        if (firstPageSecsRes.data) {
+          setSections(firstPageSecsRes.data);
+          const firstSecIds = firstPageSecsRes.data.map((s) => s.id);
+          const allSecIds = allSecs.map((s) => s.id);
+
+          // Fetch first-page blocks and all blocks in parallel
+          const [firstBlksRes, allBlksRes] = await Promise.all([
+            firstSecIds.length > 0
+              ? supabase.from("blocks").select("*").in("section_id", firstSecIds).order("order_index")
+              : Promise.resolve({ data: [] }),
+            allSecIds.length > 0
+              ? supabase.from("blocks").select("*").in("section_id", allSecIds).order("order_index")
+              : Promise.resolve({ data: [] }),
+          ]);
+
+          setBlocks((firstBlksRes.data || []) as Block[]);
+          setAllBlocks((allBlksRes.data || []) as Block[]);
         }
+      } else if (pagesData) {
+        setPages([]);
       }
       setLoading(false);
     };
