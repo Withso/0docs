@@ -221,7 +221,9 @@ function InlineSelect({ label, value, onChange, options }: {
         </SelectTrigger>
         <SelectContent>
           {options.map((o) => (
-            <SelectItem key={o.value} value={o.value} className="text-[11px]" style={o.style}>{o.label}</SelectItem>
+            <SelectItem key={o.value} value={o.value} className="text-[11px]">
+              <span style={o.style}>{o.label}</span>
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
