@@ -26,7 +26,7 @@ const Slider = React.forwardRef<
       </SliderPrimitive.Track>
       <SliderPrimitive.Thumb className={cn(
         isBarSlider
-          ? "block w-[3px] h-[55%] rounded-[1.5px] border-none bg-[hsl(var(--foreground)/0.3)] shadow-none cursor-ew-resize transition-colors hover:bg-[hsl(var(--foreground)/0.45)] active:bg-[hsl(var(--foreground)/0.55)] focus-visible:outline-none"
+          ? "block w-0 h-0 opacity-0 pointer-events-none focus-visible:outline-none"
           : "block h-4 w-4 rounded-full border-[1.5px] border-primary bg-background shadow-sm ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 hover:scale-110 hover:shadow-md active:scale-95"
       )} />
     </SliderPrimitive.Root>
