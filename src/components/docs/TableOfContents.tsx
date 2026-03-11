@@ -18,16 +18,41 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
   useEffect(() => {
     if (sections.length === 0) return;
 
+    // Track visibility ratios for all sections
+    const visibilityMap = new Map<string, IntersectionObserverEntry>();
+
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const id = entry.target.id.replace("section-", "");
-          setActiveId(id);
-          break;
+        entries.forEach((entry) => visibilityMap.set(entry.target.id, entry));
+
+        // Find the topmost visible section (smallest positive boundingClientRect.top)
+        let bestId: string | null = null;
+        let bestTop = Infinity;
+
+        visibilityMap.forEach((entry, elementId) => {
+          if (!entry.isIntersecting) return;
+          const top = entry.boundingClientRect.top;
+          if (top < bestTop) {
+            bestTop = top;
+            bestId = elementId.replace("section-", "");
+          }
+        });
+
+        // If nothing is intersecting, find the last section that scrolled past
+        if (!bestId) {
+          let lastPastId: string | null = null;
+          for (const sec of sections) {
+            const entry = visibilityMap.get(`section-${sec.id}`);
+            if (entry && entry.boundingClientRect.top < 0) {
+              lastPastId = sec.id;
+            }
+          }
+          if (lastPastId) bestId = lastPastId;
         }
+
+        if (bestId) setActiveId(bestId);
       },
-      { rootMargin: "-20% 0px -60% 0px", threshold: 0 }
+      { rootMargin: "-10% 0px -50% 0px", threshold: [0, 0.25, 0.5] }
     );
 
     const els = sections
