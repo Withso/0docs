@@ -6,18 +6,32 @@ import { cn } from "@/lib/utils";
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <SliderPrimitive.Root
-    ref={ref}
-    className={cn("relative flex w-full touch-none select-none items-center group/slider", className)}
-    {...props}
-  >
-    <SliderPrimitive.Track className="relative h-[5px] w-full grow overflow-hidden rounded-full bg-secondary">
-      <SliderPrimitive.Range className="absolute h-full bg-primary rounded-full" />
-    </SliderPrimitive.Track>
-    <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full border-[1.5px] border-primary bg-background shadow-sm ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 hover:scale-110 hover:shadow-md active:scale-95" />
-  </SliderPrimitive.Root>
-));
+>(({ className, ...props }, ref) => {
+  const isBarSlider = className?.includes("ds-bar-slider");
+
+  return (
+    <SliderPrimitive.Root
+      ref={ref}
+      className={cn("relative flex w-full touch-none select-none items-center", className)}
+      {...props}
+    >
+      <SliderPrimitive.Track className={cn(
+        "relative w-full grow overflow-hidden rounded-full",
+        isBarSlider ? "h-full bg-transparent" : "h-[5px] bg-secondary"
+      )}>
+        <SliderPrimitive.Range className={cn(
+          "absolute h-full rounded-full",
+          isBarSlider ? "bg-transparent" : "bg-primary"
+        )} />
+      </SliderPrimitive.Track>
+      <SliderPrimitive.Thumb className={cn(
+        isBarSlider
+          ? "block w-[3px] h-[55%] rounded-[1.5px] border-none bg-[hsl(var(--foreground)/0.3)] shadow-none cursor-ew-resize transition-colors hover:bg-[hsl(var(--foreground)/0.45)] active:bg-[hsl(var(--foreground)/0.55)] focus-visible:outline-none"
+          : "block h-4 w-4 rounded-full border-[1.5px] border-primary bg-background shadow-sm ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 hover:scale-110 hover:shadow-md active:scale-95"
+      )} />
+    </SliderPrimitive.Root>
+  );
+});
 Slider.displayName = SliderPrimitive.Root.displayName;
 
 export { Slider };
