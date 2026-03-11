@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { Check } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Save, RotateCcw, Type, AlignLeft, Code, ImageIcon,
