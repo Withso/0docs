@@ -122,34 +122,6 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
         </div>
       </div>
 
-      {/* Domain configuration */}
-      <div className="platform-card mb-6 p-6">
-        <h3 className="font-semibold text-foreground text-[15px] mb-1.5 flex items-center gap-2">
-          <Link2 className="h-4 w-4 text-primary" />
-          Custom Domain
-        </h3>
-        <p className="text-[12px] text-muted-foreground mb-5">
-          Set the domain where your published documentation will be accessible.
-        </p>
-        <div className="flex items-end gap-3">
-          <div className="flex-1">
-            <Label className="text-[13px] font-medium text-foreground mb-1.5 block">Domain</Label>
-            <Input
-              value={customDomain}
-              onChange={(e) => setCustomDomain(e.target.value.trim())}
-              placeholder="docs.example.com"
-              className="h-11 font-mono text-[13px] rounded-lg"
-            />
-          </div>
-          <Button size="sm" onClick={handleSaveDomain} disabled={savingDomain} className="h-11 rounded-lg px-5">
-            <Save className="h-3.5 w-3.5 mr-1.5" />
-            {savingDomain ? "Saving..." : "Save"}
-          </Button>
-        </div>
-        <p className="text-[11px] text-muted-foreground mt-2">
-          Enter your domain without https://. Leave empty to use the default URL.
-        </p>
-      </div>
 
       {/* Danger zone */}
       <div className="platform-card p-6 border-destructive/20">
