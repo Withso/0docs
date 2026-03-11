@@ -1,4 +1,5 @@
 # Memory: index.md
+Updated: now
 
 ## DocBuilder - Documentation Builder App
 
@@ -7,6 +8,7 @@
 - Database: projects → pages → sections → blocks (all with RLS)
 - Public docs accessible at /docs/:slug
 - Builder at /builder/:projectId (WYSIWYG, same layout as public docs)
+- **RULE: Always use shared component architecture across the entire application. Never duplicate UI controls.**
 
 ### Block Types
 heading, paragraph, code_block, image, video, youtube, ordered_list, unordered_list, note, callout
@@ -16,6 +18,14 @@ heading, paragraph, code_block, image, video, youtube, ordered_list, unordered_l
 - Builder mirrors exact doc layout for WYSIWYG feel
 - Monochrome palette with semantic tokens from index.css
 
+### Shared Design Controls
+- `src/components/builder/DesignControls.tsx` is the single source of truth for all design setting UI controls
+- Contains: SliderField, ColorField, ToggleField, InlineSelect, FontSelect, WeightSelect, SettingsSection, ColorControls, LayoutControls, SidebarControls, BlockControls
+- Both DesignPanel (live mode) and DesignExamplesView (examples mode) import from DesignControls
+- All controls use unified container style: 34px height, rounded-xl, hsl(var(--foreground) / 0.06) bg
+- ColorField uses react-colorful HexColorPicker in a popover
+- hslToHex/hexToHsl helpers are in DesignControls.tsx
+
 ### Design Settings Sync
 - DesignSettings type in use-design-settings.ts is the single source of truth
 - New settings added: sectionSpacing, pageTitleSize, sidebarPageGap
@@ -24,18 +34,3 @@ heading, paragraph, code_block, image, video, youtube, ordered_list, unordered_l
 - BuilderSidebar, SectionEditor, BlockEditor all accept `settings` prop
 - DocContentView is shared renderer for PublicDocs and DesignSettings preview
 - DocBlockRenderer explicitly applies bodyFont, lineHeight, baseFontSize to paragraph/list/note/callout blocks
-
-### Name Editing Flow (nav_title)
-- Pages and sections have both `title` and `nav_title` (nullable) columns
-- Main area edits `title` → reflects in sidebar (as fallback) and right TOC
-- Sidebar edits `nav_title` → sidebar-only override, does NOT change main area or right TOC
-- Sidebar displays `nav_title || title`
-- Right-side "On This Page" TOC always uses `title`
-- Public docs sidebar also uses `nav_title || title`
-
-### Drag & Drop
-- Sidebar: Single unified flat list (pages, labels, text) in one SortableContext with drag handles
-- Group membership derived from position (pages below a label belong to that label)
-- Content area: Sections have DnD with drag handles (SectionsDndWrapper in Builder.tsx)
-- Blocks within sections have DnD with drag handles (SectionEditor.tsx)
-- reorderBlocks function in use-builder.ts persists block order + section_id changes
