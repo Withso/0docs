@@ -212,7 +212,10 @@ function InlineSelect({ label, value, onChange, options }: {
       </span>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger className="w-full h-full bg-transparent border-0 shadow-none rounded-xl pl-3.5 pr-3 focus:ring-0 focus-visible:ring-0">
-          <span className="ml-auto text-[11.5px] font-medium" style={{ color: 'hsl(var(--foreground) / 0.7)' }}>
+          <span className="ml-auto text-[11.5px] font-medium" style={{
+            color: 'hsl(var(--foreground) / 0.7)',
+            fontFamily: options.find(o => o.value === value)?.style?.fontFamily || undefined,
+          }}>
             <SelectValue />
           </span>
         </SelectTrigger>
