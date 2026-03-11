@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { useDesignSettings, defaultDesignSettings } from "@/hooks/use-design-settings";
+import { defaultDesignSettings } from "@/hooks/use-design-settings";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
 import DocContentView from "@/components/docs/DocContentView";
-import DesignExamplesView from "@/components/builder/DesignExamplesView";
+import { ExamplesContent } from "@/components/builder/DesignExamplesView";
 import type { DesignSubMode } from "@/components/builder/BuilderHeader";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,14 +13,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-// ─── Shared Controls ─────────────────────────────────
 import {
   SettingsSection, SliderField, ColorField, ToggleField,
   FontSelect, WeightSelect, ColorControls, LayoutControls,
   SidebarControls, BlockControls, fontOptions, codeFontOptions,
   blockSections, type BlockKey,
 } from "@/components/builder/DesignControls";
-
 
 // ─── Interfaces ──────────────────────────────────────
 interface DocPage { id: string; title: string; slug: string; order_index: number; }
@@ -36,10 +34,30 @@ interface DesignPanelProps {
   saveSettings: (s: DS) => Promise<void>;
   resetSettings: () => void;
   designSubMode: DesignSubMode;
+  onDesignSubModeChange: (sub: DesignSubMode) => void;
 }
 
+// ─── Mode Switcher ───────────────────────────────────
+const ModeSwitcher = ({ value, onChange }: { value: DesignSubMode; onChange: (v: DesignSubMode) => void }) => (
+  <div className="flex items-center rounded-xl p-0.5" style={{ backgroundColor: 'hsl(var(--foreground) / 0.06)' }}>
+    {(["live", "examples"] as DesignSubMode[]).map((mode) => (
+      <button
+        key={mode}
+        onClick={() => onChange(mode)}
+        className={`flex-1 px-4 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+          value === mode
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        {mode === "live" ? "Live" : "Examples"}
+      </button>
+    ))}
+  </div>
+);
+
 // ─── Main Panel ──────────────────────────────────────
-const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, resetSettings, designSubMode }: DesignPanelProps) => {
+const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, resetSettings, designSubMode, onDesignSubModeChange }: DesignPanelProps) => {
   const { toast } = useToast();
   const [local, setLocal] = useState<DS>(defaultDesignSettings);
   const [panelOpen, setPanelOpen] = useState(true);
@@ -48,6 +66,8 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
   const [sections, setSections] = useState<DocSection[]>([]);
   const [blocks, setBlocks] = useState<DocBlock[]>([]);
   const [navGroups, setNavGroups] = useState<DocNavGroup[]>([]);
+  // Examples mode state
+  const [activeNav, setActiveNav] = useState("typography");
 
   useEffect(() => { setLocal(settings); }, [settings]);
 
@@ -89,38 +109,37 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
   const handleSave = async () => { await saveSettings(local); toast({ title: "Design settings saved" }); };
   const handleReset = () => { setLocal(defaultDesignSettings); resetSettings(); toast({ title: "Design settings reset to defaults" }); };
 
-  // If in "examples" mode, delegate to the examples view
-  if (designSubMode === "examples") {
-    return (
-      <DesignExamplesView
-        settings={settings}
-        saving={saving}
-        saveSettings={saveSettings}
-        resetSettings={resetSettings}
-      />
-    );
-  }
+  const isLive = designSubMode === "live";
 
   return (
     <div className="flex-1 flex min-h-0">
-      {/* Left: Live preview */}
+      {/* Left: Content area — switches between live preview and examples */}
       <div className="flex-1 overflow-auto bg-muted/30">
-        <DocContentView
-          settings={local}
-          projectName={projectName}
-          pages={pages}
-          activePage={activePage}
-          sections={sections}
-          blocks={blocks}
-          onSelectPage={setActivePage}
-          headerStickyTop={0}
-          hideHeader
-          navGroups={navGroups}
-          hideHeaderLabel
-        />
+        {isLive ? (
+          <DocContentView
+            settings={local}
+            projectName={projectName}
+            pages={pages}
+            activePage={activePage}
+            sections={sections}
+            blocks={blocks}
+            onSelectPage={setActivePage}
+            headerStickyTop={0}
+            hideHeader
+            navGroups={navGroups}
+            hideHeaderLabel
+          />
+        ) : (
+          <ExamplesContent
+            settings={local}
+            activeNav={activeNav}
+            update={update}
+            updateBlockStyle={updateBlockStyle}
+          />
+        )}
       </div>
 
-      {/* Right: Floating settings panel */}
+      {/* Right: Unified settings panel — fixed width, always 340px */}
       {panelOpen && (
         <div className="shrink-0 p-2 pl-0">
           <aside
@@ -131,12 +150,16 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
               border: "1px solid hsl(var(--border) / 0.5)",
             }}
           >
+            {/* Mode Switcher */}
+            <div className="px-3 pt-3 pb-2 shrink-0">
+              <ModeSwitcher value={designSubMode} onChange={onDesignSubModeChange} />
+            </div>
+
             {/* Header */}
-            <div className="px-4 py-3.5 shrink-0 flex items-center justify-between">
-              <div>
-                <h2 className="text-[13px] font-semibold text-foreground">Customize</h2>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Typography, colors, layout & block styles</p>
-              </div>
+            <div className="px-4 py-2 shrink-0 flex items-center justify-between">
+              <h2 className="text-[13px] font-semibold text-foreground">
+                {isLive ? "Customize" : "Style Guide"}
+              </h2>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="sm" className="h-7 text-[10px] rounded-lg gap-1 text-muted-foreground hover:text-foreground" onClick={handleReset}>
                   <RotateCcw className="h-3 w-3" /> Reset
@@ -156,33 +179,84 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
 
             <ScrollArea className="flex-1">
               <div className="p-3">
-                <div className="mb-2 px-1">
-                  <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.12em]">Global</span>
-                </div>
+                {isLive ? (
+                  /* ─── Live mode: collapsible sections ─── */
+                  <>
+                    <div className="mb-2 px-1">
+                      <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.12em]">Global</span>
+                    </div>
 
-                <SettingsSection title="Typography" icon={Type} defaultOpen>
-                  <FontSelect label="Heading Font" value={local.headingFont} onChange={(v) => update("headingFont", v)} options={fontOptions} />
-                  <FontSelect label="Body Font" value={local.bodyFont} onChange={(v) => update("bodyFont", v)} options={fontOptions} />
-                  <FontSelect label="Code Font" value={local.codeFont} onChange={(v) => update("codeFont", v)} options={codeFontOptions} />
-                  <WeightSelect label="Heading Weight" value={local.headingWeight} onChange={(v) => update("headingWeight", v)} />
-                  <SliderField label="Base Font Size" value={local.baseFontSize} onChange={(v) => update("baseFontSize", v)} min={12} max={20} step={1} />
-                  <SliderField label="Heading Size" value={local.headingFontSize} onChange={(v) => update("headingFontSize", v)} min={14} max={32} step={1} />
-                  <SliderField label="Line Height" value={local.lineHeight} onChange={(v) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} unit="" />
-                </SettingsSection>
+                    <SettingsSection title="Typography" icon={Type} defaultOpen>
+                      <FontSelect label="Heading Font" value={local.headingFont} onChange={(v) => update("headingFont", v)} options={fontOptions} />
+                      <FontSelect label="Body Font" value={local.bodyFont} onChange={(v) => update("bodyFont", v)} options={fontOptions} />
+                      <FontSelect label="Code Font" value={local.codeFont} onChange={(v) => update("codeFont", v)} options={codeFontOptions} />
+                      <WeightSelect label="Heading Weight" value={local.headingWeight} onChange={(v) => update("headingWeight", v)} />
+                      <SliderField label="Base Font Size" value={local.baseFontSize} onChange={(v) => update("baseFontSize", v)} min={12} max={20} step={1} />
+                      <SliderField label="Heading Size" value={local.headingFontSize} onChange={(v) => update("headingFontSize", v)} min={14} max={32} step={1} />
+                      <SliderField label="Line Height" value={local.lineHeight} onChange={(v) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} unit="" />
+                    </SettingsSection>
 
-                <SettingsSection title="Colors" icon={Palette}><ColorControls local={local} update={update} /></SettingsSection>
-                <SettingsSection title="Layout" icon={Layout}><LayoutControls local={local} update={update} /></SettingsSection>
-                <SettingsSection title="Sidebar" icon={Sidebar}><SidebarControls local={local} update={update} /></SettingsSection>
+                    <SettingsSection title="Colors" icon={Palette}><ColorControls local={local} update={update} /></SettingsSection>
+                    <SettingsSection title="Layout" icon={Layout}><LayoutControls local={local} update={update} /></SettingsSection>
+                    <SettingsSection title="Sidebar" icon={Sidebar}><SidebarControls local={local} update={update} /></SettingsSection>
 
-                <div className="mt-4 mb-2 px-1">
-                  <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.12em]">Block Styles</span>
-                </div>
+                    <div className="mt-4 mb-2 px-1">
+                      <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.12em]">Block Styles</span>
+                    </div>
 
-                {blockSections.map((item) => (
-                  <SettingsSection key={item.key} title={item.label} icon={item.icon}>
-                    <BlockControls blockKey={item.key} local={local} updateBlockStyle={updateBlockStyle} />
-                  </SettingsSection>
-                ))}
+                    {blockSections.map((item) => (
+                      <SettingsSection key={item.key} title={item.label} icon={item.icon}>
+                        <BlockControls blockKey={item.key} local={local} updateBlockStyle={updateBlockStyle} />
+                      </SettingsSection>
+                    ))}
+                  </>
+                ) : (
+                  /* ─── Examples mode: nav list ─── */
+                  <>
+                    <div className="px-1 mb-1">
+                      <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.1em]">Global</span>
+                    </div>
+                    {[
+                      { id: "typography", label: "Typography", icon: Type },
+                      { id: "colors", label: "Colors", icon: Palette },
+                      { id: "layout", label: "Layout", icon: Layout },
+                      { id: "sidebar", label: "Sidebar", icon: Sidebar },
+                    ].map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveNav(item.id)}
+                        className={`w-full text-left px-2.5 py-1.5 flex items-center gap-2 text-[12px] rounded-lg transition-colors ${
+                          activeNav === item.id
+                            ? "text-foreground font-medium"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        }`}
+                        style={activeNav === item.id ? { backgroundColor: 'hsl(var(--foreground) / 0.06)' } : undefined}
+                      >
+                        <item.icon className="h-3.5 w-3.5 shrink-0" />
+                        {item.label}
+                      </button>
+                    ))}
+
+                    <div className="px-1 mt-4 mb-1">
+                      <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.1em]">Block Styles</span>
+                    </div>
+                    {blockSections.map((item) => (
+                      <button
+                        key={item.key}
+                        onClick={() => setActiveNav(item.key)}
+                        className={`w-full text-left px-2.5 py-1.5 flex items-center gap-2 text-[12px] rounded-lg transition-colors ${
+                          activeNav === item.key
+                            ? "text-foreground font-medium"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        }`}
+                        style={activeNav === item.key ? { backgroundColor: 'hsl(var(--foreground) / 0.06)' } : undefined}
+                      >
+                        {item.icon && <item.icon className="h-3.5 w-3.5 shrink-0" />}
+                        {item.label}
+                      </button>
+                    ))}
+                  </>
+                )}
 
                 <div className="h-4" />
               </div>

@@ -1,16 +1,9 @@
-import { useState, useEffect } from "react";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
-import { defaultDesignSettings } from "@/hooks/use-design-settings";
 import DocBlockRenderer from "@/components/docs/DocBlockRenderer";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Save, RotateCcw, PanelRightClose, PanelRight, Palette, Layout, Sidebar } from "lucide-react";
-import { Type } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 
 import {
-  SettingsSection, SliderField, ColorField, ToggleField,
+  SliderField, ColorField, ToggleField,
   FontSelect, WeightSelect, ColorControls, LayoutControls,
   SidebarControls, BlockControls, fontOptions, codeFontOptions,
   blockSections, type BlockKey,
@@ -40,45 +33,16 @@ const sampleBlocks: Record<string, { type: string; content: any }> = {
   inline_editor: { type: "inline_editor", content: { html: "<p>Rich text content with <strong>bold</strong> and <em>italic</em> formatting.</p>" } },
 };
 
-// ─── Nav items ───────────────────────────────────────
-interface NavItem { id: string; label: string; icon: any; group: "global" | "block"; }
-const navItems: NavItem[] = [
-  { id: "typography", label: "Typography", icon: Type, group: "global" },
-  { id: "colors", label: "Colors", icon: Palette, group: "global" },
-  { id: "layout", label: "Layout", icon: Layout, group: "global" },
-  { id: "sidebar", label: "Sidebar", icon: Sidebar, group: "global" },
-  ...blockSections.map((b) => ({ id: b.key, label: b.label, icon: b.icon, group: "block" as const })),
-];
-
 // ─── Props ───────────────────────────────────────────
-interface DesignExamplesViewProps {
+interface ExamplesContentProps {
   settings: DS;
-  saving: boolean;
-  saveSettings: (s: DS) => Promise<void>;
-  resetSettings: () => void;
+  activeNav: string;
+  update: <K extends keyof DS>(key: K, value: DS[K]) => void;
+  updateBlockStyle: (block: BlockKey, key: keyof BlockStyleSettings, value: any) => void;
 }
 
-// ─── Main View ───────────────────────────────────────
-const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: DesignExamplesViewProps) => {
-  const { toast } = useToast();
-  const [local, setLocal] = useState<DS>(defaultDesignSettings);
-  const [activeNav, setActiveNav] = useState("typography");
-  const [panelOpen, setPanelOpen] = useState(true);
-
-  useEffect(() => { setLocal(settings); }, [settings]);
-
-  const update = <K extends keyof DS>(key: K, value: DS[K]) => setLocal((prev) => ({ ...prev, [key]: value }));
-  const updateBlockStyle = (block: BlockKey, key: keyof BlockStyleSettings, value: any) => {
-    setLocal((prev) => ({
-      ...prev,
-      blockStyles: { ...prev.blockStyles, [block]: { ...prev.blockStyles[block], [key]: value } },
-    }));
-  };
-
-  const hasChanges = JSON.stringify(local) !== JSON.stringify(settings);
-  const handleSave = async () => { await saveSettings(local); toast({ title: "Design settings saved" }); };
-  const handleReset = () => { setLocal(defaultDesignSettings); resetSettings(); toast({ title: "Design settings reset to defaults" }); };
-
+// ─── Examples Content (left area) ────────────────────
+export function ExamplesContent({ settings: local, activeNav, update, updateBlockStyle }: ExamplesContentProps) {
   const makeFakeBlock = (type: string) => ({
     id: `sample-${type}`,
     section_id: "sample",
@@ -86,6 +50,12 @@ const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: D
     content: sampleBlocks[type]?.content || {},
     order_index: 0,
   });
+
+  const navLabel = activeNav === "typography" ? "Typography"
+    : activeNav === "colors" ? "Colors"
+    : activeNav === "layout" ? "Layout"
+    : activeNav === "sidebar" ? "Sidebar"
+    : blockSections.find(b => b.key === activeNav)?.label || activeNav;
 
   const renderActiveContent = () => {
     switch (activeNav) {
@@ -184,102 +154,15 @@ const DesignExamplesView = ({ settings, saving, saveSettings, resetSettings }: D
   };
 
   return (
-    <div className="flex-1 flex min-h-0 relative">
-      <ScrollArea className="flex-1">
-        <div className="max-w-[680px] mx-auto px-8 py-8">
-          <h2 className="text-[18px] font-semibold text-foreground mb-6">
-            {navItems.find(n => n.id === activeNav)?.label || "Typography"}
-          </h2>
-          {renderActiveContent()}
-          <div className="h-12" />
-        </div>
-      </ScrollArea>
-
-      {panelOpen && (
-        <div className="shrink-0 p-2 pl-0">
-          <aside
-            className="w-[200px] h-full rounded-2xl flex flex-col overflow-hidden"
-            style={{
-              backgroundColor: "hsl(var(--background) / 0.92)",
-              backdropFilter: "blur(20px)",
-              border: "1px solid hsl(var(--border) / 0.5)",
-              boxShadow: '0 4px 24px -4px hsl(var(--foreground) / 0.08)',
-            }}
-          >
-            <div className="px-3 py-3 shrink-0 flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-foreground">Style Guide</span>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-foreground" onClick={handleReset}>
-                  <RotateCcw className="h-3 w-3" />
-                </Button>
-                <Button
-                  size="sm"
-                  className="h-7 text-[11px] rounded-lg gap-1 px-2"
-                  disabled={!hasChanges || saving}
-                  onClick={handleSave}
-                >
-                  <Save className="h-3 w-3" /> {saving ? "…" : "Save"}
-                </Button>
-              </div>
-            </div>
-
-            <ScrollArea className="flex-1">
-              <div className="py-1 px-2">
-                <div className="px-1 mb-1">
-                  <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.1em]">Global</span>
-                </div>
-                {navItems.filter((n) => n.group === "global").map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveNav(item.id)}
-                    className={cn(
-                      "w-full text-left px-2.5 py-1.5 flex items-center gap-2 text-[12px] rounded-lg transition-colors",
-                      activeNav === item.id
-                        ? "text-foreground font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                    style={activeNav === item.id ? { backgroundColor: 'hsl(var(--foreground) / 0.06)' } : undefined}
-                  >
-                    <item.icon className="h-3.5 w-3.5 shrink-0" />
-                    {item.label}
-                  </button>
-                ))}
-
-                <div className="px-1 mt-4 mb-1">
-                  <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.1em]">Block Styles</span>
-                </div>
-                {navItems.filter((n) => n.group === "block").map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveNav(item.id)}
-                    className={cn(
-                      "w-full text-left px-2.5 py-1.5 flex items-center gap-2 text-[12px] rounded-lg transition-colors",
-                      activeNav === item.id
-                        ? "text-foreground font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                    style={activeNav === item.id ? { backgroundColor: 'hsl(var(--foreground) / 0.06)' } : undefined}
-                  >
-                    {item.icon && <item.icon className="h-3.5 w-3.5 shrink-0" />}
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </ScrollArea>
-          </aside>
-        </div>
-      )}
-
-      <button
-        onClick={() => setPanelOpen(!panelOpen)}
-        className="fixed bottom-4 right-4 z-50 h-8 w-8 rounded-xl bg-background/90 backdrop-blur-sm shadow-platform-sm flex items-center justify-center hover:bg-muted transition-all hover:shadow-platform-md"
-        style={{ border: "1px solid hsl(var(--border) / 0.5)" }}
-      >
-        {panelOpen ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRight className="h-3.5 w-3.5" />}
-      </button>
-    </div>
+    <ScrollArea className="h-full">
+      <div className="max-w-[680px] mx-auto px-8 py-8">
+        <h2 className="text-[18px] font-semibold text-foreground mb-6">{navLabel}</h2>
+        {renderActiveContent()}
+        <div className="h-12" />
+      </div>
+    </ScrollArea>
   );
-};
+}
 
 function PreviewCard({ settings, children }: { settings: DS; children: React.ReactNode }) {
   return (
@@ -296,4 +179,4 @@ function PreviewCard({ settings, children }: { settings: DS; children: React.Rea
   );
 }
 
-export default DesignExamplesView;
+export default ExamplesContent;
