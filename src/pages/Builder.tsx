@@ -243,7 +243,7 @@ const Builder = () => {
         onModeChange={handleModeChange}
         designSubMode={designSubMode}
         onDesignSubModeChange={setDesignSubMode}
-        onPublishClick={() => setPublishDialogOpen(true)}
+        onPublishClick={() => handleModeChange("publish")}
         hasUnpublishedChanges={publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish}
       />
 
