@@ -94,7 +94,7 @@ const Builder = () => {
   const {
     versions: publishedVersions, publishing, publish, revertToVersion, previewChanges,
   } = usePublish(projectId, user?.id);
-  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  
 
   const [publishPreview, setPublishPreview] = useState(() =>
     previewChanges(pages, sections, blocks, settings, navGroups),
