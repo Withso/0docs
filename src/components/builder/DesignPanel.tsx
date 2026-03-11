@@ -118,47 +118,49 @@ function SliderField({ label, value, onChange, min, max, step, unit = "px" }: {
   label: string; value: number; onChange: (v: number) => void; min: number; max: number; step: number; unit?: string;
 }) {
   const filledPercent = ((value - min) / (max - min)) * 100;
-  // Step dots
   const range = max - min;
   const totalSteps = Math.round(range / step);
   const dotCount = Math.min(totalSteps - 1, 5);
   const dots = Array.from({ length: dotCount }, (_, i) => ((i + 1) / (dotCount + 1)) * 100);
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Slider container — full width, label overlaid */}
-      <div className="flex-1 relative rounded-[10px] bg-muted/50 h-[38px] overflow-hidden">
-        {/* Filled range */}
+    <div
+      className="relative rounded-xl h-[40px] overflow-hidden cursor-ew-resize"
+      style={{ backgroundColor: 'hsl(var(--foreground) / 0.06)' }}
+    >
+      {/* Filled range — slightly more opaque, rounded left */}
+      <div
+        className="absolute inset-y-0 left-0 rounded-xl transition-[width] duration-75"
+        style={{
+          width: `${filledPercent}%`,
+          backgroundColor: 'hsl(var(--foreground) / 0.08)',
+        }}
+      />
+      {/* Step dots */}
+      {dots.map((pos, i) => (
         <div
-          className="absolute inset-y-0 left-0 rounded-[10px] bg-muted/70 transition-[width] duration-75"
-          style={{ width: `${filledPercent}%` }}
+          key={i}
+          className="absolute top-1/2 -translate-y-1/2 w-[3px] h-[3px] rounded-full pointer-events-none"
+          style={{ left: `${pos}%`, backgroundColor: 'hsl(var(--foreground) / 0.12)' }}
         />
-        {/* Step dots */}
-        {dots.map((pos, i) => (
-          <div
-            key={i}
-            className="absolute top-1/2 -translate-y-1/2 w-[3px] h-[3px] rounded-full bg-muted-foreground/15 pointer-events-none"
-            style={{ left: `${pos}%` }}
-          />
-        ))}
-        {/* Label overlaid top-left */}
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-muted-foreground pointer-events-none select-none z-[2]">
-          {label}
-        </span>
-        {/* Radix slider stretched to fill entire container */}
-        <Slider
-          value={[value]}
-          onValueChange={([v]) => onChange(v)}
-          min={min}
-          max={max}
-          step={step}
-          className="absolute inset-0 ds-bar-slider"
-        />
-      </div>
-      {/* Value */}
-      <span className="text-[11px] font-medium text-foreground/80 tabular-nums min-w-[36px] text-right shrink-0">
+      ))}
+      {/* Label — inside, left-aligned, vertically centered */}
+      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[11.5px] font-medium pointer-events-none select-none z-[2]" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>
+        {label}
+      </span>
+      {/* Value — inside, right-aligned, vertically centered */}
+      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[12px] font-semibold pointer-events-none select-none z-[2] tabular-nums" style={{ color: 'hsl(var(--foreground) / 0.7)' }}>
         {value}{unit}
       </span>
+      {/* Radix slider — invisible track, full container, thin line thumb */}
+      <Slider
+        value={[value]}
+        onValueChange={([v]) => onChange(v)}
+        min={min}
+        max={max}
+        step={step}
+        className="absolute inset-0 ds-bar-slider"
+      />
     </div>
   );
 }

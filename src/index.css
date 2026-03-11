@@ -424,21 +424,19 @@
 
 .ds-bar-slider [data-radix-slider-thumb] {
   width: 3px !important;
-  height: 20px !important;
+  height: 55% !important;
   border-radius: 1.5px !important;
-  background: hsl(var(--muted-foreground) / 0.4) !important;
+  background: hsl(var(--foreground) / 0.3) !important;
   border: none !important;
   box-shadow: none !important;
   cursor: ew-resize;
-  transition: background 0.15s ease, height 0.1s ease;
+  transition: background 0.15s ease;
 }
 
 .ds-bar-slider [data-radix-slider-thumb]:hover {
-  background: hsl(var(--muted-foreground) / 0.6) !important;
-  height: 24px !important;
+  background: hsl(var(--foreground) / 0.45) !important;
 }
 
 .ds-bar-slider [data-radix-slider-thumb]:active {
-  background: hsl(var(--foreground) / 0.5) !important;
-  height: 26px !important;
+  background: hsl(var(--foreground) / 0.55) !important;
 }
