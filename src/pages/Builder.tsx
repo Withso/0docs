@@ -155,7 +155,6 @@ const Builder = () => {
     const result = await publish(pages, allSections, allBlocks, settings, navGroups, notes);
 
     if (result) {
-      setPublishDialogOpen(false);
       const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
       toast({ title: `Published v${result.version.version_number}`, description: "Your documentation is now live." });
     }
