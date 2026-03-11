@@ -418,6 +418,14 @@ const BuilderSidebar = ({
                           <div className="flex items-center">
                             <a
                               href={`#section-${section.id}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                const el = document.getElementById(`section-${section.id}`);
+                                if (el) {
+                                  const top = el.getBoundingClientRect().top + window.scrollY - 72;
+                                  window.scrollTo({ top, behavior: "smooth" });
+                                }
+                              }}
                               onDoubleClick={(e) => {
                                 e.preventDefault();
                                 stopEditing();
