@@ -61,6 +61,7 @@ const Builder = () => {
     if (location.pathname.endsWith("/analytics")) return "analytics";
     if (location.pathname.endsWith("/settings")) return "settings";
     if (location.pathname.endsWith("/design")) return "design";
+    if (location.pathname.endsWith("/publish")) return "publish";
     return "editor";
   };
 
