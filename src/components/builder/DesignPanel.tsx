@@ -333,9 +333,9 @@ function BlockControls({
       {supportsTextStyle && <ColorField label="Text Color" value={resolvedColor} onChange={(v) => updateBlockStyle(blockKey, "color", v)} />}
       {supportsBackground && <ColorField label="Background" value={resolvedBg} onChange={(v) => updateBlockStyle(blockKey, "backgroundColor", v)} />}
       {supportsBorder && <ColorField label="Border" value={resolvedBorder} onChange={(v) => updateBlockStyle(blockKey, "borderColor", v)} />}
-      {supportsTextStyle && <FieldRow label="Font"><FontSelect value={resolvedFont} onChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)} options={blockKey === "code_block" ? codeFontOptions : fontOptions} /></FieldRow>}
+      {supportsTextStyle && <FontSelect label="Font" value={resolvedFont} onChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)} options={blockKey === "code_block" ? codeFontOptions : fontOptions} />}
       {supportsTextStyle && <SliderField label="Font Size" value={resolvedSize} onChange={(v) => updateBlockStyle(blockKey, "fontSize", v)} min={10} max={32} step={1} />}
-      {supportsTextStyle && <FieldRow label="Font Weight"><WeightSelect value={resolvedWeight} onChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)} /></FieldRow>}
+      {supportsTextStyle && <WeightSelect label="Font Weight" value={resolvedWeight} onChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)} />}
       {supportsRadius && <SliderField label="Border Radius" value={resolvedRadius} onChange={(v) => updateBlockStyle(blockKey, "borderRadius", v)} min={0} max={20} step={1} />}
       {supportsPadding && <SliderField label="Padding" value={resolvedPadding} onChange={(v) => updateBlockStyle(blockKey, "padding", v)} min={0} max={32} step={2} />}
     </>
