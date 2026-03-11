@@ -105,11 +105,11 @@
 
     --border: 228 14% 15%;
     --input: 228 14% 15%;
-    --ring: 250 65% 62%;
+    --ring: 225 10% 80%;
 
-    --platform-accent: 250 65% 62%;
-    --platform-accent-soft: 250 30% 15%;
-    --platform-accent-foreground: 0 0% 100%;
+    --platform-accent: 225 10% 80%;
+    --platform-accent-soft: 225 10% 15%;
+    --platform-accent-foreground: 225 15% 8%;
     --platform-success: 152 60% 42%;
     --platform-success-soft: 152 30% 15%;
     --platform-warning: 38 92% 50%;
