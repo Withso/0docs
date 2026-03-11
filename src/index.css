@@ -440,3 +440,31 @@
 .ds-bar-slider [data-radix-slider-thumb]:active {
   background: hsl(var(--foreground) / 0.55) !important;
 }
+
+/* ─── react-colorful overrides ─── */
+.react-colorful {
+  gap: 10px !important;
+  border-radius: 12px !important;
+}
+
+.react-colorful__saturation {
+  border-radius: 10px !important;
+  border: none !important;
+}
+
+.react-colorful__hue {
+  height: 10px !important;
+  border-radius: 6px !important;
+}
+
+.react-colorful__pointer {
+  width: 16px !important;
+  height: 16px !important;
+  border: 2px solid white !important;
+  box-shadow: 0 1px 4px hsl(var(--foreground) / 0.2) !important;
+}
+
+.react-colorful__saturation-pointer {
+  width: 18px !important;
+  height: 18px !important;
+}
