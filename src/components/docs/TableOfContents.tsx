@@ -89,7 +89,11 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
               href={`#section-${section.id}`}
               onClick={(e) => {
                 e.preventDefault();
-                document.getElementById(`section-${section.id}`)?.scrollIntoView({ behavior: "smooth" });
+                const el = document.getElementById(`section-${section.id}`);
+                if (el) {
+                  const top = el.getBoundingClientRect().top + window.scrollY - (stickyTop + 24);
+                  window.scrollTo({ top, behavior: "smooth" });
+                }
               }}
               className="block py-[3px] pl-3 transition-colors relative"
               style={{
