@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { HexColorPicker } from "react-colorful";
 import { useDesignSettings, defaultDesignSettings } from "@/hooks/use-design-settings";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
 import DocContentView from "@/components/docs/DocContentView";
@@ -173,38 +174,92 @@ function SliderField({ label, value, onChange, min, max, step, unit = "px" }: {
 }
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const hexValue = hslToHex(value);
+  const [localHex, setLocalHex] = useState(hexValue);
+  const [hexInput, setHexInput] = useState(hexValue);
+
+  useEffect(() => {
+    const h = hslToHex(value);
+    setLocalHex(h);
+    setHexInput(h);
+  }, [value]);
+
+  const handlePickerChange = (hex: string) => {
+    setLocalHex(hex);
+    setHexInput(hex);
+    onChange(hexToHsl(hex));
+  };
+
+  const handleHexInput = (raw: string) => {
+    setHexInput(raw);
+    if (/^#[0-9a-fA-F]{6}$/.test(raw)) {
+      setLocalHex(raw);
+      onChange(hexToHsl(raw));
+    }
+  };
 
   return (
-    <div
-      className="relative rounded-xl h-[34px] flex items-center px-3.5 cursor-pointer"
-      style={{ backgroundColor: 'hsl(var(--foreground) / 0.06)' }}
-      onClick={() => inputRef.current?.click()}
-    >
-      <span className="text-[11px] font-medium select-none flex-1" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>
-        {label}
-      </span>
-      <span className="text-[10px] font-mono mr-2.5 tabular-nums" style={{ color: 'hsl(var(--foreground) / 0.35)' }}>
-        {hexValue}
-      </span>
-      <div className="relative w-5 h-5 shrink-0">
+    <Popover>
+      <PopoverTrigger asChild>
         <div
-          className="w-5 h-5 rounded-full"
+          className="relative rounded-xl h-[34px] flex items-center px-3.5 cursor-pointer"
+          style={{ backgroundColor: 'hsl(var(--foreground) / 0.06)' }}
+        >
+          <span className="text-[11px] font-medium select-none flex-1" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>
+            {label}
+          </span>
+          <span className="text-[10px] font-mono mr-2.5 tabular-nums" style={{ color: 'hsl(var(--foreground) / 0.35)' }}>
+            {localHex}
+          </span>
+          <div
+            className="w-5 h-5 rounded-full shrink-0"
+            style={{
+              backgroundColor: localHex,
+              boxShadow: 'inset 0 0 0 1px hsl(var(--foreground) / 0.08)',
+            }}
+          />
+        </div>
+      </PopoverTrigger>
+      <PopoverContent
+        side="left"
+        align="start"
+        sideOffset={8}
+        className="w-auto p-0 border-0 shadow-none bg-transparent"
+      >
+        <div
+          className="rounded-2xl overflow-hidden"
           style={{
-            backgroundColor: `hsl(${value})`,
-            boxShadow: 'inset 0 0 0 1px hsl(var(--foreground) / 0.08)',
+            backgroundColor: 'hsl(var(--background))',
+            border: '1px solid hsl(var(--foreground) / 0.08)',
+            boxShadow: '0 8px 32px -4px hsl(var(--foreground) / 0.12), 0 2px 8px -2px hsl(var(--foreground) / 0.06)',
+            padding: '14px',
+            width: '232px',
           }}
-        />
-        <input
-          ref={inputRef}
-          type="color"
-          value={hexValue}
-          onChange={(e) => onChange(hexToHsl(e.target.value))}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-        />
-      </div>
-    </div>
+        >
+          <HexColorPicker color={localHex} onChange={handlePickerChange} style={{ width: '100%', height: '160px' }} />
+          <div className="flex items-center gap-2 mt-3">
+            <div
+              className="w-8 h-8 rounded-lg shrink-0"
+              style={{
+                backgroundColor: localHex,
+                boxShadow: 'inset 0 0 0 1px hsl(var(--foreground) / 0.1)',
+              }}
+            />
+            <input
+              className="flex-1 rounded-lg h-8 px-2.5 text-[11px] font-mono outline-none"
+              style={{
+                backgroundColor: 'hsl(var(--foreground) / 0.06)',
+                color: 'hsl(var(--foreground) / 0.6)',
+                border: '1px solid hsl(var(--foreground) / 0.08)',
+              }}
+              value={hexInput}
+              onChange={(e) => handleHexInput(e.target.value)}
+              spellCheck={false}
+            />
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
