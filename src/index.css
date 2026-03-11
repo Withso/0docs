@@ -56,8 +56,8 @@
     --platform-sidebar-width: 260px;
 
     /* ─── Gradient tokens ─── */
-    --gradient-primary: linear-gradient(135deg, hsl(250 65% 55%), hsl(280 60% 55%));
-    --gradient-hero: linear-gradient(135deg, hsl(250 65% 55%) 0%, hsl(280 60% 55%) 50%, hsl(320 55% 55%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(225 15% 15%), hsl(225 10% 25%));
+    --gradient-hero: linear-gradient(135deg, hsl(225 15% 12%) 0%, hsl(225 10% 22%) 50%, hsl(225 8% 30%) 100%);
 
     /* ─── Doc-specific tokens (unchanged for docs output) ─── */
     --doc-link: 214 100% 50%;
