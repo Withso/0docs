@@ -125,17 +125,23 @@ function SliderField({ label, value, onChange, min, max, step, unit = "px" }: {
 
   return (
     <div
-      className="relative rounded-xl h-[40px] overflow-hidden cursor-ew-resize"
+      className="relative rounded-xl h-[34px] overflow-hidden cursor-ew-resize"
       style={{ backgroundColor: 'hsl(var(--foreground) / 0.06)' }}
     >
-      {/* Filled range — slightly more opaque, rounded left */}
+      {/* Filled range with thin line at right edge */}
       <div
         className="absolute inset-y-0 left-0 rounded-xl transition-[width] duration-75"
         style={{
           width: `${filledPercent}%`,
           backgroundColor: 'hsl(var(--foreground) / 0.08)',
         }}
-      />
+      >
+        {/* Thin vertical line at right edge of filled area */}
+        <div
+          className="absolute right-0 top-[15%] bottom-[15%] w-[2.5px] rounded-full"
+          style={{ backgroundColor: 'hsl(var(--foreground) / 0.25)' }}
+        />
+      </div>
       {/* Step dots */}
       {dots.map((pos, i) => (
         <div
@@ -144,15 +150,15 @@ function SliderField({ label, value, onChange, min, max, step, unit = "px" }: {
           style={{ left: `${pos}%`, backgroundColor: 'hsl(var(--foreground) / 0.12)' }}
         />
       ))}
-      {/* Label — inside, left-aligned, vertically centered */}
-      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[11.5px] font-medium pointer-events-none select-none z-[2]" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>
+      {/* Label */}
+      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[11px] font-medium pointer-events-none select-none z-[2]" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>
         {label}
       </span>
-      {/* Value — inside, right-aligned, vertically centered */}
-      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[12px] font-semibold pointer-events-none select-none z-[2] tabular-nums" style={{ color: 'hsl(var(--foreground) / 0.7)' }}>
+      {/* Value */}
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11.5px] font-semibold pointer-events-none select-none z-[2] tabular-nums" style={{ color: 'hsl(var(--foreground) / 0.7)' }}>
         {value}{unit}
       </span>
-      {/* Radix slider — invisible track, full container, thin line thumb */}
+      {/* Radix slider — interaction layer */}
       <Slider
         value={[value]}
         onValueChange={([v]) => onChange(v)}
