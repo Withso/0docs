@@ -198,6 +198,29 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
+function ToggleField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div
+      className="relative rounded-xl h-[34px] flex items-center px-3.5"
+      style={{ backgroundColor: 'hsl(var(--foreground) / 0.06)' }}
+    >
+      <span className="text-[11px] font-medium select-none flex-1" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>
+        {label}
+      </span>
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        className="h-5 w-9 border-0"
+        style={{ backgroundColor: 'hsl(var(--foreground) / 0.08)' }}
+        thumbClassName={cn(
+          "h-4 w-4 shadow-none data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0",
+        )}
+        thumbStyle={{ backgroundColor: checked ? 'hsl(var(--foreground) / 0.35)' : 'hsl(var(--foreground) / 0.15)' }}
+      />
+    </div>
+  );
+}
+
 function InlineSelect({ label, value, onChange, options }: {
   label: string; value: string; onChange: (v: string) => void;
   options: { value: string; label: string; style?: React.CSSProperties }[];
@@ -281,10 +304,7 @@ function LayoutControls({ local, update }: { local: DS; update: <K extends keyof
       <SliderField label="Page Title Size" value={local.pageTitleSize} onChange={(v) => update("pageTitleSize", v)} min={18} max={42} step={1} />
       <SliderField label="Section Spacing" value={local.sectionSpacing} onChange={(v) => update("sectionSpacing", v)} min={16} max={80} step={4} />
       <SliderField label="Paragraph Spacing" value={local.paragraphSpacing} onChange={(v) => update("paragraphSpacing", v)} min={8} max={32} step={2} />
-      <div className="flex items-center justify-between">
-        <Label className="text-[10.5px] font-medium text-muted-foreground">Rounded Images</Label>
-        <Switch checked={local.imageRounded} onCheckedChange={(v) => update("imageRounded", v)} />
-      </div>
+      <ToggleField label="Rounded Images" checked={local.imageRounded} onChange={(v) => update("imageRounded", v)} />
       <SliderField label="Code Border Radius" value={local.codeBlockBorderRadius} onChange={(v) => update("codeBlockBorderRadius", v)} min={0} max={16} step={1} />
       <SliderField label="Note Border Width" value={local.noteBorderWidth} onChange={(v) => update("noteBorderWidth", v)} min={1} max={6} step={1} />
     </>
@@ -300,10 +320,7 @@ function SidebarControls({ local, update }: { local: DS; update: <K extends keyo
       <ColorField label="Indicator Color" value={local.sidebarIndicatorColor} onChange={(v) => update("sidebarIndicatorColor", v)} />
       <SliderField label="Font Size" value={local.sidebarFontSize} onChange={(v) => update("sidebarFontSize", v)} min={11} max={16} step={1} />
       <SliderField label="Page Gap" value={local.sidebarPageGap} onChange={(v) => update("sidebarPageGap", v)} min={0} max={12} step={1} />
-      <div className="flex items-center justify-between">
-        <Label className="text-[10.5px] font-medium text-muted-foreground">Section Scroll Tracker</Label>
-        <Switch checked={local.sidebarShowSectionTracker} onCheckedChange={(v) => update("sidebarShowSectionTracker", v)} />
-      </div>
+      <ToggleField label="Section Scroll Tracker" checked={local.sidebarShowSectionTracker} onChange={(v) => update("sidebarShowSectionTracker", v)} />
     </>
   );
 }
