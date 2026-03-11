@@ -118,14 +118,14 @@ function SliderField({ label, value, onChange, min, max, step, unit = "px" }: {
   label: string; value: number; onChange: (v: number) => void; min: number; max: number; step: number; unit?: string;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <Label className="text-[11px] font-medium text-muted-foreground">{label}</Label>
-        <span className="text-[11px] font-mono text-muted-foreground tabular-nums bg-muted px-1.5 py-0.5 rounded">
+        <Label className="text-[10.5px] font-medium text-muted-foreground">{label}</Label>
+        <span className="text-[10.5px] font-mono text-foreground/70 tabular-nums min-w-[36px] text-right">
           {value}{unit}
         </span>
       </div>
-      <Slider value={[value]} onValueChange={([v]) => onChange(v)} min={min} max={max} step={step} className="ds-slider" />
+      <Slider value={[value]} onValueChange={([v]) => onChange(v)} min={min} max={max} step={step} />
     </div>
   );
 }
