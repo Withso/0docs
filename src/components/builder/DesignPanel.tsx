@@ -88,25 +88,27 @@ function SettingsSection({ title, icon: Icon, children, defaultOpen = false }: {
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex items-center justify-between w-full py-2.5 group">
-        <span className="flex items-center gap-2 text-[13px] font-medium text-foreground">
-          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-          {title}
-        </span>
-        <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform duration-200", open && "rotate-180")} />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="space-y-4 pb-4 pt-1">{children}</div>
-      </CollapsibleContent>
-    </Collapsible>
+    <div className="rounded-xl bg-muted/40 mb-1.5">
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 group rounded-xl hover:bg-muted/60 transition-colors">
+          <span className="flex items-center gap-2 text-[12.5px] font-medium text-foreground">
+            <Icon className="h-3.5 w-3.5 text-muted-foreground/70" />
+            {title}
+          </span>
+          <ChevronDown className={cn("h-3 w-3 text-muted-foreground/50 transition-transform duration-200", open && "rotate-180")} />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="space-y-3.5 px-3 pb-3 pt-0.5">{children}</div>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
   );
 }
 
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-[11px] font-medium text-muted-foreground">{label}</Label>
+    <div className="space-y-1">
+      <Label className="text-[10.5px] font-medium text-muted-foreground">{label}</Label>
       {children}
     </div>
   );
@@ -116,14 +118,14 @@ function SliderField({ label, value, onChange, min, max, step, unit = "px" }: {
   label: string; value: number; onChange: (v: number) => void; min: number; max: number; step: number; unit?: string;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <Label className="text-[11px] font-medium text-muted-foreground">{label}</Label>
-        <span className="text-[11px] font-mono text-muted-foreground tabular-nums bg-muted px-1.5 py-0.5 rounded">
+        <Label className="text-[10.5px] font-medium text-muted-foreground">{label}</Label>
+        <span className="text-[10.5px] font-mono text-foreground/70 tabular-nums min-w-[36px] text-right">
           {value}{unit}
         </span>
       </div>
-      <Slider value={[value]} onValueChange={([v]) => onChange(v)} min={min} max={max} step={step} className="ds-slider" />
+      <Slider value={[value]} onValueChange={([v]) => onChange(v)} min={min} max={max} step={step} />
     </div>
   );
 }
@@ -131,8 +133,8 @@ function SliderField({ label, value, onChange, min, max, step, unit = "px" }: {
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <Label className="text-[11px] font-medium text-muted-foreground shrink-0">{label}</Label>
-      <div className="flex items-center gap-2">
+      <Label className="text-[10.5px] font-medium text-muted-foreground shrink-0">{label}</Label>
+      <div className="flex items-center gap-1.5">
         <div className="relative">
           <input
             type="color"
@@ -141,14 +143,14 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           />
           <div
-            className="w-7 h-7 rounded-lg border border-border shadow-sm cursor-pointer"
+            className="w-6 h-6 rounded-full shadow-sm cursor-pointer ring-1 ring-border/50"
             style={{ backgroundColor: `hsl(${value})` }}
           />
         </div>
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-[100px] text-[10px] h-7 font-mono bg-muted/50 border-0 focus-visible:ring-1"
+          className="w-[90px] text-[9.5px] h-6 font-mono bg-muted/30 border-0 rounded-md focus-visible:ring-1"
         />
       </div>
     </div>
@@ -158,12 +160,12 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
 function FontSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-8 text-xs bg-muted/50 border-0 focus:ring-1">
+      <SelectTrigger className="h-7 text-[11px] bg-muted/30 border-0 rounded-lg focus:ring-1">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
         {options.map((f) => (
-          <SelectItem key={f} value={f} className="text-xs" style={{ fontFamily: f }}>{f}</SelectItem>
+          <SelectItem key={f} value={f} className="text-[11px]" style={{ fontFamily: f }}>{f}</SelectItem>
         ))}
       </SelectContent>
     </Select>
@@ -173,12 +175,12 @@ function FontSelect({ value, onChange, options }: { value: string; onChange: (v:
 function WeightSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-8 text-xs bg-muted/50 border-0 focus:ring-1">
+      <SelectTrigger className="h-7 text-[11px] bg-muted/30 border-0 rounded-lg focus:ring-1">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
         {weightOptions.map((w) => (
-          <SelectItem key={w.value} value={w.value} className="text-xs">{w.label}</SelectItem>
+          <SelectItem key={w.value} value={w.value} className="text-[11px]">{w.label}</SelectItem>
         ))}
       </SelectContent>
     </Select>
@@ -214,7 +216,7 @@ function LayoutControls({ local, update }: { local: DS; update: <K extends keyof
       <SliderField label="Section Spacing" value={local.sectionSpacing} onChange={(v) => update("sectionSpacing", v)} min={16} max={80} step={4} />
       <SliderField label="Paragraph Spacing" value={local.paragraphSpacing} onChange={(v) => update("paragraphSpacing", v)} min={8} max={32} step={2} />
       <div className="flex items-center justify-between">
-        <Label className="text-[11px] font-medium text-muted-foreground">Rounded Images</Label>
+        <Label className="text-[10.5px] font-medium text-muted-foreground">Rounded Images</Label>
         <Switch checked={local.imageRounded} onCheckedChange={(v) => update("imageRounded", v)} />
       </div>
       <SliderField label="Code Border Radius" value={local.codeBlockBorderRadius} onChange={(v) => update("codeBlockBorderRadius", v)} min={0} max={16} step={1} />
@@ -233,7 +235,7 @@ function SidebarControls({ local, update }: { local: DS; update: <K extends keyo
       <SliderField label="Font Size" value={local.sidebarFontSize} onChange={(v) => update("sidebarFontSize", v)} min={11} max={16} step={1} />
       <SliderField label="Page Gap" value={local.sidebarPageGap} onChange={(v) => update("sidebarPageGap", v)} min={0} max={12} step={1} />
       <div className="flex items-center justify-between">
-        <Label className="text-[11px] font-medium text-muted-foreground">Section Scroll Tracker</Label>
+        <Label className="text-[10.5px] font-medium text-muted-foreground">Section Scroll Tracker</Label>
         <Switch checked={local.sidebarShowSectionTracker} onCheckedChange={(v) => update("sidebarShowSectionTracker", v)} />
       </div>
     </>
@@ -377,77 +379,86 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
         />
       </div>
 
-      {/* Right: Settings panel */}
+      {/* Right: Floating settings panel */}
       {panelOpen && (
-        <aside className="w-[320px] shrink-0 border-l bg-background flex flex-col">
-          <div className="px-4 py-3 border-b shrink-0 flex items-center justify-between">
-            <div>
-              <h2 className="text-[13px] font-semibold text-foreground">Customize</h2>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Typography, colors, layout & block styles</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" className="h-7 text-[11px] rounded-lg gap-1" onClick={handleReset}>
-                <RotateCcw className="h-3 w-3" /> Reset
-              </Button>
-              <Button
-                size="sm"
-                className="h-7 text-[11px] rounded-lg gap-1 bg-foreground text-background hover:bg-foreground/90"
-                disabled={!hasChanges || saving}
-                onClick={handleSave}
-              >
-                <Save className="h-3 w-3" /> {saving ? "Saving…" : "Save"}
-              </Button>
-            </div>
-          </div>
-
-          <ScrollArea className="flex-1">
-            <div className="px-4 py-2">
-              <div className="mb-1">
-                <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">Global</span>
+        <div className="shrink-0 p-2 pl-0">
+          <aside
+            className="w-[340px] h-full rounded-2xl flex flex-col overflow-hidden shadow-platform-md"
+            style={{
+              backgroundColor: "hsl(var(--background) / 0.92)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid hsl(var(--border) / 0.5)",
+            }}
+          >
+            {/* Header */}
+            <div className="px-4 py-3.5 shrink-0 flex items-center justify-between">
+              <div>
+                <h2 className="text-[13px] font-semibold text-foreground">Customize</h2>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Typography, colors, layout & block styles</p>
               </div>
-
-              <SettingsSection title="Typography" icon={Type} defaultOpen>
-                <FieldRow label="Heading Font"><FontSelect value={local.headingFont} onChange={(v) => update("headingFont", v)} options={fontOptions} /></FieldRow>
-                <FieldRow label="Body Font"><FontSelect value={local.bodyFont} onChange={(v) => update("bodyFont", v)} options={fontOptions} /></FieldRow>
-                <FieldRow label="Code Font"><FontSelect value={local.codeFont} onChange={(v) => update("codeFont", v)} options={codeFontOptions} /></FieldRow>
-                <FieldRow label="Heading Weight"><WeightSelect value={local.headingWeight} onChange={(v) => update("headingWeight", v)} /></FieldRow>
-                <SliderField label="Base Font Size" value={local.baseFontSize} onChange={(v) => update("baseFontSize", v)} min={12} max={20} step={1} />
-                <SliderField label="Heading Size" value={local.headingFontSize} onChange={(v) => update("headingFontSize", v)} min={14} max={32} step={1} />
-                <SliderField label="Line Height" value={local.lineHeight} onChange={(v) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} unit="" />
-              </SettingsSection>
-
-              <div className="border-t" />
-              <SettingsSection title="Colors" icon={Palette}><ColorControls local={local} update={update} /></SettingsSection>
-              <div className="border-t" />
-              <SettingsSection title="Layout" icon={Layout}><LayoutControls local={local} update={update} /></SettingsSection>
-              <div className="border-t" />
-              <SettingsSection title="Sidebar" icon={Sidebar}><SidebarControls local={local} update={update} /></SettingsSection>
-
-              <div className="mt-5 mb-1">
-                <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">Block Styles</span>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] rounded-lg gap-1 text-muted-foreground hover:text-foreground" onClick={handleReset}>
+                  <RotateCcw className="h-3 w-3" /> Reset
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-7 text-[10px] rounded-lg gap-1"
+                  disabled={!hasChanges || saving}
+                  onClick={handleSave}
+                >
+                  <Save className="h-3 w-3" /> {saving ? "Saving…" : "Save"}
+                </Button>
               </div>
+            </div>
 
-              {blockSections.map((item) => (
-                <div key={item.key}>
-                  <SettingsSection title={item.label} icon={item.icon}>
+            <div className="mx-4 h-px bg-border/40" />
+
+            <ScrollArea className="flex-1">
+              <div className="p-3">
+                {/* Global label */}
+                <div className="mb-2 px-1">
+                  <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.12em]">Global</span>
+                </div>
+
+                <SettingsSection title="Typography" icon={Type} defaultOpen>
+                  <FieldRow label="Heading Font"><FontSelect value={local.headingFont} onChange={(v) => update("headingFont", v)} options={fontOptions} /></FieldRow>
+                  <FieldRow label="Body Font"><FontSelect value={local.bodyFont} onChange={(v) => update("bodyFont", v)} options={fontOptions} /></FieldRow>
+                  <FieldRow label="Code Font"><FontSelect value={local.codeFont} onChange={(v) => update("codeFont", v)} options={codeFontOptions} /></FieldRow>
+                  <FieldRow label="Heading Weight"><WeightSelect value={local.headingWeight} onChange={(v) => update("headingWeight", v)} /></FieldRow>
+                  <SliderField label="Base Font Size" value={local.baseFontSize} onChange={(v) => update("baseFontSize", v)} min={12} max={20} step={1} />
+                  <SliderField label="Heading Size" value={local.headingFontSize} onChange={(v) => update("headingFontSize", v)} min={14} max={32} step={1} />
+                  <SliderField label="Line Height" value={local.lineHeight} onChange={(v) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} unit="" />
+                </SettingsSection>
+
+                <SettingsSection title="Colors" icon={Palette}><ColorControls local={local} update={update} /></SettingsSection>
+                <SettingsSection title="Layout" icon={Layout}><LayoutControls local={local} update={update} /></SettingsSection>
+                <SettingsSection title="Sidebar" icon={Sidebar}><SidebarControls local={local} update={update} /></SettingsSection>
+
+                {/* Block Styles label */}
+                <div className="mt-4 mb-2 px-1">
+                  <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.12em]">Block Styles</span>
+                </div>
+
+                {blockSections.map((item) => (
+                  <SettingsSection key={item.key} title={item.label} icon={item.icon}>
                     <BlockControls blockKey={item.key} local={local} updateBlockStyle={updateBlockStyle} />
                   </SettingsSection>
-                  <div className="border-t" />
-                </div>
-              ))}
+                ))}
 
-              <div className="h-8" />
-            </div>
-          </ScrollArea>
-        </aside>
+                <div className="h-4" />
+              </div>
+            </ScrollArea>
+          </aside>
+        </div>
       )}
 
       {/* Toggle panel button - floating */}
       <button
         onClick={() => setPanelOpen(!panelOpen)}
-        className="fixed bottom-4 right-4 z-50 h-8 w-8 rounded-lg border bg-background shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+        className="fixed bottom-4 right-4 z-50 h-8 w-8 rounded-xl bg-background/90 backdrop-blur-sm shadow-platform-sm flex items-center justify-center hover:bg-muted transition-all hover:shadow-platform-md"
+        style={{ border: "1px solid hsl(var(--border) / 0.5)" }}
       >
-        {panelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
+        {panelOpen ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRight className="h-3.5 w-3.5" />}
       </button>
     </div>
   );
