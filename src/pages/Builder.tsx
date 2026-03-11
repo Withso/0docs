@@ -207,6 +207,7 @@ const Builder = () => {
                     page={activePage}
                     onUpdate={updatePage}
                     settings={settings}
+                    onAddSection={addSection}
                     onImportOpenAPI={() => {
                       setOpenApiMode("page");
                       setOpenApiOpen(true);
@@ -452,12 +453,13 @@ const SectionsDndWrapper = ({
 };
 
 const PageTitleEditor = ({
-  page, onUpdate, settings, onImportOpenAPI,
+  page, onUpdate, settings, onImportOpenAPI, onAddSection,
 }: {
   page: Page;
   onUpdate: (id: string, updates: Partial<Page>) => void;
   settings: DesignSettings;
   onImportOpenAPI?: () => void;
+  onAddSection?: () => void;
 }) => {
   const [title, setTitle] = useState(page.title);
 
@@ -491,6 +493,12 @@ const PageTitleEditor = ({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-[180px]">
+            {onAddSection && (
+              <DropdownMenuItem onClick={onAddSection} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Section
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={onImportOpenAPI} className="gap-2">
               <FileJson className="h-4 w-4" />
               Import OpenAPI
