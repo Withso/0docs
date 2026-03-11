@@ -148,10 +148,10 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
           Custom Domain
         </h3>
         <p className="text-[12px] text-muted-foreground mb-5">
-          Configure a custom domain for your published documentation. Point your domain's DNS to this app, then enter it below.
+          Set the domain where your published documentation will be accessible.
         </p>
-        <div className="space-y-4">
-          <div>
+        <div className="flex items-end gap-3">
+          <div className="flex-1">
             <Label className="text-[13px] font-medium text-foreground mb-1.5 block">Domain</Label>
             <Input
               value={customDomain}
@@ -159,36 +159,15 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
               placeholder="docs.example.com"
               className="h-11 font-mono text-[13px] rounded-lg"
             />
-            <p className="text-[11px] text-muted-foreground mt-2">
-              Enter your domain without https://. Leave empty to use the default URL.
-            </p>
           </div>
-
-          {customDomain && (
-            <div className="rounded-xl p-4" style={{ backgroundColor: "hsl(var(--muted) / 0.5)" }}>
-              <p className="text-[12px] font-medium text-foreground mb-2">DNS Configuration</p>
-              <div className="space-y-1.5 text-[11px] font-mono text-muted-foreground">
-                <div className="flex gap-3">
-                  <span className="text-foreground font-medium w-12">Type</span>
-                  <span className="text-foreground font-medium w-20">Name</span>
-                  <span className="text-foreground font-medium flex-1">Value</span>
-                </div>
-                <div className="flex gap-3">
-                  <span className="w-12">CNAME</span>
-                  <span className="w-20">{customDomain.split(".")[0]}</span>
-                  <span className="flex-1">{window.location.hostname}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end">
-            <Button size="sm" onClick={handleSaveDomain} disabled={savingDomain} className="h-9 rounded-lg">
-              <Save className="h-3.5 w-3.5 mr-1.5" />
-              {savingDomain ? "Saving..." : "Save Domain"}
-            </Button>
-          </div>
+          <Button size="sm" onClick={handleSaveDomain} disabled={savingDomain} className="h-11 rounded-lg px-5">
+            <Save className="h-3.5 w-3.5 mr-1.5" />
+            {savingDomain ? "Saving..." : "Save"}
+          </Button>
         </div>
+        <p className="text-[11px] text-muted-foreground mt-2">
+          Enter your domain without https://. Leave empty to use the default URL.
+        </p>
       </div>
 
       {/* Danger zone */}
