@@ -179,7 +179,7 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
                 </div>
 
                 {blockSections.map((item) => (
-                  <SettingsSection key={item.key} title={item.label} icon={blockIconMap[item.key]}>
+                  <SettingsSection key={item.key} title={item.label} icon={item.icon}>
                     <BlockControls blockKey={item.key} local={local} updateBlockStyle={updateBlockStyle} />
                   </SettingsSection>
                 ))}
