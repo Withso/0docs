@@ -379,77 +379,86 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
         />
       </div>
 
-      {/* Right: Settings panel */}
+      {/* Right: Floating settings panel */}
       {panelOpen && (
-        <aside className="w-[320px] shrink-0 border-l bg-background flex flex-col">
-          <div className="px-4 py-3 border-b shrink-0 flex items-center justify-between">
-            <div>
-              <h2 className="text-[13px] font-semibold text-foreground">Customize</h2>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Typography, colors, layout & block styles</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" className="h-7 text-[11px] rounded-lg gap-1" onClick={handleReset}>
-                <RotateCcw className="h-3 w-3" /> Reset
-              </Button>
-              <Button
-                size="sm"
-                className="h-7 text-[11px] rounded-lg gap-1 bg-foreground text-background hover:bg-foreground/90"
-                disabled={!hasChanges || saving}
-                onClick={handleSave}
-              >
-                <Save className="h-3 w-3" /> {saving ? "Saving…" : "Save"}
-              </Button>
-            </div>
-          </div>
-
-          <ScrollArea className="flex-1">
-            <div className="px-4 py-2">
-              <div className="mb-1">
-                <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">Global</span>
+        <div className="shrink-0 p-2 pl-0">
+          <aside
+            className="w-[340px] h-full rounded-2xl flex flex-col overflow-hidden shadow-platform-md"
+            style={{
+              backgroundColor: "hsl(var(--background) / 0.92)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid hsl(var(--border) / 0.5)",
+            }}
+          >
+            {/* Header */}
+            <div className="px-4 py-3.5 shrink-0 flex items-center justify-between">
+              <div>
+                <h2 className="text-[13px] font-semibold text-foreground">Customize</h2>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Typography, colors, layout & block styles</p>
               </div>
-
-              <SettingsSection title="Typography" icon={Type} defaultOpen>
-                <FieldRow label="Heading Font"><FontSelect value={local.headingFont} onChange={(v) => update("headingFont", v)} options={fontOptions} /></FieldRow>
-                <FieldRow label="Body Font"><FontSelect value={local.bodyFont} onChange={(v) => update("bodyFont", v)} options={fontOptions} /></FieldRow>
-                <FieldRow label="Code Font"><FontSelect value={local.codeFont} onChange={(v) => update("codeFont", v)} options={codeFontOptions} /></FieldRow>
-                <FieldRow label="Heading Weight"><WeightSelect value={local.headingWeight} onChange={(v) => update("headingWeight", v)} /></FieldRow>
-                <SliderField label="Base Font Size" value={local.baseFontSize} onChange={(v) => update("baseFontSize", v)} min={12} max={20} step={1} />
-                <SliderField label="Heading Size" value={local.headingFontSize} onChange={(v) => update("headingFontSize", v)} min={14} max={32} step={1} />
-                <SliderField label="Line Height" value={local.lineHeight} onChange={(v) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} unit="" />
-              </SettingsSection>
-
-              <div className="border-t" />
-              <SettingsSection title="Colors" icon={Palette}><ColorControls local={local} update={update} /></SettingsSection>
-              <div className="border-t" />
-              <SettingsSection title="Layout" icon={Layout}><LayoutControls local={local} update={update} /></SettingsSection>
-              <div className="border-t" />
-              <SettingsSection title="Sidebar" icon={Sidebar}><SidebarControls local={local} update={update} /></SettingsSection>
-
-              <div className="mt-5 mb-1">
-                <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">Block Styles</span>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] rounded-lg gap-1 text-muted-foreground hover:text-foreground" onClick={handleReset}>
+                  <RotateCcw className="h-3 w-3" /> Reset
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-7 text-[10px] rounded-lg gap-1"
+                  disabled={!hasChanges || saving}
+                  onClick={handleSave}
+                >
+                  <Save className="h-3 w-3" /> {saving ? "Saving…" : "Save"}
+                </Button>
               </div>
+            </div>
 
-              {blockSections.map((item) => (
-                <div key={item.key}>
-                  <SettingsSection title={item.label} icon={item.icon}>
+            <div className="mx-4 h-px bg-border/40" />
+
+            <ScrollArea className="flex-1">
+              <div className="p-3">
+                {/* Global label */}
+                <div className="mb-2 px-1">
+                  <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.12em]">Global</span>
+                </div>
+
+                <SettingsSection title="Typography" icon={Type} defaultOpen>
+                  <FieldRow label="Heading Font"><FontSelect value={local.headingFont} onChange={(v) => update("headingFont", v)} options={fontOptions} /></FieldRow>
+                  <FieldRow label="Body Font"><FontSelect value={local.bodyFont} onChange={(v) => update("bodyFont", v)} options={fontOptions} /></FieldRow>
+                  <FieldRow label="Code Font"><FontSelect value={local.codeFont} onChange={(v) => update("codeFont", v)} options={codeFontOptions} /></FieldRow>
+                  <FieldRow label="Heading Weight"><WeightSelect value={local.headingWeight} onChange={(v) => update("headingWeight", v)} /></FieldRow>
+                  <SliderField label="Base Font Size" value={local.baseFontSize} onChange={(v) => update("baseFontSize", v)} min={12} max={20} step={1} />
+                  <SliderField label="Heading Size" value={local.headingFontSize} onChange={(v) => update("headingFontSize", v)} min={14} max={32} step={1} />
+                  <SliderField label="Line Height" value={local.lineHeight} onChange={(v) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} unit="" />
+                </SettingsSection>
+
+                <SettingsSection title="Colors" icon={Palette}><ColorControls local={local} update={update} /></SettingsSection>
+                <SettingsSection title="Layout" icon={Layout}><LayoutControls local={local} update={update} /></SettingsSection>
+                <SettingsSection title="Sidebar" icon={Sidebar}><SidebarControls local={local} update={update} /></SettingsSection>
+
+                {/* Block Styles label */}
+                <div className="mt-4 mb-2 px-1">
+                  <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.12em]">Block Styles</span>
+                </div>
+
+                {blockSections.map((item) => (
+                  <SettingsSection key={item.key} title={item.label} icon={item.icon}>
                     <BlockControls blockKey={item.key} local={local} updateBlockStyle={updateBlockStyle} />
                   </SettingsSection>
-                  <div className="border-t" />
-                </div>
-              ))}
+                ))}
 
-              <div className="h-8" />
-            </div>
-          </ScrollArea>
-        </aside>
+                <div className="h-4" />
+              </div>
+            </ScrollArea>
+          </aside>
+        </div>
       )}
 
       {/* Toggle panel button - floating */}
       <button
         onClick={() => setPanelOpen(!panelOpen)}
-        className="fixed bottom-4 right-4 z-50 h-8 w-8 rounded-lg border bg-background shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+        className="fixed bottom-4 right-4 z-50 h-8 w-8 rounded-xl bg-background/90 backdrop-blur-sm shadow-platform-sm flex items-center justify-center hover:bg-muted transition-all hover:shadow-platform-md"
+        style={{ border: "1px solid hsl(var(--border) / 0.5)" }}
       >
-        {panelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
+        {panelOpen ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRight className="h-3.5 w-3.5" />}
       </button>
     </div>
   );
