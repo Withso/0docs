@@ -18,7 +18,7 @@ import PublishDialog from "@/components/builder/PublishDialog";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Page, Section } from "@/hooks/use-builder";
+import type { Page, Section, Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { ParsedOpenAPI } from "@/lib/openapi-parser";
 import type { BuilderMode, DesignSubMode } from "@/components/builder/BuilderHeader";
