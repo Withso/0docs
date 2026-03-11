@@ -377,26 +377,27 @@ const Builder = () => {
         <SettingsContent projectId={projectId!} project={project} />
       )}
 
-      <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
+      {/* Mode: Publish */}
+      {mode === "publish" && (
+        <PublishContent
+          editorChanges={publishPreview.editorChanges}
+          designChanges={publishPreview.designChanges}
+          nextVersion={publishPreview.nextVersion}
+          isFirstPublish={publishPreview.isFirstPublish}
+          publishing={publishing}
+          onPublish={handlePublish}
+          versions={publishedVersions}
+          onRevert={async (versionId) => {
+            await revertToVersion(versionId);
+            const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
+            toast({ title: "Version reverted", description: "The active published version has been updated." });
+          }}
+          projectSlug={project?.slug || ""}
+          customDomain={project?.custom_domain}
+        />
+      )}
 
-      <PublishDialog
-        open={publishDialogOpen}
-        onOpenChange={setPublishDialogOpen}
-        editorChanges={publishPreview.editorChanges}
-        designChanges={publishPreview.designChanges}
-        nextVersion={publishPreview.nextVersion}
-        isFirstPublish={publishPreview.isFirstPublish}
-        publishing={publishing}
-        onPublish={handlePublish}
-        versions={publishedVersions}
-        onRevert={async (versionId) => {
-          await revertToVersion(versionId);
-          const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
-          toast({ title: "Version reverted", description: "The active published version has been updated." });
-        }}
-        projectSlug={project?.slug || ""}
-        customDomain={project?.custom_domain}
-      />
+      <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
     </div>
   );
 };
