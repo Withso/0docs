@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import DocContentView from "@/components/docs/DocContentView";
 import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
-import { Button } from "@/components/ui/button";
 import { LogIn, LayoutDashboard, Search } from "lucide-react";
 
 interface Page {
