@@ -16,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 225 15% 12%;
 
-    --primary: 250 65% 55%;
+    --primary: 225 15% 15%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 225 12% 96%;
@@ -33,13 +33,13 @@
 
     --border: 225 12% 91%;
     --input: 225 12% 91%;
-    --ring: 250 65% 55%;
+    --ring: 225 15% 15%;
 
     --radius: 0.625rem;
 
     /* ─── Platform-specific tokens ─── */
-    --platform-accent: 250 65% 55%;
-    --platform-accent-soft: 250 65% 97%;
+    --platform-accent: 225 15% 15%;
+    --platform-accent-soft: 225 10% 96%;
     --platform-accent-foreground: 0 0% 100%;
     --platform-success: 152 60% 42%;
     --platform-success-soft: 152 50% 95%;
@@ -56,8 +56,8 @@
     --platform-sidebar-width: 260px;
 
     /* ─── Gradient tokens ─── */
-    --gradient-primary: linear-gradient(135deg, hsl(250 65% 55%), hsl(280 60% 55%));
-    --gradient-hero: linear-gradient(135deg, hsl(250 65% 55%) 0%, hsl(280 60% 55%) 50%, hsl(320 55% 55%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(225 15% 15%), hsl(225 10% 25%));
+    --gradient-hero: linear-gradient(135deg, hsl(225 15% 12%) 0%, hsl(225 10% 22%) 50%, hsl(225 8% 30%) 100%);
 
     /* ─── Doc-specific tokens (unchanged for docs output) ─── */
     --doc-link: 214 100% 50%;
@@ -72,10 +72,10 @@
     --sidebar-foreground: 225 8% 50%;
     --sidebar-primary: 225 15% 12%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 250 65% 97%;
-    --sidebar-accent-foreground: 250 65% 40%;
+    --sidebar-accent: 225 10% 96%;
+    --sidebar-accent-foreground: 225 15% 20%;
     --sidebar-border: 225 12% 92%;
-    --sidebar-ring: 250 65% 55%;
+    --sidebar-ring: 225 15% 15%;
   }
 
   .dark {
@@ -88,8 +88,8 @@
     --popover: 228 14% 10%;
     --popover-foreground: 225 10% 92%;
 
-    --primary: 250 65% 62%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 225 10% 80%;
+    --primary-foreground: 225 15% 8%;
 
     --secondary: 228 14% 13%;
     --secondary-foreground: 225 10% 85%;
@@ -105,11 +105,11 @@
 
     --border: 228 14% 15%;
     --input: 228 14% 15%;
-    --ring: 250 65% 62%;
+    --ring: 225 10% 80%;
 
-    --platform-accent: 250 65% 62%;
-    --platform-accent-soft: 250 30% 15%;
-    --platform-accent-foreground: 0 0% 100%;
+    --platform-accent: 225 10% 80%;
+    --platform-accent-soft: 225 10% 15%;
+    --platform-accent-foreground: 225 15% 8%;
     --platform-success: 152 60% 42%;
     --platform-success-soft: 152 30% 15%;
     --platform-warning: 38 92% 50%;
@@ -125,10 +125,10 @@
     --sidebar-foreground: 225 8% 48%;
     --sidebar-primary: 225 10% 92%;
     --sidebar-primary-foreground: 228 16% 7%;
-    --sidebar-accent: 250 30% 15%;
-    --sidebar-accent-foreground: 250 65% 80%;
+    --sidebar-accent: 225 10% 15%;
+    --sidebar-accent-foreground: 225 10% 80%;
     --sidebar-border: 228 14% 15%;
-    --sidebar-ring: 250 65% 62%;
+    --sidebar-ring: 225 10% 80%;
   }
 }
 
