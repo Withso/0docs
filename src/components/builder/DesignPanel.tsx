@@ -175,12 +175,12 @@ function FontSelect({ value, onChange, options }: { value: string; onChange: (v:
 function WeightSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-8 text-xs bg-muted/50 border-0 focus:ring-1">
+      <SelectTrigger className="h-7 text-[11px] bg-muted/30 border-0 rounded-lg focus:ring-1">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
         {weightOptions.map((w) => (
-          <SelectItem key={w.value} value={w.value} className="text-xs">{w.label}</SelectItem>
+          <SelectItem key={w.value} value={w.value} className="text-[11px]">{w.label}</SelectItem>
         ))}
       </SelectContent>
     </Select>
