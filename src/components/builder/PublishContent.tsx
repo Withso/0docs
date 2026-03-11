@@ -164,7 +164,7 @@ const PublishContent = ({
                         className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-muted/30 transition-colors"
                       >
                         {designOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                        <Palette className="h-3.5 w-3.5 text-purple-500" />
+                        <Palette className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="text-[13px] font-medium flex-1">Design</span>
                         <Badge variant="outline" className="text-[10px] h-5 rounded-md font-mono">
                           {isFirstPublish && designChanges.length === 0 ? "Initial" : designChanges.length}
