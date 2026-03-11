@@ -1,13 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, BarChart3, Settings, ChevronRight } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ArrowLeft, FileText, BarChart3, Settings, ChevronRight, Upload } from "lucide-react";
 
 export type BuilderMode = "editor" | "design" | "preview" | "analytics" | "settings";
 export type DesignSubMode = "live" | "examples";
@@ -20,6 +13,8 @@ interface BuilderHeaderProps {
   onModeChange: (mode: BuilderMode) => void;
   designSubMode?: DesignSubMode;
   onDesignSubModeChange?: (sub: DesignSubMode) => void;
+  onPublishClick?: () => void;
+  hasUnpublishedChanges?: boolean;
 }
 
 const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
@@ -29,7 +24,6 @@ const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (
     { label: "Preview", value: "preview" },
   ];
 
-  // Map analytics/settings to no active segment in the toggle
   const activeValue = ["editor", "design", "preview"].includes(value) ? value : null;
 
   return (
@@ -60,6 +54,8 @@ const BuilderHeader = ({
   onModeChange,
   designSubMode = "live",
   onDesignSubModeChange,
+  onPublishClick,
+  hasUnpublishedChanges,
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
 
@@ -89,13 +85,13 @@ const BuilderHeader = ({
             </div>
           </div>
 
-          {/* Center - Segmented Control (always visible) */}
+          {/* Center - Segmented Control */}
           <div className="flex items-center justify-center gap-3">
             <SegmentedControl value={mode} onChange={onModeChange} />
           </div>
 
-          {/* Right - icon nav */}
-          <div className="flex items-center gap-0.5 flex-1 justify-end">
+          {/* Right */}
+          <div className="flex items-center gap-1 flex-1 justify-end">
             <button
               className={`h-8 rounded-lg px-2 flex items-center gap-1.5 text-[12px] font-medium transition-all ${
                 mode === "analytics"
@@ -120,6 +116,21 @@ const BuilderHeader = ({
               <Settings className="h-4 w-4" />
               {mode === "settings" && <span>Settings</span>}
             </button>
+
+            {/* Publish button */}
+            {onPublishClick && (
+              <Button
+                size="sm"
+                className="h-8 rounded-xl px-4 text-[12px] font-medium ml-2 relative"
+                onClick={onPublishClick}
+              >
+                <Upload className="h-3.5 w-3.5 mr-1.5" />
+                Publish
+                {hasUnpublishedChanges && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-background" />
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </header>
