@@ -18,7 +18,7 @@ import PublishDialog from "@/components/builder/PublishDialog";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Page, Section } from "@/hooks/use-builder";
+import type { Page, Section, Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { ParsedOpenAPI } from "@/lib/openapi-parser";
 import type { BuilderMode, DesignSubMode } from "@/components/builder/BuilderHeader";
@@ -94,35 +94,66 @@ const Builder = () => {
   } = usePublish(projectId, user?.id);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
 
-  // Compute pending changes for publish preview
-  const publishPreview = useMemo(() => {
-    // We need ALL pages' sections/blocks for a full snapshot, but we only have active page's
-    // For now, use what we have — the publish will fetch all data
-    return previewChanges(pages, sections, blocks, settings);
-  }, [pages, sections, blocks, settings, previewChanges]);
+  const [publishPreview, setPublishPreview] = useState(() => previewChanges(pages, sections, blocks, settings));
+
+  const getCompleteSnapshot = useCallback(async () => {
+    const pageIds = pages.map((p) => p.id);
+    let allSections: Section[] = [];
+    let allBlocks: Block[] = [];
+
+    if (pageIds.length > 0) {
+      const { data: secs } = await supabase
+        .from("sections")
+        .select("*")
+        .in("page_id", pageIds)
+        .order("order_index");
+
+      allSections = (secs || []) as Section[];
+
+      if (allSections.length > 0) {
+        const secIds = allSections.map((s) => s.id);
+        const { data: blks } = await supabase
+          .from("blocks")
+          .select("*")
+          .in("section_id", secIds)
+          .order("order_index");
+
+        allBlocks = (blks || []) as Block[];
+      }
+    }
+
+    return { allSections, allBlocks };
+  }, [pages]);
+
+  // Compute pending changes against full project snapshot (all pages/sections/blocks)
+  useEffect(() => {
+    let cancelled = false;
+
+    const computePublishPreview = async () => {
+      const { allSections, allBlocks } = await getCompleteSnapshot();
+      if (cancelled) return;
+      setPublishPreview(previewChanges(pages, allSections, allBlocks, settings));
+    };
+
+    computePublishPreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pages, settings, previewChanges, getCompleteSnapshot]);
 
   const handlePublish = useCallback(async (notes?: string) => {
     if (!projectId || !user?.id) return;
-    // Fetch ALL sections and blocks across all pages for a complete snapshot
-    const pageIds = pages.map(p => p.id);
-    let allSections: Section[] = [];
-    let allBlocks: any[] = [];
-    if (pageIds.length > 0) {
-      const { data: secs } = await supabase.from("sections").select("*").in("page_id", pageIds).order("order_index");
-      allSections = secs || [];
-      if (allSections.length > 0) {
-        const secIds = allSections.map(s => s.id);
-        const { data: blks } = await supabase.from("blocks").select("*").in("section_id", secIds).order("order_index");
-        allBlocks = blks || [];
-      }
-    }
+
+    const { allSections, allBlocks } = await getCompleteSnapshot();
     const result = await publish(pages, allSections, allBlocks, settings, navGroups, notes);
+
     if (result) {
       setPublishDialogOpen(false);
       const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
       toast({ title: `Published v${result.version.version_number}`, description: "Your documentation is now live." });
     }
-  }, [projectId, user?.id, pages, settings, navGroups, publish]);
+  }, [projectId, user?.id, getCompleteSnapshot, publish, pages, settings, navGroups]);
 
   // Listen for sidebar section title edits and sync to builder state
   useEffect(() => {
