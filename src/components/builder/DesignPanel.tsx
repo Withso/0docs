@@ -198,7 +198,31 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-function InlineSelect({ label, value, onChange, options }: {
+function ToggleField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div
+      className="relative rounded-xl h-[34px] flex items-center px-3.5"
+      style={{ backgroundColor: 'hsl(var(--foreground) / 0.06)' }}
+    >
+      <span className="text-[11px] font-medium select-none flex-1" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>
+        {label}
+      </span>
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        className="data-[state=checked]:bg-[hsl(var(--foreground)/0.08)] data-[state=unchecked]:bg-[hsl(var(--foreground)/0.08)] border border-[hsl(var(--foreground)/0.1)] h-5 w-9"
+        thumbClassName={cn(
+          "h-4 w-4 data-[state=checked]:translate-x-4",
+          checked
+            ? "bg-[hsl(var(--foreground)/0.35)]"
+            : "bg-[hsl(var(--foreground)/0.15)]"
+        )}
+      />
+    </div>
+  );
+}
+
+
   label: string; value: string; onChange: (v: string) => void;
   options: { value: string; label: string; style?: React.CSSProperties }[];
 }) {
