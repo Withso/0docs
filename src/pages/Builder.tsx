@@ -207,6 +207,7 @@ const Builder = () => {
                     page={activePage}
                     onUpdate={updatePage}
                     settings={settings}
+                    onAddSection={addSection}
                     onImportOpenAPI={() => {
                       setOpenApiMode("page");
                       setOpenApiOpen(true);
