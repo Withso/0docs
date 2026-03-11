@@ -222,7 +222,7 @@ function ToggleField({ label, checked, onChange }: { label: string; checked: boo
   );
 }
 
-
+function InlineSelect({ label, value, onChange, options }: {
   label: string; value: string; onChange: (v: string) => void;
   options: { value: string; label: string; style?: React.CSSProperties }[];
 }) {
