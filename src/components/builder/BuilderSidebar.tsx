@@ -117,6 +117,64 @@ const BuilderSidebar = ({
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  // IntersectionObserver for section highlighting in editor sidebar
+  useEffect(() => {
+    if (!activePage || sortedSections.length === 0) {
+      setActiveSectionId(null);
+      return;
+    }
+
+    // Small delay to allow DOM to render new sections
+    const timer = setTimeout(() => {
+      const visibilityMap = new Map<string, IntersectionObserverEntry>();
+
+      observerRef.current?.disconnect();
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => visibilityMap.set(entry.target.id, entry));
+
+          let bestId: string | null = null;
+          let bestTop = Infinity;
+
+          visibilityMap.forEach((entry, elementId) => {
+            if (!entry.isIntersecting) return;
+            const top = entry.boundingClientRect.top;
+            if (top < bestTop) {
+              bestTop = top;
+              bestId = elementId.replace("section-", "");
+            }
+          });
+
+          if (!bestId) {
+            let lastPastId: string | null = null;
+            for (const sec of sortedSections) {
+              const entry = visibilityMap.get(`section-${sec.id}`);
+              if (entry && entry.boundingClientRect.top < 0) {
+                lastPastId = sec.id;
+              }
+            }
+            if (lastPastId) bestId = lastPastId;
+          }
+
+          if (bestId) setActiveSectionId(bestId);
+        },
+        { rootMargin: "-10% 0px -50% 0px", threshold: [0, 0.25, 0.5] }
+      );
+
+      const els = sortedSections
+        .map((sec) => document.getElementById(`section-${sec.id}`))
+        .filter(Boolean) as HTMLElement[];
+
+      els.forEach((el) => observerRef.current!.observe(el));
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      observerRef.current?.disconnect();
+    };
+  }, [activePage?.id, sortedSections]);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
