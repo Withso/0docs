@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,13 +6,20 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import Builder from "./pages/Builder";
-import ProfileSettings from "./pages/ProfileSettings";
-import PublicDocs from "./pages/PublicDocs";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Builder = lazy(() => import("./pages/Builder"));
+const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
+const PublicDocs = lazy(() => import("./pages/PublicDocs"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const LazyFallback = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <span className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+  </div>
+);
 
 const queryClient = new QueryClient();
 
