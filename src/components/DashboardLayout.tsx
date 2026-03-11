@@ -32,7 +32,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center shadow-platform-sm">
               <FileText className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-[15px] tracking-tight text-foreground">DocBuilder</span>
+            <span className="font-semibold text-[15px] tracking-tight text-foreground">0docs</span>
           </div>
 
           {/* Nav */}
