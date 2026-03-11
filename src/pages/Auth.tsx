@@ -36,9 +36,7 @@ const Auth = () => {
     } else {
       if (isSignUp) {
         try {
-          await supabase.functions.invoke("seed-demo-project", {
-            body: { user_id: (await supabase.auth.getUser()).data.user?.id },
-          });
+          await supabase.functions.invoke("seed-demo-project");
         } catch (e) {
           console.error("Demo seed failed:", e);
         }

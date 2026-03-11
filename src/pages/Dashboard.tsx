@@ -109,9 +109,7 @@ const Dashboard = () => {
   };
 
   const seedDemo = async () => {
-    const { data, error } = await supabase.functions.invoke("seed-demo-project", {
-      body: { user_id: user!.id },
-    });
+    const { data, error } = await supabase.functions.invoke("seed-demo-project");
     if (error) {
       toast({ title: "Error", description: "Failed to create demo project", variant: "destructive" });
     } else {
