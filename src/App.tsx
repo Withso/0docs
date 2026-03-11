@@ -81,6 +81,7 @@ const App = () => (
                     <Builder />
                   </ProtectedRoute>
                 }
+              />
               <Route
                 path="/settings/profile"
                 element={
