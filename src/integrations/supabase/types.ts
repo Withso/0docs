@@ -325,35 +325,111 @@ export type Database = {
       projects: {
         Row: {
           created_at: string
+          custom_domain: string | null
           description: string | null
           id: string
           is_homepage: boolean
           name: string
+          published_version_id: string | null
           slug: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          custom_domain?: string | null
           description?: string | null
           id?: string
           is_homepage?: boolean
           name: string
+          published_version_id?: string | null
           slug: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          custom_domain?: string | null
           description?: string | null
           id?: string
           is_homepage?: boolean
           name?: string
+          published_version_id?: string | null
           slug?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_published_version_id_fkey"
+            columns: ["published_version_id"]
+            isOneToOne: false
+            referencedRelation: "published_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      published_versions: {
+        Row: {
+          blocks_snapshot: Json
+          created_at: string
+          design_changes: Json
+          design_snapshot: Json
+          editor_changes: Json
+          id: string
+          is_active: boolean
+          nav_groups_snapshot: Json
+          notes: string | null
+          pages_snapshot: Json
+          project_id: string
+          published_at: string
+          published_by: string
+          sections_snapshot: Json
+          version_number: string
+        }
+        Insert: {
+          blocks_snapshot?: Json
+          created_at?: string
+          design_changes?: Json
+          design_snapshot?: Json
+          editor_changes?: Json
+          id?: string
+          is_active?: boolean
+          nav_groups_snapshot?: Json
+          notes?: string | null
+          pages_snapshot?: Json
+          project_id: string
+          published_at?: string
+          published_by: string
+          sections_snapshot?: Json
+          version_number: string
+        }
+        Update: {
+          blocks_snapshot?: Json
+          created_at?: string
+          design_changes?: Json
+          design_snapshot?: Json
+          editor_changes?: Json
+          id?: string
+          is_active?: boolean
+          nav_groups_snapshot?: Json
+          notes?: string | null
+          pages_snapshot?: Json
+          project_id?: string
+          published_at?: string
+          published_by?: string
+          sections_snapshot?: Json
+          version_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       search_queries: {
         Row: {
