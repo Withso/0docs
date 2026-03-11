@@ -88,18 +88,20 @@ function SettingsSection({ title, icon: Icon, children, defaultOpen = false }: {
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex items-center justify-between w-full py-2.5 group">
-        <span className="flex items-center gap-2 text-[13px] font-medium text-foreground">
-          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-          {title}
-        </span>
-        <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform duration-200", open && "rotate-180")} />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="space-y-4 pb-4 pt-1">{children}</div>
-      </CollapsibleContent>
-    </Collapsible>
+    <div className="rounded-xl bg-muted/40 mb-1.5">
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 group rounded-xl hover:bg-muted/60 transition-colors">
+          <span className="flex items-center gap-2 text-[12.5px] font-medium text-foreground">
+            <Icon className="h-3.5 w-3.5 text-muted-foreground/70" />
+            {title}
+          </span>
+          <ChevronDown className={cn("h-3 w-3 text-muted-foreground/50 transition-transform duration-200", open && "rotate-180")} />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="space-y-3.5 px-3 pb-3 pt-0.5">{children}</div>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
   );
 }
 
