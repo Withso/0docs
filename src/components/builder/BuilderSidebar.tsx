@@ -611,10 +611,10 @@ const BuilderSidebar = ({
     }
     return (
       <div
-        className="rounded px-2 py-1 shadow-lg"
+        className="rounded-xl px-2 py-1 shadow-xl"
         style={{
           backgroundColor: `hsl(${s.sidebarBg})`,
-          border: `2px solid hsl(${s.sidebarActiveColor} / 0.3)`,
+          border: `none`,
           fontSize: `${s.sidebarFontSize}px`,
           fontFamily: `'${s.bodyFont}', sans-serif`,
           color: `hsl(${s.sidebarTextColor})`,

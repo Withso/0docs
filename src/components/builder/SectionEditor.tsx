@@ -122,10 +122,9 @@ const SectionEditor = ({
     if (!block) return null;
     return (
       <div
-        className="rounded-lg px-3 py-2 shadow-lg text-xs"
+        className="rounded-xl px-3 py-2 shadow-xl text-xs"
         style={{
           backgroundColor: `hsl(${settings.backgroundColor})`,
-          border: `2px solid hsl(${settings.primaryColor} / 0.3)`,
           color: `hsl(${settings.mutedForegroundColor})`,
           maxWidth: "300px",
         }}

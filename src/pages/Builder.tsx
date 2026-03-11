@@ -394,10 +394,9 @@ const SectionsDndWrapper = ({
     const sectionBlocks = blocks.filter((b) => b.section_id === section.id);
     return (
       <div
-        className="rounded-lg px-4 py-3 shadow-lg"
+        className="rounded-xl px-4 py-3 shadow-xl"
         style={{
           backgroundColor: `hsl(${settings.backgroundColor})`,
-          border: `2px solid hsl(${settings.primaryColor} / 0.3)`,
           maxWidth: "400px",
         }}
       >
