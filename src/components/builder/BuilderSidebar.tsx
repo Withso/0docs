@@ -588,7 +588,7 @@ const BuilderSidebar = ({
           className="rounded-xl px-2 py-1 shadow-xl text-[10px] font-semibold uppercase tracking-widest"
           style={{
             backgroundColor: `hsl(${s.sidebarBg})`,
-            border: `2px solid hsl(${s.sidebarActiveColor} / 0.3)`,
+            border: `none`,
             color: `hsl(${s.sidebarTextColor})`,
           }}
           dangerouslySetInnerHTML={{ __html: item.groupData!.title }}
