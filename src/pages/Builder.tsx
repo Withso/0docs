@@ -14,7 +14,7 @@ import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SettingsContent from "@/components/builder/SettingsContent";
 import AnalyticsContent from "@/components/builder/AnalyticsContent";
-import PublishDialog from "@/components/builder/PublishDialog";
+import PublishContent from "@/components/builder/PublishContent";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +61,7 @@ const Builder = () => {
     if (location.pathname.endsWith("/analytics")) return "analytics";
     if (location.pathname.endsWith("/settings")) return "settings";
     if (location.pathname.endsWith("/design")) return "design";
+    if (location.pathname.endsWith("/publish")) return "publish";
     return "editor";
   };
 
@@ -75,6 +76,7 @@ const Builder = () => {
     if (newMode === "analytics") navigate(`${base}/analytics`, { replace: true });
     else if (newMode === "settings") navigate(`${base}/settings`, { replace: true });
     else if (newMode === "design") navigate(`${base}/design`, { replace: true });
+    else if (newMode === "publish") navigate(`${base}/publish`, { replace: true });
     else navigate(base, { replace: true });
   }, [projectId, navigate]);
 
@@ -92,7 +94,7 @@ const Builder = () => {
   const {
     versions: publishedVersions, publishing, publish, revertToVersion, previewChanges,
   } = usePublish(projectId, user?.id);
-  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  
 
   const [publishPreview, setPublishPreview] = useState(() =>
     previewChanges(pages, sections, blocks, settings, navGroups),
@@ -153,7 +155,6 @@ const Builder = () => {
     const result = await publish(pages, allSections, allBlocks, settings, navGroups, notes);
 
     if (result) {
-      setPublishDialogOpen(false);
       const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
       toast({ title: `Published v${result.version.version_number}`, description: "Your documentation is now live." });
     }
@@ -242,7 +243,7 @@ const Builder = () => {
         onModeChange={handleModeChange}
         designSubMode={designSubMode}
         onDesignSubModeChange={setDesignSubMode}
-        onPublishClick={() => setPublishDialogOpen(true)}
+        onPublishClick={() => handleModeChange("publish")}
         hasUnpublishedChanges={publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish}
       />
 
@@ -376,26 +377,27 @@ const Builder = () => {
         <SettingsContent projectId={projectId!} project={project} />
       )}
 
-      <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
+      {/* Mode: Publish */}
+      {mode === "publish" && (
+        <PublishContent
+          editorChanges={publishPreview.editorChanges}
+          designChanges={publishPreview.designChanges}
+          nextVersion={publishPreview.nextVersion}
+          isFirstPublish={publishPreview.isFirstPublish}
+          publishing={publishing}
+          onPublish={handlePublish}
+          versions={publishedVersions}
+          onRevert={async (versionId) => {
+            await revertToVersion(versionId);
+            const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
+            toast({ title: "Version reverted", description: "The active published version has been updated." });
+          }}
+          projectSlug={project?.slug || ""}
+          customDomain={project?.custom_domain}
+        />
+      )}
 
-      <PublishDialog
-        open={publishDialogOpen}
-        onOpenChange={setPublishDialogOpen}
-        editorChanges={publishPreview.editorChanges}
-        designChanges={publishPreview.designChanges}
-        nextVersion={publishPreview.nextVersion}
-        isFirstPublish={publishPreview.isFirstPublish}
-        publishing={publishing}
-        onPublish={handlePublish}
-        versions={publishedVersions}
-        onRevert={async (versionId) => {
-          await revertToVersion(versionId);
-          const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
-          toast({ title: "Version reverted", description: "The active published version has been updated." });
-        }}
-        projectSlug={project?.slug || ""}
-        customDomain={project?.custom_domain}
-      />
+      <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
     </div>
   );
 };

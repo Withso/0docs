@@ -75,6 +75,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/builder/:projectId/publish"
+                element={
+                  <ProtectedRoute>
+                    <Builder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/settings/profile"
                 element={
                   <ProtectedRoute>
