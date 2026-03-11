@@ -234,7 +234,7 @@ function InlineSelect({ label, value, onChange, options }: {
                   <Check className="h-4 w-4" />
                 </SelectPrimitive.ItemIndicator>
               </span>
-              <span className="sr-only"><SelectPrimitive.ItemText>{o.label}</SelectPrimitive.ItemText></span>
+              <span className="opacity-0 h-0 overflow-hidden"><SelectPrimitive.ItemText>{o.label}</SelectPrimitive.ItemText></span>
               <span style={o.style}>{o.label}</span>
             </SelectPrimitive.Item>
           )) : options.map((o) => (
