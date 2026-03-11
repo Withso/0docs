@@ -32,7 +32,6 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
       setName(project.name);
       setDescription(project.description || "");
       setSlug(project.slug);
-      setCustomDomain(project.custom_domain || "");
     }
   }, [project]);
 
