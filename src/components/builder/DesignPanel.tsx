@@ -281,10 +281,7 @@ function LayoutControls({ local, update }: { local: DS; update: <K extends keyof
       <SliderField label="Page Title Size" value={local.pageTitleSize} onChange={(v) => update("pageTitleSize", v)} min={18} max={42} step={1} />
       <SliderField label="Section Spacing" value={local.sectionSpacing} onChange={(v) => update("sectionSpacing", v)} min={16} max={80} step={4} />
       <SliderField label="Paragraph Spacing" value={local.paragraphSpacing} onChange={(v) => update("paragraphSpacing", v)} min={8} max={32} step={2} />
-      <div className="flex items-center justify-between">
-        <Label className="text-[10.5px] font-medium text-muted-foreground">Rounded Images</Label>
-        <Switch checked={local.imageRounded} onCheckedChange={(v) => update("imageRounded", v)} />
-      </div>
+      <ToggleField label="Rounded Images" checked={local.imageRounded} onChange={(v) => update("imageRounded", v)} />
       <SliderField label="Code Border Radius" value={local.codeBlockBorderRadius} onChange={(v) => update("codeBlockBorderRadius", v)} min={0} max={16} step={1} />
       <SliderField label="Note Border Width" value={local.noteBorderWidth} onChange={(v) => update("noteBorderWidth", v)} min={1} max={6} step={1} />
     </>
