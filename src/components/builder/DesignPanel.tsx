@@ -198,33 +198,53 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-function FontSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+function InlineSelect({ label, value, onChange, options }: {
+  label: string; value: string; onChange: (v: string) => void;
+  options: { value: string; label: string; style?: React.CSSProperties }[];
+}) {
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-7 text-[11px] bg-muted/30 border-0 rounded-lg focus:ring-1">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((f) => (
-          <SelectItem key={f} value={f} className="text-[11px]" style={{ fontFamily: f }}>{f}</SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div
+      className="relative rounded-xl h-[34px] flex items-center cursor-pointer"
+      style={{ backgroundColor: 'hsl(var(--foreground) / 0.06)' }}
+    >
+      <span className="absolute left-3.5 text-[11px] font-medium pointer-events-none select-none" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>
+        {label}
+      </span>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-full h-full bg-transparent border-0 shadow-none rounded-xl pl-3.5 pr-3 focus:ring-0 focus-visible:ring-0">
+          <span className="ml-auto text-[11.5px] font-medium" style={{ color: 'hsl(var(--foreground) / 0.7)' }}>
+            <SelectValue />
+          </span>
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value} className="text-[11px]" style={o.style}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 
-function WeightSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function FontSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-7 text-[11px] bg-muted/30 border-0 rounded-lg focus:ring-1">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {weightOptions.map((w) => (
-          <SelectItem key={w.value} value={w.value} className="text-[11px]">{w.label}</SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <InlineSelect
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={options.map((f) => ({ value: f, label: f, style: { fontFamily: f } }))}
+    />
+  );
+}
+
+function WeightSelect({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <InlineSelect
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={weightOptions.map((w) => ({ value: w.value, label: w.label }))}
+    />
   );
 }
 
@@ -313,9 +333,9 @@ function BlockControls({
       {supportsTextStyle && <ColorField label="Text Color" value={resolvedColor} onChange={(v) => updateBlockStyle(blockKey, "color", v)} />}
       {supportsBackground && <ColorField label="Background" value={resolvedBg} onChange={(v) => updateBlockStyle(blockKey, "backgroundColor", v)} />}
       {supportsBorder && <ColorField label="Border" value={resolvedBorder} onChange={(v) => updateBlockStyle(blockKey, "borderColor", v)} />}
-      {supportsTextStyle && <FieldRow label="Font"><FontSelect value={resolvedFont} onChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)} options={blockKey === "code_block" ? codeFontOptions : fontOptions} /></FieldRow>}
+      {supportsTextStyle && <FontSelect label="Font" value={resolvedFont} onChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)} options={blockKey === "code_block" ? codeFontOptions : fontOptions} />}
       {supportsTextStyle && <SliderField label="Font Size" value={resolvedSize} onChange={(v) => updateBlockStyle(blockKey, "fontSize", v)} min={10} max={32} step={1} />}
-      {supportsTextStyle && <FieldRow label="Font Weight"><WeightSelect value={resolvedWeight} onChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)} /></FieldRow>}
+      {supportsTextStyle && <WeightSelect label="Font Weight" value={resolvedWeight} onChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)} />}
       {supportsRadius && <SliderField label="Border Radius" value={resolvedRadius} onChange={(v) => updateBlockStyle(blockKey, "borderRadius", v)} min={0} max={20} step={1} />}
       {supportsPadding && <SliderField label="Padding" value={resolvedPadding} onChange={(v) => updateBlockStyle(blockKey, "padding", v)} min={0} max={32} step={2} />}
     </>
@@ -462,10 +482,10 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
                 </div>
 
                 <SettingsSection title="Typography" icon={Type} defaultOpen>
-                  <FieldRow label="Heading Font"><FontSelect value={local.headingFont} onChange={(v) => update("headingFont", v)} options={fontOptions} /></FieldRow>
-                  <FieldRow label="Body Font"><FontSelect value={local.bodyFont} onChange={(v) => update("bodyFont", v)} options={fontOptions} /></FieldRow>
-                  <FieldRow label="Code Font"><FontSelect value={local.codeFont} onChange={(v) => update("codeFont", v)} options={codeFontOptions} /></FieldRow>
-                  <FieldRow label="Heading Weight"><WeightSelect value={local.headingWeight} onChange={(v) => update("headingWeight", v)} /></FieldRow>
+                  <FontSelect label="Heading Font" value={local.headingFont} onChange={(v) => update("headingFont", v)} options={fontOptions} />
+                  <FontSelect label="Body Font" value={local.bodyFont} onChange={(v) => update("bodyFont", v)} options={fontOptions} />
+                  <FontSelect label="Code Font" value={local.codeFont} onChange={(v) => update("codeFont", v)} options={codeFontOptions} />
+                  <WeightSelect label="Heading Weight" value={local.headingWeight} onChange={(v) => update("headingWeight", v)} />
                   <SliderField label="Base Font Size" value={local.baseFontSize} onChange={(v) => update("baseFontSize", v)} min={12} max={20} step={1} />
                   <SliderField label="Heading Size" value={local.headingFontSize} onChange={(v) => update("headingFontSize", v)} min={14} max={32} step={1} />
                   <SliderField label="Line Height" value={local.lineHeight} onChange={(v) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} unit="" />
