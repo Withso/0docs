@@ -10,9 +10,27 @@ import useSEOHead from "@/hooks/use-seo-head";
 import { Button } from "@/components/ui/button";
 import { LogIn, LayoutDashboard, Search } from "lucide-react";
 
-interface Page { id: string; title: string; slug: string; order_index: number; meta_description?: string | null; version_id?: string | null; }
-interface Section { id: string; page_id: string; title: string; order_index: number; }
-interface Block { id: string; section_id: string; type: string; content: any; order_index: number; }
+interface Page {
+  id: string;
+  title: string;
+  slug: string;
+  order_index: number;
+  meta_description?: string | null;
+  version_id?: string | null;
+}
+interface Section {
+  id: string;
+  page_id: string;
+  title: string;
+  order_index: number;
+}
+interface Block {
+  id: string;
+  section_id: string;
+  type: string;
+  content: any;
+  order_index: number;
+}
 
 const Index = () => {
   const navigate = useNavigate();
@@ -55,10 +73,19 @@ const Index = () => {
           .single();
 
         if (published && published.is_active) {
-          const snapPages = (published.pages_snapshot as unknown as Page[]) || [];
-          const snapSections = (published.sections_snapshot as unknown as Section[]) || [];
-          const snapBlocks = (published.blocks_snapshot as unknown as Block[]) || [];
-          const snapNavGroups = (published.nav_groups_snapshot as unknown as any[]) || [];
+          const snapPages =
+            ((published.pages_snapshot as unknown as Page[]) || []).slice();
+          const snapSections =
+            ((published.sections_snapshot as unknown as Section[]) || []).slice();
+          const snapBlocks =
+            ((published.blocks_snapshot as unknown as Block[]) || []).slice();
+          const snapNavGroups =
+            ((published.nav_groups_snapshot as unknown as any[]) || []).slice();
+
+          snapPages.sort((a, b) => a.order_index - b.order_index);
+          snapSections.sort((a, b) => a.order_index - b.order_index);
+          snapBlocks.sort((a, b) => a.order_index - b.order_index);
+          snapNavGroups.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
 
           setPages(snapPages);
           setAllSections(snapSections);
@@ -71,10 +98,10 @@ const Index = () => {
           setActivePage(active);
 
           if (active) {
-            const pageSecs = snapSections.filter(s => s.page_id === active.id);
+            const pageSecs = snapSections.filter((s) => s.page_id === active.id);
             setSections(pageSecs);
-            const secIds = new Set(pageSecs.map(s => s.id));
-            setBlocks(snapBlocks.filter(b => secIds.has(b.section_id)));
+            const secIds = new Set(pageSecs.map((s) => s.id));
+            setBlocks(snapBlocks.filter((b) => secIds.has(b.section_id)));
           }
 
           setLoading(false);
@@ -87,6 +114,7 @@ const Index = () => {
         .from("pages")
         .select("*")
         .eq("project_id", proj.id)
+        .order("nav_group_id", { ascending: true, nullsFirst: true })
         .order("order_index");
 
       if (pagesData && pagesData.length > 0) {
@@ -97,8 +125,16 @@ const Index = () => {
         const pageIds = pagesData.map((p) => p.id);
 
         const [allSecsRes, firstPageSecsRes] = await Promise.all([
-          supabase.from("sections").select("*").in("page_id", pageIds).order("order_index"),
-          supabase.from("sections").select("*").eq("page_id", firstPage.id).order("order_index"),
+          supabase
+            .from("sections")
+            .select("*")
+            .in("page_id", pageIds)
+            .order("order_index"),
+          supabase
+            .from("sections")
+            .select("*")
+            .eq("page_id", firstPage.id)
+            .order("order_index"),
         ]);
 
         const allSecs = allSecsRes.data || [];
@@ -111,10 +147,18 @@ const Index = () => {
 
           const [firstBlksRes, allBlksRes] = await Promise.all([
             firstSecIds.length > 0
-              ? supabase.from("blocks").select("*").in("section_id", firstSecIds).order("order_index")
+              ? supabase
+                  .from("blocks")
+                  .select("*")
+                  .in("section_id", firstSecIds)
+                  .order("order_index")
               : Promise.resolve({ data: [] }),
             allSecIds.length > 0
-              ? supabase.from("blocks").select("*").in("section_id", allSecIds).order("order_index")
+              ? supabase
+                  .from("blocks")
+                  .select("*")
+                  .in("section_id", allSecIds)
+                  .order("order_index")
               : Promise.resolve({ data: [] }),
           ]);
 
@@ -123,7 +167,11 @@ const Index = () => {
         }
 
         // Load nav groups for live data
-        const { data: groups } = await supabase.from("nav_groups").select("*").eq("project_id", proj.id).order("order_index");
+        const { data: groups } = await supabase
+          .from("nav_groups")
+          .select("*")
+          .eq("project_id", proj.id)
+          .order("order_index");
         if (groups) setNavGroups(groups);
       } else if (pagesData) {
         setPages([]);
@@ -138,10 +186,10 @@ const Index = () => {
     if (!activePage) return;
 
     if (usingPublished) {
-      const pageSecs = allSections.filter(s => s.page_id === activePage.id);
+      const pageSecs = allSections.filter((s) => s.page_id === activePage.id);
       setSections(pageSecs);
-      const secIds = new Set(pageSecs.map(s => s.id));
-      setBlocks(allBlocks.filter(b => secIds.has(b.section_id)));
+      const secIds = new Set(pageSecs.map((s) => s.id));
+      setBlocks(allBlocks.filter((b) => secIds.has(b.section_id)));
       return;
     }
 
@@ -157,7 +205,10 @@ const Index = () => {
           const { data: blks } = await supabase
             .from("blocks")
             .select("*")
-            .in("section_id", secs.map((s) => s.id))
+            .in(
+              "section_id",
+              secs.map((s) => s.id),
+            )
             .order("order_index");
           setBlocks(blks || []);
         } else setBlocks([]);
@@ -178,10 +229,13 @@ const Index = () => {
 
       const rows = existing || [];
       if (rows.length > 0) {
-        await supabase.from("page_analytics").update({
-          view_count: rows[0].view_count + 1,
-          last_viewed_at: new Date().toISOString(),
-        } as any).eq("id", rows[0].id);
+        await supabase
+          .from("page_analytics")
+          .update({
+            view_count: rows[0].view_count + 1,
+            last_viewed_at: new Date().toISOString(),
+          } as any)
+          .eq("id", rows[0].id);
       } else {
         await supabase.from("page_analytics").insert({
           page_id: activePage.id,
@@ -195,12 +249,12 @@ const Index = () => {
   }, [activePage?.id, project?.id]);
 
   const { versions, activeVersion, setActiveVersion } = useVersions(project?.id);
-  const filteredPages = versions.length > 0 && activeVersion
-    ? pages.filter((p) => p.version_id === activeVersion.id || !p.version_id)
-    : pages;
+  const filteredPages =
+    usingPublished || !(versions.length > 0 && activeVersion)
+      ? pages
+      : pages.filter((p) => p.version_id === activeVersion.id || !p.version_id);
 
   const { settings: liveSettings } = useDesignSettings(project?.id);
-  // Use published design if available, otherwise live
   const settings = publishedDesign || liveSettings;
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -244,7 +298,9 @@ const Index = () => {
       >
         <div
           className="mx-auto h-full flex items-center justify-between px-6"
-          style={{ maxWidth: `${settings.contentMaxWidth + settings.sidebarWidth + 200 + 48}px` }}
+          style={{
+            maxWidth: `${settings.contentMaxWidth + settings.sidebarWidth + 200 + 48}px`,
+          }}
         >
           <div style={{ width: `${settings.sidebarWidth}px`, flexShrink: 0 }} />
           <div className="flex-1 min-w-0 lg:pl-4">
@@ -262,7 +318,10 @@ const Index = () => {
             >
               <Search className="h-3.5 w-3.5" />
               <span>Search</span>
-              <kbd className="ml-auto hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]" style={{ borderColor: `hsl(${settings.borderColor})` }}>
+              <kbd
+                className="ml-auto hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]"
+                style={{ borderColor: `hsl(${settings.borderColor})` }}
+              >
                 ⌘K
               </kbd>
             </button>
@@ -305,9 +364,9 @@ const Index = () => {
         showFeedback
         pageId={activePage?.id}
         projectId={project?.id}
-        versions={versions}
-        activeVersion={activeVersion}
-        onSelectVersion={setActiveVersion}
+        versions={usingPublished ? [] : versions}
+        activeVersion={usingPublished ? undefined : activeVersion}
+        onSelectVersion={usingPublished ? undefined : setActiveVersion}
         externalSearchOpen={searchOpen}
         onExternalSearchOpenChange={setSearchOpen}
         navGroups={navGroups}

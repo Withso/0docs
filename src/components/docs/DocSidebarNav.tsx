@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode, useMemo } from "react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
 export interface SidebarPageBase {
@@ -86,7 +86,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
 
         if (bestId) setActiveSectionId(bestId);
       },
-      { rootMargin: "-10% 0px -50% 0px", threshold: [0, 0.25, 0.5] }
+      { rootMargin: "-10% 0px -50% 0px", threshold: [0, 0.25, 0.5] },
     );
 
     const sectionEls = sections
@@ -98,8 +98,17 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
     return () => observer.disconnect();
   }, [sections, s.sidebarShowSectionTracker]);
 
-  const ungroupedPages = pages.filter((p) => !p.nav_group_id);
-  const hasGroups = navGroups.length > 0;
+  const sortedPages = useMemo(
+    () => [...pages].sort((a, b) => a.order_index - b.order_index),
+    [pages],
+  );
+  const sortedNavGroups = useMemo(
+    () => [...navGroups].sort((a, b) => a.order_index - b.order_index),
+    [navGroups],
+  );
+
+  const ungroupedPages = sortedPages.filter((p) => !p.nav_group_id);
+  const hasGroups = sortedNavGroups.length > 0;
 
   const renderPage = (page: TPage) => {
     const isActive = activePage?.id === page.id;
@@ -149,7 +158,8 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                     e.preventDefault();
                     const el = document.getElementById(`section-${section.id}`);
                     if (el) {
-                      const top = el.getBoundingClientRect().top + window.scrollY - (stickyTop + 24);
+                      const top =
+                        el.getBoundingClientRect().top + window.scrollY - (stickyTop + 24);
                       window.scrollTo({ top, behavior: "smooth" });
                     }
                   }}
@@ -169,7 +179,9 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                       style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
                     />
                   )}
-                  <span dangerouslySetInnerHTML={{ __html: section.nav_title || section.title }} />
+                  <span
+                    dangerouslySetInnerHTML={{ __html: section.nav_title || section.title }}
+                  />
                 </a>
               );
             })}
@@ -205,8 +217,9 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
 
         {/* Nav groups with their pages */}
         {hasGroups &&
-          navGroups.map((group) => {
+          sortedNavGroups.map((group) => {
             const isTextType = group.type === "text";
+            const groupPages = sortedPages.filter((p) => p.nav_group_id === group.id);
 
             if (isTextType) {
               return (
@@ -224,7 +237,8 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
               );
             }
 
-            const groupPages = pages.filter((p) => p.nav_group_id === group.id);
+            if (groupPages.length === 0) return null;
+
             return (
               <div key={group.id} className="mt-3">
                 <div
