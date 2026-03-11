@@ -14,7 +14,7 @@ import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SettingsContent from "@/components/builder/SettingsContent";
 import AnalyticsContent from "@/components/builder/AnalyticsContent";
-import PublishDialog from "@/components/builder/PublishDialog";
+import PublishContent from "@/components/builder/PublishContent";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
