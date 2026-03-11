@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { HexColorPicker } from "react-colorful";
 import { useDesignSettings, defaultDesignSettings } from "@/hooks/use-design-settings";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
 import DocContentView from "@/components/docs/DocContentView";
