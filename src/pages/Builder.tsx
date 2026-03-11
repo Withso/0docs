@@ -76,6 +76,7 @@ const Builder = () => {
     if (newMode === "analytics") navigate(`${base}/analytics`, { replace: true });
     else if (newMode === "settings") navigate(`${base}/settings`, { replace: true });
     else if (newMode === "design") navigate(`${base}/design`, { replace: true });
+    else if (newMode === "publish") navigate(`${base}/publish`, { replace: true });
     else navigate(base, { replace: true });
   }, [projectId, navigate]);
 
