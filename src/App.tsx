@@ -30,61 +30,63 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/builder/:projectId"
-              element={
-                <ProtectedRoute>
-                  <Builder />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/builder/:projectId/design"
-              element={
-                <ProtectedRoute>
-                  <Builder />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/builder/:projectId/analytics"
-              element={
-                <ProtectedRoute>
-                  <Builder />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/builder/:projectId/settings"
-              element={
-                <ProtectedRoute>
-                  <Builder />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfileSettings />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/docs/:slug" element={<PublicDocs />} />
-            <Route path="/docs/:slug/:pageSlug" element={<PublicDocs />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<LazyFallback />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/builder/:projectId"
+                element={
+                  <ProtectedRoute>
+                    <Builder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/builder/:projectId/design"
+                element={
+                  <ProtectedRoute>
+                    <Builder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/builder/:projectId/analytics"
+                element={
+                  <ProtectedRoute>
+                    <Builder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/builder/:projectId/settings"
+                element={
+                  <ProtectedRoute>
+                    <Builder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfileSettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/docs/:slug" element={<PublicDocs />} />
+              <Route path="/docs/:slug/:pageSlug" element={<PublicDocs />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
