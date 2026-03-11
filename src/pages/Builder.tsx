@@ -94,7 +94,9 @@ const Builder = () => {
   } = usePublish(projectId, user?.id);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
 
-  const [publishPreview, setPublishPreview] = useState(() => previewChanges(pages, sections, blocks, settings));
+  const [publishPreview, setPublishPreview] = useState(() =>
+    previewChanges(pages, sections, blocks, settings, navGroups),
+  );
 
   const getCompleteSnapshot = useCallback(async () => {
     const pageIds = pages.map((p) => p.id);
@@ -132,7 +134,9 @@ const Builder = () => {
     const computePublishPreview = async () => {
       const { allSections, allBlocks } = await getCompleteSnapshot();
       if (cancelled) return;
-      setPublishPreview(previewChanges(pages, allSections, allBlocks, settings));
+      setPublishPreview(
+        previewChanges(pages, allSections, allBlocks, settings, navGroups),
+      );
     };
 
     computePublishPreview();
@@ -140,7 +144,7 @@ const Builder = () => {
     return () => {
       cancelled = true;
     };
-  }, [pages, settings, previewChanges, getCompleteSnapshot]);
+  }, [pages, settings, navGroups, previewChanges, getCompleteSnapshot]);
 
   const handlePublish = useCallback(async (notes?: string) => {
     if (!projectId || !user?.id) return;
