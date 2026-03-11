@@ -55,16 +55,38 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
   useEffect(() => {
     if (!s.sidebarShowSectionTracker || sections.length === 0) return;
 
+    const visibilityMap = new Map<string, IntersectionObserverEntry>();
+
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const id = entry.target.id.replace("section-", "");
-          setActiveSectionId(id);
-          break;
+        entries.forEach((entry) => visibilityMap.set(entry.target.id, entry));
+
+        let bestId: string | null = null;
+        let bestTop = Infinity;
+
+        visibilityMap.forEach((entry, elementId) => {
+          if (!entry.isIntersecting) return;
+          const top = entry.boundingClientRect.top;
+          if (top < bestTop) {
+            bestTop = top;
+            bestId = elementId.replace("section-", "");
+          }
+        });
+
+        if (!bestId) {
+          let lastPastId: string | null = null;
+          for (const sec of sections) {
+            const entry = visibilityMap.get(`section-${sec.id}`);
+            if (entry && entry.boundingClientRect.top < 0) {
+              lastPastId = sec.id;
+            }
+          }
+          if (lastPastId) bestId = lastPastId;
         }
+
+        if (bestId) setActiveSectionId(bestId);
       },
-      { rootMargin: "-20% 0px -60% 0px", threshold: 0 }
+      { rootMargin: "-10% 0px -50% 0px", threshold: [0, 0.25, 0.5] }
     );
 
     const sectionEls = sections
@@ -123,6 +145,14 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                 <a
                   key={section.id}
                   href={`#section-${section.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById(`section-${section.id}`);
+                    if (el) {
+                      const top = el.getBoundingClientRect().top + window.scrollY - (stickyTop + 24);
+                      window.scrollTo({ top, behavior: "smooth" });
+                    }
+                  }}
                   className="block py-[3px] pl-3 transition-colors relative"
                   style={{
                     color: isSectionActive

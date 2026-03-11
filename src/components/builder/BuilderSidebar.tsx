@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical } from "lucide-react";
 import type { Page, Section, NavGroup } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -118,6 +118,7 @@ const BuilderSidebar = ({
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -134,6 +135,62 @@ const BuilderSidebar = ({
     () => [...sections].sort((a, b) => a.order_index - b.order_index),
     [sections]
   );
+
+  // IntersectionObserver for section highlighting in editor sidebar
+  useEffect(() => {
+    if (!activePage || sortedSections.length === 0) {
+      setActiveSectionId(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const visibilityMap = new Map<string, IntersectionObserverEntry>();
+
+      observerRef.current?.disconnect();
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => visibilityMap.set(entry.target.id, entry));
+
+          let bestId: string | null = null;
+          let bestTop = Infinity;
+
+          visibilityMap.forEach((entry, elementId) => {
+            if (!entry.isIntersecting) return;
+            const top = entry.boundingClientRect.top;
+            if (top < bestTop) {
+              bestTop = top;
+              bestId = elementId.replace("section-", "");
+            }
+          });
+
+          if (!bestId) {
+            let lastPastId: string | null = null;
+            for (const sec of sortedSections) {
+              const entry = visibilityMap.get(`section-${sec.id}`);
+              if (entry && entry.boundingClientRect.top < 0) {
+                lastPastId = sec.id;
+              }
+            }
+            if (lastPastId) bestId = lastPastId;
+          }
+
+          if (bestId) setActiveSectionId(bestId);
+        },
+        { rootMargin: "-10% 0px -50% 0px", threshold: [0, 0.25, 0.5] }
+      );
+
+      const els = sortedSections
+        .map((sec) => document.getElementById(`section-${sec.id}`))
+        .filter(Boolean) as HTMLElement[];
+
+      els.forEach((el) => observerRef.current!.observe(el));
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      observerRef.current?.disconnect();
+    };
+  }, [activePage?.id, sortedSections]);
 
   /* ─── Build unified flat list ───
    * We merge nav groups and pages into one flat list ordered by a global position.
@@ -361,6 +418,14 @@ const BuilderSidebar = ({
                           <div className="flex items-center">
                             <a
                               href={`#section-${section.id}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                const el = document.getElementById(`section-${section.id}`);
+                                if (el) {
+                                  const top = el.getBoundingClientRect().top + window.scrollY - 72;
+                                  window.scrollTo({ top, behavior: "smooth" });
+                                }
+                              }}
                               onDoubleClick={(e) => {
                                 e.preventDefault();
                                 stopEditing();

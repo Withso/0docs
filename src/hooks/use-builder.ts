@@ -125,7 +125,10 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     }
   }, [activePage]);
 
+  // Clear sections/blocks immediately on page switch, then load new content
   useEffect(() => {
+    setSections([]);
+    setBlocks([]);
     loadPageContent();
   }, [loadPageContent]);
 
