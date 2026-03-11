@@ -43,10 +43,10 @@ const PublicDocs = () => {
 
         if (published && published.is_active) {
           // Use published snapshot
-          const snapPages = (published.pages_snapshot || []) as Page[];
-          const snapSections = (published.sections_snapshot || []) as Section[];
-          const snapBlocks = (published.blocks_snapshot || []) as Block[];
-          const snapNavGroups = (published.nav_groups_snapshot || []) as any[];
+          const snapPages = (published.pages_snapshot as unknown as Page[]) || [];
+          const snapSections = (published.sections_snapshot as unknown as Section[]) || [];
+          const snapBlocks = (published.blocks_snapshot as unknown as Block[]) || [];
+          const snapNavGroups = (published.nav_groups_snapshot as unknown as any[]) || [];
 
           setPages(snapPages);
           setAllSections(snapSections);
