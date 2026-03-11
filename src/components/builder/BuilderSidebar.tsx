@@ -117,7 +117,24 @@ const BuilderSidebar = ({
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [dragActiveId, setDragActiveId] = useState<string | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const stopEditing = useCallback(() => {
+    setEditingPageId(null);
+    setEditingGroupId(null);
+    setEditingSectionId(null);
+  }, []);
+
+  const sortedSections = useMemo(
+    () => [...sections].sort((a, b) => a.order_index - b.order_index),
+    [sections]
+  );
 
   // IntersectionObserver for section highlighting in editor sidebar
   useEffect(() => {
@@ -126,7 +143,6 @@ const BuilderSidebar = ({
       return;
     }
 
-    // Small delay to allow DOM to render new sections
     const timer = setTimeout(() => {
       const visibilityMap = new Map<string, IntersectionObserverEntry>();
 
@@ -175,23 +191,6 @@ const BuilderSidebar = ({
       observerRef.current?.disconnect();
     };
   }, [activePage?.id, sortedSections]);
-  const [dragActiveId, setDragActiveId] = useState<string | null>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  const stopEditing = useCallback(() => {
-    setEditingPageId(null);
-    setEditingGroupId(null);
-    setEditingSectionId(null);
-  }, []);
-
-  const sortedSections = useMemo(
-    () => [...sections].sort((a, b) => a.order_index - b.order_index),
-    [sections]
-  );
 
   /* ─── Build unified flat list ───
    * We merge nav groups and pages into one flat list ordered by a global position.
