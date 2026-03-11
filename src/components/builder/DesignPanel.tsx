@@ -210,13 +210,12 @@ function ToggleField({ label, checked, onChange }: { label: string; checked: boo
       <Switch
         checked={checked}
         onCheckedChange={onChange}
-        className="data-[state=checked]:bg-[hsl(var(--foreground)/0.08)] data-[state=unchecked]:bg-[hsl(var(--foreground)/0.08)] border border-[hsl(var(--foreground)/0.1)] h-5 w-9"
+        className="h-5 w-9 border-0"
+        style={{ backgroundColor: 'hsl(var(--foreground) / 0.08)' }}
         thumbClassName={cn(
-          "h-4 w-4 data-[state=checked]:translate-x-4",
-          checked
-            ? "bg-[hsl(var(--foreground)/0.35)]"
-            : "bg-[hsl(var(--foreground)/0.15)]"
+          "h-4 w-4 shadow-none data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0",
         )}
+        thumbStyle={{ backgroundColor: checked ? 'hsl(var(--foreground) / 0.35)' : 'hsl(var(--foreground) / 0.15)' }}
       />
     </div>
   );
