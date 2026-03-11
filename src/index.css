@@ -405,3 +405,33 @@
   .inline-editor-readonly hr { border: none; border-top: 1px solid hsl(var(--border)); margin: 1.5em 0; }
   .inline-editor-readonly a { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 2px; }
 }
+
+/* ─── Design Panel Bar Slider ─── */
+.ds-bar-slider [data-radix-slider-track] {
+  background: transparent !important;
+  height: 100% !important;
+}
+
+.ds-bar-slider [data-radix-slider-range] {
+  background: transparent !important;
+}
+
+.ds-bar-slider [data-radix-slider-thumb] {
+  width: 4px !important;
+  height: 14px !important;
+  border-radius: 2px !important;
+  background: hsl(var(--muted-foreground) / 0.45) !important;
+  border: none !important;
+  box-shadow: none !important;
+  cursor: ew-resize;
+  transition: background 0.15s ease, height 0.15s ease;
+}
+
+.ds-bar-slider [data-radix-slider-thumb]:hover {
+  background: hsl(var(--muted-foreground) / 0.65) !important;
+  height: 16px !important;
+}
+
+.ds-bar-slider [data-radix-slider-thumb]:active {
+  background: hsl(var(--foreground) / 0.5) !important;
+}
