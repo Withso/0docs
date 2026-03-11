@@ -278,7 +278,7 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-2">0colors</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">0docs</h1>
           <p className="text-muted-foreground mb-4">Documentation is being set up.</p>
           <button
             onClick={() => navigate("/auth")}
