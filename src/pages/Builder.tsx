@@ -264,6 +264,7 @@ const Builder = () => {
           saveSettings={saveSettings}
           resetSettings={resetSettings}
           designSubMode={designSubMode}
+          onDesignSubModeChange={setDesignSubMode}
         />
       )}
 

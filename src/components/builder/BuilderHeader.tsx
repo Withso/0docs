@@ -51,17 +51,6 @@ const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (
   );
 };
 
-const DesignSubSelect = ({ value, onChange }: { value: DesignSubMode; onChange: (v: DesignSubMode) => void }) => (
-  <Select value={value} onValueChange={(v) => onChange(v as DesignSubMode)}>
-    <SelectTrigger className="h-7 w-[110px] rounded-full text-[12px] font-medium border-border bg-muted">
-      <SelectValue />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="live" className="text-[12px]">Live</SelectItem>
-      <SelectItem value="examples" className="text-[12px]">Examples</SelectItem>
-    </SelectContent>
-  </Select>
-);
 
 const BuilderHeader = ({
   projectId,
@@ -103,9 +92,6 @@ const BuilderHeader = ({
           {/* Center - Segmented Control (always visible) */}
           <div className="flex items-center justify-center gap-3">
             <SegmentedControl value={mode} onChange={onModeChange} />
-            {mode === "design" && onDesignSubModeChange && (
-              <DesignSubSelect value={designSubMode} onChange={onDesignSubModeChange} />
-            )}
           </div>
 
           {/* Right - icon nav */}
