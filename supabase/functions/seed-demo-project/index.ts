@@ -13,15 +13,34 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    const { user_id } = await req.json();
-    if (!user_id) {
-      return new Response(JSON.stringify({ error: "user_id required" }), {
-        status: 400,
+    // Verify the caller's identity from the JWT
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(
+      authHeader.replace("Bearer ", "")
+    );
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const user_id = claimsData.claims.sub as string;
+
+    // Use service role client for data operations
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Check if demo already exists for this user
     const { data: existing } = await supabase
@@ -460,13 +479,13 @@ Deno.serve(async (req) => {
       {
         title: "Does it work with Vue or Angular?",
         blocks: [
-          { type: "paragraph", content: { text: "Basic annotation works with any web framework. React-specific features like component tree detection are currently React-only. Vue support is partial, Angular/Svelte planned for v3.0." } },
+          { type: "paragraph", content: { text: "The toolbar is framework-agnostic — it works with any web application. React component tree inspection is a bonus feature when React is detected." } },
         ],
       },
       {
-        title: "Is my data sent to any server?",
+        title: "How do I report bugs?",
         blocks: [
-          { type: "paragraph", content: { text: "No. All annotation data stays on your local machine. The HTTP and MCP servers run on localhost. Nothing is sent externally unless you configure webhooks." } },
+          { type: "paragraph", content: { text: "Open an issue on GitHub or send feedback through the toolbar itself using the built-in annotation system." } },
         ],
       },
     ]);
@@ -474,48 +493,48 @@ Deno.serve(async (req) => {
     // ── Changelog ──
     await seed("changelog", [
       {
-        title: "v2.3.0 — March 2025",
+        title: "v2.3.0 — 2025-01-15",
         blocks: [
           {
             type: "unordered_list",
             content: {
               items: [
-                "Added animation pause mode for annotating specific frames",
-                "New keyboard shortcuts for all toolbar actions",
-                "Improved component tree detection for React 19",
-                "Fixed marker positioning on scrolled pages",
+                "Added MCP server support for Claude Code integration",
+                "New annotation grouping and batch operations",
+                "Improved dark mode contrast ratios",
+                "Fixed toolbar positioning on sticky headers",
               ],
             },
           },
         ],
       },
       {
-        title: "v2.2.0 — February 2025",
+        title: "v2.2.0 — 2024-12-01",
         blocks: [
           {
             type: "unordered_list",
             content: {
               items: [
-                "Webhook support for external integrations",
-                "Custom marker colors in settings",
-                "Block page interactions mode during annotation",
+                "React component tree inspection",
+                "Keyboard shortcuts for all actions",
                 "Performance improvements for large DOMs",
+                "Added Vue and Svelte detection (experimental)",
               ],
             },
           },
         ],
       },
       {
-        title: "v2.1.0 — January 2025",
+        title: "v2.1.0 — 2024-10-15",
         blocks: [
           {
             type: "unordered_list",
             content: {
               items: [
-                "MCP server for real-time agent sync",
-                "Agent response annotations",
-                "Self-driving mode (experimental)",
-                "Critique mode for automated feedback",
+                "Custom marker colors and themes",
+                "Webhook support for CI/CD pipelines",
+                "Improved accessibility (WCAG 2.1 AA)",
+                "Bug fixes and stability improvements",
               ],
             },
           },
@@ -523,11 +542,12 @@ Deno.serve(async (req) => {
       },
     ]);
 
-    return new Response(JSON.stringify({ success: true, project_id: pid }), {
+    return new Response(JSON.stringify({ project_id: pid }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+  } catch (e) {
+    console.error("Seed error:", e);
+    return new Response(JSON.stringify({ error: "Failed to seed demo project" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
