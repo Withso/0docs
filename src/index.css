@@ -33,13 +33,13 @@
 
     --border: 225 12% 91%;
     --input: 225 12% 91%;
-    --ring: 250 65% 55%;
+    --ring: 225 15% 15%;
 
     --radius: 0.625rem;
 
     /* ─── Platform-specific tokens ─── */
-    --platform-accent: 250 65% 55%;
-    --platform-accent-soft: 250 65% 97%;
+    --platform-accent: 225 15% 15%;
+    --platform-accent-soft: 225 10% 96%;
     --platform-accent-foreground: 0 0% 100%;
     --platform-success: 152 60% 42%;
     --platform-success-soft: 152 50% 95%;
