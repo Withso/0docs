@@ -24,10 +24,8 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
   const [name, setName] = useState(project?.name || "");
   const [description, setDescription] = useState(project?.description || "");
   const [slug, setSlug] = useState(project?.slug || "");
-  const [customDomain, setCustomDomain] = useState(project?.custom_domain || "");
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [savingDomain, setSavingDomain] = useState(false);
 
   useEffect(() => {
     if (project) {
