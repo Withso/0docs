@@ -133,8 +133,8 @@ function SliderField({ label, value, onChange, min, max, step, unit = "px" }: {
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <Label className="text-[11px] font-medium text-muted-foreground shrink-0">{label}</Label>
-      <div className="flex items-center gap-2">
+      <Label className="text-[10.5px] font-medium text-muted-foreground shrink-0">{label}</Label>
+      <div className="flex items-center gap-1.5">
         <div className="relative">
           <input
             type="color"
@@ -143,14 +143,14 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           />
           <div
-            className="w-7 h-7 rounded-lg border border-border shadow-sm cursor-pointer"
+            className="w-6 h-6 rounded-full shadow-sm cursor-pointer ring-1 ring-border/50"
             style={{ backgroundColor: `hsl(${value})` }}
           />
         </div>
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-[100px] text-[10px] h-7 font-mono bg-muted/50 border-0 focus-visible:ring-1"
+          className="w-[90px] text-[9.5px] h-6 font-mono bg-muted/30 border-0 rounded-md focus-visible:ring-1"
         />
       </div>
     </div>
