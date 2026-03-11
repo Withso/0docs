@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBuilder } from "@/hooks/use-builder";
 import { useDesignSettings } from "@/hooks/use-design-settings";
+import { usePublish } from "@/hooks/use-publish";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
 import BuilderSidebar from "@/components/builder/BuilderSidebar";
 import SectionEditor from "@/components/builder/SectionEditor";
@@ -13,6 +14,7 @@ import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SettingsContent from "@/components/builder/SettingsContent";
 import AnalyticsContent from "@/components/builder/AnalyticsContent";
+import PublishDialog from "@/components/builder/PublishDialog";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,6 +87,42 @@ const Builder = () => {
   } = useBuilder(projectId, user?.id);
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
+
+  // Publish system
+  const {
+    versions: publishedVersions, publishing, publish, revertToVersion, previewChanges,
+  } = usePublish(projectId, user?.id);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+
+  // Compute pending changes for publish preview
+  const publishPreview = useMemo(() => {
+    // We need ALL pages' sections/blocks for a full snapshot, but we only have active page's
+    // For now, use what we have — the publish will fetch all data
+    return previewChanges(pages, sections, blocks, settings);
+  }, [pages, sections, blocks, settings, previewChanges]);
+
+  const handlePublish = useCallback(async (notes?: string) => {
+    if (!projectId || !user?.id) return;
+    // Fetch ALL sections and blocks across all pages for a complete snapshot
+    const pageIds = pages.map(p => p.id);
+    let allSections: Section[] = [];
+    let allBlocks: any[] = [];
+    if (pageIds.length > 0) {
+      const { data: secs } = await supabase.from("sections").select("*").in("page_id", pageIds).order("order_index");
+      allSections = secs || [];
+      if (allSections.length > 0) {
+        const secIds = allSections.map(s => s.id);
+        const { data: blks } = await supabase.from("blocks").select("*").in("section_id", secIds).order("order_index");
+        allBlocks = blks || [];
+      }
+    }
+    const result = await publish(pages, allSections, allBlocks, settings, navGroups, notes);
+    if (result) {
+      setPublishDialogOpen(false);
+      const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
+      toast({ title: `Published v${result.version.version_number}`, description: "Your documentation is now live." });
+    }
+  }, [projectId, user?.id, pages, settings, navGroups, publish]);
 
   // Listen for sidebar section title edits and sync to builder state
   useEffect(() => {
@@ -169,6 +207,8 @@ const Builder = () => {
         onModeChange={handleModeChange}
         designSubMode={designSubMode}
         onDesignSubModeChange={setDesignSubMode}
+        onPublishClick={() => setPublishDialogOpen(true)}
+        hasUnpublishedChanges={publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish}
       />
 
       {/* Mode: Editor */}
@@ -302,6 +342,25 @@ const Builder = () => {
       )}
 
       <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
+
+      <PublishDialog
+        open={publishDialogOpen}
+        onOpenChange={setPublishDialogOpen}
+        editorChanges={publishPreview.editorChanges}
+        designChanges={publishPreview.designChanges}
+        nextVersion={publishPreview.nextVersion}
+        isFirstPublish={publishPreview.isFirstPublish}
+        publishing={publishing}
+        onPublish={handlePublish}
+        versions={publishedVersions}
+        onRevert={async (versionId) => {
+          await revertToVersion(versionId);
+          const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
+          toast({ title: "Version reverted", description: "The active published version has been updated." });
+        }}
+        projectSlug={project?.slug || ""}
+        customDomain={project?.custom_domain}
+      />
     </div>
   );
 };

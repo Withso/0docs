@@ -10,7 +10,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Save, Globe, Trash2, Copy, Check } from "lucide-react";
+import { Save, Globe, Trash2, Copy, Check, Link2 } from "lucide-react";
 
 interface SettingsContentProps {
   projectId: string;
@@ -24,14 +24,17 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
   const [name, setName] = useState(project?.name || "");
   const [description, setDescription] = useState(project?.description || "");
   const [slug, setSlug] = useState(project?.slug || "");
+  const [customDomain, setCustomDomain] = useState(project?.custom_domain || "");
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [savingDomain, setSavingDomain] = useState(false);
 
   useEffect(() => {
     if (project) {
       setName(project.name);
       setDescription(project.description || "");
       setSlug(project.slug);
+      setCustomDomain(project.custom_domain || "");
     }
   }, [project]);
 
@@ -41,7 +44,7 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
     const newSlug = slug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
     const { error } = await supabase
       .from("projects")
-      .update({ name: name.trim(), description, slug: newSlug, updated_at: new Date().toISOString() })
+      .update({ name: name.trim(), description, slug: newSlug, updated_at: new Date().toISOString() } as any)
       .eq("id", projectId);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -50,6 +53,22 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
       toast({ title: "Project settings saved" });
     }
     setSaving(false);
+  };
+
+  const handleSaveDomain = async () => {
+    if (!projectId) return;
+    setSavingDomain(true);
+    const domain = customDomain.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "") || null;
+    const { error } = await supabase
+      .from("projects")
+      .update({ custom_domain: domain } as any)
+      .eq("id", projectId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Domain configuration saved" });
+    }
+    setSavingDomain(false);
   };
 
   const handleDelete = async () => {
@@ -66,7 +85,7 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
   const docsUrl = `${window.location.origin}/docs/${slug}`;
 
   const copyUrl = () => {
-    navigator.clipboard.writeText(docsUrl);
+    navigator.clipboard.writeText(customDomain ? `https://${customDomain}` : docsUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -108,7 +127,7 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
               <Globe className="h-3 w-3" />
               {docsUrl}
               <button onClick={copyUrl} className="hover:text-foreground transition-colors ml-1">
-                {copied ? <Check className="h-3 w-3 text-platform-success" /> : <Copy className="h-3 w-3" />}
+                {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
               </button>
             </p>
           </div>
@@ -119,6 +138,56 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
             <Save className="h-3.5 w-3.5 mr-1.5" />
             {saving ? "Saving..." : "Save Changes"}
           </Button>
+        </div>
+      </div>
+
+      {/* Domain configuration */}
+      <div className="platform-card mb-6 p-6">
+        <h3 className="font-semibold text-foreground text-[15px] mb-1.5 flex items-center gap-2">
+          <Link2 className="h-4 w-4 text-primary" />
+          Custom Domain
+        </h3>
+        <p className="text-[12px] text-muted-foreground mb-5">
+          Configure a custom domain for your published documentation. Point your domain's DNS to this app, then enter it below.
+        </p>
+        <div className="space-y-4">
+          <div>
+            <Label className="text-[13px] font-medium text-foreground mb-1.5 block">Domain</Label>
+            <Input
+              value={customDomain}
+              onChange={(e) => setCustomDomain(e.target.value.trim())}
+              placeholder="docs.example.com"
+              className="h-11 font-mono text-[13px] rounded-lg"
+            />
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Enter your domain without https://. Leave empty to use the default URL.
+            </p>
+          </div>
+
+          {customDomain && (
+            <div className="rounded-xl p-4" style={{ backgroundColor: "hsl(var(--muted) / 0.5)" }}>
+              <p className="text-[12px] font-medium text-foreground mb-2">DNS Configuration</p>
+              <div className="space-y-1.5 text-[11px] font-mono text-muted-foreground">
+                <div className="flex gap-3">
+                  <span className="text-foreground font-medium w-12">Type</span>
+                  <span className="text-foreground font-medium w-20">Name</span>
+                  <span className="text-foreground font-medium flex-1">Value</span>
+                </div>
+                <div className="flex gap-3">
+                  <span className="w-12">CNAME</span>
+                  <span className="w-20">{customDomain.split(".")[0]}</span>
+                  <span className="flex-1">{window.location.hostname}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button size="sm" onClick={handleSaveDomain} disabled={savingDomain} className="h-9 rounded-lg">
+              <Save className="h-3.5 w-3.5 mr-1.5" />
+              {savingDomain ? "Saving..." : "Save Domain"}
+            </Button>
+          </div>
         </div>
       </div>
 
