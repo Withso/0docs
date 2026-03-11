@@ -21,12 +21,6 @@ import {
   blockSections, type BlockKey,
 } from "@/components/builder/DesignControls";
 
-// Icon map for block sections
-const blockIconMap: Record<string, any> = {
-  heading: Type, paragraph: AlignLeft, code_block: Code, image: ImageIcon,
-  video: Film, youtube: Youtube, ordered_list: ListOrdered, unordered_list: List,
-  note: StickyNote, callout: AlertCircle,
-};
 
 // ─── Interfaces ──────────────────────────────────────
 interface DocPage { id: string; title: string; slug: string; order_index: number; }
