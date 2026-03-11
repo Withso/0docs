@@ -52,21 +52,6 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
     setSaving(false);
   };
 
-  const handleSaveDomain = async () => {
-    if (!projectId) return;
-    setSavingDomain(true);
-    const domain = customDomain.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "") || null;
-    const { error } = await supabase
-      .from("projects")
-      .update({ custom_domain: domain } as any)
-      .eq("id", projectId);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Domain configuration saved" });
-    }
-    setSavingDomain(false);
-  };
 
   const handleDelete = async () => {
     if (!projectId) return;
