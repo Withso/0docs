@@ -227,8 +227,11 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
     >
       {!hideHeaderLabel && (
         <div
-          className="text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center justify-between"
-          style={{ color: `hsl(${s.sidebarTextColor})` }}
+          className="font-semibold uppercase tracking-widest mb-3 flex items-center justify-between"
+          style={{
+            color: `hsl(${s.sidebarLabelColor || s.sidebarTextColor})`,
+            fontSize: `${s.sidebarLabelFontSize || 10}px`,
+          }}
         >
           <span>Pages</span>
           {headerAction}
