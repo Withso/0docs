@@ -134,6 +134,30 @@ export function ExamplesContent({ settings: local, activeNav, update, updateBloc
             </PreviewCard>
           </div>
         );
+      case "toc":
+        return (
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <TOCControls local={local} update={update} />
+            </div>
+          </div>
+        );
+      case "section":
+        return (
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <SectionControls local={local} update={update} />
+            </div>
+            <PreviewCard settings={local}>
+              <h2 className="flex items-center gap-3" style={{ fontFamily: `'${local.headingFont}', sans-serif`, fontWeight: local.headingWeight as any, fontSize: `${local.headingFontSize}px` }}>
+                <span>Section Title</span>
+                {local.sectionBorderVisible && (
+                  <span className="flex-1" style={{ height: `${local.sectionBorderThickness}px`, backgroundColor: `hsl(${local.sectionBorderColor})`, opacity: 0.5 }} />
+                )}
+              </h2>
+            </PreviewCard>
+          </div>
+        );
       default: {
         const blockKey = activeNav as BlockKey;
         const sample = sampleBlocks[blockKey];
