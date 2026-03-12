@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   SliderField, ColorField, ToggleField,
   FontSelect, WeightSelect, ColorControls, LayoutControls,
-  SidebarControls, BlockControls, fontOptions, codeFontOptions,
+  SidebarControls, TOCControls, SectionControls, BlockControls, fontOptions, codeFontOptions,
   blockSections, type BlockKey,
 } from "@/components/builder/DesignControls";
 
