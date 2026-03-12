@@ -112,6 +112,21 @@ export interface DesignSettings {
   sidebarShowPageArrows: boolean;
   sidebarActivePageBg: boolean;
 
+  // Sidebar label/section/group font controls
+  sidebarLabelFontSize: number;
+  sidebarLabelColor: string;
+  sidebarSectionFontSize: number;
+  sidebarSectionColor: string;
+
+  // Table of Contents (right sidebar)
+  tocVisible: boolean;
+  tocGap: number;
+
+  // Section title border
+  sectionBorderVisible: boolean;
+  sectionBorderColor: string;
+  sectionBorderThickness: number;
+
   // Per-block overrides
   blockStyles: {
     heading: Partial<BlockStyleSettings>;
