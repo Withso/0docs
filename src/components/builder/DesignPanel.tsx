@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Save, RotateCcw, Type, Palette, Layout, Sidebar,
-  PanelRightClose, PanelRight,
+  PanelRightClose, PanelRight, PanelRight as TOCIcon, Minus as SectionIcon,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
