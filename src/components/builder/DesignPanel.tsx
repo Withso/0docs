@@ -199,6 +199,8 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
                     <SettingsSection title="Colors" icon={Palette}><ColorControls local={local} update={update} /></SettingsSection>
                     <SettingsSection title="Layout" icon={Layout}><LayoutControls local={local} update={update} /></SettingsSection>
                     <SettingsSection title="Sidebar" icon={Sidebar}><SidebarControls local={local} update={update} /></SettingsSection>
+                    <SettingsSection title="On This Page" icon={TOCIcon}><TOCControls local={local} update={update} /></SettingsSection>
+                    <SettingsSection title="Section" icon={SectionIcon}><SectionControls local={local} update={update} /></SettingsSection>
 
                     <div className="mt-4 mb-2 px-1">
                       <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-[0.12em]">Block Styles</span>
