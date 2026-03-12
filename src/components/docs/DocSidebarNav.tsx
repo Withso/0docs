@@ -269,8 +269,11 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
             return (
               <div key={group.id} className="mt-3">
                 <div
-                  className="text-[10px] font-semibold uppercase tracking-widest mb-1.5"
-                  style={{ color: `hsl(${s.sidebarTextColor} / 0.5)` }}
+                  className="font-semibold uppercase tracking-widest mb-1.5"
+                  style={{
+                    color: `hsl(${s.sidebarLabelColor || s.sidebarTextColor} / 0.5)`,
+                    fontSize: `${s.sidebarLabelFontSize || 10}px`,
+                  }}
                 >
                   <span dangerouslySetInnerHTML={{ __html: group.title }} />
                 </div>
