@@ -348,7 +348,7 @@ const Builder = () => {
 
       {/* Mode: Preview */}
       {mode === "preview" && (
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <DocContentView
             settings={settings}
             projectName={project?.name || ""}
@@ -365,6 +365,7 @@ const Builder = () => {
             navGroups={navGroups}
             hideHeaderLabel
           />
+          <MadeWithBanner />
         </div>
       )}
 
