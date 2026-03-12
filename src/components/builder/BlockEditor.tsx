@@ -137,10 +137,39 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
             {localContent.url && (
               <div style={{ backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined, border: `1px solid hsl(${bs.borderColor || settings.borderColor})`, borderRadius: `${bs.borderRadius ?? 8}px`, padding: bs.padding != null ? `${bs.padding}px` : undefined }}>
                 <div className="overflow-hidden" style={{ borderRadius: `${bs.borderRadius ?? 8}px` }}>
-                  <video controls className="w-full" style={{ display: "block" }}><source src={localContent.url} /></video>
+                  <video
+                    controls={localContent.showControls !== false}
+                    loop={localContent.loop === true}
+                    autoPlay={localContent.loop === true}
+                    muted={localContent.loop === true}
+                    className="w-full"
+                    style={{ display: "block" }}
+                  >
+                    <source src={localContent.url} />
+                  </video>
                 </div>
               </div>
             )}
+            <div className="flex items-center gap-4 mt-2">
+              <label className="flex items-center gap-2 text-[12px] text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={localContent.showControls !== false}
+                  onChange={(e) => updateContent({ showControls: e.target.checked })}
+                  className="accent-primary"
+                />
+                Show Controls
+              </label>
+              <label className="flex items-center gap-2 text-[12px] text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={localContent.loop === true}
+                  onChange={(e) => updateContent({ loop: e.target.checked })}
+                  className="accent-primary"
+                />
+                Loop
+              </label>
+            </div>
           </div>
         );
 
