@@ -218,6 +218,18 @@ export const defaultDesignSettings: DesignSettings = {
   sidebarShowPageArrows: false,
   sidebarActivePageBg: false,
 
+  sidebarLabelFontSize: 10,
+  sidebarLabelColor: "0 0% 45%",
+  sidebarSectionFontSize: 13,
+  sidebarSectionColor: "0 0% 45%",
+
+  tocVisible: true,
+  tocGap: 24,
+
+  sectionBorderVisible: true,
+  sectionBorderColor: "20 70% 55%",
+  sectionBorderThickness: 1,
+
   blockStyles: emptyBlockStyles,
 };
 
