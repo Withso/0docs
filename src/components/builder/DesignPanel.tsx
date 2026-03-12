@@ -223,6 +223,8 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
                       { id: "colors", label: "Colors", icon: Palette },
                       { id: "layout", label: "Layout", icon: Layout },
                       { id: "sidebar", label: "Sidebar", icon: Sidebar },
+                      { id: "toc", label: "On This Page", icon: TOCIcon },
+                      { id: "section", label: "Section", icon: SectionIcon },
                     ].map((item) => (
                       <button
                         key={item.id}
