@@ -123,7 +123,16 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
           borderRadius: `${bs.borderRadius ?? 8}px`, padding: bs.padding != null ? `${bs.padding}px` : undefined, marginBottom: "16px",
         }}>
           <div className="overflow-hidden" style={{ borderRadius: `${bs.borderRadius ?? 8}px` }}>
-            <video controls className="w-full" style={{ display: "block" }}><source src={content.url} /></video>
+            <video
+              controls={content.showControls !== false}
+              loop={content.loop === true}
+              autoPlay={content.loop === true}
+              muted={content.loop === true}
+              className="w-full"
+              style={{ display: "block" }}
+            >
+              <source src={content.url} />
+            </video>
           </div>
         </div>
       ) : null;
