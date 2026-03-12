@@ -191,8 +191,8 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                   style={{
                     color: isSectionActive
                       ? `hsl(${s.sidebarActiveColor})`
-                      : `hsl(${s.sidebarTextColor} / 0.65)`,
-                    fontSize: `${s.sidebarFontSize - 1}px`,
+                      : `hsl(${s.sidebarSectionColor || s.sidebarTextColor} / 0.65)`,
+                    fontSize: `${s.sidebarSectionFontSize || (s.sidebarFontSize - 1)}px`,
                     fontWeight: isSectionActive ? 500 : 400,
                     fontFamily: `'${s.bodyFont}', sans-serif`,
                   }}
