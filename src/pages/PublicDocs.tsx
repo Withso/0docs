@@ -6,6 +6,7 @@ import { useVersions } from "@/hooks/use-versions";
 import DocContentView from "@/components/docs/DocContentView";
 import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
+import MadeWithBanner from "@/components/docs/MadeWithBanner";
 
 interface Page {
   id: string;
