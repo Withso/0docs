@@ -112,6 +112,21 @@ export interface DesignSettings {
   sidebarShowPageArrows: boolean;
   sidebarActivePageBg: boolean;
 
+  // Sidebar label/section/group font controls
+  sidebarLabelFontSize: number;
+  sidebarLabelColor: string;
+  sidebarSectionFontSize: number;
+  sidebarSectionColor: string;
+
+  // Table of Contents (right sidebar)
+  tocVisible: boolean;
+  tocGap: number;
+
+  // Section title border
+  sectionBorderVisible: boolean;
+  sectionBorderColor: string;
+  sectionBorderThickness: number;
+
   // Per-block overrides
   blockStyles: {
     heading: Partial<BlockStyleSettings>;
@@ -202,6 +217,18 @@ export const defaultDesignSettings: DesignSettings = {
   sidebarShowSectionTracker: true,
   sidebarShowPageArrows: false,
   sidebarActivePageBg: false,
+
+  sidebarLabelFontSize: 10,
+  sidebarLabelColor: "0 0% 45%",
+  sidebarSectionFontSize: 13,
+  sidebarSectionColor: "0 0% 45%",
+
+  tocVisible: true,
+  tocGap: 24,
+
+  sectionBorderVisible: true,
+  sectionBorderColor: "20 70% 55%",
+  sectionBorderThickness: 1,
 
   blockStyles: emptyBlockStyles,
 };

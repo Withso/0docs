@@ -57,34 +57,50 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
 
     const visibilityMap = new Map<string, IntersectionObserverEntry>();
 
+    const computeActive = () => {
+      // If at the top of the page, highlight first section
+      if (window.scrollY < 100) {
+        setActiveSectionId(sections[0].id);
+        return;
+      }
+
+      // If at the bottom of the page, highlight last section
+      const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 50);
+      if (atBottom) {
+        setActiveSectionId(sections[sections.length - 1].id);
+        return;
+      }
+
+      let bestId: string | null = null;
+      let bestTop = Infinity;
+
+      visibilityMap.forEach((entry, elementId) => {
+        if (!entry.isIntersecting) return;
+        const top = entry.boundingClientRect.top;
+        if (top < bestTop) {
+          bestTop = top;
+          bestId = elementId.replace("section-", "");
+        }
+      });
+
+      if (!bestId) {
+        let lastPastId: string | null = null;
+        for (const sec of sections) {
+          const entry = visibilityMap.get(`section-${sec.id}`);
+          if (entry && entry.boundingClientRect.top < 0) {
+            lastPastId = sec.id;
+          }
+        }
+        if (lastPastId) bestId = lastPastId;
+      }
+
+      if (bestId) setActiveSectionId(bestId);
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => visibilityMap.set(entry.target.id, entry));
-
-        let bestId: string | null = null;
-        let bestTop = Infinity;
-
-        visibilityMap.forEach((entry, elementId) => {
-          if (!entry.isIntersecting) return;
-          const top = entry.boundingClientRect.top;
-          if (top < bestTop) {
-            bestTop = top;
-            bestId = elementId.replace("section-", "");
-          }
-        });
-
-        if (!bestId) {
-          let lastPastId: string | null = null;
-          for (const sec of sections) {
-            const entry = visibilityMap.get(`section-${sec.id}`);
-            if (entry && entry.boundingClientRect.top < 0) {
-              lastPastId = sec.id;
-            }
-          }
-          if (lastPastId) bestId = lastPastId;
-        }
-
-        if (bestId) setActiveSectionId(bestId);
+        computeActive();
       },
       { rootMargin: "-10% 0px -50% 0px", threshold: [0, 0.25, 0.5] },
     );
@@ -95,7 +111,15 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
 
     sectionEls.forEach((el) => observer.observe(el));
 
-    return () => observer.disconnect();
+    const handleScroll = () => computeActive();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    computeActive();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, [sections, s.sidebarShowSectionTracker]);
 
   const sortedPages = useMemo(
@@ -167,8 +191,8 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
                   style={{
                     color: isSectionActive
                       ? `hsl(${s.sidebarActiveColor})`
-                      : `hsl(${s.sidebarTextColor} / 0.65)`,
-                    fontSize: `${s.sidebarFontSize - 1}px`,
+                      : `hsl(${s.sidebarSectionColor || s.sidebarTextColor} / 0.65)`,
+                    fontSize: `${s.sidebarSectionFontSize || (s.sidebarFontSize - 1)}px`,
                     fontWeight: isSectionActive ? 500 : 400,
                     fontFamily: `'${s.bodyFont}', sans-serif`,
                   }}
@@ -203,8 +227,11 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
     >
       {!hideHeaderLabel && (
         <div
-          className="text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center justify-between"
-          style={{ color: `hsl(${s.sidebarTextColor})` }}
+          className="font-semibold uppercase tracking-widest mb-3 flex items-center justify-between"
+          style={{
+            color: `hsl(${s.sidebarLabelColor || s.sidebarTextColor})`,
+            fontSize: `${s.sidebarLabelFontSize || 10}px`,
+          }}
         >
           <span>Pages</span>
           {headerAction}
@@ -242,8 +269,11 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
             return (
               <div key={group.id} className="mt-3">
                 <div
-                  className="text-[10px] font-semibold uppercase tracking-widest mb-1.5"
-                  style={{ color: `hsl(${s.sidebarTextColor} / 0.5)` }}
+                  className="font-semibold uppercase tracking-widest mb-1.5"
+                  style={{
+                    color: `hsl(${s.sidebarLabelColor || s.sidebarTextColor} / 0.5)`,
+                    fontSize: `${s.sidebarLabelFontSize || 10}px`,
+                  }}
                 >
                   <span dangerouslySetInnerHTML={{ __html: group.title }} />
                 </div>

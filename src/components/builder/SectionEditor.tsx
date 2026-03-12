@@ -216,7 +216,9 @@ const SectionEditor = ({
             </button>
           </div>
         )}
-        <div className="flex-1 h-px opacity-50" style={{ backgroundColor: `hsl(${settings.sectionLineColor})` }} />
+        {settings.sectionBorderVisible && (
+          <div className="flex-1" style={{ height: `${settings.sectionBorderThickness}px`, backgroundColor: `hsl(${settings.sectionBorderColor})`, opacity: 0.5 }} />
+        )}
         <button
           onClick={() => onDeleteSection(section.id)}
           className="opacity-0 group-hover/section:opacity-100 transition-opacity"

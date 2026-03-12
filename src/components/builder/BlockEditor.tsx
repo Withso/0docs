@@ -96,19 +96,56 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
               style={{ borderColor: `hsl(${settings.borderColor})`, color: `hsl(${settings.mutedForegroundColor})`, fontSize: `${settings.baseFontSize - 1}px`, borderRadius: `${settings.codeBlockBorderRadius}px` }}
               value={localContent.url || ""} onChange={(e) => updateContent({ url: e.target.value })} placeholder="Image URL..." />
             {localContent.url && (
-              <div className="overflow-hidden" style={{
-                borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : (settings.imageRounded ? "8px" : "0"),
-                border: `1px solid hsl(${bs.borderColor || settings.borderColor})`,
-                ...(bs.backgroundColor ? { backgroundColor: `hsl(${bs.backgroundColor})` } : {}),
-                ...(bs.padding != null ? { padding: `${bs.padding}px` } : {}),
+              <div style={{
+                display: "flex",
+                justifyContent: localContent.align === "center" ? "center" : localContent.align === "right" ? "flex-end" : "flex-start",
               }}>
-                <img src={localContent.url} alt={localContent.alt || ""} className="w-full h-auto" loading="lazy" />
+                <div style={{ width: `${localContent.width || 100}%`, maxWidth: "100%" }}>
+                  <div className="overflow-hidden" style={{
+                    borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : (settings.imageRounded ? "8px" : "0"),
+                    border: `1px solid hsl(${bs.borderColor || settings.borderColor})`,
+                    ...(bs.backgroundColor ? { backgroundColor: `hsl(${bs.backgroundColor})` } : {}),
+                    ...(bs.padding != null ? { padding: `${bs.padding}px` } : {}),
+                  }}>
+                    <img src={localContent.url} alt={localContent.alt || ""} className="w-full h-auto" loading="lazy" />
+                  </div>
+                </div>
               </div>
             )}
-            <input className="w-full bg-transparent outline-none mt-1 px-1"
-              style={{ color: bs.color ? `hsl(${bs.color})` : `hsl(${settings.mutedForegroundColor})`, fontSize: `${bs.fontSize ?? (settings.baseFontSize - 1)}px`,
-                fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${settings.bodyFont}', sans-serif`, fontWeight: (bs.fontWeight as any) || undefined, lineHeight: settings.lineHeight }}
-              value={localContent.alt || ""} onChange={(e) => updateContent({ alt: e.target.value })} placeholder="Alt text / caption" />
+            <div className="flex items-center gap-3 mt-2">
+              <input className="flex-1 bg-transparent outline-none px-1"
+                style={{ color: bs.color ? `hsl(${bs.color})` : `hsl(${settings.mutedForegroundColor})`, fontSize: `${bs.fontSize ?? (settings.baseFontSize - 1)}px`,
+                  fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${settings.bodyFont}', sans-serif`, fontWeight: (bs.fontWeight as any) || undefined, lineHeight: settings.lineHeight }}
+                value={localContent.alt || ""} onChange={(e) => updateContent({ alt: e.target.value })} placeholder="Alt text / caption" />
+            </div>
+            <div className="flex items-center gap-3 mt-2">
+              <label className="text-[11px] text-muted-foreground shrink-0">Size</label>
+              <input
+                type="range"
+                min={20}
+                max={100}
+                step={5}
+                value={localContent.width || 100}
+                onChange={(e) => updateContent({ width: parseInt(e.target.value) })}
+                className="flex-1 h-1 accent-primary"
+              />
+              <span className="text-[11px] text-muted-foreground tabular-nums w-8">{localContent.width || 100}%</span>
+              <div className="flex items-center gap-1 ml-2">
+                {(["left", "center", "right"] as const).map((align) => (
+                  <button
+                    key={align}
+                    onClick={() => updateContent({ align })}
+                    className={`h-7 w-7 rounded-md text-[10px] font-medium transition-colors ${
+                      (localContent.align || "left") === align
+                        ? "bg-foreground text-background"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {align === "left" ? "L" : align === "center" ? "C" : "R"}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         );
 
@@ -137,10 +174,39 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
             {localContent.url && (
               <div style={{ backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined, border: `1px solid hsl(${bs.borderColor || settings.borderColor})`, borderRadius: `${bs.borderRadius ?? 8}px`, padding: bs.padding != null ? `${bs.padding}px` : undefined }}>
                 <div className="overflow-hidden" style={{ borderRadius: `${bs.borderRadius ?? 8}px` }}>
-                  <video controls className="w-full" style={{ display: "block" }}><source src={localContent.url} /></video>
+                  <video
+                    controls={localContent.showControls !== false}
+                    loop={localContent.loop === true}
+                    autoPlay={localContent.loop === true}
+                    muted={localContent.loop === true}
+                    className="w-full"
+                    style={{ display: "block" }}
+                  >
+                    <source src={localContent.url} />
+                  </video>
                 </div>
               </div>
             )}
+            <div className="flex items-center gap-4 mt-2">
+              <label className="flex items-center gap-2 text-[12px] text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={localContent.showControls !== false}
+                  onChange={(e) => updateContent({ showControls: e.target.checked })}
+                  className="accent-primary"
+                />
+                Show Controls
+              </label>
+              <label className="flex items-center gap-2 text-[12px] text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={localContent.loop === true}
+                  onChange={(e) => updateContent({ loop: e.target.checked })}
+                  className="accent-primary"
+                />
+                Loop
+              </label>
+            </div>
           </div>
         );
 

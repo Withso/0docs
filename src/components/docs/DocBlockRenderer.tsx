@@ -80,27 +80,34 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
       );
     }
 
-    case "image":
+    case "image": {
+      const imageWidth = content.width ? `${content.width}%` : "100%";
+      const alignment = content.align || "left";
+      const justifyMap: Record<string, string> = { left: "flex-start", center: "center", right: "flex-end" };
       return content.url ? wrapHighlight(
-        <div style={{ marginBottom: "16px" }}>
-          <div className="overflow-hidden" style={{
-            borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : (s.imageRounded ? "8px" : "0"),
-            border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-            ...(bs.backgroundColor ? { backgroundColor: `hsl(${bs.backgroundColor})` } : {}),
-            ...(bs.padding != null ? { padding: `${bs.padding}px` } : {}),
-          }}>
-            <img src={content.url} alt={content.alt || ""} className="w-full h-auto" loading="lazy" />
+        <div style={{ marginBottom: "16px", display: "flex", justifyContent: justifyMap[alignment] || "flex-start" }}>
+          <div style={{ width: imageWidth, maxWidth: "100%" }}>
+            <div className="overflow-hidden" style={{
+              borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : (s.imageRounded ? "8px" : "0"),
+              border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+              ...(bs.backgroundColor ? { backgroundColor: `hsl(${bs.backgroundColor})` } : {}),
+              ...(bs.padding != null ? { padding: `${bs.padding}px` } : {}),
+            }}>
+              <img src={content.url} alt={content.alt || ""} className="w-full h-auto" loading="lazy" />
+            </div>
+            {content.alt && (
+              <p style={{
+                color: bs.color ? `hsl(${bs.color})` : `hsl(${s.mutedForegroundColor})`,
+                fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+                fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
+                fontWeight: (bs.fontWeight as any) || undefined, marginTop: "4px", lineHeight: s.lineHeight,
+                textAlign: alignment as any,
+              }}>{content.alt}</p>
+            )}
           </div>
-          {content.alt && (
-            <p style={{
-              color: bs.color ? `hsl(${bs.color})` : `hsl(${s.mutedForegroundColor})`,
-              fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-              fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
-              fontWeight: (bs.fontWeight as any) || undefined, marginTop: "4px", lineHeight: s.lineHeight,
-            }}>{content.alt}</p>
-          )}
         </div>
       ) : null;
+    }
 
     case "youtube":
       return content.videoId ? wrapHighlight(
@@ -123,7 +130,16 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
           borderRadius: `${bs.borderRadius ?? 8}px`, padding: bs.padding != null ? `${bs.padding}px` : undefined, marginBottom: "16px",
         }}>
           <div className="overflow-hidden" style={{ borderRadius: `${bs.borderRadius ?? 8}px` }}>
-            <video controls className="w-full" style={{ display: "block" }}><source src={content.url} /></video>
+            <video
+              controls={content.showControls !== false}
+              loop={content.loop === true}
+              autoPlay={content.loop === true}
+              muted={content.loop === true}
+              className="w-full"
+              style={{ display: "block" }}
+            >
+              <source src={content.url} />
+            </video>
           </div>
         </div>
       ) : null;

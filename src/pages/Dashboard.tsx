@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Plus, ExternalLink, Trash2, BookOpen, Search,
-  FileText, Settings, MoreHorizontal, FolderOpen, Clock, Home,
+  FileText, Settings, MoreHorizontal, FolderOpen, Clock, Home, Copy,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -98,6 +98,7 @@ const Dashboard = () => {
   };
 
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
 
   const deleteProject = async (id: string) => {
     const { error } = await supabase.from("projects").delete().eq("id", id);
@@ -106,6 +107,82 @@ const Dashboard = () => {
       toast({ title: "Project deleted" });
     }
     setDeleteTarget(null);
+  };
+
+  const duplicateProject = async (project: Project) => {
+    setDuplicating(project.id);
+    try {
+      // Create new project
+      const newSlug = `${project.slug}-copy-${Date.now().toString(36)}`;
+      const { data: newProject, error: projErr } = await supabase
+        .from("projects")
+        .insert({ name: `${project.name} (Copy)`, slug: newSlug, description: project.description, user_id: user!.id })
+        .select()
+        .single();
+
+      if (projErr || !newProject) {
+        toast({ title: "Error", description: "Failed to duplicate project", variant: "destructive" });
+        setDuplicating(null);
+        return;
+      }
+
+      // Copy nav groups
+      const { data: srcGroups } = await supabase.from("nav_groups").select("*").eq("project_id", project.id).order("order_index");
+      const groupIdMap = new Map<string, string>();
+      if (srcGroups) {
+        for (const g of srcGroups) {
+          const { data: newG } = await supabase.from("nav_groups")
+            .insert({ project_id: newProject.id, title: g.title, order_index: g.order_index, type: g.type })
+            .select().single();
+          if (newG) groupIdMap.set(g.id, newG.id);
+        }
+      }
+
+      // Copy pages
+      const { data: srcPages } = await supabase.from("pages").select("*").eq("project_id", project.id).order("order_index");
+      if (srcPages) {
+        for (const page of srcPages) {
+          const newNavGroupId = page.nav_group_id ? groupIdMap.get(page.nav_group_id) || null : null;
+          const { data: newPage } = await supabase.from("pages")
+            .insert({ project_id: newProject.id, title: page.title, slug: page.slug, order_index: page.order_index, nav_group_id: newNavGroupId, nav_title: page.nav_title, meta_description: page.meta_description })
+            .select().single();
+          if (!newPage) continue;
+
+          // Copy sections
+          const { data: srcSections } = await supabase.from("sections").select("*").eq("page_id", page.id).order("order_index");
+          if (srcSections) {
+            for (const sec of srcSections) {
+              const { data: newSec } = await supabase.from("sections")
+                .insert({ page_id: newPage.id, title: sec.title, order_index: sec.order_index, nav_title: sec.nav_title })
+                .select().single();
+              if (!newSec) continue;
+
+              // Copy blocks
+              const { data: srcBlocks } = await supabase.from("blocks").select("*").eq("section_id", sec.id).order("order_index");
+              if (srcBlocks) {
+                for (const blk of srcBlocks) {
+                  await supabase.from("blocks").insert({
+                    section_id: newSec.id, type: blk.type as any, content: blk.content, order_index: blk.order_index,
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Copy design settings
+      const { data: srcDesign } = await supabase.from("project_design_settings").select("*").eq("project_id", project.id).maybeSingle();
+      if (srcDesign) {
+        await supabase.from("project_design_settings").insert({ project_id: newProject.id, settings: srcDesign.settings });
+      }
+
+      toast({ title: "Project duplicated!" });
+      fetchProjects();
+    } catch {
+      toast({ title: "Error", description: "Failed to duplicate project", variant: "destructive" });
+    }
+    setDuplicating(null);
   };
 
   const seedDemo = async () => {
@@ -260,6 +337,12 @@ const Dashboard = () => {
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/builder/${project.id}/settings`); }}>
                             <Settings className="h-4 w-4 mr-2" /> Settings
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => { e.stopPropagation(); duplicateProject(project); }}
+                            disabled={duplicating === project.id}
+                          >
+                            <Copy className="h-4 w-4 mr-2" /> {duplicating === project.id ? "Duplicating..." : "Duplicate"}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem

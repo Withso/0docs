@@ -17,6 +17,7 @@ import AnalyticsContent from "@/components/builder/AnalyticsContent";
 import PublishContent from "@/components/builder/PublishContent";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical } from "lucide-react";
+import MadeWithBanner from "@/components/docs/MadeWithBanner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page, Section, Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -347,7 +348,7 @@ const Builder = () => {
 
       {/* Mode: Preview */}
       {mode === "preview" && (
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <DocContentView
             settings={settings}
             projectName={project?.name || ""}
@@ -364,6 +365,7 @@ const Builder = () => {
             navGroups={navGroups}
             hideHeaderLabel
           />
+          <MadeWithBanner />
         </div>
       )}
 

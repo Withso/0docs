@@ -8,6 +8,7 @@ import DocContentView from "@/components/docs/DocContentView";
 import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
 import { LogIn, LayoutDashboard, Search } from "lucide-react";
+import MadeWithBanner from "@/components/docs/MadeWithBanner";
 
 interface Page {
   id: string;
@@ -373,6 +374,7 @@ const Index = () => {
         hideHeaderLabel
       />
       {project?.id && <AskDocsChat projectId={project.id} settings={settings} />}
+      <MadeWithBanner />
     </div>
   );
 };

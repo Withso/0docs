@@ -371,6 +371,29 @@ export function SidebarControls({ local, update }: { local: DS; update: <K exten
       <SliderField label="Font Size" value={local.sidebarFontSize} onChange={(v) => update("sidebarFontSize", v)} min={11} max={16} step={1} />
       <SliderField label="Page Gap" value={local.sidebarPageGap} onChange={(v) => update("sidebarPageGap", v)} min={0} max={12} step={1} />
       <ToggleField label="Section Scroll Tracker" checked={local.sidebarShowSectionTracker} onChange={(v) => update("sidebarShowSectionTracker", v)} />
+      <SliderField label="Label Font Size" value={local.sidebarLabelFontSize} onChange={(v) => update("sidebarLabelFontSize", v)} min={8} max={14} step={1} />
+      <ColorField label="Label Color" value={local.sidebarLabelColor} onChange={(v) => update("sidebarLabelColor", v)} />
+      <SliderField label="Section Font Size" value={local.sidebarSectionFontSize} onChange={(v) => update("sidebarSectionFontSize", v)} min={10} max={16} step={1} />
+      <ColorField label="Section Color" value={local.sidebarSectionColor} onChange={(v) => update("sidebarSectionColor", v)} />
+    </>
+  );
+}
+
+export function TOCControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
+  return (
+    <>
+      <ToggleField label="Show On This Page" checked={local.tocVisible} onChange={(v) => update("tocVisible", v)} />
+      <SliderField label="Gap from Content" value={local.tocGap} onChange={(v) => update("tocGap", v)} min={0} max={64} step={4} />
+    </>
+  );
+}
+
+export function SectionControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
+  return (
+    <>
+      <ToggleField label="Show Border Line" checked={local.sectionBorderVisible} onChange={(v) => update("sectionBorderVisible", v)} />
+      <ColorField label="Border Color" value={local.sectionBorderColor} onChange={(v) => update("sectionBorderColor", v)} />
+      <SliderField label="Border Thickness" value={local.sectionBorderThickness} onChange={(v) => update("sectionBorderThickness", v)} min={1} max={6} step={1} />
     </>
   );
 }
