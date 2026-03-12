@@ -338,6 +338,12 @@ const Dashboard = () => {
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/builder/${project.id}/settings`); }}>
                             <Settings className="h-4 w-4 mr-2" /> Settings
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => { e.stopPropagation(); duplicateProject(project); }}
+                            disabled={duplicating === project.id}
+                          >
+                            <Copy className="h-4 w-4 mr-2" /> {duplicating === project.id ? "Duplicating..." : "Duplicate"}
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={(e) => { e.stopPropagation(); setDeleteTarget(project); }}
