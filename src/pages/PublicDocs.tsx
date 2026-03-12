@@ -302,6 +302,7 @@ const PublicDocs = () => {
         hideHeaderLabel
       />
       {project?.id && <AskDocsChat projectId={project.id} settings={settings} />}
+      <MadeWithBanner />
     </div>
   );
 };
