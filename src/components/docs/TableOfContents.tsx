@@ -18,39 +18,54 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
   useEffect(() => {
     if (sections.length === 0) return;
 
-    // Track visibility ratios for all sections
     const visibilityMap = new Map<string, IntersectionObserverEntry>();
+
+    const computeActive = () => {
+      // If at the top of the page, highlight first section
+      if (window.scrollY < 100) {
+        setActiveId(sections[0].id);
+        return;
+      }
+
+      // If at the bottom of the page, highlight last section
+      const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 50);
+      if (atBottom) {
+        setActiveId(sections[sections.length - 1].id);
+        return;
+      }
+
+      // Find the topmost visible section
+      let bestId: string | null = null;
+      let bestTop = Infinity;
+
+      visibilityMap.forEach((entry, elementId) => {
+        if (!entry.isIntersecting) return;
+        const top = entry.boundingClientRect.top;
+        if (top < bestTop) {
+          bestTop = top;
+          bestId = elementId.replace("section-", "");
+        }
+      });
+
+      // If nothing is intersecting, find the last section that scrolled past
+      if (!bestId) {
+        let lastPastId: string | null = null;
+        for (const sec of sections) {
+          const entry = visibilityMap.get(`section-${sec.id}`);
+          if (entry && entry.boundingClientRect.top < 0) {
+            lastPastId = sec.id;
+          }
+        }
+        if (lastPastId) bestId = lastPastId;
+      }
+
+      if (bestId) setActiveId(bestId);
+    };
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => visibilityMap.set(entry.target.id, entry));
-
-        // Find the topmost visible section (smallest positive boundingClientRect.top)
-        let bestId: string | null = null;
-        let bestTop = Infinity;
-
-        visibilityMap.forEach((entry, elementId) => {
-          if (!entry.isIntersecting) return;
-          const top = entry.boundingClientRect.top;
-          if (top < bestTop) {
-            bestTop = top;
-            bestId = elementId.replace("section-", "");
-          }
-        });
-
-        // If nothing is intersecting, find the last section that scrolled past
-        if (!bestId) {
-          let lastPastId: string | null = null;
-          for (const sec of sections) {
-            const entry = visibilityMap.get(`section-${sec.id}`);
-            if (entry && entry.boundingClientRect.top < 0) {
-              lastPastId = sec.id;
-            }
-          }
-          if (lastPastId) bestId = lastPastId;
-        }
-
-        if (bestId) setActiveId(bestId);
+        computeActive();
       },
       { rootMargin: "-10% 0px -50% 0px", threshold: [0, 0.25, 0.5] }
     );
@@ -60,7 +75,18 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
       .filter(Boolean) as HTMLElement[];
 
     els.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+
+    // Also listen to scroll for edge cases (top/bottom of page)
+    const handleScroll = () => computeActive();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    // Set initial active
+    computeActive();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, [sections]);
 
   if (sections.length < 2) return null;
