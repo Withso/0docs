@@ -183,7 +183,7 @@ const DocContentView = ({
           hideHeaderLabel={hideHeaderLabel}
         />
 
-        <main className="flex-1 min-w-0 py-10 lg:pl-4">
+        <main className="flex-1 min-w-0 py-10 lg:pl-4" style={{ paddingRight: s.tocVisible ? undefined : undefined }}>
           {activePage ? (
             <article style={{ maxWidth: `${s.contentMaxWidth}px` }}>
               <h1
@@ -217,10 +217,16 @@ const DocContentView = ({
                       }}
                     >
                       <span dangerouslySetInnerHTML={{ __html: section.title }} />
-                      <span
-                        className="flex-1 h-px opacity-50"
-                        style={{ backgroundColor: `hsl(${s.sectionLineColor})` }}
-                      />
+                      {s.sectionBorderVisible && (
+                        <span
+                          className="flex-1"
+                          style={{
+                            height: `${s.sectionBorderThickness}px`,
+                            backgroundColor: `hsl(${s.sectionBorderColor})`,
+                            opacity: 0.5,
+                          }}
+                        />
+                      )}
                     </h2>
 
                     <div>
@@ -254,11 +260,15 @@ const DocContentView = ({
           )}
         </main>
 
-        <TableOfContents
-          sections={sections}
-          settings={s}
-          stickyTop={sidebarTop}
-        />
+        {s.tocVisible && (
+          <div style={{ paddingLeft: `${s.tocGap}px` }}>
+            <TableOfContents
+              sections={sections}
+              settings={s}
+              stickyTop={sidebarTop}
+            />
+          </div>
+        )}
       </div>
 
       <SearchDialog
