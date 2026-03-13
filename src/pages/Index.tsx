@@ -9,6 +9,7 @@ import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
 import { LogIn, LayoutDashboard, Search } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
+import DocMobileNavComponent from "@/components/docs/DocMobileNav";
 
 interface Page {
   id: string;
