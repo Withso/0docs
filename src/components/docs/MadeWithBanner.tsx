@@ -2,7 +2,7 @@ const MadeWithBanner = () => {
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
       <a
-        href="/"
+        href="https://docs0.lovable.app"
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all hover:scale-105"

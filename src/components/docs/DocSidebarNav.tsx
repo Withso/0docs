@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode, useMemo } from "react";
+import { useState, useEffect, useRef, type ReactNode, useMemo } from "react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
 export interface SidebarPageBase {
@@ -51,6 +51,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
   navGroups = [],
 }: DocSidebarNavProps<TPage>) => {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!s.sidebarShowSectionTracker || sections.length === 0) return;
@@ -58,13 +59,11 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
     const visibilityMap = new Map<string, IntersectionObserverEntry>();
 
     const computeActive = () => {
-      // If at the top of the page, highlight first section
       if (window.scrollY < 100) {
         setActiveSectionId(sections[0].id);
         return;
       }
 
-      // If at the bottom of the page, highlight last section
       const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 50);
       if (atBottom) {
         setActiveSectionId(sections[sections.length - 1].id);
@@ -111,7 +110,13 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
 
     sectionEls.forEach((el) => observer.observe(el));
 
-    const handleScroll = () => computeActive();
+    const handleScroll = () => {
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(() => {
+        computeActive();
+        rafRef.current = null;
+      });
+    };
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     computeActive();
@@ -119,6 +124,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
     return () => {
       observer.disconnect();
       window.removeEventListener("scroll", handleScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [sections, s.sidebarShowSectionTracker]);
 
@@ -145,7 +151,10 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
             renderPageActions(page, isActive)
           ) : (
             <button
-              onClick={() => onSelectPage(page)}
+              onClick={() => {
+                onSelectPage(page);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               className="flex-1 text-left truncate py-[3px] transition-colors block w-full"
               style={{
                 fontSize: `${s.sidebarFontSize}px`,

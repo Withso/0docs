@@ -147,7 +147,7 @@ const Builder = () => {
     return () => {
       cancelled = true;
     };
-  }, [pages, settings, navGroups, previewChanges, getCompleteSnapshot]);
+  }, [pages, sections, blocks, settings, navGroups, previewChanges, getCompleteSnapshot]);
 
   const handlePublish = useCallback(async (notes?: string) => {
     if (!projectId || !user?.id) return;

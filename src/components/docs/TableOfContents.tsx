@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
 interface TOCSection {
@@ -14,6 +14,7 @@ interface TableOfContentsProps {
 
 const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfContentsProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (sections.length === 0) return;
@@ -21,20 +22,17 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
     const visibilityMap = new Map<string, IntersectionObserverEntry>();
 
     const computeActive = () => {
-      // If at the top of the page, highlight first section
       if (window.scrollY < 100) {
         setActiveId(sections[0].id);
         return;
       }
 
-      // If at the bottom of the page, highlight last section
       const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 50);
       if (atBottom) {
         setActiveId(sections[sections.length - 1].id);
         return;
       }
 
-      // Find the topmost visible section
       let bestId: string | null = null;
       let bestTop = Infinity;
 
@@ -47,7 +45,6 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
         }
       });
 
-      // If nothing is intersecting, find the last section that scrolled past
       if (!bestId) {
         let lastPastId: string | null = null;
         for (const sec of sections) {
@@ -76,16 +73,21 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
 
     els.forEach((el) => observer.observe(el));
 
-    // Also listen to scroll for edge cases (top/bottom of page)
-    const handleScroll = () => computeActive();
+    const handleScroll = () => {
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(() => {
+        computeActive();
+        rafRef.current = null;
+      });
+    };
     window.addEventListener("scroll", handleScroll, { passive: true });
 
-    // Set initial active
     computeActive();
 
     return () => {
       observer.disconnect();
       window.removeEventListener("scroll", handleScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [sections]);
 
