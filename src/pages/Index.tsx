@@ -305,7 +305,20 @@ const Index = () => {
             maxWidth: `${settings.contentMaxWidth + settings.sidebarWidth + 200 + 48}px`,
           }}
         >
-          <div className="flex items-center" style={{ width: `${settings.sidebarWidth}px`, flexShrink: 0 }}>
+          <div className="flex items-center gap-2" style={{ width: `${settings.sidebarWidth}px`, flexShrink: 0 }}>
+            {/* Mobile nav */}
+            <div className="lg:hidden">
+              <DocMobileNavComponent
+                settings={settings}
+                pages={filteredPages}
+                activePage={activePage}
+                sections={allSections}
+                onSelectPage={setActivePage}
+                onSearchOpen={() => setSearchOpen(true)}
+                navGroups={navGroups}
+                projectName="0docs"
+              />
+            </div>
             <span className="font-semibold text-[15px] tracking-tight text-foreground">0docs</span>
           </div>
           <div className="flex-1 min-w-0 lg:pl-4">
