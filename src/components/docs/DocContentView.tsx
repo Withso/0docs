@@ -8,6 +8,7 @@ import TableOfContents from "./TableOfContents";
 import SearchDialog from "./SearchDialog";
 import PageFeedback from "./PageFeedback";
 import VersionSelector from "./VersionSelector";
+import DocMobileNav from "./DocMobileNav";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -65,6 +66,7 @@ interface DocContentViewProps {
   onExternalSearchOpenChange?: (open: boolean) => void;
   navGroups?: DocNavGroup[];
   hideHeaderLabel?: boolean;
+  showMobileNav?: boolean;
 }
 
 const DocContentView = ({
@@ -90,6 +92,7 @@ const DocContentView = ({
   onExternalSearchOpenChange,
   navGroups = [],
   hideHeaderLabel = false,
+  showMobileNav = true,
 }: DocContentViewProps) => {
   const [internalSearchOpen, setInternalSearchOpen] = useState(false);
   const searchOpen = externalSearchOpen !== undefined ? externalSearchOpen : internalSearchOpen;
@@ -133,9 +136,22 @@ const DocContentView = ({
         >
           <div
             style={{ maxWidth: `${frameMaxWidth}px` }}
-            className="mx-auto px-6 h-12 flex items-center justify-between"
+            className="mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-2"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {/* Mobile nav hamburger */}
+              {showMobileNav && (
+                <DocMobileNav
+                  settings={s}
+                  pages={pages}
+                  activePage={activePage}
+                  sections={allSections || sections}
+                  onSelectPage={onSelectPage}
+                  onSearchOpen={() => setSearchOpen(true)}
+                  navGroups={navGroups as any}
+                  projectName={projectName}
+                />
+              )}
               <span
                 className="font-semibold text-sm"
                 style={{ fontFamily: `'${s.bodyFont}', sans-serif` }}
@@ -162,7 +178,7 @@ const DocContentView = ({
               }}
             >
               <Search className="h-3.5 w-3.5" />
-              <span>Search</span>
+              <span className="hidden sm:inline">Search</span>
               <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]" style={{ borderColor: `hsl(${s.borderColor})` }}>
                 ⌘K
               </kbd>
@@ -171,7 +187,7 @@ const DocContentView = ({
         </header>
       )}
 
-      <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
+      <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-4 sm:px-6">
         <DocSidebarNav
           settings={s}
           pages={pages}
