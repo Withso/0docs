@@ -1,4 +1,5 @@
 import { useState } from "react";
+import DOMPurify from "dompurify";
 import type { DesignSettings, BlockStyleSettings } from "@/hooks/use-design-settings";
 
 type BlockKey = keyof DesignSettings["blockStyles"];
@@ -259,7 +260,7 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
             marginBottom: "16px",
             ...getBlockStyle(),
           }}
-          dangerouslySetInnerHTML={{ __html: content.html || "" }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.html || "") }}
         />
       );
 

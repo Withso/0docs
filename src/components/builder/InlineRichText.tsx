@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
+import DOMPurify from "dompurify";
 import { Bold, Italic, Underline, LinkIcon, Palette, X, Check } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
@@ -80,7 +81,7 @@ const InlineRichText = ({
 
   const handleInput = useCallback(() => {
     if (!ref.current) return;
-    let html = ref.current.innerHTML;
+    let html = DOMPurify.sanitize(ref.current.innerHTML);
     if (singleLine) {
       html = html.replace(/<br\s*\/?>/gi, "").replace(/<div>|<\/div>/gi, "");
     }
@@ -92,7 +93,7 @@ const InlineRichText = ({
     doneCalledRef.current = true;
     // Flush any pending changes immediately
     if (ref.current) {
-      let html = ref.current.innerHTML;
+      let html = DOMPurify.sanitize(ref.current.innerHTML);
       if (singleLine) {
         html = html.replace(/<br\s*\/?>/gi, "").replace(/<div>|<\/div>/gi, "");
       }
