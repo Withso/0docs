@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
+import DOMPurify from "dompurify";
 import { Bold, Italic, Underline, LinkIcon, Palette, X, Check } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
