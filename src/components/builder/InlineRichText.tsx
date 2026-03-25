@@ -93,7 +93,7 @@ const InlineRichText = ({
     doneCalledRef.current = true;
     // Flush any pending changes immediately
     if (ref.current) {
-      let html = ref.current.innerHTML;
+      let html = DOMPurify.sanitize(ref.current.innerHTML);
       if (singleLine) {
         html = html.replace(/<br\s*\/?>/gi, "").replace(/<div>|<\/div>/gi, "");
       }
