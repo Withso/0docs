@@ -81,7 +81,7 @@ const InlineRichText = ({
 
   const handleInput = useCallback(() => {
     if (!ref.current) return;
-    let html = ref.current.innerHTML;
+    let html = DOMPurify.sanitize(ref.current.innerHTML);
     if (singleLine) {
       html = html.replace(/<br\s*\/?>/gi, "").replace(/<div>|<\/div>/gi, "");
     }
