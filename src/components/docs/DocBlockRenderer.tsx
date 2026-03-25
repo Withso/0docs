@@ -259,7 +259,7 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
             marginBottom: "16px",
             ...getBlockStyle(),
           }}
-          dangerouslySetInnerHTML={{ __html: content.html || "" }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.html || "") }}
         />
       );
 
