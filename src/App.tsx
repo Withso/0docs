@@ -58,14 +58,6 @@ const App = () => (
                 }
               />
               <Route
-                path="/builder/:projectId/analytics"
-                element={
-                  <ProtectedRoute>
-                    <Builder />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/builder/:projectId/settings"
                 element={
                   <ProtectedRoute>
