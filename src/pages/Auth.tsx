@@ -118,7 +118,7 @@ const Auth = () => {
                 </button>
               </div>
             </div>
-            <Button type="submit" className="w-full h-11 rounded-lg text-[14px]" disabled={loading}>
+            <Button type="submit" className="w-full h-10 rounded-lg text-[13px]" disabled={loading}>
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
