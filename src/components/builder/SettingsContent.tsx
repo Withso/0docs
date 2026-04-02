@@ -18,7 +18,7 @@ interface SettingsContentProps {
   onSaved?: () => void;
 }
 
-const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
+const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
