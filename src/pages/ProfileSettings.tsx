@@ -44,28 +44,26 @@ const ProfileSettings = () => {
     load();
   }, [user]);
 
-  const handleSave = async () => {
+  const saveProfile = async (name: string, bioVal: string) => {
     if (!user) return;
-    setSaving(true);
-
     const { error } = await supabase
       .from("profiles")
-      .upsert({
-        id: user.id,
-        display_name: displayName,
-        bio,
-        updated_at: new Date().toISOString(),
-      });
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      await supabase.auth.updateUser({
-        data: { display_name: displayName },
-      });
-      toast({ title: "Profile updated successfully" });
+      .upsert({ id: user.id, display_name: name, bio: bioVal, updated_at: new Date().toISOString() });
+    if (!error) {
+      await supabase.auth.updateUser({ data: { display_name: name } });
     }
-    setSaving(false);
+  };
+
+  const debouncedSave = useDebounce(saveProfile, 800);
+
+  const handleDisplayNameChange = (val: string) => {
+    setDisplayName(val);
+    debouncedSave(val, bio);
+  };
+
+  const handleBioChange = (val: string) => {
+    setBio(val);
+    debouncedSave(displayName, val);
   };
 
   const userInitial = displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U";
