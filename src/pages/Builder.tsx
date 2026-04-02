@@ -366,11 +366,6 @@ const Builder = () => {
         </div>
       )}
 
-      {/* Mode: Analytics */}
-      {mode === "analytics" && (
-        <AnalyticsContent projectId={projectId!} userId={user?.id || ""} />
-      )}
-
       {/* Mode: Settings */}
       {mode === "settings" && (
         <SettingsContent projectId={projectId!} project={project} />

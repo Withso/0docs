@@ -89,8 +89,6 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route path="/docs/:slug" element={<PublicDocs />} />
-              <Route path="/docs/:slug/:pageSlug" element={<PublicDocs />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
