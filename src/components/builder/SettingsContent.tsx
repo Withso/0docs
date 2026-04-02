@@ -62,6 +62,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Project settings saved" });
+      onSaved?.();
     }
     setSaving(false);
   };
