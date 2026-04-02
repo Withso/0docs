@@ -1,10 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Upload, FileText, Palette, ChevronDown, ChevronRight,
   Plus, Minus, Pencil, Check, Clock, RotateCcw,
   Loader2, Tag, Rocket, Github, GitBranch, ExternalLink,
+  Search, MousePointerClick, Code, Layout, MessageSquare,
+  Smartphone, ThumbsUp, BookOpen, Table2, Zap, ListOrdered,
+  Quote, Image, Video, Type, SeparatorHorizontal, CreditCard,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
