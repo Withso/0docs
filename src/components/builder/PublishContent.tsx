@@ -70,7 +70,7 @@ const PublishContent = ({
 
     try {
       // Export the documentation
-      const exported = exportProject(pages, sections, blocks, settings, navGroups);
+      const exported = exportProject(pages, sections, blocks, settings, navGroups, project?.name || "Documentation");
       const message = commitMessage.trim() || getDefaultCommitMessage();
 
       // Call edge function
