@@ -31,14 +31,15 @@ async function ghFetch(url: string, token: string, options: RequestInit = {}) {
       ...(options.headers || {}),
     },
   });
+
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`GitHub API error ${res.status}: ${body}`);
   }
+
   return res.json();
 }
 
-/** Try to get a ref; returns null if repo is empty (409) or ref not found (404). */
 async function ghFetchOptional(url: string, token: string) {
   const res = await fetch(url, {
     headers: {
@@ -47,15 +48,26 @@ async function ghFetchOptional(url: string, token: string) {
       "X-GitHub-Api-Version": "2022-11-28",
     },
   });
+
   if (res.status === 404 || res.status === 409) {
-    await res.text(); // consume body
+    await res.text();
     return null;
   }
+
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`GitHub API error ${res.status}: ${body}`);
   }
+
   return res.json();
+}
+
+function toBase64Utf8(value: string) {
+  return btoa(Array.from(new TextEncoder().encode(value), (byte) => String.fromCharCode(byte)).join(""));
+}
+
+function toGitHubContentPath(path: string) {
+  return path.split("/").map(encodeURIComponent).join("/");
 }
 
 Deno.serve(async (req) => {
@@ -75,10 +87,14 @@ Deno.serve(async (req) => {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      { global: { headers: { Authorization: authHeader } } },
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -92,7 +108,7 @@ Deno.serve(async (req) => {
     if (!projectId || !files || files.length === 0 || !commitMessage) {
       return new Response(
         JSON.stringify({ error: "Missing required fields: projectId, files, commitMessage" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -122,7 +138,7 @@ Deno.serve(async (req) => {
     if (!githubRepo || !githubToken) {
       return new Response(
         JSON.stringify({ error: "GitHub not configured. Add repo and token in project settings." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -130,27 +146,82 @@ Deno.serve(async (req) => {
     if (!owner || !repo) {
       return new Response(
         JSON.stringify({ error: "Invalid github_repo format. Expected owner/repo." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const targetBranch = branch || project.github_branch || "main";
+    const repoInfo = await ghFetch(`${GITHUB_API}/repos/${owner}/${repo}`, githubToken);
+    const defaultBranch = repoInfo.default_branch || project.github_branch || "main";
+    const targetBranch = branch || project.github_branch || defaultBranch;
 
-    // Check if repo has any commits by trying to get the default branch ref
-    const existingRef = await ghFetchOptional(
+    let targetRef = await ghFetchOptional(
       `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${targetBranch}`,
-      githubToken
+      githubToken,
     );
+    let defaultRef = targetBranch === defaultBranch
+      ? targetRef
+      : await ghFetchOptional(`${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${defaultBranch}`, githubToken);
 
-    const isEmptyRepo = !existingRef;
+    const isEmptyRepo = !defaultRef;
 
-    // If creating a new branch on a non-empty repo
-    if (createBranch && !isEmptyRepo) {
-      const base = baseBranch || project.github_branch || "main";
-      const baseRef = await ghFetch(
-        `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${base}`,
-        githubToken
+    if (isEmptyRepo) {
+      const firstFile = files[0];
+
+      await ghFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/contents/${toGitHubContentPath(firstFile.path)}`,
+        githubToken,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            message: `${commitMessage} (initialize repository)`,
+            content: toBase64Utf8(firstFile.content),
+          }),
+        },
       );
+
+      defaultRef = await ghFetchOptional(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${defaultBranch}`,
+        githubToken,
+      );
+
+      if (!defaultRef) {
+        throw new Error("GitHub repository initialization failed.");
+      }
+
+      if (targetBranch !== defaultBranch) {
+        try {
+          await ghFetch(`${GITHUB_API}/repos/${owner}/${repo}/git/refs`, githubToken, {
+            method: "POST",
+            body: JSON.stringify({
+              ref: `refs/heads/${targetBranch}`,
+              sha: defaultRef.object.sha,
+            }),
+          });
+        } catch (error: any) {
+          if (!error.message.includes("422")) throw error;
+        }
+
+        targetRef = await ghFetchOptional(
+          `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${targetBranch}`,
+          githubToken,
+        );
+      } else {
+        targetRef = defaultRef;
+      }
+    } else if (!targetRef) {
+      const base = baseBranch || defaultBranch;
+      const baseRef = base === defaultBranch
+        ? defaultRef
+        : await ghFetch(`${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${base}`, githubToken);
+
+      if (!baseRef) {
+        throw new Error(`Base branch \"${base}\" was not found.`);
+      }
+
+      if (!createBranch && targetBranch !== defaultBranch) {
+        // Create the missing branch automatically from the base branch on first publish to that branch.
+      }
+
       try {
         await ghFetch(`${GITHUB_API}/repos/${owner}/${repo}/git/refs`, githubToken, {
           method: "POST",
@@ -159,12 +230,20 @@ Deno.serve(async (req) => {
             sha: baseRef.object.sha,
           }),
         });
-      } catch (e: any) {
-        if (!e.message.includes("422")) throw e;
+      } catch (error: any) {
+        if (!error.message.includes("422")) throw error;
       }
+
+      targetRef = await ghFetchOptional(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${targetBranch}`,
+        githubToken,
+      );
     }
 
-    // 1. Create blobs for each file
+    if (!targetRef) {
+      throw new Error(`Could not resolve target branch \"${targetBranch}\".`);
+    }
+
     const treeEntries = [];
     for (const file of files) {
       const blobData = await ghFetch(
@@ -172,9 +251,13 @@ Deno.serve(async (req) => {
         githubToken,
         {
           method: "POST",
-          body: JSON.stringify({ content: file.content, encoding: "utf-8" }),
-        }
+          body: JSON.stringify({
+            content: file.content,
+            encoding: "utf-8",
+          }),
+        },
       );
+
       treeEntries.push({
         path: file.path,
         mode: "100644" as const,
@@ -183,95 +266,60 @@ Deno.serve(async (req) => {
       });
     }
 
-    let newCommitSha: string;
+    const latestCommitSha = targetRef.object.sha;
+    const commitData = await ghFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/commits/${latestCommitSha}`,
+      githubToken,
+    );
 
-    if (isEmptyRepo) {
-      // For empty repos: create tree without base_tree, commit without parents, then create ref
-      const newTree = await ghFetch(
-        `${GITHUB_API}/repos/${owner}/${repo}/git/trees`,
-        githubToken,
-        { method: "POST", body: JSON.stringify({ tree: treeEntries }) }
-      );
-
-      const newCommit = await ghFetch(
-        `${GITHUB_API}/repos/${owner}/${repo}/git/commits`,
-        githubToken,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            message: commitMessage,
-            tree: newTree.sha,
-            parents: [],
-          }),
-        }
-      );
-      newCommitSha = newCommit.sha;
-
-      // Create the branch ref pointing to the new commit
-      await ghFetch(`${GITHUB_API}/repos/${owner}/${repo}/git/refs`, githubToken, {
+    const newTree = await ghFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/trees`,
+      githubToken,
+      {
         method: "POST",
         body: JSON.stringify({
-          ref: `refs/heads/${targetBranch}`,
-          sha: newCommitSha,
+          base_tree: commitData.tree.sha,
+          tree: treeEntries,
         }),
-      });
-    } else {
-      // Non-empty repo: normal flow
-      const refData = existingRef || await ghFetch(
-        `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${targetBranch}`,
-        githubToken
-      );
-      const latestCommitSha = refData.object.sha;
+      },
+    );
 
-      const commitData = await ghFetch(
-        `${GITHUB_API}/repos/${owner}/${repo}/git/commits/${latestCommitSha}`,
-        githubToken
-      );
+    const newCommit = await ghFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/commits`,
+      githubToken,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          message: commitMessage,
+          tree: newTree.sha,
+          parents: [latestCommitSha],
+        }),
+      },
+    );
 
-      const newTree = await ghFetch(
-        `${GITHUB_API}/repos/${owner}/${repo}/git/trees`,
-        githubToken,
-        {
-          method: "POST",
-          body: JSON.stringify({ base_tree: commitData.tree.sha, tree: treeEntries }),
-        }
-      );
-
-      const newCommit = await ghFetch(
-        `${GITHUB_API}/repos/${owner}/${repo}/git/commits`,
-        githubToken,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            message: commitMessage,
-            tree: newTree.sha,
-            parents: [latestCommitSha],
-          }),
-        }
-      );
-      newCommitSha = newCommit.sha;
-
-      await ghFetch(
-        `${GITHUB_API}/repos/${owner}/${repo}/git/refs/heads/${targetBranch}`,
-        githubToken,
-        { method: "PATCH", body: JSON.stringify({ sha: newCommitSha }) }
-      );
-    }
+    await ghFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/refs/heads/${targetBranch}`,
+      githubToken,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ sha: newCommit.sha }),
+      },
+    );
 
     return new Response(
       JSON.stringify({
         success: true,
-        commitSha: newCommitSha,
-        commitUrl: `https://github.com/${owner}/${repo}/commit/${newCommitSha}`,
+        commitSha: newCommit.sha,
+        commitUrl: `https://github.com/${owner}/${repo}/commit/${newCommit.sha}`,
         branch: targetBranch,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error: any) {
     console.error("publish-to-github error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
