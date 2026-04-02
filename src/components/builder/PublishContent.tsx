@@ -1,10 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Upload, FileText, Palette, ChevronDown, ChevronRight,
   Plus, Minus, Pencil, Check, Clock, RotateCcw,
   Loader2, Tag, Rocket, Github, GitBranch, ExternalLink,
+  Search, MousePointerClick, Code, Layout, MessageSquare,
+  Smartphone, ThumbsUp, BookOpen, Table2, Zap, ListOrdered,
+  Quote, Image, Video, Type, SeparatorHorizontal, CreditCard,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +50,7 @@ const PublishContent = ({
   const [notes, setNotes] = useState("");
   const [editorOpen, setEditorOpen] = useState(true);
   const [designOpen, setDesignOpen] = useState(true);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
   const [expandedVersion, setExpandedVersion] = useState<string | null>(null);
   const [pushingToGithub, setPushingToGithub] = useState(false);
   const [commitMessage, setCommitMessage] = useState("");
@@ -56,6 +60,101 @@ const PublishContent = ({
   const hasChanges = editorChanges.length > 0 || designChanges.length > 0;
   const totalChanges = editorChanges.length + designChanges.length;
   const githubConfigured = project?.github_repo && project?.github_token_encrypted;
+
+  // Auto-detect site features from blocks and settings
+  const siteFeatures = useMemo(() => {
+    const blockTypes = new Set(blocks.map((b: any) => b.type));
+    const features: { icon: React.ReactNode; label: string; description: string; active: boolean }[] = [
+      {
+        icon: <Search className="h-3.5 w-3.5" />,
+        label: "Fuzzy Search (⌘K)",
+        description: "Full-text search across all pages and sections",
+        active: true, // always included
+      },
+      {
+        icon: <Smartphone className="h-3.5 w-3.5" />,
+        label: "Mobile Navigation",
+        description: "Responsive hamburger menu for mobile devices",
+        active: true,
+      },
+      {
+        icon: <BookOpen className="h-3.5 w-3.5" />,
+        label: "Table of Contents",
+        description: "Right sidebar with section navigation",
+        active: settings?.tocVisible !== false,
+      },
+      {
+        icon: <ThumbsUp className="h-3.5 w-3.5" />,
+        label: "Page Feedback",
+        description: "\"Was this helpful?\" widget on every page",
+        active: true,
+      },
+      {
+        icon: <MousePointerClick className="h-3.5 w-3.5" />,
+        label: "Interactive Tabs",
+        description: "Clickable tab panels with content switching",
+        active: blockTypes.has("tabs") || blockTypes.has("code_tabs"),
+      },
+      {
+        icon: <ListOrdered className="h-3.5 w-3.5" />,
+        label: "Accordion / Collapsible",
+        description: "Expandable content sections",
+        active: blockTypes.has("accordion"),
+      },
+      {
+        icon: <Code className="h-3.5 w-3.5" />,
+        label: "Code Blocks",
+        description: "Syntax-highlighted code with copy button",
+        active: blockTypes.has("code_block") || blockTypes.has("code_tabs"),
+      },
+      {
+        icon: <Zap className="h-3.5 w-3.5" />,
+        label: "API Reference",
+        description: "Method badges, parameter tables, response blocks",
+        active: blockTypes.has("api_endpoint"),
+      },
+      {
+        icon: <CreditCard className="h-3.5 w-3.5" />,
+        label: "Cards",
+        description: "Styled card components with icons",
+        active: blockTypes.has("card"),
+      },
+      {
+        icon: <Table2 className="h-3.5 w-3.5" />,
+        label: "Data Tables",
+        description: "Structured tables with header styling",
+        active: blockTypes.has("table"),
+      },
+      {
+        icon: <Layout className="h-3.5 w-3.5" />,
+        label: "Step-by-Step Guides",
+        description: "Numbered steps with connector lines",
+        active: blockTypes.has("steps"),
+      },
+      {
+        icon: <Video className="h-3.5 w-3.5" />,
+        label: "Video / YouTube Embeds",
+        description: "Embedded video players",
+        active: blockTypes.has("video") || blockTypes.has("youtube"),
+      },
+      {
+        icon: <Image className="h-3.5 w-3.5" />,
+        label: "Images",
+        description: "Resizable images with alignment",
+        active: blockTypes.has("image"),
+      },
+      {
+        icon: <Quote className="h-3.5 w-3.5" />,
+        label: "Quotes & Callouts",
+        description: "Styled blockquotes and callout boxes",
+        active: blockTypes.has("quote") || blockTypes.has("callout") || blockTypes.has("note"),
+      },
+    ];
+
+    const activeFeatures = features.filter(f => f.active);
+    const inactiveFeatures = features.filter(f => !f.active);
+    return { active: activeFeatures, inactive: inactiveFeatures, total: features.length };
+  }, [blocks, settings]);
 
   const getDefaultCommitMessage = useCallback(() => {
     if (isFirstPublish) return `docs: initial publish v${nextVersion}`;
@@ -214,6 +313,47 @@ const PublishContent = ({
                 </div>
               </div>
             )}
+
+            {/* Site Features */}
+            <div className="rounded-xl border overflow-hidden">
+              <button
+                onClick={() => setFeaturesOpen(!featuresOpen)}
+                className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-muted/30 transition-colors"
+              >
+                {featuresOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                <Zap className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[13px] font-medium flex-1">Site Features</span>
+                <Badge variant="outline" className="text-[10px] h-5 rounded-md font-mono">
+                  {siteFeatures.active.length}/{siteFeatures.total}
+                </Badge>
+              </button>
+              {featuresOpen && (
+                <div className="border-t px-4 py-3 space-y-1.5" style={{ backgroundColor: "hsl(var(--muted) / 0.15)" }}>
+                  <p className="text-[11px] text-muted-foreground mb-2">
+                    Features included in the exported site based on your content:
+                  </p>
+                  {siteFeatures.active.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2.5 py-1 px-2.5 rounded-lg text-[12px]">
+                      <span className="text-emerald-500 shrink-0">{f.icon}</span>
+                      <span className="font-medium flex-1">{f.label}</span>
+                      <span className="text-[10px] text-muted-foreground hidden sm:block">{f.description}</span>
+                    </div>
+                  ))}
+                  {siteFeatures.inactive.length > 0 && (
+                    <>
+                      <div className="border-t my-2" />
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Not in use</p>
+                      {siteFeatures.inactive.map((f, i) => (
+                        <div key={i} className="flex items-center gap-2.5 py-1 px-2.5 rounded-lg text-[12px] opacity-40">
+                          <span className="shrink-0">{f.icon}</span>
+                          <span className="flex-1">{f.label}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div>
               <h2 className="text-[13px] font-semibold text-foreground mb-4 flex items-center gap-2">
