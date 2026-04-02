@@ -1409,8 +1409,8 @@ div.zdocs-list-item-text {
   --platform-surface-active: 0 0% 13%;
   --platform-surface-elevated: 0 0% 10%;
 
-  /* Sidebar */
-  --sidebar-background: 0 0% 5%;
+  /* Sidebar — slightly different from main bg for differentiation (like Linear) */
+  --sidebar-background: 0 0% 4%;  /* darker than main bg */
   --sidebar-foreground: 0 0% 44%;
   --sidebar-primary: 0 0% 94%;
   --sidebar-primary-foreground: 0 0% 5%;
