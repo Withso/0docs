@@ -15,9 +15,10 @@ import { Save, Trash2, GitBranch, Github, Loader2, CheckCircle2, XCircle, Eye, E
 interface SettingsContentProps {
   projectId: string;
   project: any;
+  onSaved?: () => void;
 }
 
-const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
+const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -61,6 +62,7 @@ const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Project settings saved" });
+      onSaved?.();
     }
     setSaving(false);
   };

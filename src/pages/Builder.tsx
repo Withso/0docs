@@ -84,6 +84,7 @@ const Builder = () => {
     addBlock, updateBlock, deleteBlock, reloadPages, loadPageContent,
     navGroups, addNavGroup, updateNavGroup, deleteNavGroup,
     reorderPages, reorderNavGroups, reorderSections, reorderBlocks,
+    refreshProject,
   } = useBuilder(projectId, user?.id);
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
@@ -368,7 +369,7 @@ const Builder = () => {
 
       {/* Mode: Settings */}
       {mode === "settings" && (
-        <SettingsContent projectId={projectId!} project={project} />
+        <SettingsContent projectId={projectId!} project={project} onSaved={refreshProject} />
       )}
 
       {/* Mode: Publish */}
