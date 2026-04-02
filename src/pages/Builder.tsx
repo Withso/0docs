@@ -369,7 +369,7 @@ const Builder = () => {
 
       {/* Mode: Settings */}
       {mode === "settings" && (
-        <SettingsContent projectId={projectId!} project={project} />
+        <SettingsContent projectId={projectId!} project={project} onSaved={refreshProject} />
       )}
 
       {/* Mode: Publish */}
