@@ -229,7 +229,7 @@ const PublishContent = ({
 
           <Button
             onClick={githubConfigured ? handlePublishToGithub : () => onPublish(notes || undefined)}
-            disabled={pushingToGithub || publishing || (!hasChanges && !isFirstPublish)}
+            disabled={pushingToGithub || publishing || (!hasChanges && !isFirstPublish && !githubConfigured)}
             className="h-10 rounded-xl px-6 text-[13px] font-medium shrink-0"
           >
             {pushingToGithub || publishing ? (
