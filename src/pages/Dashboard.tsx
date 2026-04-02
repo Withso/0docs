@@ -319,8 +319,8 @@ const Dashboard = () => {
                     style={{ animationDelay: `${i * 40}ms`, animationFillMode: "both" }}
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <div className="h-10 w-10 rounded-xl bg-platform-accent-soft flex items-center justify-center">
-                        <FileText className="h-[18px] w-[18px] text-primary" />
+                      <div className="h-9 w-9 rounded-lg bg-accent/60 flex items-center justify-center">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
