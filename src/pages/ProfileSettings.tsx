@@ -150,7 +150,7 @@ const ProfileSettings = () => {
                 <Label className="text-[13px] text-muted-foreground mb-1.5 block">Bio</Label>
                 <textarea
                   value={bio}
-                  onChange={(e) => setBio(e.target.value)}
+                  onChange={(e) => handleBioChange(e.target.value)}
                   placeholder="Tell us about yourself..."
                   rows={3}
                   className="flex w-full rounded-lg bg-accent/40 border border-transparent px-3 py-2.5 text-[13px] ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30 focus-visible:border-border resize-none text-foreground"
