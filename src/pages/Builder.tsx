@@ -13,7 +13,6 @@ import DesignPanel from "@/components/builder/DesignPanel";
 import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SettingsContent from "@/components/builder/SettingsContent";
-import AnalyticsContent from "@/components/builder/AnalyticsContent";
 import PublishContent from "@/components/builder/PublishContent";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical } from "lucide-react";
@@ -59,7 +58,6 @@ const Builder = () => {
 
   // Derive initial mode from URL path
   const getInitialMode = (): BuilderMode => {
-    if (location.pathname.endsWith("/analytics")) return "analytics";
     if (location.pathname.endsWith("/settings")) return "settings";
     if (location.pathname.endsWith("/design")) return "design";
     if (location.pathname.endsWith("/publish")) return "publish";
@@ -74,8 +72,7 @@ const Builder = () => {
     setMode(newMode);
     if (!projectId) return;
     const base = `/builder/${projectId}`;
-    if (newMode === "analytics") navigate(`${base}/analytics`, { replace: true });
-    else if (newMode === "settings") navigate(`${base}/settings`, { replace: true });
+    if (newMode === "settings") navigate(`${base}/settings`, { replace: true });
     else if (newMode === "design") navigate(`${base}/design`, { replace: true });
     else if (newMode === "publish") navigate(`${base}/publish`, { replace: true });
     else navigate(base, { replace: true });
@@ -369,11 +366,6 @@ const Builder = () => {
         </div>
       )}
 
-      {/* Mode: Analytics */}
-      {mode === "analytics" && (
-        <AnalyticsContent projectId={projectId!} userId={user?.id || ""} />
-      )}
-
       {/* Mode: Settings */}
       {mode === "settings" && (
         <SettingsContent projectId={projectId!} project={project} />
@@ -396,6 +388,12 @@ const Builder = () => {
           }}
           projectSlug={project?.slug || ""}
           customDomain={project?.custom_domain}
+          project={project}
+          pages={pages}
+          sections={sections}
+          blocks={blocks}
+          settings={settings}
+          navGroups={navGroups}
         />
       )}
 

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, BarChart3, Settings, ChevronRight, Upload } from "lucide-react";
+import { ArrowLeft, FileText, Settings, ChevronRight, Upload } from "lucide-react";
 
 export type BuilderMode = "editor" | "design" | "preview" | "analytics" | "settings" | "publish";
 export type DesignSubMode = "live" | "examples";
@@ -92,18 +92,6 @@ const BuilderHeader = ({
 
           {/* Right */}
           <div className="flex items-center gap-1 flex-1 justify-end">
-            <button
-              className={`h-8 rounded-lg px-2 flex items-center gap-1.5 text-[12px] font-medium transition-all ${
-                mode === "analytics"
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-              title="Analytics"
-              onClick={() => onModeChange("analytics")}
-            >
-              <BarChart3 className="h-4 w-4" />
-              {mode === "analytics" && <span>Analytics</span>}
-            </button>
             <button
               className={`h-8 rounded-lg px-2 flex items-center gap-1.5 text-[12px] font-medium transition-all ${
                 mode === "settings"

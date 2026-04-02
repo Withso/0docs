@@ -327,6 +327,9 @@ export type Database = {
           created_at: string
           custom_domain: string | null
           description: string | null
+          github_branch: string
+          github_repo: string | null
+          github_token_encrypted: string | null
           id: string
           is_homepage: boolean
           name: string
@@ -339,6 +342,9 @@ export type Database = {
           created_at?: string
           custom_domain?: string | null
           description?: string | null
+          github_branch?: string
+          github_repo?: string | null
+          github_token_encrypted?: string | null
           id?: string
           is_homepage?: boolean
           name: string
@@ -351,6 +357,9 @@ export type Database = {
           created_at?: string
           custom_domain?: string | null
           description?: string | null
+          github_branch?: string
+          github_repo?: string | null
+          github_token_encrypted?: string | null
           id?: string
           is_homepage?: boolean
           name?: string

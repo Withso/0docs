@@ -12,7 +12,6 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Builder = lazy(() => import("./pages/Builder"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
-const PublicDocs = lazy(() => import("./pages/PublicDocs"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const LazyFallback = () => (
@@ -59,14 +58,6 @@ const App = () => (
                 }
               />
               <Route
-                path="/builder/:projectId/analytics"
-                element={
-                  <ProtectedRoute>
-                    <Builder />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/builder/:projectId/settings"
                 element={
                   <ProtectedRoute>
@@ -90,8 +81,6 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route path="/docs/:slug" element={<PublicDocs />} />
-              <Route path="/docs/:slug/:pageSlug" element={<PublicDocs />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
