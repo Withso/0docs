@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, User, Mail, Save, LogOut, Shield, Sun, Moon, Monitor } from "lucide-react";
+import { ArrowLeft, User, Mail, LogOut, Shield, Sun, Moon, Monitor } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { usePlatformTheme } from "@/hooks/use-platform-theme";
+import { useDebouncedCallback } from "@/hooks/use-debounce";
 
 const ProfileSettings = () => {
   const { user, signOut } = useAuth();
