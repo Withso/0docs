@@ -228,8 +228,8 @@ const Dashboard = () => {
       <div className="max-w-5xl mx-auto px-6 py-8">
             {/* Header row: Title + Search + Actions */}
             <div className="flex items-center gap-3 mb-6">
-              <h1 className="text-[15px] font-semibold text-foreground shrink-0">Projects</h1>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md shrink-0">{visibleProjects.length}</span>
+              <h1 className="text-[14px] font-medium text-foreground shrink-0">Projects</h1>
+              <span className="text-[11px] text-muted-foreground bg-accent/60 px-1.5 py-0.5 rounded-md shrink-0">{visibleProjects.length}</span>
 
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
