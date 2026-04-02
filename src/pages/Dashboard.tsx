@@ -232,12 +232,12 @@ const Dashboard = () => {
               <span className="text-[11px] text-muted-foreground bg-accent/60 px-1.5 py-0.5 rounded-md shrink-0">{visibleProjects.length}</span>
 
               <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search projects..."
-                  className="pl-9 h-9 rounded-lg text-[13px]"
+                  className="pl-9 h-9 rounded-lg text-[13px] bg-accent/40 border-transparent focus-visible:border-border focus-visible:ring-1 focus-visible:ring-ring/30"
                 />
               </div>
 
