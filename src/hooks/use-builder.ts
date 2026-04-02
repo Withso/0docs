@@ -48,6 +48,17 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
   const [navGroups, setNavGroups] = useState<NavGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const refreshProject = useCallback(async () => {
+    if (!projectId || !userId) return;
+    const { data: proj } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("id", projectId)
+      .eq("user_id", userId)
+      .single();
+    if (proj) setProject(proj);
+  }, [projectId, userId]);
+
   // Load project and pages
   useEffect(() => {
     if (!projectId || !userId) return;
