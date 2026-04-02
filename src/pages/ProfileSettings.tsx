@@ -126,7 +126,7 @@ const ProfileSettings = () => {
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                   <Input
                     value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
+                    onChange={(e) => handleDisplayNameChange(e.target.value)}
                     placeholder="Your display name"
                     className="pl-10 h-10 rounded-lg bg-accent/40 border-transparent focus-visible:border-border focus-visible:ring-1 focus-visible:ring-ring/30"
                   />
