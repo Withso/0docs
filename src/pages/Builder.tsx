@@ -388,6 +388,12 @@ const Builder = () => {
           }}
           projectSlug={project?.slug || ""}
           customDomain={project?.custom_domain}
+          project={project}
+          pages={pages}
+          sections={sections}
+          blocks={blocks}
+          settings={settings}
+          navGroups={navGroups}
         />
       )}
 
