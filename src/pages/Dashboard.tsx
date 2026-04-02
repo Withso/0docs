@@ -249,7 +249,7 @@ const Dashboard = () => {
                 )}
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="h-9 text-[13px] rounded-lg shadow-platform-sm">
+                    <Button size="sm" className="h-9 text-[13px] rounded-lg">
                       <Plus className="h-3.5 w-3.5 mr-1.5" /> New Project
                     </Button>
                   </DialogTrigger>
