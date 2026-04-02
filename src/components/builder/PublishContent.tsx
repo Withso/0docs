@@ -314,6 +314,47 @@ const PublishContent = ({
               </div>
             )}
 
+            {/* Site Features */}
+            <div className="rounded-xl border overflow-hidden">
+              <button
+                onClick={() => setFeaturesOpen(!featuresOpen)}
+                className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-muted/30 transition-colors"
+              >
+                {featuresOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                <Zap className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[13px] font-medium flex-1">Site Features</span>
+                <Badge variant="outline" className="text-[10px] h-5 rounded-md font-mono">
+                  {siteFeatures.active.length}/{siteFeatures.total}
+                </Badge>
+              </button>
+              {featuresOpen && (
+                <div className="border-t px-4 py-3 space-y-1.5" style={{ backgroundColor: "hsl(var(--muted) / 0.15)" }}>
+                  <p className="text-[11px] text-muted-foreground mb-2">
+                    Features included in the exported site based on your content:
+                  </p>
+                  {siteFeatures.active.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2.5 py-1 px-2.5 rounded-lg text-[12px]">
+                      <span className="text-emerald-500 shrink-0">{f.icon}</span>
+                      <span className="font-medium flex-1">{f.label}</span>
+                      <span className="text-[10px] text-muted-foreground hidden sm:block">{f.description}</span>
+                    </div>
+                  ))}
+                  {siteFeatures.inactive.length > 0 && (
+                    <>
+                      <div className="border-t my-2" />
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Not in use</p>
+                      {siteFeatures.inactive.map((f, i) => (
+                        <div key={i} className="flex items-center gap-2.5 py-1 px-2.5 rounded-lg text-[12px] opacity-40">
+                          <span className="shrink-0">{f.icon}</span>
+                          <span className="flex-1">{f.label}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div>
               <h2 className="text-[13px] font-semibold text-foreground mb-4 flex items-center gap-2">
                 Pending Changes
