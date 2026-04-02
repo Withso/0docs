@@ -16,6 +16,8 @@ const ProfileSettings = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { preference, setPreference } = usePlatformTheme();
+  const { toast } = useToast();
 
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
