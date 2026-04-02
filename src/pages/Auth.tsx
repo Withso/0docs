@@ -67,7 +67,7 @@ const Auth = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div>
-                <Label htmlFor="displayName" className="text-[13px] font-medium text-foreground">
+                <Label htmlFor="displayName" className="text-[13px] text-muted-foreground">
                   Display Name
                 </Label>
                 <Input
@@ -76,12 +76,12 @@ const Auth = () => {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Your name"
-                  className="mt-1.5 h-11 rounded-lg"
+                  className="mt-1.5 h-10 rounded-lg bg-accent/40 border-transparent focus-visible:border-border focus-visible:ring-1 focus-visible:ring-ring/30"
                 />
               </div>
             )}
             <div>
-              <Label htmlFor="email" className="text-[13px] font-medium text-foreground">
+              <Label htmlFor="email" className="text-[13px] text-muted-foreground">
                 Email
               </Label>
               <Input
@@ -91,7 +91,7 @@ const Auth = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="mt-1.5 h-11 rounded-lg"
+                className="mt-1.5 h-10 rounded-lg bg-accent/40 border-transparent focus-visible:border-border focus-visible:ring-1 focus-visible:ring-ring/30"
               />
             </div>
             <div>
