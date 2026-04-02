@@ -151,34 +151,33 @@
 
 /* ─── Platform UI Components ─── */
 @layer components {
-  /* Platform header */
+  /* Platform header — borderless, uses shadow for separation */
   .platform-header {
-    @apply h-[52px] border-b bg-background/80 backdrop-blur-xl sticky top-0 z-50;
+    @apply h-[52px] bg-background/80 backdrop-blur-xl sticky top-0 z-50;
   }
 
-  /* Platform sidebar nav item */
+  /* Platform sidebar nav item — fill-based states, no borders */
   .platform-nav-item {
     @apply flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] text-muted-foreground 
            transition-all duration-150 cursor-pointer select-none;
   }
 
   .platform-nav-item:hover {
-    @apply bg-accent text-accent-foreground;
+    @apply bg-accent/60 text-foreground;
   }
 
   .platform-nav-item.active {
-    background: hsl(var(--platform-accent-soft));
-    color: hsl(var(--platform-accent));
-    @apply font-medium;
+    @apply bg-accent text-foreground font-medium;
   }
 
-  /* Platform card */
+  /* Platform card — very subtle border, fill-based hierarchy */
   .platform-card {
-    @apply bg-card border rounded-xl p-5 transition-all duration-200;
+    @apply bg-card rounded-xl p-5 transition-all duration-200;
+    border: 1px solid hsl(var(--border) / 0.5);
   }
 
   .platform-card:hover {
-    @apply shadow-platform-md;
+    border-color: hsl(var(--border) / 0.8);
   }
 
   /* Platform section label */
@@ -188,16 +187,18 @@
 
   /* Platform avatar */
   .platform-avatar {
-    @apply rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-xs font-medium text-primary-foreground;
+    @apply rounded-full bg-foreground/10 flex items-center justify-center text-xs font-medium text-foreground;
   }
 
-  /* Stat card */
+  /* Stat card — borderless, fill-based */
   .stat-card {
-    @apply bg-card border rounded-xl p-4 transition-all duration-200;
+    @apply bg-card rounded-xl p-4 transition-all duration-200;
+    border: 1px solid hsl(var(--border) / 0.4);
   }
 
   .stat-card:hover {
-    @apply shadow-platform-sm border-primary/20;
+    @apply bg-accent/40;
+    border-color: hsl(var(--border) / 0.7);
   }
 
   /* ─── Doc-specific typography (unchanged) ─── */
