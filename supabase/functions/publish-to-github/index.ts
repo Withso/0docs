@@ -38,13 +38,32 @@ async function ghFetch(url: string, token: string, options: RequestInit = {}) {
   return res.json();
 }
 
+/** Try to get a ref; returns null if repo is empty (409) or ref not found (404). */
+async function ghFetchOptional(url: string, token: string) {
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
+  if (res.status === 404 || res.status === 409) {
+    await res.text(); // consume body
+    return null;
+  }
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`GitHub API error ${res.status}: ${body}`);
+  }
+  return res.json();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Validate auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -77,7 +96,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch project and verify ownership
     const { data: project, error: projError } = await supabase
       .from("projects")
       .select("id, user_id, github_repo, github_branch, github_token_encrypted")
@@ -118,45 +136,35 @@ Deno.serve(async (req) => {
 
     const targetBranch = branch || project.github_branch || "main";
 
-    // If creating a new branch, get the base branch SHA first
-    if (createBranch) {
+    // Check if repo has any commits by trying to get the default branch ref
+    const existingRef = await ghFetchOptional(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${targetBranch}`,
+      githubToken
+    );
+
+    const isEmptyRepo = !existingRef;
+
+    // If creating a new branch on a non-empty repo
+    if (createBranch && !isEmptyRepo) {
       const base = baseBranch || project.github_branch || "main";
       const baseRef = await ghFetch(
         `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${base}`,
         githubToken
       );
-      const baseSha = baseRef.object.sha;
-
-      // Create the new branch ref
       try {
         await ghFetch(`${GITHUB_API}/repos/${owner}/${repo}/git/refs`, githubToken, {
           method: "POST",
           body: JSON.stringify({
             ref: `refs/heads/${targetBranch}`,
-            sha: baseSha,
+            sha: baseRef.object.sha,
           }),
         });
       } catch (e: any) {
-        // Branch may already exist — that's OK
         if (!e.message.includes("422")) throw e;
       }
     }
 
-    // 1. Get current commit SHA of target branch
-    const refData = await ghFetch(
-      `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${targetBranch}`,
-      githubToken
-    );
-    const latestCommitSha = refData.object.sha;
-
-    // 2. Get the tree SHA of that commit
-    const commitData = await ghFetch(
-      `${GITHUB_API}/repos/${owner}/${repo}/git/commits/${latestCommitSha}`,
-      githubToken
-    );
-    const baseTreeSha = commitData.tree.sha;
-
-    // 3. Create blobs for each file
+    // 1. Create blobs for each file
     const treeEntries = [];
     for (const file of files) {
       const blobData = await ghFetch(
@@ -164,10 +172,7 @@ Deno.serve(async (req) => {
         githubToken,
         {
           method: "POST",
-          body: JSON.stringify({
-            content: file.content,
-            encoding: "utf-8",
-          }),
+          body: JSON.stringify({ content: file.content, encoding: "utf-8" }),
         }
       );
       treeEntries.push({
@@ -178,48 +183,86 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 4. Create a new tree
-    const newTree = await ghFetch(
-      `${GITHUB_API}/repos/${owner}/${repo}/git/trees`,
-      githubToken,
-      {
+    let newCommitSha: string;
+
+    if (isEmptyRepo) {
+      // For empty repos: create tree without base_tree, commit without parents, then create ref
+      const newTree = await ghFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/trees`,
+        githubToken,
+        { method: "POST", body: JSON.stringify({ tree: treeEntries }) }
+      );
+
+      const newCommit = await ghFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/commits`,
+        githubToken,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            message: commitMessage,
+            tree: newTree.sha,
+            parents: [],
+          }),
+        }
+      );
+      newCommitSha = newCommit.sha;
+
+      // Create the branch ref pointing to the new commit
+      await ghFetch(`${GITHUB_API}/repos/${owner}/${repo}/git/refs`, githubToken, {
         method: "POST",
         body: JSON.stringify({
-          base_tree: baseTreeSha,
-          tree: treeEntries,
+          ref: `refs/heads/${targetBranch}`,
+          sha: newCommitSha,
         }),
-      }
-    );
+      });
+    } else {
+      // Non-empty repo: normal flow
+      const refData = existingRef || await ghFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${targetBranch}`,
+        githubToken
+      );
+      const latestCommitSha = refData.object.sha;
 
-    // 5. Create a commit
-    const newCommit = await ghFetch(
-      `${GITHUB_API}/repos/${owner}/${repo}/git/commits`,
-      githubToken,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          message: commitMessage,
-          tree: newTree.sha,
-          parents: [latestCommitSha],
-        }),
-      }
-    );
+      const commitData = await ghFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/commits/${latestCommitSha}`,
+        githubToken
+      );
 
-    // 6. Update the branch ref
-    await ghFetch(
-      `${GITHUB_API}/repos/${owner}/${repo}/git/refs/heads/${targetBranch}`,
-      githubToken,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ sha: newCommit.sha }),
-      }
-    );
+      const newTree = await ghFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/trees`,
+        githubToken,
+        {
+          method: "POST",
+          body: JSON.stringify({ base_tree: commitData.tree.sha, tree: treeEntries }),
+        }
+      );
+
+      const newCommit = await ghFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/commits`,
+        githubToken,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            message: commitMessage,
+            tree: newTree.sha,
+            parents: [latestCommitSha],
+          }),
+        }
+      );
+      newCommitSha = newCommit.sha;
+
+      await ghFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/refs/heads/${targetBranch}`,
+        githubToken,
+        { method: "PATCH", body: JSON.stringify({ sha: newCommitSha }) }
+      );
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        commitSha: newCommit.sha,
-        commitUrl: `https://github.com/${owner}/${repo}/commit/${newCommit.sha}`,
+        commitSha: newCommitSha,
+        commitUrl: `https://github.com/${owner}/${repo}/commit/${newCommitSha}`,
         branch: targetBranch,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
