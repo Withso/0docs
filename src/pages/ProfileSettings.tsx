@@ -14,7 +14,7 @@ import { useDebouncedCallback } from "@/hooks/use-debounce";
 const ProfileSettings = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
   const { preference, setPreference } = usePlatformTheme();
 
   const [displayName, setDisplayName] = useState("");
