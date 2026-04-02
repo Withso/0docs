@@ -168,8 +168,33 @@ const PublishContent = ({
     setLastCommit(null);
 
     try {
+      // Fetch ALL sections and blocks for ALL pages (not just the active page)
+      const allPageIds = pages.map((p: any) => p.id);
+      let allSections = sections;
+      let allBlocks = blocks;
+
+      if (allPageIds.length > 0) {
+        const { data: sectionsData } = await supabase
+          .from("sections")
+          .select("*")
+          .in("page_id", allPageIds)
+          .order("order_index");
+
+        if (sectionsData && sectionsData.length > 0) {
+          allSections = sectionsData;
+          const sectionIds = sectionsData.map((s: any) => s.id);
+          const { data: blocksData } = await supabase
+            .from("blocks")
+            .select("*")
+            .in("section_id", sectionIds)
+            .order("order_index");
+
+          if (blocksData) allBlocks = blocksData;
+        }
+      }
+
       // Export the documentation
-      const exported = exportProject(pages, sections, blocks, settings, navGroups, project?.name || "Documentation");
+      const exported = exportProject(pages, allSections, allBlocks, settings, navGroups, project?.name || "Documentation");
       const message = commitMessage.trim() || getDefaultCommitMessage();
 
       // Call edge function
