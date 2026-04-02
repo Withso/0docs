@@ -172,6 +172,34 @@ const ProfileSettings = () => {
             </Button>
           </div>
         </div>
+
+        {/* Theme Preference */}
+        <div className="platform-card p-6 mt-6">
+          <h3 className="font-semibold text-foreground text-[15px] mb-1.5">Appearance</h3>
+          <p className="text-[13px] text-muted-foreground mb-5">Choose your preferred theme for the platform</p>
+
+          <div className="grid grid-cols-3 gap-3">
+            {([
+              { value: "system" as const, label: "System", icon: Monitor, desc: "Follow OS" },
+              { value: "light" as const, label: "Light", icon: Sun, desc: "Always light" },
+              { value: "dark" as const, label: "Dark", icon: Moon, desc: "Always dark" },
+            ]).map(({ value, label, icon: Icon, desc }) => (
+              <button
+                key={value}
+                onClick={() => setPreference(value)}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
+                  preference === value
+                    ? "border-primary bg-primary/5 text-foreground"
+                    : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-[13px] font-medium">{label}</span>
+                <span className="text-[11px] text-muted-foreground">{desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
