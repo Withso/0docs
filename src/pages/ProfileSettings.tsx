@@ -56,6 +56,10 @@ const ProfileSettings = () => {
   const debouncedSave = useDebouncedCallback((name: string, bioVal: string) => {
     saveProfile(name, bioVal);
   }, 800);
+
+  const handleDisplayNameChange = (val: string) => {
+    setDisplayName(val);
+    debouncedSave(val, bio);
   };
 
   const handleBioChange = (val: string) => {
