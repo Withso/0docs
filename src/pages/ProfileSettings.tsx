@@ -83,11 +83,12 @@ const ProfileSettings = () => {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto px-6 py-10 animate-fade-in">
+        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1.5">
             <button
               onClick={() => navigate("/dashboard")}
-              className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+              className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-accent/60 transition-colors text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
@@ -96,8 +97,8 @@ const ProfileSettings = () => {
           <p className="text-[14px] text-muted-foreground ml-11">Manage your account information</p>
         </div>
 
-        {/* Avatar section */}
-        <div className="flex items-center gap-4 mb-8">
+        {/* Avatar section — mild bg to differentiate */}
+        <div className="flex items-center gap-4 mb-8 p-4 rounded-xl bg-accent/40">
           <div className="h-14 w-14 platform-avatar text-lg">
             {userInitial}
           </div>
@@ -114,9 +115,9 @@ const ProfileSettings = () => {
           </div>
         </div>
 
-        {/* Profile form */}
-        <div className="space-y-8">
-          <div>
+        {/* Profile form — section with mild bg */}
+        <div className="space-y-6">
+          <div className="rounded-xl bg-card p-5" style={{ border: '1px solid hsl(var(--border) / 0.4)' }}>
             <h3 className="font-medium text-foreground text-[14px] mb-5">Personal Information</h3>
 
             <div className="space-y-5">
@@ -159,10 +160,9 @@ const ProfileSettings = () => {
             </div>
           </div>
 
-          <div className="h-px bg-border/50" />
-
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={signOut} className="h-9 rounded-lg text-muted-foreground hover:text-destructive">
+          {/* Actions — section with mild bg */}
+          <div className="rounded-xl bg-card p-5 flex items-center justify-between" style={{ border: '1px solid hsl(var(--border) / 0.4)' }}>
+            <Button variant="ghost" size="sm" onClick={signOut} className="h-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10">
               <LogOut className="h-3.5 w-3.5 mr-1.5" /> Sign Out
             </Button>
             <Button size="sm" onClick={handleSave} disabled={saving} className="h-9 rounded-lg">
@@ -171,10 +171,8 @@ const ProfileSettings = () => {
             </Button>
           </div>
 
-          <div className="h-px bg-border/50" />
-
-          {/* Theme Preference */}
-          <div>
+          {/* Theme Preference — section with mild bg */}
+          <div className="rounded-xl bg-card p-5" style={{ border: '1px solid hsl(var(--border) / 0.4)' }}>
             <h3 className="font-medium text-foreground text-[14px] mb-1">Appearance</h3>
             <p className="text-[13px] text-muted-foreground mb-5">Choose your preferred theme for the platform</p>
 
@@ -190,7 +188,7 @@ const ProfileSettings = () => {
                   className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all ${
                     preference === value
                       ? "bg-accent text-foreground"
-                      : "bg-transparent hover:bg-accent/50 text-muted-foreground hover:text-foreground"
+                      : "bg-transparent hover:bg-accent/40 text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <Icon className="h-5 w-5" />
