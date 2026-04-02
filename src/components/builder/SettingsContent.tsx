@@ -15,6 +15,7 @@ import { Save, Trash2, GitBranch, Github, Loader2, CheckCircle2, XCircle, Eye, E
 interface SettingsContentProps {
   projectId: string;
   project: any;
+  onSaved?: () => void;
 }
 
 const SettingsContent = ({ projectId, project }: SettingsContentProps) => {
