@@ -1,155 +1,96 @@
 
 
-# GitHub-Based Publishing System — Architecture Plan
+# Revised Export Engine: React-from-CDN Static Site
 
-## Overview
+## The Core Problem
 
-Replace the current same-domain publishing model (`/docs/:slug`) with a GitHub-based workflow where documentation is exported as static files (Markdown/MDX + config) and pushed to a GitHub repository. Users connect their GitHub account, choose a repo (or create one), and "publish" commits their doc changes as files to that repo. Versioning maps to Git branches and commits.
+Vanilla JS translation of React components is **not sustainable**. Every new block type, every future feature (custom blocks, AI chat, search) would require maintaining two separate implementations. They will inevitably drift apart.
 
-## What Gets Removed
+## The Solution: Ship Real React, No Build Step
 
-1. **Analytics tab** — Remove the Analytics mode from the builder header and `AnalyticsContent` component. The page view tracking in `PublicDocs.tsx` and search query tracking in `DocContentView.tsx` will be removed.
-2. **Same-domain public docs route** — Remove `/docs/:slug` and `/docs/:slug/:pageSlug` routes. Remove `PublicDocs.tsx`. The documentation will be hosted externally (GitHub Pages, Vercel, Netlify, etc.).
-3. **Current publish system** — The snapshot-based `published_versions` flow will be replaced with GitHub commits. The `use-publish.ts` hook and `PublishContent.tsx` will be rewritten.
-4. **Page analytics tracking** — Remove the `page_analytics` insert/update logic from `PublicDocs.tsx`.
+Instead of translating React to vanilla JS, the exported site **uses React directly** — loaded from a CDN. All viewer components are written as `React.createElement()` calls (no JSX, no bundler needed). This gives us:
 
-## What Stays
+- **Exact behavioral parity** with the builder preview
+- **Zero dual-maintenance** — one rendering logic, one codebase
+- **Custom blocks work automatically** — HTML/CSS/JS rendered via `dangerouslySetInnerHTML`, same as the builder
+- **Future features slot in naturally** — AI chat, advanced search, MCP-generated content all use the same React patterns
 
-- **Feedback widget** (`PageFeedback`) — stays in the builder preview; feedback data remains in the database for the project owner.
-- **Search dialog** — stays in the builder preview for testing.
-- **Internal versioning** (`doc_versions` / `use-versions.ts`) — kept as "draft versions" within the editor. These are independent of Git branches but can be mapped to branches when publishing.
-- **Design settings** — exported as a `theme.json` or similar config file in the repo.
-
-## New Architecture
+## How It Works
 
 ```text
-┌─────────────────────────────────────────────────┐
-│                  zdocs Builder                   │
-│                                                  │
-│  Editor → Design → Preview → Publish to GitHub   │
-│                                                  │
-│  ┌──────────────┐    ┌────────────────────────┐  │
-│  │ Draft content │───▶│ Export Engine           │  │
-│  │ (DB: pages,   │    │ • pages → .mdx files   │  │
-│  │  sections,    │    │ • design → theme.json  │  │
-│  │  blocks)      │    │ • nav → docs.json      │  │
-│  └──────────────┘    └─────────┬──────────────┘  │
-│                                │                  │
-│                    ┌───────────▼──────────────┐   │
-│                    │ Edge Function:            │   │
-│                    │ publish-to-github         │   │
-│                    │ • GitHub API (PAT/OAuth)  │   │
-│                    │ • Create tree + commit    │   │
-│                    │ • Push to branch          │   │
-│                    └──────────────────────────┘   │
-└─────────────────────────────────────────────────┘
-                         │
-                         ▼
-              ┌──────────────────────┐
-              │   GitHub Repository   │
-              │                      │
-              │  docs/               │
-              │  ├── getting-started.mdx
-              │  ├── api-reference.mdx
-              │  └── ...             │
-              │  docs.json (nav/meta)│
-              │  theme.json (design) │
-              │  main branch         │
-              │  feature branches    │
-              └──────────────────────┘
-                         │
-                         ▼
-              User deploys via GitHub Pages,
-              Vercel, Netlify, or any SSG
+Export Engine (doc-exporter.ts) produces:
+├── index.html          ← HTML shell + React from CDN + viewer script
+├── content.json        ← All pages, sections, blocks (structured data)
+├── theme.json          ← Design tokens (colors, fonts, spacing)
+├── docs.json           ← Navigation groups + page order
+└── .nojekyll           ← GitHub Pages compatibility
 ```
+
+`index.html` contains:
+1. `<script>` tags loading React 18 + ReactDOM from unpkg CDN (~45KB gzipped)
+2. A `<script>` block (~600-800 lines) containing the viewer app written with `React.createElement()` — direct translations of `DocContentView`, `DocBlockRenderer`, `DocSidebarNav`, `SearchDialog`, `TableOfContents`, `DocMobileNav`, `PageFeedback`
+3. Inlined `<style>` generated from the user's DesignSettings
+4. Google Fonts `<link>` for configured fonts
+
+At boot, the viewer fetches `content.json` and renders the full doc site with hash-based routing (`#/page-slug`).
+
+## Future-Proofing Analysis
+
+| Future Feature | How It Works in This Architecture |
+|---|---|
+| **Custom blocks (HTML/CSS/JS)** | Block content stored in `content.json` with `type: "custom"`. Viewer renders via `dangerouslySetInnerHTML` + scoped `<style>` + inline `<script>`. Identical to builder behavior. |
+| **AI Chat widget** | Add the chat component to the viewer script. It calls the same `ask-docs` edge function. Works identically. |
+| **Advanced search (Cmd+K)** | Already planned. Fuzzy search over `content.json` data. Same logic as `SearchDialog.tsx`. |
+| **MCP-generated content** | MCP tools write to the database. Content flows through the same export pipeline into `content.json`. No viewer changes needed. |
+| **New block types** | Add rendering logic to `DocBlockRenderer` (React) → copy the same `createElement` pattern to the viewer script. One pattern, one translation. |
+| **Interactive embeds** | Rendered as iframes or raw HTML in custom blocks. Works in both builder and exported site. |
+
+## Why Not Other Approaches
+
+| Approach | Problem |
+|---|---|
+| **Vanilla JS translation** | Dual maintenance nightmare. Every feature needs two implementations. Custom blocks break. |
+| **Ship the entire React app source** | Requires a build step (Vite/npm). Users can't just host static files on GitHub Pages. |
+| **Pre-built viewer bundle** | Can't run Vite builds in Lovable at publish time. Would need a separate CI pipeline. |
+| **SSG (Docusaurus/Nextra)** | External dependency. Users need Node.js setup. Not "one-click." |
+| **React from CDN (this plan)** | No build step. Real React. Works on any static host. One-click. |
+
+## Migration Path for New Features
+
+When adding a new block type or feature:
+1. Build the React component in `src/components/docs/` (JSX, as usual)
+2. Add the equivalent `React.createElement()` version to the viewer generator in `doc-exporter.ts`
+3. Both use the same props, same logic, same styling — just different syntax
+
+This is a **mechanical translation**, not a reimplementation. `createElement('div', {style: {...}}, children)` maps 1:1 to `<div style={{...}}>{children}</div>`.
 
 ## Implementation Steps
 
-### Step 1: GitHub Connection & Auth
-- Add a **GitHub Personal Access Token (PAT)** field in Project Settings, stored as a secret per-project in a new `project_secrets` table (encrypted) or via the Supabase secrets/vault.
-- Alternatively, store the GitHub PAT in the `projects` table as `github_token` (encrypted at app level) along with `github_repo` (e.g., `owner/repo-name`) and `github_branch` (default: `main`).
-- Settings UI: repo URL input, branch selector, token input with secure storage.
+### Step 1: Rewrite `src/lib/doc-exporter.ts`
+- `generateContentJSON()` — structured JSON with all pages, sections, blocks
+- `generateStaticHTML(settings, navGroups)` — the main function that produces the complete `index.html`:
+  - CSS generation from DesignSettings (same logic as `DesignSettingsWrapper`)
+  - Viewer script with all doc components as `createElement` calls
+  - HTML shell with sidebar, main content, TOC, search modal, mobile nav containers
 
-### Step 2: Export Engine (Client-Side)
-- New utility `src/lib/doc-exporter.ts` that converts the internal data model to files:
-  - Each **page** → an `.mdx` file named `{slug}.mdx` with frontmatter (title, description, order)
-  - Each **section** → an `## heading` within the page MDX
-  - Each **block** → rendered as Markdown (paragraph → text, code_block → fenced code, api_endpoint → formatted endpoint block, etc.)
-  - **Navigation** → `docs.json` with page order, nav groups, hierarchy
-  - **Design** → `theme.json` with all design tokens
-- This runs client-side and produces a `Map<string, string>` of file paths to content.
+### Step 2: Implement viewer components in createElement syntax
+Translate these components (in priority order):
+1. `DocBlockRenderer` — all 20+ block types
+2. `DocSidebarNav` — navigation with scroll tracking
+3. `TableOfContents` — right sidebar
+4. `SearchDialog` — Cmd+K fuzzy search
+5. `DocMobileNav` — responsive hamburger menu
+6. `PageFeedback` — feedback widget
+7. `DesignSettingsWrapper` — CSS variable injection
 
-### Step 3: Edge Function — `publish-to-github`
-- New Supabase Edge Function that receives the exported files and pushes to GitHub using the Git Data API:
-  1. Get the current commit SHA of the target branch
-  2. Get the tree SHA of that commit
-  3. Create blobs for each file
-  4. Create a new tree with all blobs
-  5. Create a commit with a message (e.g., "docs: publish v0.05 — Added API Reference page")
-  6. Update the branch ref to point to the new commit
-- Supports creating new branches (for versioning/drafts)
-- The edge function receives: `{ repoOwner, repoName, branch, files: [{path, content}], commitMessage, token }`
+### Step 3: Keep edge function unchanged
+`publish-to-github` already handles pushing arbitrary files. No changes needed.
 
-### Step 4: Rewrite Publish UI (`PublishContent.tsx`)
-- Replace the current snapshot-based UI with:
-  - **Repository info**: Connected repo, branch, last push timestamp
-  - **Changed files**: Show which `.mdx` files changed (diff against last publish)
-  - **Commit message**: Auto-generated but editable
-  - **Branch selector**: Push to `main` or create/select a feature branch
-  - **Publish button**: Triggers export → edge function → GitHub push
-- Keep the version history but now it shows Git commits (fetched from GitHub API)
-
-### Step 5: Branch Management
-- Allow users to create branches from the builder (maps to Git branches)
-- Branch switcher in the publish panel
-- "Merge" concept — user merges branches on GitHub directly (we link to the PR creation URL)
-
-### Step 6: Remove Analytics & Public Docs
-- Remove `AnalyticsContent.tsx` import and mode from `Builder.tsx`
-- Remove analytics button from `BuilderHeader.tsx`
-- Remove `/docs/:slug` routes from `App.tsx`
-- Remove `PublicDocs.tsx`
-- Remove page view tracking code
-- Remove search query tracking from `DocContentView.tsx` (keep the search UI for preview)
-- Clean up the analytics route from the builder URL handling
-
-### Step 7: Update Settings
-- Remove the "URL Slug" / docs URL display from `SettingsContent.tsx`
-- Add GitHub repository settings section:
-  - Repository: `owner/repo` input
-  - Default branch: dropdown
-  - GitHub token: secure input (masked)
-  - "Test Connection" button
-  - Status indicator (connected/disconnected)
-
-## Database Changes
-- Add columns to `projects` table: `github_repo` (text, nullable), `github_branch` (text, default 'main'), `github_token_encrypted` (text, nullable)
-- Or create a `project_github_settings` table with `project_id`, `repo_full_name`, `default_branch`, `token_hash`
-- Keep `published_versions` table but repurpose it to store commit SHAs and metadata for history
-
-## File Changes Summary
+## What Changes
 
 | File | Action |
-|------|--------|
-| `src/components/builder/AnalyticsContent.tsx` | Delete |
-| `src/pages/PublicDocs.tsx` | Delete |
-| `src/components/builder/BuilderHeader.tsx` | Remove analytics button |
-| `src/pages/Builder.tsx` | Remove analytics mode, rewrite publish integration |
-| `src/components/builder/PublishContent.tsx` | Rewrite for GitHub publishing |
-| `src/components/builder/SettingsContent.tsx` | Add GitHub repo settings, remove slug URL |
-| `src/hooks/use-publish.ts` | Rewrite to use GitHub API via edge function |
-| `src/lib/doc-exporter.ts` | **New** — export engine |
-| `supabase/functions/publish-to-github/index.ts` | **New** — edge function |
-| `src/App.tsx` | Remove `/docs/:slug` routes |
-| `src/components/docs/DocContentView.tsx` | Remove search tracking |
-| Database migration | Add GitHub settings columns |
+|---|---|
+| `src/lib/doc-exporter.ts` | **Rewrite** — generate `index.html` with React CDN viewer + `content.json` |
 
-## Security Considerations
-- GitHub PAT is stored encrypted and only sent to the edge function (server-side)
-- The edge function validates ownership before pushing
-- PAT should have minimal scope: `repo` or `public_repo` only
-
-## Questions Before Implementation
-
-I want to clarify a few things before proceeding:
+Everything else stays the same — the edge function, publish UI, settings UI, builder components.
 
