@@ -152,8 +152,8 @@ const PublishContent = ({
     ];
 
     const activeFeatures = features.filter(f => f.active);
-    const inactiveFeatures = features.filter(f => !f.active);
-    return { active: activeFeatures, inactive: inactiveFeatures, total: features.length };
+    const availableFeatures = features.filter(f => !f.active);
+    return { active: activeFeatures, available: availableFeatures, total: features.length };
   }, [blocks, settings]);
 
   const getDefaultCommitMessage = useCallback(() => {
