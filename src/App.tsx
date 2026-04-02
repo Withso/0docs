@@ -12,7 +12,6 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Builder = lazy(() => import("./pages/Builder"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
-const PublicDocs = lazy(() => import("./pages/PublicDocs"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const LazyFallback = () => (
