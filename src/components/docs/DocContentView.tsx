@@ -113,15 +113,10 @@ const DocContentView = ({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Track search queries
-  const handleSearch = useCallback((query: string, resultsCount: number) => {
-    if (!projectId || !query.trim()) return;
-    supabase.from("search_queries").insert({
-      project_id: projectId,
-      query: query.trim(),
-      results_count: resultsCount,
-    }).then(() => {});
-  }, [projectId]);
+  // Search handler (no tracking)
+  const handleSearch = useCallback((_query: string, _resultsCount: number) => {
+    // Search tracking removed — kept for interface compatibility
+  }, []);
 
   return (
     <DesignSettingsWrapper settings={s} className="min-h-full">
