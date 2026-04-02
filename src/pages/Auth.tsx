@@ -95,7 +95,7 @@ const Auth = () => {
               />
             </div>
             <div>
-              <Label htmlFor="password" className="text-[13px] font-medium text-foreground">
+              <Label htmlFor="password" className="text-[13px] text-muted-foreground">
                 Password
               </Label>
               <div className="relative mt-1.5">
@@ -107,7 +107,7 @@ const Auth = () => {
                   placeholder="••••••••"
                   required
                   minLength={6}
-                  className="h-11 pr-10 rounded-lg"
+                  className="h-10 pr-10 rounded-lg bg-accent/40 border-transparent focus-visible:border-border focus-visible:ring-1 focus-visible:ring-ring/30"
                 />
                 <button
                   type="button"
