@@ -1361,100 +1361,101 @@ div.zdocs-list-item-text {
    ============================================ */
 
 :root {
-  /* Backgrounds */
-  --background: var(--zdocs-bg1);
-  --foreground: var(--zdocs-text1);
+  /* Backgrounds — zdocs dark hex converted to HSL triplets */
+  --background: 0 0% 5%;          /* #0d0d0d */
+  --foreground: 0 0% 94%;         /* #f0f0f0 */
 
-  --card: var(--zdocs-bg2);
-  --card-foreground: var(--zdocs-text1);
+  --card: 0 0% 9%;                /* #161616 */
+  --card-foreground: 0 0% 94%;
 
-  --popover: var(--zdocs-bg2);
-  --popover-foreground: var(--zdocs-text1);
+  --popover: 0 0% 9%;
+  --popover-foreground: 0 0% 94%;
 
-  --primary: var(--zdocs-button);
-  --primary-foreground: var(--zdocs-button2);
+  --primary: 0 0% 100%;           /* #ffffff button */
+  --primary-foreground: 0 0% 5%;  /* #0d0d0d button2 */
 
-  --secondary: var(--zdocs-bg3);
-  --secondary-foreground: var(--zdocs-text1);
+  --secondary: 0 0% 12%;          /* #1e1e1e bg3 */
+  --secondary-foreground: 0 0% 94%;
 
-  --muted: var(--zdocs-bg3);
-  --muted-foreground: var(--zdocs-text3);
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 44%;   /* #707070 text3 */
 
-  --accent: var(--zdocs-bg4);
-  --accent-foreground: var(--zdocs-text1);
+  --accent: 0 0% 15%;             /* #262626 bg4 */
+  --accent-foreground: 0 0% 94%;
 
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
 
-  --border: var(--zdocs-border);
-  --input: var(--zdocs-border);
-  --ring: var(--zdocs-text3);
+  --border: 0 0% 16%;             /* #2a2a2a */
+  --input: 0 0% 16%;
+  --ring: 0 0% 44%;
 
-  --radius: var(--zdocs-radius);
+  --radius: 10px;
 
-  /* Platform-specific overrides */
-  --platform-accent: var(--zdocs-text1);
-  --platform-accent-soft: var(--zdocs-bg3);
-  --platform-accent-foreground: var(--zdocs-bg1);
-  --platform-surface: var(--zdocs-bg2);
-  --platform-surface-hover: var(--zdocs-bg3);
-  --platform-surface-active: var(--zdocs-bg4);
-  --platform-surface-elevated: var(--zdocs-bg2);
+  /* Platform-specific */
+  --platform-accent: 0 0% 94%;
+  --platform-accent-soft: 0 0% 12%;
+  --platform-accent-foreground: 0 0% 5%;
+  --platform-surface: 0 0% 9%;
+  --platform-surface-hover: 0 0% 12%;
+  --platform-surface-active: 0 0% 15%;
+  --platform-surface-elevated: 0 0% 9%;
 
   /* Sidebar */
-  --sidebar-background: var(--zdocs-bg1);
-  --sidebar-foreground: var(--zdocs-text3);
-  --sidebar-primary: var(--zdocs-text1);
-  --sidebar-primary-foreground: var(--zdocs-bg1);
-  --sidebar-accent: var(--zdocs-bg3);
-  --sidebar-accent-foreground: var(--zdocs-text1);
-  --sidebar-border: var(--zdocs-border);
-  --sidebar-ring: var(--zdocs-text3);
+  --sidebar-background: 0 0% 5%;
+  --sidebar-foreground: 0 0% 44%;
+  --sidebar-primary: 0 0% 94%;
+  --sidebar-primary-foreground: 0 0% 5%;
+  --sidebar-accent: 0 0% 12%;
+  --sidebar-accent-foreground: 0 0% 94%;
+  --sidebar-border: 0 0% 16%;
+  --sidebar-ring: 0 0% 44%;
 
   /* Typography */
   font-family: var(--zdocs-font);
 }
 
+/* Light theme bridge */
 [data-theme="light"] {
-  --background: var(--zdocs-bg1);
-  --foreground: var(--zdocs-text1);
+  --background: 30 10% 95%;       /* #f5f3f0 */
+  --foreground: 0 0% 10%;         /* #1a1a1a */
 
-  --card: var(--zdocs-bg2);
-  --card-foreground: var(--zdocs-text1);
+  --card: 0 0% 100%;              /* #ffffff */
+  --card-foreground: 0 0% 10%;
 
-  --popover: var(--zdocs-bg2);
-  --popover-foreground: var(--zdocs-text1);
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
 
-  --primary: var(--zdocs-button);
-  --primary-foreground: var(--zdocs-button2);
+  --primary: 0 0% 10%;            /* #1a1a1a button */
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: var(--zdocs-bg3);
-  --secondary-foreground: var(--zdocs-text1);
+  --secondary: 30 8% 92%;         /* #edeae6 bg3 */
+  --secondary-foreground: 0 0% 10%;
 
-  --muted: var(--zdocs-bg3);
-  --muted-foreground: var(--zdocs-text3);
+  --muted: 30 8% 92%;
+  --muted-foreground: 25 3% 60%;  /* #9a9895 text3 */
 
-  --accent: var(--zdocs-bg4);
-  --accent-foreground: var(--zdocs-text1);
+  --accent: 28 6% 87%;            /* #e3e0db bg4 */
+  --accent-foreground: 0 0% 10%;
 
-  --border: var(--zdocs-border);
-  --input: var(--zdocs-border);
-  --ring: var(--zdocs-text3);
+  --border: 28 8% 85%;            /* #ddd9d4 */
+  --input: 28 8% 85%;
+  --ring: 25 3% 60%;
 
-  --platform-accent: var(--zdocs-text1);
-  --platform-accent-soft: var(--zdocs-bg3);
-  --platform-accent-foreground: var(--zdocs-bg1);
-  --platform-surface: var(--zdocs-bg2);
-  --platform-surface-hover: var(--zdocs-bg3);
-  --platform-surface-active: var(--zdocs-bg4);
-  --platform-surface-elevated: var(--zdocs-bg2);
+  --platform-accent: 0 0% 10%;
+  --platform-accent-soft: 30 8% 92%;
+  --platform-accent-foreground: 30 10% 95%;
+  --platform-surface: 0 0% 100%;
+  --platform-surface-hover: 30 8% 92%;
+  --platform-surface-active: 28 6% 87%;
+  --platform-surface-elevated: 0 0% 100%;
 
-  --sidebar-background: var(--zdocs-bg1);
-  --sidebar-foreground: var(--zdocs-text3);
-  --sidebar-primary: var(--zdocs-text1);
-  --sidebar-primary-foreground: var(--zdocs-bg1);
-  --sidebar-accent: var(--zdocs-bg3);
-  --sidebar-accent-foreground: var(--zdocs-text1);
-  --sidebar-border: var(--zdocs-border);
-  --sidebar-ring: var(--zdocs-text3);
+  --sidebar-background: 30 10% 95%;
+  --sidebar-foreground: 25 3% 60%;
+  --sidebar-primary: 0 0% 10%;
+  --sidebar-primary-foreground: 30 10% 95%;
+  --sidebar-accent: 30 8% 92%;
+  --sidebar-accent-foreground: 0 0% 10%;
+  --sidebar-border: 28 8% 85%;
+  --sidebar-ring: 25 3% 60%;
 }
