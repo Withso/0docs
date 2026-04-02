@@ -8,13 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, User, Mail, Save, LogOut, Shield } from "lucide-react";
+import { ArrowLeft, User, Mail, Save, LogOut, Shield, Sun, Moon, Monitor } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
 
 const ProfileSettings = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { preference, setPreference } = usePlatformTheme();
 
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
@@ -168,6 +170,34 @@ const ProfileSettings = () => {
               <Save className="h-3.5 w-3.5 mr-1.5" />
               {saving ? "Saving..." : "Save Changes"}
             </Button>
+          </div>
+        </div>
+
+        {/* Theme Preference */}
+        <div className="platform-card p-6 mt-6">
+          <h3 className="font-semibold text-foreground text-[15px] mb-1.5">Appearance</h3>
+          <p className="text-[13px] text-muted-foreground mb-5">Choose your preferred theme for the platform</p>
+
+          <div className="grid grid-cols-3 gap-3">
+            {([
+              { value: "system" as const, label: "System", icon: Monitor, desc: "Follow OS" },
+              { value: "light" as const, label: "Light", icon: Sun, desc: "Always light" },
+              { value: "dark" as const, label: "Dark", icon: Moon, desc: "Always dark" },
+            ]).map(({ value, label, icon: Icon, desc }) => (
+              <button
+                key={value}
+                onClick={() => setPreference(value)}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
+                  preference === value
+                    ? "border-primary bg-primary/5 text-foreground"
+                    : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-[13px] font-medium">{label}</span>
+                <span className="text-[11px] text-muted-foreground">{desc}</span>
+              </button>
+            ))}
           </div>
         </div>
       </div>

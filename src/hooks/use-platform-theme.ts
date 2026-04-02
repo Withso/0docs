@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 
 type Theme = "dark" | "light";
+type ThemePreference = "dark" | "light" | "system";
 const STORAGE_KEY = "zdocs_theme";
 
 function getSystemTheme(): Theme {
@@ -8,11 +9,16 @@ function getSystemTheme(): Theme {
   return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
 }
 
-function getInitialTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
+function getStoredPreference(): ThemePreference {
+  if (typeof window === "undefined") return "system";
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
-  return getSystemTheme();
+  if (stored === "system") return "system";
+  return "system";
+}
+
+function resolveTheme(pref: ThemePreference): Theme {
+  return pref === "system" ? getSystemTheme() : pref;
 }
 
 function applyTheme(theme: Theme) {
@@ -21,36 +27,39 @@ function applyTheme(theme: Theme) {
 
 /** Initialise theme synchronously (call once before React renders to avoid flash) */
 export function initPlatformTheme() {
-  applyTheme(getInitialTheme());
+  applyTheme(resolveTheme(getStoredPreference()));
 }
 
 /** React hook for reading / toggling the platform theme */
 export function usePlatformTheme() {
-  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+  const [preference, setPreferenceState] = useState<ThemePreference>(getStoredPreference);
+  const [resolved, setResolved] = useState<Theme>(() => resolveTheme(getStoredPreference()));
 
-  const setTheme = useCallback((t: Theme) => {
-    localStorage.setItem(STORAGE_KEY, t);
+  const setPreference = useCallback((pref: ThemePreference) => {
+    localStorage.setItem(STORAGE_KEY, pref);
+    const t = resolveTheme(pref);
     applyTheme(t);
-    setThemeState(t);
+    setPreferenceState(pref);
+    setResolved(t);
   }, []);
 
   const toggle = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  }, [theme, setTheme]);
+    setPreference(resolved === "dark" ? "light" : "dark");
+  }, [resolved, setPreference]);
 
-  // Listen for OS theme changes when no manual preference is stored
+  // Listen for OS theme changes when preference is "system"
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: light)");
     const handler = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem(STORAGE_KEY)) {
+      if (getStoredPreference() === "system") {
         const next: Theme = e.matches ? "light" : "dark";
         applyTheme(next);
-        setThemeState(next);
+        setResolved(next);
       }
     };
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  return { theme, setTheme, toggle } as const;
+  return { theme: resolved, preference, setPreference, toggle } as const;
 }
