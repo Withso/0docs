@@ -20,7 +20,6 @@ const ProfileSettings = () => {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
