@@ -1358,10 +1358,17 @@ div.zdocs-list-item-text {
    BRIDGE: Map shadcn / Tailwind semantic tokens
    to zdocs design tokens so existing components
    automatically pick up the new palette.
+
+   LINEAR-INSPIRED UI PHILOSOPHY:
+   ─ Borders are near-invisible (≤5% opacity feel)
+   ─ Hierarchy comes from fill/surface layers, not outlines
+   ─ Selected states use subtle fills, NOT heavy borders
+   ─ Spacing is generous; UI feels open and breathable
+   ─ Text hierarchy via weight + opacity, not size jumps
+   ─ Interactions: gentle background shifts on hover
    ============================================ */
 
 :root {
-  /* Backgrounds — zdocs dark hex converted to HSL triplets */
   --background: 0 0% 5%;          /* #0d0d0d */
   --foreground: 0 0% 94%;         /* #f0f0f0 */
 
@@ -1380,36 +1387,37 @@ div.zdocs-list-item-text {
   --muted: 0 0% 12%;
   --muted-foreground: 0 0% 44%;   /* #707070 text3 */
 
-  --accent: 0 0% 15%;             /* #262626 bg4 */
+  --accent: 0 0% 12%;             /* subtle fill for hovers */
   --accent-foreground: 0 0% 94%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 0 0% 16%;             /* #2a2a2a */
-  --input: 0 0% 16%;
-  --ring: 0 0% 44%;
+  /* KEY: Borders are very faint — Linear uses ~5-8% white in dark mode */
+  --border: 0 0% 12%;             /* was 16%, now much subtler */
+  --input: 0 0% 14%;              /* slightly visible for form fields */
+  --ring: 0 0% 30%;               /* focus ring: visible but not harsh */
 
-  --radius: 10px;
+  --radius: 8px;
 
   /* Platform-specific */
   --platform-accent: 0 0% 94%;
-  --platform-accent-soft: 0 0% 12%;
+  --platform-accent-soft: 0 0% 10%;
   --platform-accent-foreground: 0 0% 5%;
   --platform-surface: 0 0% 9%;
-  --platform-surface-hover: 0 0% 12%;
-  --platform-surface-active: 0 0% 15%;
-  --platform-surface-elevated: 0 0% 9%;
+  --platform-surface-hover: 0 0% 11%;
+  --platform-surface-active: 0 0% 13%;
+  --platform-surface-elevated: 0 0% 10%;
 
   /* Sidebar */
   --sidebar-background: 0 0% 5%;
   --sidebar-foreground: 0 0% 44%;
   --sidebar-primary: 0 0% 94%;
   --sidebar-primary-foreground: 0 0% 5%;
-  --sidebar-accent: 0 0% 12%;
+  --sidebar-accent: 0 0% 10%;
   --sidebar-accent-foreground: 0 0% 94%;
-  --sidebar-border: 0 0% 16%;
-  --sidebar-ring: 0 0% 44%;
+  --sidebar-border: 0 0% 10%;
+  --sidebar-ring: 0 0% 30%;
 
   /* Typography */
   font-family: var(--zdocs-font);
@@ -1417,45 +1425,46 @@ div.zdocs-list-item-text {
 
 /* Light theme bridge */
 [data-theme="light"] {
-  --background: 30 10% 95%;       /* #f5f3f0 */
-  --foreground: 0 0% 10%;         /* #1a1a1a */
+  --background: 0 0% 98%;         /* near-white, clean */
+  --foreground: 0 0% 9%;          /* near-black text */
 
-  --card: 0 0% 100%;              /* #ffffff */
-  --card-foreground: 0 0% 10%;
+  --card: 0 0% 100%;              /* white cards */
+  --card-foreground: 0 0% 9%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 10%;
+  --popover-foreground: 0 0% 9%;
 
-  --primary: 0 0% 10%;            /* #1a1a1a button */
+  --primary: 0 0% 9%;             /* dark button */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 30 8% 92%;         /* #edeae6 bg3 */
-  --secondary-foreground: 0 0% 10%;
+  --secondary: 0 0% 96%;          /* very light gray */
+  --secondary-foreground: 0 0% 9%;
 
-  --muted: 30 8% 92%;
-  --muted-foreground: 25 3% 60%;  /* #9a9895 text3 */
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;   /* mid-gray secondary text */
 
-  --accent: 28 6% 87%;            /* #e3e0db bg4 */
-  --accent-foreground: 0 0% 10%;
+  --accent: 0 0% 95%;             /* subtle hover fill */
+  --accent-foreground: 0 0% 9%;
 
-  --border: 28 8% 85%;            /* #ddd9d4 */
-  --input: 28 8% 85%;
-  --ring: 25 3% 60%;
+  /* KEY: Light borders — Linear uses ~6% black in light mode */
+  --border: 0 0% 91%;             /* very faint line */
+  --input: 0 0% 88%;              /* slightly more visible for inputs */
+  --ring: 0 0% 70%;
 
-  --platform-accent: 0 0% 10%;
-  --platform-accent-soft: 30 8% 92%;
-  --platform-accent-foreground: 30 10% 95%;
+  --platform-accent: 0 0% 9%;
+  --platform-accent-soft: 0 0% 96%;
+  --platform-accent-foreground: 0 0% 98%;
   --platform-surface: 0 0% 100%;
-  --platform-surface-hover: 30 8% 92%;
-  --platform-surface-active: 28 6% 87%;
+  --platform-surface-hover: 0 0% 97%;
+  --platform-surface-active: 0 0% 95%;
   --platform-surface-elevated: 0 0% 100%;
 
-  --sidebar-background: 30 10% 95%;
-  --sidebar-foreground: 25 3% 60%;
-  --sidebar-primary: 0 0% 10%;
-  --sidebar-primary-foreground: 30 10% 95%;
-  --sidebar-accent: 30 8% 92%;
-  --sidebar-accent-foreground: 0 0% 10%;
-  --sidebar-border: 28 8% 85%;
-  --sidebar-ring: 25 3% 60%;
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 0 0% 45%;
+  --sidebar-primary: 0 0% 9%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent-foreground: 0 0% 9%;
+  --sidebar-border: 0 0% 91%;
+  --sidebar-ring: 0 0% 70%;
 }

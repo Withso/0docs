@@ -24,15 +24,15 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Floating Sidebar */}
-      <div className="hidden md:flex p-1.5 shrink-0">
-        <aside className="w-[var(--platform-sidebar-width)] bg-card rounded-2xl border shadow-sm flex flex-col overflow-hidden">
+      {/* Sidebar — borderless, uses background separation */}
+      <div className="hidden md:flex shrink-0">
+        <aside className="w-[var(--platform-sidebar-width)] bg-background flex flex-col overflow-hidden border-r border-border/40">
           {/* Logo */}
           <div className="h-[52px] flex items-center gap-2.5 px-5">
-            <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center shadow-platform-sm">
-              <FileText className="h-4 w-4 text-primary-foreground" />
+            <div className="h-7 w-7 rounded-lg bg-foreground/10 flex items-center justify-center">
+              <FileText className="h-3.5 w-3.5 text-foreground" />
             </div>
-            <span className="font-semibold text-[15px] tracking-tight text-foreground">0docs</span>
+            <span className="font-semibold text-[14px] tracking-tight text-foreground">0docs</span>
           </div>
 
           {/* Nav */}
@@ -53,12 +53,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </div>
           </nav>
 
-          {/* User section — sign out only */}
+          {/* User section */}
           <div className="p-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-accent transition-colors">
-                  <div className="h-8 w-8 platform-avatar text-[11px]">
+                <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-accent/60 transition-colors">
+                  <div className="h-7 w-7 platform-avatar text-[11px]">
                     {userInitial}
                   </div>
                   <div className="flex-1 text-left min-w-0">
@@ -82,7 +82,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
-        <header className="md:hidden h-[52px] border-b px-4 flex items-center justify-between shrink-0">
+        <header className="md:hidden h-[52px] border-b border-border/40 px-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center">
               <FileText className="h-4 w-4 text-primary-foreground" />

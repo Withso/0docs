@@ -228,16 +228,16 @@ const Dashboard = () => {
       <div className="max-w-5xl mx-auto px-6 py-8">
             {/* Header row: Title + Search + Actions */}
             <div className="flex items-center gap-3 mb-6">
-              <h1 className="text-[15px] font-semibold text-foreground shrink-0">Projects</h1>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md shrink-0">{visibleProjects.length}</span>
+              <h1 className="text-[14px] font-medium text-foreground shrink-0">Projects</h1>
+              <span className="text-[11px] text-muted-foreground bg-accent/60 px-1.5 py-0.5 rounded-md shrink-0">{visibleProjects.length}</span>
 
               <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search projects..."
-                  className="pl-9 h-9 rounded-lg text-[13px]"
+                  className="pl-9 h-9 rounded-lg text-[13px] bg-accent/40 border-transparent focus-visible:border-border focus-visible:ring-1 focus-visible:ring-ring/30"
                 />
               </div>
 
@@ -249,7 +249,7 @@ const Dashboard = () => {
                 )}
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="h-9 text-[13px] rounded-lg shadow-platform-sm">
+                    <Button size="sm" className="h-9 text-[13px] rounded-lg">
                       <Plus className="h-3.5 w-3.5 mr-1.5" /> New Project
                     </Button>
                   </DialogTrigger>
@@ -319,8 +319,8 @@ const Dashboard = () => {
                     style={{ animationDelay: `${i * 40}ms`, animationFillMode: "both" }}
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <div className="h-10 w-10 rounded-xl bg-platform-accent-soft flex items-center justify-center">
-                        <FileText className="h-[18px] w-[18px] text-primary" />
+                      <div className="h-9 w-9 rounded-lg bg-accent/60 flex items-center justify-center">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

@@ -62,8 +62,8 @@ const BuilderHeader = ({
   return (
     <div className="sticky top-0 z-50 p-1.5 backdrop-blur-xl" style={{ backgroundColor: "hsl(var(--background) / 0.5)" }}>
       <header
-        className="border rounded-2xl backdrop-blur-xl shadow-sm"
-        style={{ backgroundColor: "hsl(var(--background) / 0.85)", borderColor: "hsl(var(--border))" }}
+        className="rounded-2xl backdrop-blur-xl"
+        style={{ backgroundColor: "hsl(var(--background) / 0.85)", borderBottom: "1px solid hsl(var(--border) / 0.4)" }}
       >
         <div className="px-4 h-[48px] flex items-center justify-between">
           {/* Left */}

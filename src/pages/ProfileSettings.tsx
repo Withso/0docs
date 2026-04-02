@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, User, Mail, Save, LogOut, Shield, Sun, Moon, Monitor } from "lucide-react";
@@ -98,72 +97,72 @@ const ProfileSettings = () => {
         </div>
 
         {/* Avatar section */}
-        <div className="platform-card mb-6 p-6">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 platform-avatar text-xl">
-              {userInitial}
+        <div className="flex items-center gap-4 mb-8">
+          <div className="h-14 w-14 platform-avatar text-lg">
+            {userInitial}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-foreground text-[15px]">{displayName || "User"}</h3>
+              {isAdmin && (
+                <Badge variant="secondary" className="gap-1 text-[11px] bg-accent text-muted-foreground border-0">
+                  <Shield className="h-3 w-3" /> Admin
+                </Badge>
+              )}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-foreground text-[15px]">{displayName || "User"}</h3>
-                {isAdmin && (
-                  <Badge variant="secondary" className="gap-1 text-[11px] bg-primary/10 text-primary border-primary/20">
-                    <Shield className="h-3 w-3" /> Admin
-                  </Badge>
-                )}
-              </div>
-              <p className="text-[13px] text-muted-foreground">{user?.email}</p>
-            </div>
+            <p className="text-[13px] text-muted-foreground">{user?.email}</p>
           </div>
         </div>
 
         {/* Profile form */}
-        <div className="platform-card p-6">
-          <h3 className="font-semibold text-foreground text-[15px] mb-5">Personal Information</h3>
+        <div className="space-y-8">
+          <div>
+            <h3 className="font-medium text-foreground text-[14px] mb-5">Personal Information</h3>
 
-          <div className="space-y-5">
-            <div>
-              <Label className="text-[13px] font-medium text-foreground mb-1.5 block">Display Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Your display name"
-                  className="pl-10 h-11 rounded-lg"
+            <div className="space-y-5">
+              <div>
+                <Label className="text-[13px] text-muted-foreground mb-1.5 block">Display Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                  <Input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Your display name"
+                    className="pl-10 h-10 rounded-lg bg-accent/40 border-transparent focus-visible:border-border focus-visible:ring-1 focus-visible:ring-ring/30"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-[13px] text-muted-foreground mb-1.5 block">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                  <Input
+                    value={user?.email || ""}
+                    disabled
+                    className="pl-10 h-10 rounded-lg bg-accent/30 border-transparent opacity-60"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1.5">Email cannot be changed</p>
+              </div>
+
+              <div>
+                <Label className="text-[13px] text-muted-foreground mb-1.5 block">Bio</Label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell us about yourself..."
+                  rows={3}
+                  className="flex w-full rounded-lg bg-accent/40 border border-transparent px-3 py-2.5 text-[13px] ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30 focus-visible:border-border resize-none text-foreground"
                 />
               </div>
-            </div>
-
-            <div>
-              <Label className="text-[13px] font-medium text-foreground mb-1.5 block">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={user?.email || ""}
-                  disabled
-                  className="pl-10 h-11 rounded-lg opacity-60"
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1.5">Email cannot be changed</p>
-            </div>
-
-            <div>
-              <Label className="text-[13px] font-medium text-foreground mb-1.5 block">Bio</Label>
-              <textarea
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell us about yourself..."
-                rows={3}
-                className="flex w-full rounded-lg border border-input bg-background px-3 py-2.5 text-[13px] ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-              />
             </div>
           </div>
 
-          <Separator className="my-6" />
+          <div className="h-px bg-border/50" />
 
           <div className="flex items-center justify-between">
-            <Button variant="outline" size="sm" onClick={signOut} className="h-9 rounded-lg text-destructive hover:text-destructive">
+            <Button variant="ghost" size="sm" onClick={signOut} className="h-9 rounded-lg text-muted-foreground hover:text-destructive">
               <LogOut className="h-3.5 w-3.5 mr-1.5" /> Sign Out
             </Button>
             <Button size="sm" onClick={handleSave} disabled={saving} className="h-9 rounded-lg">
@@ -171,33 +170,35 @@ const ProfileSettings = () => {
               {saving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
-        </div>
 
-        {/* Theme Preference */}
-        <div className="platform-card p-6 mt-6">
-          <h3 className="font-semibold text-foreground text-[15px] mb-1.5">Appearance</h3>
-          <p className="text-[13px] text-muted-foreground mb-5">Choose your preferred theme for the platform</p>
+          <div className="h-px bg-border/50" />
 
-          <div className="grid grid-cols-3 gap-3">
-            {([
-              { value: "system" as const, label: "System", icon: Monitor, desc: "Follow OS" },
-              { value: "light" as const, label: "Light", icon: Sun, desc: "Always light" },
-              { value: "dark" as const, label: "Dark", icon: Moon, desc: "Always dark" },
-            ]).map(({ value, label, icon: Icon, desc }) => (
-              <button
-                key={value}
-                onClick={() => setPreference(value)}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
-                  preference === value
-                    ? "border-primary bg-primary/5 text-foreground"
-                    : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-                <span className="text-[13px] font-medium">{label}</span>
-                <span className="text-[11px] text-muted-foreground">{desc}</span>
-              </button>
-            ))}
+          {/* Theme Preference */}
+          <div>
+            <h3 className="font-medium text-foreground text-[14px] mb-1">Appearance</h3>
+            <p className="text-[13px] text-muted-foreground mb-5">Choose your preferred theme for the platform</p>
+
+            <div className="grid grid-cols-3 gap-3">
+              {([
+                { value: "system" as const, label: "System", icon: Monitor, desc: "Follow OS" },
+                { value: "light" as const, label: "Light", icon: Sun, desc: "Always light" },
+                { value: "dark" as const, label: "Dark", icon: Moon, desc: "Always dark" },
+              ]).map(({ value, label, icon: Icon, desc }) => (
+                <button
+                  key={value}
+                  onClick={() => setPreference(value)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all ${
+                    preference === value
+                      ? "bg-accent text-foreground"
+                      : "bg-transparent hover:bg-accent/50 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="text-[13px] font-medium">{label}</span>
+                  <span className="text-[11px] text-muted-foreground">{desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
