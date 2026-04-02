@@ -159,18 +159,8 @@ const ProfileSettings = () => {
             </div>
           </div>
 
-          {/* Actions — section with mild bg */}
-          <div className="rounded-xl bg-card p-5 flex items-center justify-between" style={{ border: '1px solid hsl(var(--border) / 0.4)' }}>
-            <Button variant="ghost" size="sm" onClick={signOut} className="h-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-              <LogOut className="h-3.5 w-3.5 mr-1.5" /> Sign Out
-            </Button>
-            <Button size="sm" onClick={handleSave} disabled={saving} className="h-9 rounded-lg">
-              <Save className="h-3.5 w-3.5 mr-1.5" />
-              {saving ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
 
-          {/* Theme Preference — section with mild bg */}
+          {/* Theme Preference */}
           <div className="rounded-xl bg-card p-5" style={{ border: '1px solid hsl(var(--border) / 0.4)' }}>
             <h3 className="font-medium text-foreground text-[14px] mb-1">Appearance</h3>
             <p className="text-[13px] text-muted-foreground mb-5">Choose your preferred theme for the platform</p>
