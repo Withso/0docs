@@ -152,8 +152,8 @@ const PublishContent = ({
     ];
 
     const activeFeatures = features.filter(f => f.active);
-    const inactiveFeatures = features.filter(f => !f.active);
-    return { active: activeFeatures, inactive: inactiveFeatures, total: features.length };
+    const availableFeatures = features.filter(f => !f.active);
+    return { active: activeFeatures, available: availableFeatures, total: features.length };
   }, [blocks, settings]);
 
   const getDefaultCommitMessage = useCallback(() => {
@@ -339,14 +339,15 @@ const PublishContent = ({
                       <span className="text-[10px] text-muted-foreground hidden sm:block">{f.description}</span>
                     </div>
                   ))}
-                  {siteFeatures.inactive.length > 0 && (
+                  {siteFeatures.available.length > 0 && (
                     <>
                       <div className="border-t my-2" />
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Not in use</p>
-                      {siteFeatures.inactive.map((f, i) => (
-                        <div key={i} className="flex items-center gap-2.5 py-1 px-2.5 rounded-lg text-[12px] opacity-40">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Available (add these blocks to activate)</p>
+                      {siteFeatures.available.map((f, i) => (
+                        <div key={i} className="flex items-center gap-2.5 py-1 px-2.5 rounded-lg text-[12px] opacity-50">
                           <span className="shrink-0">{f.icon}</span>
                           <span className="flex-1">{f.label}</span>
+                          <span className="text-[10px] text-muted-foreground hidden sm:block">{f.description}</span>
                         </div>
                       ))}
                     </>
