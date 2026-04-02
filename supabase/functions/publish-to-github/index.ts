@@ -158,57 +158,50 @@ Deno.serve(async (req) => {
       `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${targetBranch}`,
       githubToken,
     );
-    let defaultRef = targetBranch === defaultBranch
+    const defaultRef = targetBranch === defaultBranch
       ? targetRef
       : await ghFetchOptional(`${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${defaultBranch}`, githubToken);
 
     const isEmptyRepo = !defaultRef;
 
     if (isEmptyRepo) {
-      const firstFile = files[0];
+      for (let index = 0; index < files.length; index += 1) {
+        const file = files[index];
+        await ghFetch(
+          `${GITHUB_API}/repos/${owner}/${repo}/contents/${toGitHubContentPath(file.path)}`,
+          githubToken,
+          {
+            method: "PUT",
+            body: JSON.stringify({
+              message: index === 0 ? `${commitMessage} (initialize repository)` : commitMessage,
+              content: toBase64Utf8(file.content),
+              branch: targetBranch,
+            }),
+          },
+        );
+      }
 
-      await ghFetch(
-        `${GITHUB_API}/repos/${owner}/${repo}/contents/${toGitHubContentPath(firstFile.path)}`,
+      const initializedRef = await ghFetchOptional(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${targetBranch}`,
         githubToken,
-        {
-          method: "PUT",
-          body: JSON.stringify({
-            message: `${commitMessage} (initialize repository)`,
-            content: toBase64Utf8(firstFile.content),
-          }),
-        },
       );
 
-      defaultRef = await ghFetchOptional(
-        `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${defaultBranch}`,
-        githubToken,
-      );
-
-      if (!defaultRef) {
+      if (!initializedRef) {
         throw new Error("GitHub repository initialization failed.");
       }
 
-      if (targetBranch !== defaultBranch) {
-        try {
-          await ghFetch(`${GITHUB_API}/repos/${owner}/${repo}/git/refs`, githubToken, {
-            method: "POST",
-            body: JSON.stringify({
-              ref: `refs/heads/${targetBranch}`,
-              sha: defaultRef.object.sha,
-            }),
-          });
-        } catch (error: any) {
-          if (!error.message.includes("422")) throw error;
-        }
+      return new Response(
+        JSON.stringify({
+          success: true,
+          commitSha: initializedRef.object.sha,
+          commitUrl: `https://github.com/${owner}/${repo}/commit/${initializedRef.object.sha}`,
+          branch: targetBranch,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
-        targetRef = await ghFetchOptional(
-          `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${targetBranch}`,
-          githubToken,
-        );
-      } else {
-        targetRef = defaultRef;
-      }
-    } else if (!targetRef) {
+    if (!targetRef) {
       const base = baseBranch || defaultBranch;
       const baseRef = base === defaultBranch
         ? defaultRef
@@ -218,20 +211,18 @@ Deno.serve(async (req) => {
         throw new Error(`Base branch \"${base}\" was not found.`);
       }
 
-      if (!createBranch && targetBranch !== defaultBranch) {
-        // Create the missing branch automatically from the base branch on first publish to that branch.
-      }
-
-      try {
-        await ghFetch(`${GITHUB_API}/repos/${owner}/${repo}/git/refs`, githubToken, {
-          method: "POST",
-          body: JSON.stringify({
-            ref: `refs/heads/${targetBranch}`,
-            sha: baseRef.object.sha,
-          }),
-        });
-      } catch (error: any) {
-        if (!error.message.includes("422")) throw error;
+      if (createBranch || targetBranch !== defaultBranch) {
+        try {
+          await ghFetch(`${GITHUB_API}/repos/${owner}/${repo}/git/refs`, githubToken, {
+            method: "POST",
+            body: JSON.stringify({
+              ref: `refs/heads/${targetBranch}`,
+              sha: baseRef.object.sha,
+            }),
+          });
+        } catch (error: any) {
+          if (!error.message.includes("422")) throw error;
+        }
       }
 
       targetRef = await ghFetchOptional(
