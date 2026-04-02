@@ -187,6 +187,13 @@ const ProfileSettings = () => {
               ))}
             </div>
           </div>
+
+          {/* Sign Out */}
+          <div className="pt-2">
+            <Button variant="ghost" size="sm" onClick={signOut} className="h-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+              <LogOut className="h-3.5 w-3.5 mr-1.5" /> Sign Out
+            </Button>
+          </div>
         </div>
       </div>
     </DashboardLayout>
