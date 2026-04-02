@@ -26,7 +26,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar — borderless, uses background separation */}
       <div className="hidden md:flex shrink-0">
-        <aside className="w-[var(--platform-sidebar-width)] bg-background flex flex-col overflow-hidden border-r border-border/40">
+        <aside className="w-[var(--platform-sidebar-width)] bg-sidebar-background flex flex-col overflow-hidden border-r border-border/40">
           {/* Logo */}
           <div className="h-[52px] flex items-center gap-2.5 px-5">
             <div className="h-7 w-7 rounded-lg bg-foreground/10 flex items-center justify-center">

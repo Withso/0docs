@@ -1459,11 +1459,12 @@ div.zdocs-list-item-text {
   --platform-surface-active: 0 0% 95%;
   --platform-surface-elevated: 0 0% 100%;
 
-  --sidebar-background: 0 0% 98%;
+  /* Sidebar — slightly tinted from main bg for differentiation */
+  --sidebar-background: 0 0% 96%;
   --sidebar-foreground: 0 0% 45%;
   --sidebar-primary: 0 0% 9%;
   --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent: 0 0% 92%;
   --sidebar-accent-foreground: 0 0% 9%;
   --sidebar-border: 0 0% 91%;
   --sidebar-ring: 0 0% 70%;
