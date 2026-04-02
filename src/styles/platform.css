@@ -1352,3 +1352,109 @@ div.zdocs-list-item-text {
     display: block;
   }
 }
+
+
+/* ============================================
+   BRIDGE: Map shadcn / Tailwind semantic tokens
+   to zdocs design tokens so existing components
+   automatically pick up the new palette.
+   ============================================ */
+
+:root {
+  /* Backgrounds */
+  --background: var(--zdocs-bg1);
+  --foreground: var(--zdocs-text1);
+
+  --card: var(--zdocs-bg2);
+  --card-foreground: var(--zdocs-text1);
+
+  --popover: var(--zdocs-bg2);
+  --popover-foreground: var(--zdocs-text1);
+
+  --primary: var(--zdocs-button);
+  --primary-foreground: var(--zdocs-button2);
+
+  --secondary: var(--zdocs-bg3);
+  --secondary-foreground: var(--zdocs-text1);
+
+  --muted: var(--zdocs-bg3);
+  --muted-foreground: var(--zdocs-text3);
+
+  --accent: var(--zdocs-bg4);
+  --accent-foreground: var(--zdocs-text1);
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: var(--zdocs-border);
+  --input: var(--zdocs-border);
+  --ring: var(--zdocs-text3);
+
+  --radius: var(--zdocs-radius);
+
+  /* Platform-specific overrides */
+  --platform-accent: var(--zdocs-text1);
+  --platform-accent-soft: var(--zdocs-bg3);
+  --platform-accent-foreground: var(--zdocs-bg1);
+  --platform-surface: var(--zdocs-bg2);
+  --platform-surface-hover: var(--zdocs-bg3);
+  --platform-surface-active: var(--zdocs-bg4);
+  --platform-surface-elevated: var(--zdocs-bg2);
+
+  /* Sidebar */
+  --sidebar-background: var(--zdocs-bg1);
+  --sidebar-foreground: var(--zdocs-text3);
+  --sidebar-primary: var(--zdocs-text1);
+  --sidebar-primary-foreground: var(--zdocs-bg1);
+  --sidebar-accent: var(--zdocs-bg3);
+  --sidebar-accent-foreground: var(--zdocs-text1);
+  --sidebar-border: var(--zdocs-border);
+  --sidebar-ring: var(--zdocs-text3);
+
+  /* Typography */
+  font-family: var(--zdocs-font);
+}
+
+[data-theme="light"] {
+  --background: var(--zdocs-bg1);
+  --foreground: var(--zdocs-text1);
+
+  --card: var(--zdocs-bg2);
+  --card-foreground: var(--zdocs-text1);
+
+  --popover: var(--zdocs-bg2);
+  --popover-foreground: var(--zdocs-text1);
+
+  --primary: var(--zdocs-button);
+  --primary-foreground: var(--zdocs-button2);
+
+  --secondary: var(--zdocs-bg3);
+  --secondary-foreground: var(--zdocs-text1);
+
+  --muted: var(--zdocs-bg3);
+  --muted-foreground: var(--zdocs-text3);
+
+  --accent: var(--zdocs-bg4);
+  --accent-foreground: var(--zdocs-text1);
+
+  --border: var(--zdocs-border);
+  --input: var(--zdocs-border);
+  --ring: var(--zdocs-text3);
+
+  --platform-accent: var(--zdocs-text1);
+  --platform-accent-soft: var(--zdocs-bg3);
+  --platform-accent-foreground: var(--zdocs-bg1);
+  --platform-surface: var(--zdocs-bg2);
+  --platform-surface-hover: var(--zdocs-bg3);
+  --platform-surface-active: var(--zdocs-bg4);
+  --platform-surface-elevated: var(--zdocs-bg2);
+
+  --sidebar-background: var(--zdocs-bg1);
+  --sidebar-foreground: var(--zdocs-text3);
+  --sidebar-primary: var(--zdocs-text1);
+  --sidebar-primary-foreground: var(--zdocs-bg1);
+  --sidebar-accent: var(--zdocs-bg3);
+  --sidebar-accent-foreground: var(--zdocs-text1);
+  --sidebar-border: var(--zdocs-border);
+  --sidebar-ring: var(--zdocs-text3);
+}
