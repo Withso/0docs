@@ -50,6 +50,7 @@ const PublishContent = ({
   const [notes, setNotes] = useState("");
   const [editorOpen, setEditorOpen] = useState(true);
   const [designOpen, setDesignOpen] = useState(true);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
   const [expandedVersion, setExpandedVersion] = useState<string | null>(null);
   const [pushingToGithub, setPushingToGithub] = useState(false);
   const [commitMessage, setCommitMessage] = useState("");
@@ -59,6 +60,101 @@ const PublishContent = ({
   const hasChanges = editorChanges.length > 0 || designChanges.length > 0;
   const totalChanges = editorChanges.length + designChanges.length;
   const githubConfigured = project?.github_repo && project?.github_token_encrypted;
+
+  // Auto-detect site features from blocks and settings
+  const siteFeatures = useMemo(() => {
+    const blockTypes = new Set(blocks.map((b: any) => b.type));
+    const features: { icon: React.ReactNode; label: string; description: string; active: boolean }[] = [
+      {
+        icon: <Search className="h-3.5 w-3.5" />,
+        label: "Fuzzy Search (⌘K)",
+        description: "Full-text search across all pages and sections",
+        active: true, // always included
+      },
+      {
+        icon: <Smartphone className="h-3.5 w-3.5" />,
+        label: "Mobile Navigation",
+        description: "Responsive hamburger menu for mobile devices",
+        active: true,
+      },
+      {
+        icon: <BookOpen className="h-3.5 w-3.5" />,
+        label: "Table of Contents",
+        description: "Right sidebar with section navigation",
+        active: settings?.tocVisible !== false,
+      },
+      {
+        icon: <ThumbsUp className="h-3.5 w-3.5" />,
+        label: "Page Feedback",
+        description: "\"Was this helpful?\" widget on every page",
+        active: true,
+      },
+      {
+        icon: <MousePointerClick className="h-3.5 w-3.5" />,
+        label: "Interactive Tabs",
+        description: "Clickable tab panels with content switching",
+        active: blockTypes.has("tabs") || blockTypes.has("code_tabs"),
+      },
+      {
+        icon: <ListOrdered className="h-3.5 w-3.5" />,
+        label: "Accordion / Collapsible",
+        description: "Expandable content sections",
+        active: blockTypes.has("accordion"),
+      },
+      {
+        icon: <Code className="h-3.5 w-3.5" />,
+        label: "Code Blocks",
+        description: "Syntax-highlighted code with copy button",
+        active: blockTypes.has("code_block") || blockTypes.has("code_tabs"),
+      },
+      {
+        icon: <Zap className="h-3.5 w-3.5" />,
+        label: "API Reference",
+        description: "Method badges, parameter tables, response blocks",
+        active: blockTypes.has("api_endpoint"),
+      },
+      {
+        icon: <CreditCard className="h-3.5 w-3.5" />,
+        label: "Cards",
+        description: "Styled card components with icons",
+        active: blockTypes.has("card"),
+      },
+      {
+        icon: <Table2 className="h-3.5 w-3.5" />,
+        label: "Data Tables",
+        description: "Structured tables with header styling",
+        active: blockTypes.has("table"),
+      },
+      {
+        icon: <Layout className="h-3.5 w-3.5" />,
+        label: "Step-by-Step Guides",
+        description: "Numbered steps with connector lines",
+        active: blockTypes.has("steps"),
+      },
+      {
+        icon: <Video className="h-3.5 w-3.5" />,
+        label: "Video / YouTube Embeds",
+        description: "Embedded video players",
+        active: blockTypes.has("video") || blockTypes.has("youtube"),
+      },
+      {
+        icon: <Image className="h-3.5 w-3.5" />,
+        label: "Images",
+        description: "Resizable images with alignment",
+        active: blockTypes.has("image"),
+      },
+      {
+        icon: <Quote className="h-3.5 w-3.5" />,
+        label: "Quotes & Callouts",
+        description: "Styled blockquotes and callout boxes",
+        active: blockTypes.has("quote") || blockTypes.has("callout") || blockTypes.has("note"),
+      },
+    ];
+
+    const activeFeatures = features.filter(f => f.active);
+    const inactiveFeatures = features.filter(f => !f.active);
+    return { active: activeFeatures, inactive: inactiveFeatures, total: features.length };
+  }, [blocks, settings]);
 
   const getDefaultCommitMessage = useCallback(() => {
     if (isFirstPublish) return `docs: initial publish v${nextVersion}`;
