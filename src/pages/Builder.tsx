@@ -403,9 +403,11 @@ const Builder = () => {
                   if (full) setActivePage(full);
                 }}
                 headerStickyTop={0}
-                hideHeader
                 navGroups={navGroups}
                 hideHeaderLabel
+                tabs={tabs}
+                activeTabId={activeTabId}
+                onSelectTab={setActiveTabId}
               />
               <MadeWithBanner />
             </div>
