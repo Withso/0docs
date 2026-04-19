@@ -271,14 +271,16 @@ export function generateViewerScript(): string {
       c.response ? h('div', {className:'api-response'}, c.response) : null);
   }
 
-  // ── Sidebar ──
+  // ── Sidebar (Classic) ──
   function Sidebar(props) {
     var pages = props.pages, activePage = props.activePage, sections = props.sections;
     var navGroups = props.navGroups, onSelectPage = props.onSelectPage;
     var activeSectionId = props.activeSectionId;
     var activeTabId = props.activeTabId;
 
-    var sortedPages = pages.slice().sort(function(a,b){return a.order_index-b.order_index});
+    var sortedPages = pages.slice()
+      .filter(function(p){return !(p.metadata && p.metadata.hidden)})
+      .sort(function(a,b){return a.order_index-b.order_index});
     var sortedGroups = navGroups.slice()
       .filter(function(g){return g.type !== 'dropdown'})
       .filter(function(g){return !(g.metadata && g.metadata.hidden)})
@@ -289,6 +291,11 @@ export function generateViewerScript(): string {
     function renderPage(page) {
       var isActive = activePage && activePage.id === page.id;
       var pageSections = isActive ? sections.filter(function(s){return s.page_id===page.id}) : [];
+      var ext = page.metadata && page.metadata.external_url;
+      if (ext) {
+        return h('a', {key:page.id, href:ext, target:'_blank', rel:'noopener noreferrer', className:'page-link'},
+          h('span', {dangerouslySetInnerHTML:{__html:page.nav_title||page.title}}));
+      }
       return h('div', {key:page.id},
         h('button', {className:'page-link'+(isActive?' active':''), onClick:function(){onSelectPage(page);window.scrollTo({top:0,behavior:'smooth'})}},
           h('span', {dangerouslySetInnerHTML:{__html:page.nav_title||page.title}})),
@@ -314,6 +321,86 @@ export function generateViewerScript(): string {
           return h('div', {key:group.id},
             h('div', {className:'nav-group-label'}, h('span', {dangerouslySetInnerHTML:{__html:group.title}})),
             h('div', {style:{display:'flex',flexDirection:'column',gap:'2px'}}, gPages.map(renderPage)));
+        })));
+  }
+
+  // ── Sidebar (Mintlify variant) ──
+  function MintlifySidebar(props) {
+    var pages = props.pages, activePage = props.activePage, sections = props.sections;
+    var navGroups = props.navGroups, onSelectPage = props.onSelectPage;
+    var activeSectionId = props.activeSectionId, activeTabId = props.activeTabId;
+
+    var sortedPages = pages.slice()
+      .filter(function(p){return !(p.metadata && p.metadata.hidden)})
+      .sort(function(a,b){return a.order_index-b.order_index});
+    var sortedGroups = navGroups.slice()
+      .filter(function(g){return g.type !== 'dropdown'})
+      .filter(function(g){return !(g.metadata && g.metadata.hidden)})
+      .filter(function(g){return activeTabId == null || !g.tab_id || g.tab_id === activeTabId})
+      .sort(function(a,b){return a.order_index-b.order_index});
+    var ungrouped = sortedPages.filter(function(p){return !p.nav_group_id});
+
+    var openState = useState({}), open = openState[0], setOpen = openState[1];
+    useEffect(function() {
+      if (activePage && activePage.nav_group_id && open[activePage.nav_group_id] === undefined) {
+        var next = {}; for (var k in open) next[k] = open[k];
+        next[activePage.nav_group_id] = true; setOpen(next);
+      }
+    }, [activePage && activePage.nav_group_id]);
+    function isOpen(g) { return open[g.id] !== undefined ? open[g.id] : true; }
+    function toggle(g) { var n = {}; for (var k in open) n[k]=open[k]; n[g.id]=!isOpen(g); setOpen(n); }
+
+    function renderTag(tag) {
+      if (!tag) return null;
+      var lc = String(tag).toLowerCase();
+      return h('span', {className:'ml-tag tag-'+lc}, tag);
+    }
+
+    function renderPage(page) {
+      var isActive = activePage && activePage.id === page.id;
+      var pageSections = isActive ? sections.filter(function(s){return s.page_id===page.id}) : [];
+      var meta = page.metadata || {};
+      var ext = meta.external_url;
+      var tag = meta.tag;
+
+      if (ext) {
+        return h('a', {key:page.id, className:'ml-page-row', href:ext, target:'_blank', rel:'noopener noreferrer'},
+          h(ExtLinkIcon),
+          h('span', {className:'ml-label', dangerouslySetInnerHTML:{__html:page.nav_title||page.title}}),
+          renderTag(tag));
+      }
+      return h('div', {key:page.id},
+        h('button', {className:'ml-page-row'+(isActive?' active':''), onClick:function(){onSelectPage(page);window.scrollTo({top:0,behavior:'smooth'})}},
+          h(FileTextIcon),
+          h('span', {className:'ml-label', dangerouslySetInnerHTML:{__html:page.nav_title||page.title}}),
+          renderTag(tag)),
+        isActive && pageSections.length > 0 ? h('nav', {className:'ml-section-nav'},
+          pageSections.map(function(sec) {
+            var isSA = activeSectionId === sec.id;
+            return h('button', {key:sec.id, className:'section-link'+(isSA?' active':''), onClick:function(){
+              var el = document.getElementById('section-'+sec.id);
+              if(el){var top=el.getBoundingClientRect().top+window.scrollY-72;window.scrollTo({top:top,behavior:'smooth'})}
+            }}, h('span', {dangerouslySetInnerHTML:{__html:sec.nav_title||sec.title}}));
+          })) : null);
+    }
+
+    return h('aside', {className:'sidebar mintlify'},
+      h('div', {className:'sidebar-label'}, 'Documentation'),
+      h('nav', {style:{display:'flex',flexDirection:'column',gap:'2px'}},
+        ungrouped.map(renderPage),
+        sortedGroups.map(function(group) {
+          var isText = group.type === 'text';
+          var gPages = sortedPages.filter(function(p){return p.nav_group_id===group.id});
+          if (isText) return h('div', {key:group.id, className:'nav-group-text'}, h('span', {dangerouslySetInnerHTML:{__html:group.title}}));
+          if (gPages.length === 0) return null;
+          var op = isOpen(group);
+          var groupTag = group.metadata && group.metadata.tag;
+          return h('div', {key:group.id, style:{marginTop:'4px'}},
+            h('button', {className:'ml-group-header', onClick:function(){toggle(group)}},
+              op ? h(FolderOpenIcon) : h(FolderIcon),
+              h('span', {className:'ml-label', dangerouslySetInnerHTML:{__html:group.title}}),
+              renderTag(groupTag)),
+            op ? h('div', {className:'ml-group-children'}, gPages.map(renderPage)) : null);
         })));
   }
 
