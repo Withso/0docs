@@ -76,6 +76,9 @@ interface DocContentViewProps {
   navGroups?: DocNavGroup[];
   hideHeaderLabel?: boolean;
   showMobileNav?: boolean;
+  tabs?: DocTab[];
+  activeTabId?: string | null;
+  onSelectTab?: (tabId: string | null) => void;
 }
 
 const DocContentView = ({
