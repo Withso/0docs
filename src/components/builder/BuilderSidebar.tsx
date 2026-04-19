@@ -216,9 +216,14 @@ const BuilderSidebar = ({
    */
   const flatItems: FlatItem[] = useMemo(() => {
     const items: FlatItem[] = [];
-    const sortedGroups = [...navGroups].sort((a, b) => a.order_index - b.order_index);
+    // Filter groups by activeTabId: null = show all; otherwise only matching groups (and ones with no tab)
+    const sortedGroups = [...navGroups]
+      .filter((g) => activeTabId === null || g.tab_id === activeTabId || !g.tab_id)
+      .sort((a, b) => a.order_index - b.order_index);
 
-    // Ungrouped pages first
+    const visibleGroupIds = new Set(sortedGroups.map((g) => g.id));
+
+    // Ungrouped pages first (always visible)
     const ungrouped = pages
       .filter((p) => !p.nav_group_id)
       .sort((a, b) => a.order_index - b.order_index);
@@ -226,11 +231,13 @@ const BuilderSidebar = ({
       items.push({ sortId: toSortId("page", p.id), type: "page", pageData: p });
     });
 
-    // Then each nav group + its pages
+    // Then each visible nav group + its pages
     sortedGroups.forEach((g) => {
+      const itemType: FlatItemType =
+        g.type === "text" ? "text" : g.type === "dropdown" ? "dropdown" : "label";
       items.push({
         sortId: toSortId("group", g.id),
-        type: g.type === "text" ? "text" : "label",
+        type: itemType,
         groupData: g,
       });
       const groupPages = pages
@@ -242,7 +249,7 @@ const BuilderSidebar = ({
     });
 
     return items;
-  }, [pages, navGroups]);
+  }, [pages, navGroups, activeTabId]);
 
   const flatSortIds = useMemo(() => flatItems.map((i) => i.sortId), [flatItems]);
 
