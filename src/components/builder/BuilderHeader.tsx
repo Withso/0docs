@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, Settings, ChevronRight, Upload } from "lucide-react";
+import { ArrowLeft, FileText, Settings, ChevronRight, Upload, Eye, Code2 } from "lucide-react";
+import BranchSelector from "./BranchSelector";
 
-export type BuilderMode = "editor" | "design" | "preview" | "analytics" | "settings" | "publish" | "configurations";
+export type BuilderMode = "editor" | "design" | "preview" | "analytics" | "settings" | "publish" | "configurations" | "code";
 export type EditorTab = "navigation" | "files";
 export type DesignSubMode = "live" | "examples";
 
@@ -16,36 +17,43 @@ interface BuilderHeaderProps {
   onDesignSubModeChange?: (sub: DesignSubMode) => void;
   onPublishClick?: () => void;
   hasUnpublishedChanges?: boolean;
+  // Branch selector
+  currentBranch?: string;
+  hasGithub?: boolean;
+  onBranchChange?: (branch: string) => void;
 }
 
-const SegmentedControl = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
-  const options: { label: string; value: BuilderMode }[] = [
-    { label: "Editor", value: "editor" },
-    { label: "Design", value: "design" },
-    { label: "Preview", value: "preview" },
+/** Visual / Code / Preview toggle — only shown in editor-related modes. */
+const ViewToggle = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
+  const options: { label: string; value: BuilderMode; icon: typeof Eye }[] = [
+    { label: "Visual", value: "editor", icon: FileText },
+    { label: "Code", value: "code", icon: Code2 },
+    { label: "Preview", value: "preview", icon: Eye },
   ];
-
-  const activeValue = ["editor", "design", "preview"].includes(value) ? value : null;
+  const activeValue = ["editor", "code", "preview"].includes(value) ? value : null;
 
   return (
     <div className="flex items-center rounded-full bg-muted p-0.5">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          className={`px-4 py-1 rounded-full text-[12px] font-medium transition-all ${
-            activeValue === opt.value
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
+      {options.map((opt) => {
+        const Icon = opt.icon;
+        return (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={`px-3 py-1 rounded-full text-[12px] font-medium transition-all flex items-center gap-1.5 ${
+              activeValue === opt.value
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Icon className="h-3 w-3" />
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 };
-
 
 const BuilderHeader = ({
   projectId,
@@ -53,12 +61,14 @@ const BuilderHeader = ({
   activePageTitle,
   mode,
   onModeChange,
-  designSubMode = "live",
-  onDesignSubModeChange,
   onPublishClick,
   hasUnpublishedChanges,
+  currentBranch = "main",
+  hasGithub = false,
+  onBranchChange,
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
+  const showEditorTools = ["editor", "code", "preview"].includes(mode);
 
   return (
     <div className="sticky top-0 z-50 p-1.5 backdrop-blur-xl" style={{ backgroundColor: "hsl(var(--background) / 0.5)" }}>
@@ -77,18 +87,26 @@ const BuilderHeader = ({
                 <FileText className="h-3 w-3 text-primary" />
               </div>
               <span className="font-semibold text-foreground text-[13px] truncate">{projectName}</span>
-              {activePageTitle && mode !== "analytics" && mode !== "settings" && (
+              {activePageTitle && showEditorTools && (
                 <>
                   <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
                   <span className="text-[12px] text-muted-foreground truncate">{activePageTitle}</span>
                 </>
               )}
             </div>
+            {showEditorTools && onBranchChange && (
+              <BranchSelector
+                projectId={projectId}
+                currentBranch={currentBranch}
+                hasGithub={hasGithub}
+                onBranchChange={onBranchChange}
+              />
+            )}
           </div>
 
-          {/* Center - Segmented Control */}
+          {/* Center */}
           <div className="flex items-center justify-center gap-3">
-            <SegmentedControl value={mode} onChange={onModeChange} />
+            {showEditorTools && <ViewToggle value={mode} onChange={onModeChange} />}
           </div>
 
           {/* Right */}
@@ -106,7 +124,6 @@ const BuilderHeader = ({
               {mode === "settings" && <span>Settings</span>}
             </button>
 
-            {/* Publish button */}
             {onPublishClick && (
               <Button
                 size="sm"
