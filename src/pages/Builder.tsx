@@ -18,6 +18,8 @@ import ProjectRail from "@/components/builder/ProjectRail";
 import EditorTabs from "@/components/builder/EditorTabs";
 import FilesPanel from "@/components/builder/FilesPanel";
 import AnalyticsContent from "@/components/builder/AnalyticsContent";
+import ConfigurationsPanel from "@/components/builder/ConfigurationsPanel";
+import PageSettingsPanel from "@/components/builder/PageSettingsPanel";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
@@ -64,6 +66,7 @@ const Builder = () => {
   const getInitialMode = (): BuilderMode => {
     if (location.pathname.endsWith("/settings")) return "settings";
     if (location.pathname.endsWith("/design")) return "design";
+    if (location.pathname.endsWith("/configurations")) return "configurations";
     if (location.pathname.endsWith("/publish")) return "publish";
     if (location.pathname.endsWith("/analytics")) return "analytics";
     return "editor";
@@ -80,6 +83,7 @@ const Builder = () => {
     const base = `/builder/${projectId}`;
     if (newMode === "settings") navigate(`${base}/settings`, { replace: true });
     else if (newMode === "design") navigate(`${base}/design`, { replace: true });
+    else if (newMode === "configurations") navigate(`${base}/configurations`, { replace: true });
     else if (newMode === "publish") navigate(`${base}/publish`, { replace: true });
     else if (newMode === "analytics") navigate(`${base}/analytics`, { replace: true });
     else navigate(base, { replace: true });
