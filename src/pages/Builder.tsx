@@ -251,157 +251,181 @@ const Builder = () => {
         hasUnpublishedChanges={publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish}
       />
 
-      {/* Mode: Editor */}
-      {mode === "editor" && (
-        <DesignSettingsWrapper settings={settings} className="">
-          {/* Floating SEO panel — fixed top-left, to the left of the sidebar */}
-          {activePage && (
-            <SeoFloatingPanel
-              page={activePage}
+      <div className="flex min-h-[calc(100vh-60px)]">
+        <ProjectRail mode={mode} onModeChange={handleModeChange} />
+
+        <div className="flex-1 min-w-0">
+          {/* Mode: Editor */}
+          {mode === "editor" && (
+            <DesignSettingsWrapper settings={settings} className="">
+              {/* Floating SEO panel — fixed top-left, to the left of the sidebar */}
+              {activePage && editorTab === "navigation" && (
+                <SeoFloatingPanel page={activePage} settings={settings} />
+              )}
+              <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
+                <div className="shrink-0" style={{ width: settings.sidebarWidth }}>
+                  <EditorTabs value={editorTab} onChange={setEditorTab} />
+                  {editorTab === "navigation" ? (
+                    <BuilderSidebar
+                      settings={settings}
+                      pages={pages}
+                      activePage={activePage}
+                      sections={sections}
+                      navGroups={navGroups}
+                      onSelectPage={setActivePage}
+                      onAddPage={addPage}
+                      onUpdatePage={updatePage}
+                      onDeletePage={deletePage}
+                      onAddNavGroup={addNavGroup}
+                      onUpdateNavGroup={updateNavGroup}
+                      onDeleteNavGroup={deleteNavGroup}
+                      onReorderPages={reorderPages}
+                      onReorderNavGroups={reorderNavGroups}
+                      onReorderSections={reorderSections}
+                    />
+                  ) : (
+                    <FilesPanel
+                      pages={pages}
+                      navGroups={navGroups}
+                      activePage={activePage}
+                      onSelectPage={(p) => {
+                        setActivePage(p);
+                        setEditorTab("navigation");
+                      }}
+                      projectSlug={project?.slug}
+                    />
+                  )}
+                </div>
+
+                <main className="flex-1 min-w-0 py-10 lg:pl-4">
+                  {activePage ? (
+                    <article style={{ maxWidth: `${settings.contentMaxWidth}px` }} className="animate-fade-in">
+                      <PageTitleEditor
+                        page={activePage}
+                        onUpdate={updatePage}
+                        settings={settings}
+                        onAddSection={addSection}
+                        onImportOpenAPI={() => {
+                          setOpenApiMode("page");
+                          setOpenApiOpen(true);
+                        }}
+                      />
+
+                      <SectionsDndWrapper
+                        sections={sections}
+                        blocks={blocks}
+                        settings={settings}
+                        onUpdateSection={updateSection}
+                        onDeleteSection={deleteSection}
+                        onAddBlock={addBlock}
+                        onUpdateBlock={updateBlock}
+                        onDeleteBlock={deleteBlock}
+                        onReorderSections={reorderSections}
+                        onReorderBlocks={reorderBlocks}
+                        onImportOpenAPI={(sectionId) => {
+                          setOpenApiMode("block");
+                          setImportTargetSectionId(sectionId);
+                          setOpenApiOpen(true);
+                        }}
+                      />
+
+                      <button
+                        onClick={addSection}
+                        className="w-full border-2 border-dashed rounded-xl py-6 text-[13px] text-muted-foreground hover:text-primary hover:border-primary/30 transition-all mt-6 flex items-center justify-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" /> Add Section
+                      </button>
+                    </article>
+                  ) : (
+                    <div className="text-center py-20 animate-fade-in" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
+                      <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-5">
+                        <FileText className="h-7 w-7 text-muted-foreground" />
+                      </div>
+                      <p className="mb-5 text-[14px]">No pages yet. Add a page to get started.</p>
+                      <Button onClick={() => addPage()} className="rounded-lg">
+                        <Plus className="h-4 w-4 mr-2" /> Add Page
+                      </Button>
+                    </div>
+                  )}
+                </main>
+              </div>
+            </DesignSettingsWrapper>
+          )}
+
+          {/* Mode: Design */}
+          {mode === "design" && (
+            <DesignPanel
+              projectId={projectId!}
+              projectName={project?.name || ""}
               settings={settings}
+              saving={saving}
+              saveSettings={saveSettings}
+              resetSettings={resetSettings}
+              designSubMode={designSubMode}
+              onDesignSubModeChange={setDesignSubMode}
             />
           )}
-          <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
-            <BuilderSidebar
-              settings={settings}
+
+          {/* Mode: Preview */}
+          {mode === "preview" && (
+            <div className="flex-1 relative">
+              <DocContentView
+                settings={settings}
+                projectName={project?.name || ""}
+                pages={pages}
+                activePage={activePage}
+                sections={sections}
+                blocks={blocks}
+                onSelectPage={(p) => {
+                  const full = pages.find((pg) => pg.id === p.id);
+                  if (full) setActivePage(full);
+                }}
+                headerStickyTop={0}
+                hideHeader
+                navGroups={navGroups}
+                hideHeaderLabel
+              />
+              <MadeWithBanner />
+            </div>
+          )}
+
+          {/* Mode: Analytics */}
+          {mode === "analytics" && (
+            <AnalyticsContent projectName={project?.name} projectSlug={project?.slug} />
+          )}
+
+          {/* Mode: Settings */}
+          {mode === "settings" && (
+            <SettingsContent projectId={projectId!} project={project} onSaved={refreshProject} />
+          )}
+
+          {/* Mode: Publish */}
+          {mode === "publish" && (
+            <PublishContent
+              editorChanges={publishPreview.editorChanges}
+              designChanges={publishPreview.designChanges}
+              nextVersion={publishPreview.nextVersion}
+              isFirstPublish={publishPreview.isFirstPublish}
+              publishing={publishing}
+              onPublish={handlePublish}
+              versions={publishedVersions}
+              onRevert={async (versionId) => {
+                await revertToVersion(versionId);
+                const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
+                toast({ title: "Version reverted", description: "The active published version has been updated." });
+              }}
+              projectSlug={project?.slug || ""}
+              customDomain={project?.custom_domain}
+              project={project}
               pages={pages}
-              activePage={activePage}
               sections={sections}
+              blocks={blocks}
+              settings={settings}
               navGroups={navGroups}
-              onSelectPage={setActivePage}
-              onAddPage={addPage}
-              onUpdatePage={updatePage}
-              onDeletePage={deletePage}
-              onAddNavGroup={addNavGroup}
-              onUpdateNavGroup={updateNavGroup}
-              onDeleteNavGroup={deleteNavGroup}
-              onReorderPages={reorderPages}
-              onReorderNavGroups={reorderNavGroups}
-              onReorderSections={reorderSections}
             />
-
-            <main className="flex-1 min-w-0 py-10 lg:pl-4">
-              {activePage ? (
-                <article style={{ maxWidth: `${settings.contentMaxWidth}px` }} className="animate-fade-in">
-                  <PageTitleEditor
-                    page={activePage}
-                    onUpdate={updatePage}
-                    settings={settings}
-                    onAddSection={addSection}
-                    onImportOpenAPI={() => {
-                      setOpenApiMode("page");
-                      setOpenApiOpen(true);
-                    }}
-                  />
-
-                  <SectionsDndWrapper
-                    sections={sections}
-                    blocks={blocks}
-                    settings={settings}
-                    onUpdateSection={updateSection}
-                    onDeleteSection={deleteSection}
-                    onAddBlock={addBlock}
-                    onUpdateBlock={updateBlock}
-                    onDeleteBlock={deleteBlock}
-                    onReorderSections={reorderSections}
-                    onReorderBlocks={reorderBlocks}
-                    onImportOpenAPI={(sectionId) => {
-                      setOpenApiMode("block");
-                      setImportTargetSectionId(sectionId);
-                      setOpenApiOpen(true);
-                    }}
-                  />
-
-                  <button
-                    onClick={addSection}
-                    className="w-full border-2 border-dashed rounded-xl py-6 text-[13px] text-muted-foreground hover:text-primary hover:border-primary/30 transition-all mt-6 flex items-center justify-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" /> Add Section
-                  </button>
-                </article>
-              ) : (
-                <div className="text-center py-20 animate-fade-in" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
-                  <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-5">
-                    <FileText className="h-7 w-7 text-muted-foreground" />
-                  </div>
-                  <p className="mb-5 text-[14px]">No pages yet. Add a page to get started.</p>
-                  <Button onClick={() => addPage()} className="rounded-lg">
-                    <Plus className="h-4 w-4 mr-2" /> Add Page
-                  </Button>
-                </div>
-              )}
-            </main>
-          </div>
-        </DesignSettingsWrapper>
-      )}
-
-      {/* Mode: Design */}
-      {mode === "design" && (
-        <DesignPanel
-          projectId={projectId!}
-          projectName={project?.name || ""}
-          settings={settings}
-          saving={saving}
-          saveSettings={saveSettings}
-          resetSettings={resetSettings}
-          designSubMode={designSubMode}
-          onDesignSubModeChange={setDesignSubMode}
-        />
-      )}
-
-      {/* Mode: Preview */}
-      {mode === "preview" && (
-        <div className="flex-1 relative">
-          <DocContentView
-            settings={settings}
-            projectName={project?.name || ""}
-            pages={pages}
-            activePage={activePage}
-            sections={sections}
-            blocks={blocks}
-            onSelectPage={(p) => {
-              const full = pages.find((pg) => pg.id === p.id);
-              if (full) setActivePage(full);
-            }}
-            headerStickyTop={0}
-            hideHeader
-            navGroups={navGroups}
-            hideHeaderLabel
-          />
-          <MadeWithBanner />
+          )}
         </div>
-      )}
-
-      {/* Mode: Settings */}
-      {mode === "settings" && (
-        <SettingsContent projectId={projectId!} project={project} onSaved={refreshProject} />
-      )}
-
-      {/* Mode: Publish */}
-      {mode === "publish" && (
-        <PublishContent
-          editorChanges={publishPreview.editorChanges}
-          designChanges={publishPreview.designChanges}
-          nextVersion={publishPreview.nextVersion}
-          isFirstPublish={publishPreview.isFirstPublish}
-          publishing={publishing}
-          onPublish={handlePublish}
-          versions={publishedVersions}
-          onRevert={async (versionId) => {
-            await revertToVersion(versionId);
-            const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
-            toast({ title: "Version reverted", description: "The active published version has been updated." });
-          }}
-          projectSlug={project?.slug || ""}
-          customDomain={project?.custom_domain}
-          project={project}
-          pages={pages}
-          sections={sections}
-          blocks={blocks}
-          settings={settings}
-          navGroups={navGroups}
-        />
-      )}
+      </div>
 
       <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
     </div>
