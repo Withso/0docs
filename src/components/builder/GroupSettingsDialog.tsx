@@ -55,13 +55,13 @@ const GroupSettingsDialog = ({ group, open, onOpenChange, onSaved, tabs = [] }: 
 
   const handleSave = async () => {
     setSaving(true);
-    const updates: any = {
+    const updates = {
       title,
-      metadata: meta as any,
+      metadata: meta,
       type,
       tab_id: tabId === "__none__" ? null : tabId,
-    };
-    const { error } = await supabase
+    } as any;
+    const { error } = await (supabase as any)
       .from("nav_groups")
       .update(updates)
       .eq("id", group.id);
