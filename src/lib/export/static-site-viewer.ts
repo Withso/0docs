@@ -583,6 +583,7 @@ export function generateViewerScript(): string {
     var data = props.data;
     var pages = data.pages, sections = data.sections, blocks = data.blocks;
     var navGroups = data.navGroups, projectName = data.projectName;
+    var tabs = data.tabs || [];
 
     // Hash-based routing
     var s1 = useState(function() {
@@ -591,6 +592,9 @@ export function generateViewerScript(): string {
       return found || (pages.length > 0 ? pages.slice().sort(function(a,b){return a.order_index-b.order_index})[0] : null);
     });
     var activePage = s1[0], setActivePage = s1[1];
+
+    // Active tab (top-bar) — null = "All"
+    var sTab = useState(null), activeTabId = sTab[0], setActiveTabId = sTab[1];
 
     var s2 = useState(false), searchOpen = s2[0], setSearchOpen = s2[1];
 
