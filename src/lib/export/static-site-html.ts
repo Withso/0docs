@@ -1,5 +1,5 @@
 import type { DesignSettings } from "@/hooks/use-design-settings";
-import type { ExportPage, ExportSection, ExportBlock, ExportNavGroup } from "./types";
+import type { ExportPage, ExportSection, ExportBlock, ExportNavGroup, ExportTab } from "./types";
 import { generateCSS } from "./static-site-css";
 import { generateViewerScript } from "./static-site-viewer";
 
@@ -14,6 +14,7 @@ export function generateStaticHTML(
   blocks: ExportBlock[],
   navGroups: ExportNavGroup[],
   settings: DesignSettings,
+  tabs: ExportTab[] = [],
 ): string {
   // Collect unique Google Fonts
   const fonts = new Set<string>();
@@ -58,6 +59,14 @@ export function generateStaticHTML(
       title: g.title,
       order_index: g.order_index,
       type: g.type || "label",
+      tab_id: g.tab_id || null,
+      metadata: g.metadata || {},
+    })),
+    tabs: tabs.map((t) => ({
+      id: t.id,
+      label: t.label,
+      icon: t.icon || null,
+      order_index: t.order_index,
     })),
   });
 

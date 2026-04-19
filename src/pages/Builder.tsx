@@ -469,6 +469,7 @@ const Builder = () => {
               blocks={blocks}
               settings={settings}
               navGroups={navGroups}
+              tabs={tabs}
             />
           )}
         </div>

@@ -33,6 +33,7 @@ interface PublishContentProps {
   blocks?: any[];
   settings?: DesignSettings;
   navGroups?: any[];
+  tabs?: any[];
 }
 
 const changeIcon = (type: string) => {
@@ -45,7 +46,7 @@ const PublishContent = ({
   editorChanges, designChanges, nextVersion,
   isFirstPublish, publishing, onPublish, versions, onRevert,
   projectSlug, customDomain,
-  project, pages = [], sections = [], blocks = [], settings, navGroups = [],
+  project, pages = [], sections = [], blocks = [], settings, navGroups = [], tabs = [],
 }: PublishContentProps) => {
   const [notes, setNotes] = useState("");
   const [editorOpen, setEditorOpen] = useState(true);
@@ -194,7 +195,7 @@ const PublishContent = ({
       }
 
       // Export the documentation
-      const exported = exportProject(pages, allSections, allBlocks, settings, navGroups, project?.name || "Documentation");
+      const exported = exportProject(pages, allSections, allBlocks, settings, navGroups, project?.name || "Documentation", tabs);
       const message = commitMessage.trim() || getDefaultCommitMessage();
 
       // Call edge function
