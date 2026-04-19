@@ -750,7 +750,7 @@ export function generateViewerScript(): string {
           onSelectTab:setActiveTabId, pages:pages, onSelectPage:handleSelectPage})),
       // Body
       h('div', {className:'site-body'},
-        h(Sidebar, {pages:pages,activePage:activePage,sections:pageSections,navGroups:navGroups,
+        h(((data.settings && data.settings.sidebarStyle === 'mintlify') ? MintlifySidebar : Sidebar), {pages:pages,activePage:activePage,sections:pageSections,navGroups:navGroups,
           onSelectPage:handleSelectPage, activeSectionId:activeSectionId, activeTabId:activeTabId}),
         h('main', {className:'main-content'},
           activePage
