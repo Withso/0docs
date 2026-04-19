@@ -325,6 +325,39 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     await Promise.all(updates);
   };
 
+  /* ─── Tabs CRUD ─── */
+  const addTab = async (label = "New Tab") => {
+    if (!projectId) return;
+    const { data } = await (supabase as any)
+      .from("tabs")
+      .insert({ project_id: projectId, label, order_index: tabs.length })
+      .select()
+      .single();
+    if (data) setTabs((t) => [...t, data as Tab]);
+  };
+
+  const updateTab = async (tabId: string, updates: Partial<Tab>) => {
+    await (supabase as any).from("tabs").update(updates).eq("id", tabId);
+    setTabs((t) => t.map((tb) => (tb.id === tabId ? { ...tb, ...updates } : tb)));
+  };
+
+  const deleteTab = async (tabId: string) => {
+    // Unassign nav_groups from this tab first (DB also has ON DELETE SET NULL)
+    await supabase.from("nav_groups").update({ tab_id: null } as any).eq("tab_id", tabId as any);
+    setNavGroups((g) => g.map((ng) => (ng.tab_id === tabId ? { ...ng, tab_id: null } : ng)));
+    await (supabase as any).from("tabs").delete().eq("id", tabId);
+    setTabs((t) => t.filter((tb) => tb.id !== tabId));
+    if (activeTabId === tabId) setActiveTabId(null);
+  };
+
+  const reorderTabs = async (reordered: Tab[]) => {
+    setTabs(reordered);
+    const updates = reordered.map((t, i) =>
+      (supabase as any).from("tabs").update({ order_index: i }).eq("id", t.id),
+    );
+    await Promise.all(updates);
+  };
+
   return {
     project,
     pages,
@@ -333,6 +366,9 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     sections,
     blocks,
     navGroups,
+    tabs,
+    activeTabId,
+    setActiveTabId,
     loading,
     addPage,
     updatePage,
@@ -346,6 +382,10 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     addNavGroup,
     updateNavGroup,
     deleteNavGroup,
+    addTab,
+    updateTab,
+    deleteTab,
+    reorderTabs,
     reloadPages,
     loadPageContent,
     reorderPages,
