@@ -137,8 +137,13 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
     [pages],
   );
   const sortedNavGroups = useMemo(
-    () => [...navGroups].sort((a, b) => a.order_index - b.order_index),
-    [navGroups],
+    () =>
+      [...navGroups]
+        .filter((g) => g.type !== "dropdown")
+        .filter((g) => !g.metadata?.hidden)
+        .filter((g) => activeTabId == null || g.tab_id === activeTabId || !g.tab_id)
+        .sort((a, b) => a.order_index - b.order_index),
+    [navGroups, activeTabId],
   );
 
   const ungroupedPages = sortedPages.filter((p) => !p.nav_group_id);
