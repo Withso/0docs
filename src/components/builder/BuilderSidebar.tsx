@@ -382,10 +382,21 @@ const BuilderSidebar = ({
               >
                 <Pencil className="h-2.5 w-2.5" />
               </button>
+              {onOpenPageSettings && (
+                <button
+                  onClick={() => onOpenPageSettings(page)}
+                  style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                  title="Page settings"
+                  className="ml-0.5"
+                >
+                  <SettingsIcon className="h-2.5 w-2.5" />
+                </button>
+              )}
               <button
                 onClick={() => onDeletePage(page.id)}
                 style={{ color: `hsl(${s.mutedForegroundColor})` }}
                 title="Delete"
+                className="ml-0.5"
               >
                 <Trash2 className="h-3 w-3" />
               </button>
