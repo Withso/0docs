@@ -57,6 +57,8 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
   const [sections, setSections] = useState<Section[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [navGroups, setNavGroups] = useState<NavGroup[]>([]);
+  const [tabs, setTabs] = useState<Tab[]>([]);
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshProject = useCallback(async () => {
