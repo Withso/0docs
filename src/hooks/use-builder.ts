@@ -36,7 +36,18 @@ export interface NavGroup {
   project_id: string;
   title: string;
   order_index: number;
-  type: "label" | "text";
+  type: "label" | "text" | "dropdown";
+  tab_id?: string | null;
+  metadata?: Record<string, any>;
+}
+
+export interface Tab {
+  id: string;
+  project_id: string;
+  label: string;
+  icon?: string | null;
+  order_index: number;
+  metadata?: Record<string, any>;
 }
 
 export function useBuilder(projectId: string | undefined, userId: string | undefined) {
