@@ -335,6 +335,8 @@ const Builder = () => {
                       setEditorTab("navigation");
                     }}
                     projectSlug={project?.slug}
+                    onAddPage={addPage}
+                    onAddNavGroup={addNavGroup}
                   />
                 )}
               </div>
