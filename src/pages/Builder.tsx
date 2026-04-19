@@ -65,6 +65,7 @@ const Builder = () => {
     if (location.pathname.endsWith("/settings")) return "settings";
     if (location.pathname.endsWith("/design")) return "design";
     if (location.pathname.endsWith("/publish")) return "publish";
+    if (location.pathname.endsWith("/analytics")) return "analytics";
     return "editor";
   };
 
@@ -80,6 +81,7 @@ const Builder = () => {
     if (newMode === "settings") navigate(`${base}/settings`, { replace: true });
     else if (newMode === "design") navigate(`${base}/design`, { replace: true });
     else if (newMode === "publish") navigate(`${base}/publish`, { replace: true });
+    else if (newMode === "analytics") navigate(`${base}/analytics`, { replace: true });
     else navigate(base, { replace: true });
   }, [projectId, navigate]);
 
