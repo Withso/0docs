@@ -6,9 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import type { NavGroup } from "@/hooks/use-builder";
+import type { NavGroup, Tab } from "@/hooks/use-builder";
 
 interface GroupMetadata {
   hidden?: boolean;
@@ -24,19 +27,24 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved?: () => void;
+  tabs?: Tab[];
 }
 
 /** Settings dialog for a nav group (Mintlify parity) */
-const GroupSettingsDialog = ({ group, open, onOpenChange, onSaved }: Props) => {
+const GroupSettingsDialog = ({ group, open, onOpenChange, onSaved, tabs = [] }: Props) => {
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [meta, setMeta] = useState<GroupMetadata>({});
+  const [type, setType] = useState<"label" | "text" | "dropdown">("label");
+  const [tabId, setTabId] = useState<string>("__none__");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (group) {
       setTitle(group.title);
       setMeta(((group as any).metadata || {}) as GroupMetadata);
+      setType((group.type as any) || "label");
+      setTabId((group.tab_id as string) || "__none__");
     }
   }, [group?.id]);
 
@@ -47,9 +55,15 @@ const GroupSettingsDialog = ({ group, open, onOpenChange, onSaved }: Props) => {
 
   const handleSave = async () => {
     setSaving(true);
+    const updates: any = {
+      title,
+      metadata: meta as any,
+      type,
+      tab_id: tabId === "__none__" ? null : tabId,
+    };
     const { error } = await supabase
       .from("nav_groups")
-      .update({ title, metadata: meta as any } as any)
+      .update(updates)
       .eq("id", group.id);
     setSaving(false);
     if (error) {
@@ -72,6 +86,35 @@ const GroupSettingsDialog = ({ group, open, onOpenChange, onSaved }: Props) => {
           <Field label="Title">
             <Input value={title} onChange={(e) => setTitle(e.target.value)} className="h-9 text-[12px]" />
           </Field>
+
+          <Field label="Type">
+            <Select value={type} onValueChange={(v) => setType(v as any)}>
+              <SelectTrigger className="h-9 text-[12px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="label" className="text-[12px]">Label (uppercase header)</SelectItem>
+                <SelectItem value="text" className="text-[12px]">Text (plain row)</SelectItem>
+                <SelectItem value="dropdown" className="text-[12px]">Dropdown (top-bar menu)</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+
+          {tabs.length > 0 && (
+            <Field label="Belongs to Tab">
+              <Select value={tabId} onValueChange={setTabId}>
+                <SelectTrigger className="h-9 text-[12px]">
+                  <SelectValue placeholder="No tab" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__" className="text-[12px]">— None (always visible) —</SelectItem>
+                  {tabs.map((t) => (
+                    <SelectItem key={t.id} value={t.id} className="text-[12px]">{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          )}
 
           <Field label="Icon">
             <Input

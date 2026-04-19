@@ -22,7 +22,9 @@ export interface SidebarNavGroup {
   id: string;
   title: string;
   order_index: number;
-  type?: "label" | "text";
+  type?: "label" | "text" | "dropdown" | string;
+  tab_id?: string | null;
+  metadata?: Record<string, any>;
 }
 
 interface DocSidebarNavProps<TPage extends SidebarPageBase = SidebarPageBase> {
@@ -36,6 +38,7 @@ interface DocSidebarNavProps<TPage extends SidebarPageBase = SidebarPageBase> {
   stickyTop?: number;
   hideHeaderLabel?: boolean;
   navGroups?: SidebarNavGroup[];
+  activeTabId?: string | null;
 }
 
 const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
@@ -49,6 +52,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
   stickyTop = 48,
   hideHeaderLabel = false,
   navGroups = [],
+  activeTabId = null,
 }: DocSidebarNavProps<TPage>) => {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -133,8 +137,13 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
     [pages],
   );
   const sortedNavGroups = useMemo(
-    () => [...navGroups].sort((a, b) => a.order_index - b.order_index),
-    [navGroups],
+    () =>
+      [...navGroups]
+        .filter((g) => g.type !== "dropdown")
+        .filter((g) => !g.metadata?.hidden)
+        .filter((g) => activeTabId == null || g.tab_id === activeTabId || !g.tab_id)
+        .sort((a, b) => a.order_index - b.order_index),
+    [navGroups, activeTabId],
   );
 
   const ungroupedPages = sortedPages.filter((p) => !p.nav_group_id);

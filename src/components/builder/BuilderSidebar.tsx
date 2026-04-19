@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical, Settings as SettingsIcon } from "lucide-react";
+import { Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical, Settings as SettingsIcon, ChevronDown } from "lucide-react";
 import GroupSettingsDialog from "./GroupSettingsDialog";
-import type { Page, Section, NavGroup } from "@/hooks/use-builder";
+import TabsManager from "./TabsManager";
+import type { Page, Section, NavGroup, Tab } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import InlineRichText from "./InlineRichText";
 import {
@@ -33,11 +34,18 @@ interface BuilderSidebarProps {
   activePage: Page | null;
   sections: Section[];
   navGroups: NavGroup[];
+  tabs: Tab[];
+  activeTabId: string | null;
+  onSelectTab: (tabId: string | null) => void;
+  onAddTab: (label?: string) => Promise<void> | void;
+  onUpdateTab: (tabId: string, updates: Partial<Tab>) => Promise<void> | void;
+  onDeleteTab: (tabId: string) => Promise<void> | void;
+  onReorderTabs: (reordered: Tab[]) => Promise<void> | void;
   onSelectPage: (page: Page) => void;
   onAddPage: (navGroupId?: string) => void;
   onUpdatePage: (pageId: string, updates: Partial<Page>) => void;
   onDeletePage: (pageId: string) => void;
-  onAddNavGroup: (type?: "label" | "text") => void;
+  onAddNavGroup: (type?: "label" | "text" | "dropdown") => void;
   onUpdateNavGroup: (groupId: string, updates: Partial<NavGroup>) => void;
   onDeleteNavGroup: (groupId: string) => void;
   onReorderPages: (pages: Page[]) => void;
@@ -46,7 +54,7 @@ interface BuilderSidebarProps {
 }
 
 /* ─── Unified flat item types ─── */
-type FlatItemType = "page" | "label" | "text";
+type FlatItemType = "page" | "label" | "text" | "dropdown";
 
 interface FlatItem {
   sortId: string;         // unique id for dnd-kit
@@ -103,6 +111,13 @@ const BuilderSidebar = ({
   activePage,
   sections,
   navGroups,
+  tabs,
+  activeTabId,
+  onSelectTab,
+  onAddTab,
+  onUpdateTab,
+  onDeleteTab,
+  onReorderTabs,
   onSelectPage,
   onAddPage,
   onUpdatePage,
@@ -201,9 +216,14 @@ const BuilderSidebar = ({
    */
   const flatItems: FlatItem[] = useMemo(() => {
     const items: FlatItem[] = [];
-    const sortedGroups = [...navGroups].sort((a, b) => a.order_index - b.order_index);
+    // Filter groups by activeTabId: null = show all; otherwise only matching groups (and ones with no tab)
+    const sortedGroups = [...navGroups]
+      .filter((g) => activeTabId === null || g.tab_id === activeTabId || !g.tab_id)
+      .sort((a, b) => a.order_index - b.order_index);
 
-    // Ungrouped pages first
+    const visibleGroupIds = new Set(sortedGroups.map((g) => g.id));
+
+    // Ungrouped pages first (always visible)
     const ungrouped = pages
       .filter((p) => !p.nav_group_id)
       .sort((a, b) => a.order_index - b.order_index);
@@ -211,11 +231,13 @@ const BuilderSidebar = ({
       items.push({ sortId: toSortId("page", p.id), type: "page", pageData: p });
     });
 
-    // Then each nav group + its pages
+    // Then each visible nav group + its pages
     sortedGroups.forEach((g) => {
+      const itemType: FlatItemType =
+        g.type === "text" ? "text" : g.type === "dropdown" ? "dropdown" : "label";
       items.push({
         sortId: toSortId("group", g.id),
-        type: g.type === "text" ? "text" : "label",
+        type: itemType,
         groupData: g,
       });
       const groupPages = pages
@@ -227,7 +249,7 @@ const BuilderSidebar = ({
     });
 
     return items;
-  }, [pages, navGroups]);
+  }, [pages, navGroups, activeTabId]);
 
   const flatSortIds = useMemo(() => flatItems.map((i) => i.sortId), [flatItems]);
 
@@ -598,7 +620,7 @@ const BuilderSidebar = ({
     const item = flatItems.find((i) => i.sortId === dragActiveId);
     if (!item) return null;
 
-    if (item.type === "label") {
+    if (item.type === "label" || item.type === "dropdown") {
       return (
         <div
           className="rounded-xl px-2 py-1 shadow-xl text-[10px] font-semibold uppercase tracking-widest"
@@ -650,6 +672,18 @@ const BuilderSidebar = ({
       }}
       className="shrink-0 sticky overflow-y-auto py-8 pr-6 hidden lg:block"
     >
+      {/* Tabs strip */}
+      <TabsManager
+        settings={s}
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onSelectTab={onSelectTab}
+        onAddTab={onAddTab}
+        onUpdateTab={onUpdateTab}
+        onDeleteTab={onDeleteTab}
+        onReorderTabs={onReorderTabs}
+      />
+
       <div
         className="text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center justify-between"
         style={{ color: `hsl(${s.sidebarTextColor})` }}
@@ -678,6 +712,10 @@ const BuilderSidebar = ({
               <Type className="h-3.5 w-3.5" />
               Text
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onAddNavGroup("dropdown")} className="gap-2 text-[13px]">
+              <ChevronDown className="h-3.5 w-3.5" />
+              Dropdown
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -696,6 +734,7 @@ const BuilderSidebar = ({
                 {({ handleProps }) => {
                   if (item.type === "page") return renderPageItem(item.pageData!, handleProps);
                   if (item.type === "label") return renderLabelItem(item.groupData!, handleProps);
+                  if (item.type === "dropdown") return renderLabelItem(item.groupData!, handleProps);
                   return renderTextItem(item.groupData!, handleProps);
                 }}
               </SortableItem>
@@ -710,6 +749,7 @@ const BuilderSidebar = ({
 
       <GroupSettingsDialog
         group={settingsGroup}
+        tabs={tabs}
         open={!!settingsGroup}
         onOpenChange={(open) => !open && setSettingsGroup(null)}
       />

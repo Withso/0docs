@@ -265,9 +265,14 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     }
   }, [projectId]);
 
-  const addNavGroup = async (type: "label" | "text" = "label") => {
+  const addNavGroup = async (type: "label" | "text" | "dropdown" = "label") => {
     if (!projectId) return;
-    const title = type === "text" ? "Static text" : "New Label";
+    const titleByType: Record<string, string> = {
+      text: "Static text",
+      dropdown: "New Dropdown",
+      label: "New Label",
+    };
+    const title = titleByType[type] || "New Label";
     const { data } = await supabase
       .from("nav_groups")
       .insert({ project_id: projectId, title, order_index: navGroups.length, type } as any)

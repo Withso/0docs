@@ -99,6 +99,7 @@ const Builder = () => {
     addPage, updatePage, deletePage, addSection, updateSection, deleteSection,
     addBlock, updateBlock, deleteBlock, reloadPages, loadPageContent,
     navGroups, addNavGroup, updateNavGroup, deleteNavGroup,
+    tabs, activeTabId, setActiveTabId, addTab, updateTab, deleteTab, reorderTabs,
     reorderPages, reorderNavGroups, reorderSections, reorderBlocks,
     refreshProject,
   } = useBuilder(projectId, user?.id);
@@ -286,6 +287,13 @@ const Builder = () => {
                       activePage={activePage}
                       sections={sections}
                       navGroups={navGroups}
+                      tabs={tabs}
+                      activeTabId={activeTabId}
+                      onSelectTab={setActiveTabId}
+                      onAddTab={addTab}
+                      onUpdateTab={updateTab}
+                      onDeleteTab={deleteTab}
+                      onReorderTabs={reorderTabs}
                       onSelectPage={setActivePage}
                       onAddPage={addPage}
                       onUpdatePage={updatePage}
@@ -395,9 +403,11 @@ const Builder = () => {
                   if (full) setActivePage(full);
                 }}
                 headerStickyTop={0}
-                hideHeader
                 navGroups={navGroups}
                 hideHeaderLabel
+                tabs={tabs}
+                activeTabId={activeTabId}
+                onSelectTab={setActiveTabId}
               />
               <MadeWithBanner />
             </div>

@@ -25,6 +25,15 @@ interface DocNavGroup {
   id: string;
   title: string;
   order_index: number;
+  type?: string;
+  tab_id?: string | null;
+  metadata?: Record<string, any>;
+}
+
+interface DocTab {
+  id: string;
+  label: string;
+  order_index: number;
 }
 
 interface DocSection {
@@ -67,6 +76,9 @@ interface DocContentViewProps {
   navGroups?: DocNavGroup[];
   hideHeaderLabel?: boolean;
   showMobileNav?: boolean;
+  tabs?: DocTab[];
+  activeTabId?: string | null;
+  onSelectTab?: (tabId: string | null) => void;
 }
 
 const DocContentView = ({
@@ -93,6 +105,9 @@ const DocContentView = ({
   navGroups = [],
   hideHeaderLabel = false,
   showMobileNav = true,
+  tabs = [],
+  activeTabId = null,
+  onSelectTab,
 }: DocContentViewProps) => {
   const [internalSearchOpen, setInternalSearchOpen] = useState(false);
   const searchOpen = externalSearchOpen !== undefined ? externalSearchOpen : internalSearchOpen;
@@ -179,6 +194,50 @@ const DocContentView = ({
               </kbd>
             </button>
           </div>
+          {/* Top-bar tabs + dropdown groups */}
+          {(tabs.length > 0 || navGroups.some((g) => g.type === "dropdown")) && (
+            <div
+              style={{ maxWidth: `${frameMaxWidth}px` }}
+              className="mx-auto px-4 sm:px-6 flex items-center gap-1 h-9 border-t"
+            >
+              {[...tabs].sort((a, b) => a.order_index - b.order_index).map((tab) => {
+                const isActive = activeTabId === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => onSelectTab?.(isActive ? null : tab.id)}
+                    className="text-[12px] px-2.5 py-1 rounded-md transition-colors"
+                    style={{
+                      color: isActive
+                        ? `hsl(${s.sidebarActiveColor})`
+                        : `hsl(${s.mutedForegroundColor})`,
+                      fontWeight: isActive ? 600 : 400,
+                      fontFamily: `'${s.bodyFont}', sans-serif`,
+                      backgroundColor: isActive ? `hsl(${s.borderColor} / 0.3)` : "transparent",
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+              {navGroups
+                .filter((g) => g.type === "dropdown" && !g.metadata?.hidden)
+                .map((g) => (
+                  <button
+                    key={g.id}
+                    className="text-[12px] px-2.5 py-1 rounded-md transition-colors hover:bg-accent flex items-center gap-1"
+                    style={{
+                      color: `hsl(${s.mutedForegroundColor})`,
+                      fontFamily: `'${s.bodyFont}', sans-serif`,
+                    }}
+                    title={g.title.replace(/<[^>]*>/g, "")}
+                  >
+                    <span dangerouslySetInnerHTML={{ __html: g.title }} />
+                    <span className="text-[10px] opacity-60">▾</span>
+                  </button>
+                ))}
+            </div>
+          )}
         </header>
       )}
 
@@ -192,6 +251,7 @@ const DocContentView = ({
           stickyTop={sidebarTop}
           navGroups={navGroups}
           hideHeaderLabel={hideHeaderLabel}
+          activeTabId={activeTabId}
         />
 
         <main className="flex-1 min-w-0 py-10 lg:pl-4" style={{ paddingRight: s.tocVisible ? undefined : undefined }}>
