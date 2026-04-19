@@ -330,12 +330,24 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     await Promise.all(updates);
   };
 
-  /* ─── Tabs CRUD ─── */
-  const addTab = async (label = "New Tab") => {
+  /* ─── Tabs CRUD ───
+   * `kind` stored in metadata.kind — "tab" | "language" | "product" | "version".
+   * Used by the Mintlify-style "Wrap with" menu so we can render different icons
+   * without adding new schema. Defaults to "tab".
+   */
+  const addTab = async (
+    label = "New Tab",
+    kind: "tab" | "language" | "product" | "version" = "tab",
+  ) => {
     if (!projectId) return;
     const { data } = await (supabase as any)
       .from("tabs")
-      .insert({ project_id: projectId, label, order_index: tabs.length })
+      .insert({
+        project_id: projectId,
+        label,
+        order_index: tabs.length,
+        metadata: { kind },
+      })
       .select()
       .single();
     if (data) setTabs((t) => [...t, data as Tab]);
