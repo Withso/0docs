@@ -88,6 +88,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          metadata: Json
           order_index: number
           project_id: string
           title: string
@@ -97,6 +98,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          metadata?: Json
           order_index?: number
           project_id: string
           title?: string
@@ -106,6 +108,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          metadata?: Json
           order_index?: number
           project_id?: string
           title?: string
@@ -204,6 +207,7 @@ export type Database = {
           created_at: string
           id: string
           meta_description: string | null
+          metadata: Json
           nav_group_id: string | null
           nav_title: string | null
           order_index: number
@@ -217,6 +221,7 @@ export type Database = {
           created_at?: string
           id?: string
           meta_description?: string | null
+          metadata?: Json
           nav_group_id?: string | null
           nav_title?: string | null
           order_index?: number
@@ -230,6 +235,7 @@ export type Database = {
           created_at?: string
           id?: string
           meta_description?: string | null
+          metadata?: Json
           nav_group_id?: string | null
           nav_title?: string | null
           order_index?: number
