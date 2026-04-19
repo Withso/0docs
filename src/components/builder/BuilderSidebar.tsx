@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical, Settings as SettingsIcon, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical, Settings as SettingsIcon, ChevronDown, Sliders } from "lucide-react";
 import GroupSettingsDialog from "./GroupSettingsDialog";
 import TabsManager from "./TabsManager";
 import type { Page, Section, NavGroup, Tab } from "@/hooks/use-builder";
@@ -51,6 +51,8 @@ interface BuilderSidebarProps {
   onReorderPages: (pages: Page[]) => void;
   onReorderNavGroups: (groups: NavGroup[]) => void;
   onReorderSections: (sections: Section[]) => void;
+  /** Open the per-page settings dialog (Mintlify-style gear icon on each row). */
+  onOpenPageSettings?: (page: Page) => void;
 }
 
 /* ─── Unified flat item types ─── */
@@ -128,6 +130,7 @@ const BuilderSidebar = ({
   onReorderPages,
   onReorderNavGroups,
   onReorderSections,
+  onOpenPageSettings,
 }: BuilderSidebarProps) => {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
@@ -379,10 +382,21 @@ const BuilderSidebar = ({
               >
                 <Pencil className="h-2.5 w-2.5" />
               </button>
+              {onOpenPageSettings && (
+                <button
+                  onClick={() => onOpenPageSettings(page)}
+                  style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                  title="Page settings"
+                  className="ml-0.5"
+                >
+                  <SettingsIcon className="h-2.5 w-2.5" />
+                </button>
+              )}
               <button
                 onClick={() => onDeletePage(page.id)}
                 style={{ color: `hsl(${s.mutedForegroundColor})` }}
                 title="Delete"
+                className="ml-0.5"
               >
                 <Trash2 className="h-3 w-3" />
               </button>
