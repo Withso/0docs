@@ -178,7 +178,7 @@ const TabsManager = ({
                     </button>
                     <button
                       onClick={() => onDeleteTab(tab.id)}
-                      className="opacity-0 group-hover:opacity-100 h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-destructive"
+                      className="opacity-0 group-hover:opacity-100 h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-destructive-foreground"
                       title="Delete"
                     >
                       <Trash2 className="h-3 w-3" />
