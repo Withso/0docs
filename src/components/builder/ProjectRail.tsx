@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Home, Pencil, BarChart3, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, Pencil, BarChart3, Settings, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import type { BuilderMode } from "./BuilderHeader";
 
@@ -20,6 +20,7 @@ type RailItem = {
 const items: RailItem[] = [
   { id: "home", label: "Home", icon: Home, action: "navigate" },
   { id: "editor", label: "Editor", icon: Pencil, action: "mode", target: "editor" },
+  { id: "configurations", label: "Configurations", icon: SlidersHorizontal, action: "mode", target: "configurations" },
   { id: "analytics", label: "Analytics", icon: BarChart3, action: "mode", target: "analytics" },
   { id: "settings", label: "Settings", icon: Settings, action: "mode", target: "settings" },
 ];
