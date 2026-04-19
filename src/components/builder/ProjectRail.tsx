@@ -31,7 +31,7 @@ const ProjectRail = ({ mode, onModeChange }: ProjectRailProps) => {
 
   // map current mode → which rail item is active
   const activeId: string =
-    mode === "editor" || mode === "design" || mode === "preview" || mode === "publish"
+    mode === "editor" || mode === "design" || mode === "preview" || mode === "publish" || mode === "code"
       ? "editor"
       : mode;
 
