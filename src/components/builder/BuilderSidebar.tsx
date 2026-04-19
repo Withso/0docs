@@ -672,6 +672,18 @@ const BuilderSidebar = ({
       }}
       className="shrink-0 sticky overflow-y-auto py-8 pr-6 hidden lg:block"
     >
+      {/* Tabs strip */}
+      <TabsManager
+        settings={s}
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onSelectTab={onSelectTab}
+        onAddTab={onAddTab}
+        onUpdateTab={onUpdateTab}
+        onDeleteTab={onDeleteTab}
+        onReorderTabs={onReorderTabs}
+      />
+
       <div
         className="text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center justify-between"
         style={{ color: `hsl(${s.sidebarTextColor})` }}
@@ -700,6 +712,10 @@ const BuilderSidebar = ({
               <Type className="h-3.5 w-3.5" />
               Text
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onAddNavGroup("dropdown")} className="gap-2 text-[13px]">
+              <ChevronDown className="h-3.5 w-3.5" />
+              Dropdown
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -718,6 +734,7 @@ const BuilderSidebar = ({
                 {({ handleProps }) => {
                   if (item.type === "page") return renderPageItem(item.pageData!, handleProps);
                   if (item.type === "label") return renderLabelItem(item.groupData!, handleProps);
+                  if (item.type === "dropdown") return renderLabelItem(item.groupData!, handleProps);
                   return renderTextItem(item.groupData!, handleProps);
                 }}
               </SortableItem>
@@ -732,6 +749,7 @@ const BuilderSidebar = ({
 
       <GroupSettingsDialog
         group={settingsGroup}
+        tabs={tabs}
         open={!!settingsGroup}
         onOpenChange={(open) => !open && setSettingsGroup(null)}
       />
