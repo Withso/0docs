@@ -415,6 +415,17 @@ const Builder = () => {
             />
           )}
 
+          {/* Mode: Code (Monaco MDX preview) */}
+          {mode === "code" && (
+            <CodeView
+              page={activePage}
+              sections={sections}
+              blocks={blocks}
+              settings={settings}
+              projectSlug={project?.slug}
+            />
+          )}
+
           {/* Mode: Analytics */}
           {mode === "analytics" && (
             <AnalyticsContent projectName={project?.name} projectSlug={project?.slug} />
