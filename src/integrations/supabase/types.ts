@@ -91,6 +91,7 @@ export type Database = {
           metadata: Json
           order_index: number
           project_id: string
+          tab_id: string | null
           title: string
           type: string
           updated_at: string
@@ -101,6 +102,7 @@ export type Database = {
           metadata?: Json
           order_index?: number
           project_id: string
+          tab_id?: string | null
           title?: string
           type?: string
           updated_at?: string
@@ -111,6 +113,7 @@ export type Database = {
           metadata?: Json
           order_index?: number
           project_id?: string
+          tab_id?: string | null
           title?: string
           type?: string
           updated_at?: string
@@ -121,6 +124,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nav_groups_tab_id_fkey"
+            columns: ["tab_id"]
+            isOneToOne: false
+            referencedRelation: "tabs"
             referencedColumns: ["id"]
           },
         ]
@@ -515,6 +525,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tabs: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          label: string
+          metadata: Json
+          order_index: number
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          label?: string
+          metadata?: Json
+          order_index?: number
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          label?: string
+          metadata?: Json
+          order_index?: number
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

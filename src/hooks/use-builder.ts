@@ -36,7 +36,18 @@ export interface NavGroup {
   project_id: string;
   title: string;
   order_index: number;
-  type: "label" | "text";
+  type: "label" | "text" | "dropdown";
+  tab_id?: string | null;
+  metadata?: Record<string, any>;
+}
+
+export interface Tab {
+  id: string;
+  project_id: string;
+  label: string;
+  icon?: string | null;
+  order_index: number;
+  metadata?: Record<string, any>;
 }
 
 export function useBuilder(projectId: string | undefined, userId: string | undefined) {
@@ -46,6 +57,8 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
   const [sections, setSections] = useState<Section[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [navGroups, setNavGroups] = useState<NavGroup[]>([]);
+  const [tabs, setTabs] = useState<Tab[]>([]);
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshProject = useCallback(async () => {
@@ -89,13 +102,21 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
         if (pagesData.length > 0) setActivePage(pagesData[0]);
       }
 
-      const { data: groupsData } = await supabase
-        .from("nav_groups")
-        .select("*")
-        .eq("project_id", projectId)
-        .order("order_index");
+      const [{ data: groupsData }, { data: tabsData }] = await Promise.all([
+        supabase
+          .from("nav_groups")
+          .select("*")
+          .eq("project_id", projectId)
+          .order("order_index"),
+        (supabase as any)
+          .from("tabs")
+          .select("*")
+          .eq("project_id", projectId)
+          .order("order_index"),
+      ]);
 
       if (groupsData) setNavGroups(groupsData as unknown as NavGroup[]);
+      if (tabsData) setTabs(tabsData as unknown as Tab[]);
 
       setLoading(false);
     };
@@ -304,6 +325,39 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     await Promise.all(updates);
   };
 
+  /* ─── Tabs CRUD ─── */
+  const addTab = async (label = "New Tab") => {
+    if (!projectId) return;
+    const { data } = await (supabase as any)
+      .from("tabs")
+      .insert({ project_id: projectId, label, order_index: tabs.length })
+      .select()
+      .single();
+    if (data) setTabs((t) => [...t, data as Tab]);
+  };
+
+  const updateTab = async (tabId: string, updates: Partial<Tab>) => {
+    await (supabase as any).from("tabs").update(updates).eq("id", tabId);
+    setTabs((t) => t.map((tb) => (tb.id === tabId ? { ...tb, ...updates } : tb)));
+  };
+
+  const deleteTab = async (tabId: string) => {
+    // Unassign nav_groups from this tab first (DB also has ON DELETE SET NULL)
+    await supabase.from("nav_groups").update({ tab_id: null } as any).eq("tab_id", tabId as any);
+    setNavGroups((g) => g.map((ng) => (ng.tab_id === tabId ? { ...ng, tab_id: null } : ng)));
+    await (supabase as any).from("tabs").delete().eq("id", tabId);
+    setTabs((t) => t.filter((tb) => tb.id !== tabId));
+    if (activeTabId === tabId) setActiveTabId(null);
+  };
+
+  const reorderTabs = async (reordered: Tab[]) => {
+    setTabs(reordered);
+    const updates = reordered.map((t, i) =>
+      (supabase as any).from("tabs").update({ order_index: i }).eq("id", t.id),
+    );
+    await Promise.all(updates);
+  };
+
   return {
     project,
     pages,
@@ -312,6 +366,9 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     sections,
     blocks,
     navGroups,
+    tabs,
+    activeTabId,
+    setActiveTabId,
     loading,
     addPage,
     updatePage,
@@ -325,6 +382,10 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     addNavGroup,
     updateNavGroup,
     deleteNavGroup,
+    addTab,
+    updateTab,
+    deleteTab,
+    reorderTabs,
     reloadPages,
     loadPageContent,
     reorderPages,
