@@ -668,7 +668,7 @@ const SeoFloatingPanel = ({
       className="fixed z-50 hidden lg:block"
       style={{
         top: "80px",
-        left: "24px",
+        left: "76px",
       }}
     >
       <button
