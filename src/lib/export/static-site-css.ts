@@ -690,5 +690,72 @@ ${!s.tocVisible ? '.toc { display: none !important; }' : ''}
 }
 .dropdown-item:hover { background-color: hsl(${s.accentColor}); }
 .dropdown-empty { padding: 8px 10px; font-size: 12px; color: hsl(${s.mutedForegroundColor}); }
+
+/* ── Mintlify-style sidebar variant ── */
+.sidebar.mintlify { padding-right: 16px; }
+.sidebar.mintlify .ml-page-row {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; text-align: left;
+  padding: 5px 8px; border-radius: 6px;
+  font-size: ${s.sidebarFontSize}px;
+  color: hsl(${s.sidebarTextColor});
+  font-family: '${s.bodyFont}', sans-serif;
+  transition: background-color 0.12s, color 0.12s;
+}
+.sidebar.mintlify .ml-page-row:hover { background-color: hsl(${s.accentColor}); }
+.sidebar.mintlify .ml-page-row.active {
+  color: hsl(${s.sidebarActiveColor}); font-weight: 500;
+  background-color: hsl(${s.sidebarActiveColor} / 0.08);
+}
+.sidebar.mintlify .ml-icon { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.6; }
+.sidebar.mintlify .ml-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar.mintlify .ml-tag {
+  margin-left: auto;
+  font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 1px 6px; border-radius: 4px;
+  background: hsl(${s.borderColor}); color: hsl(${s.mutedForegroundColor});
+}
+.sidebar.mintlify .ml-tag.tag-new { background: hsl(142 76% 92%); color: hsl(142 76% 28%); }
+.sidebar.mintlify .ml-tag.tag-beta { background: hsl(38 92% 92%); color: hsl(38 92% 35%); }
+.sidebar.mintlify .ml-tag.tag-updated { background: hsl(214 100% 94%); color: hsl(214 100% 40%); }
+.sidebar.mintlify .ml-tag.tag-deprecated { background: hsl(0 84% 94%); color: hsl(0 84% 40%); }
+
+.sidebar.mintlify .ml-group-header {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; text-align: left;
+  padding: 5px 8px; border-radius: 6px;
+  font-size: ${s.sidebarFontSize}px; font-weight: 600;
+  color: hsl(${s.sidebarActiveColor});
+  font-family: '${s.bodyFont}', sans-serif;
+  transition: background-color 0.12s;
+}
+.sidebar.mintlify .ml-group-header:hover { background-color: hsl(${s.accentColor}); }
+.sidebar.mintlify .ml-group-icon { width: 14px; height: 14px; opacity: 0.7; flex-shrink: 0; }
+.sidebar.mintlify .ml-group-children {
+  margin: 2px 0 4px 10px; padding-left: 10px;
+  border-left: 1px solid hsl(${s.borderColor} / 0.4);
+  display: flex; flex-direction: column;
+  gap: ${Math.max(s.sidebarPageGap, 1)}px;
+}
+.sidebar.mintlify .ml-section-nav {
+  margin: 1px 0 4px 18px;
+  border-left: 1px solid hsl(${s.borderColor} / 0.5);
+  display: flex; flex-direction: column;
+}
+.sidebar.mintlify .section-link {
+  display: block; padding: 3px 0 3px 12px; position: relative;
+  font-size: ${s.sidebarSectionFontSize || (s.sidebarFontSize - 1)}px;
+  color: hsl(${s.sidebarSectionColor || s.sidebarTextColor} / 0.7);
+  font-family: '${s.bodyFont}', sans-serif;
+  text-align: left; width: 100%; transition: color 0.15s;
+}
+.sidebar.mintlify .section-link.active {
+  color: hsl(${s.sidebarActiveColor}); font-weight: 500;
+}
+.sidebar.mintlify .section-link.active::before {
+  content: ''; position: absolute; left: -1px; top: 5px; bottom: 5px;
+  width: 2px; border-radius: 9999px;
+  background-color: hsl(${s.sidebarIndicatorColor});
+}
 `;
 }

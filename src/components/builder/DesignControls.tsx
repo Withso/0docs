@@ -364,6 +364,15 @@ export function LayoutControls({ local, update }: { local: DS; update: <K extend
 export function SidebarControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
   return (
     <>
+      <InlineSelect
+        label="Sidebar Style"
+        value={local.sidebarStyle || "classic"}
+        onChange={(v) => update("sidebarStyle", v as any)}
+        options={[
+          { value: "classic", label: "Classic" },
+          { value: "mintlify", label: "Mintlify" },
+        ]}
+      />
       <ColorField label="Background" value={local.sidebarBg} onChange={(v) => update("sidebarBg", v)} />
       <ColorField label="Text Color" value={local.sidebarTextColor} onChange={(v) => update("sidebarTextColor", v)} />
       <ColorField label="Active Color" value={local.sidebarActiveColor} onChange={(v) => update("sidebarActiveColor", v)} />
