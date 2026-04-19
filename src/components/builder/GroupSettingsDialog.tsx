@@ -26,7 +26,7 @@ interface Props {
   group: NavGroup | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaved?: () => void;
+  onSaved?: (updated?: any) => void;
   tabs?: Tab[];
 }
 
@@ -61,16 +61,17 @@ const GroupSettingsDialog = ({ group, open, onOpenChange, onSaved, tabs = [] }: 
       type,
       tab_id: tabId === "__none__" ? null : tabId,
     } as any;
-    const { error } = await (supabase as any)
+    const { data, error } = await (supabase as any)
       .from("nav_groups")
       .update(updates)
-      .eq("id", group.id);
+      .eq("id", group.id)
+      .select();
     setSaving(false);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Group settings saved" });
-      onSaved?.();
+      onSaved?.(data?.[0]);
       onOpenChange(false);
     }
   };
