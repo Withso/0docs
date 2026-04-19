@@ -511,6 +511,36 @@ const Builder = () => {
       </div>
 
       <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
+
+      <PageSettingsDialog
+        page={pageSettingsTarget}
+        open={!!pageSettingsTarget}
+        onOpenChange={(o) => { if (!o) setPageSettingsTarget(null); }}
+        projectSlug={project?.slug}
+      />
+
+      <SearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        pages={pages.map((p) => ({ id: p.id, title: p.title, slug: p.slug }))}
+        sections={sections.map((s) => ({ id: s.id, page_id: s.page_id, title: s.title }))}
+        blocks={blocks.map((b) => ({ id: b.id, section_id: b.section_id, type: b.type, content: b.content }))}
+        onSelectPage={(p) => {
+          const full = pages.find((pg) => pg.id === p.id);
+          if (full) setActivePage(full);
+        }}
+        onSelectSection={(sectionId, p) => {
+          const full = pages.find((pg) => pg.id === p.id);
+          if (full) setActivePage(full);
+          setTimeout(() => {
+            const el = document.getElementById(`section-${sectionId}`);
+            if (el) {
+              const top = el.getBoundingClientRect().top + window.scrollY - 72;
+              window.scrollTo({ top, behavior: "smooth" });
+            }
+          }, 200);
+        }}
+      />
     </div>
   );
 };
