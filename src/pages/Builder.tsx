@@ -99,6 +99,7 @@ const Builder = () => {
     addPage, updatePage, deletePage, addSection, updateSection, deleteSection,
     addBlock, updateBlock, deleteBlock, reloadPages, loadPageContent,
     navGroups, addNavGroup, updateNavGroup, deleteNavGroup,
+    tabs, activeTabId, setActiveTabId, addTab, updateTab, deleteTab, reorderTabs,
     reorderPages, reorderNavGroups, reorderSections, reorderBlocks,
     refreshProject,
   } = useBuilder(projectId, user?.id);
