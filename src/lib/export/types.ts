@@ -29,6 +29,15 @@ export interface ExportNavGroup {
   title: string;
   order_index: number;
   type?: string;
+  tab_id?: string | null;
+  metadata?: Record<string, any>;
+}
+
+export interface ExportTab {
+  id: string;
+  label: string;
+  icon?: string | null;
+  order_index: number;
 }
 
 export interface ExportResult {

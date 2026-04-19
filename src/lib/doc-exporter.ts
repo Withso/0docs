@@ -16,12 +16,13 @@ import type {
   ExportSection,
   ExportBlock,
   ExportNavGroup,
+  ExportTab,
   ExportResult,
 } from "./export/types";
 import { generateStaticHTML } from "./export/static-site-html";
 
 // Re-export types for consumers
-export type { ExportPage, ExportSection, ExportBlock, ExportNavGroup, ExportResult };
+export type { ExportPage, ExportSection, ExportBlock, ExportNavGroup, ExportTab, ExportResult };
 
 // ── Main export function ────────────────────────────────
 export function exportProject(
@@ -31,6 +32,7 @@ export function exportProject(
   settings: DesignSettings,
   navGroups: ExportNavGroup[],
   projectName = "Documentation",
+  tabs: ExportTab[] = [],
 ): ExportResult {
   const files: { path: string; content: string }[] = [];
 
