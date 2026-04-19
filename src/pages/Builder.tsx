@@ -20,6 +20,7 @@ import FilesPanel from "@/components/builder/FilesPanel";
 import AnalyticsContent from "@/components/builder/AnalyticsContent";
 import ConfigurationsPanel from "@/components/builder/ConfigurationsPanel";
 import PageSettingsPanel from "@/components/builder/PageSettingsPanel";
+import CodeView from "@/components/builder/CodeView";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
@@ -69,6 +70,8 @@ const Builder = () => {
     if (location.pathname.endsWith("/configurations")) return "configurations";
     if (location.pathname.endsWith("/publish")) return "publish";
     if (location.pathname.endsWith("/analytics")) return "analytics";
+    if (location.pathname.endsWith("/code")) return "code";
+    if (location.pathname.endsWith("/preview")) return "preview";
     return "editor";
   };
 
@@ -86,6 +89,8 @@ const Builder = () => {
     else if (newMode === "configurations") navigate(`${base}/configurations`, { replace: true });
     else if (newMode === "publish") navigate(`${base}/publish`, { replace: true });
     else if (newMode === "analytics") navigate(`${base}/analytics`, { replace: true });
+    else if (newMode === "code") navigate(`${base}/code`, { replace: true });
+    else if (newMode === "preview") navigate(`${base}/preview`, { replace: true });
     else navigate(base, { replace: true });
   }, [projectId, navigate]);
 
@@ -255,6 +260,9 @@ const Builder = () => {
         onDesignSubModeChange={setDesignSubMode}
         onPublishClick={() => handleModeChange("publish")}
         hasUnpublishedChanges={publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish}
+        currentBranch={project?.github_branch || "main"}
+        hasGithub={!!project?.github_repo && !!project?.github_token_encrypted}
+        onBranchChange={() => refreshProject()}
       />
 
       <div className="flex min-h-[calc(100vh-60px)]">
@@ -404,6 +412,17 @@ const Builder = () => {
               saving={saving}
               saveSettings={saveSettings}
               resetSettings={resetSettings}
+            />
+          )}
+
+          {/* Mode: Code (Monaco MDX preview) */}
+          {mode === "code" && (
+            <CodeView
+              page={activePage}
+              sections={sections}
+              blocks={blocks}
+              settings={settings}
+              projectSlug={project?.slug}
             />
           )}
 
