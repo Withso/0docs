@@ -26,7 +26,7 @@ interface Props {
   group: NavGroup | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaved?: () => void;
+  onSaved?: (updated?: any) => void;
   tabs?: Tab[];
 }
 
