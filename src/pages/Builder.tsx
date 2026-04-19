@@ -260,6 +260,9 @@ const Builder = () => {
         onDesignSubModeChange={setDesignSubMode}
         onPublishClick={() => handleModeChange("publish")}
         hasUnpublishedChanges={publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish}
+        currentBranch={project?.github_branch || "main"}
+        hasGithub={!!project?.github_repo && !!project?.github_token_encrypted}
+        onBranchChange={() => refreshProject()}
       />
 
       <div className="flex min-h-[calc(100vh-60px)]">
