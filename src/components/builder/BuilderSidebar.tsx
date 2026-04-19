@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical, Settings as SettingsIcon } from "lucide-react";
+import { Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical, Settings as SettingsIcon, ChevronDown } from "lucide-react";
 import GroupSettingsDialog from "./GroupSettingsDialog";
-import type { Page, Section, NavGroup } from "@/hooks/use-builder";
+import TabsManager from "./TabsManager";
+import type { Page, Section, NavGroup, Tab } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import InlineRichText from "./InlineRichText";
 import {
