@@ -260,9 +260,14 @@ export function generateViewerScript(): string {
     var pages = props.pages, activePage = props.activePage, sections = props.sections;
     var navGroups = props.navGroups, onSelectPage = props.onSelectPage;
     var activeSectionId = props.activeSectionId;
+    var activeTabId = props.activeTabId;
 
     var sortedPages = pages.slice().sort(function(a,b){return a.order_index-b.order_index});
-    var sortedGroups = navGroups.slice().sort(function(a,b){return a.order_index-b.order_index});
+    var sortedGroups = navGroups.slice()
+      .filter(function(g){return g.type !== 'dropdown'})
+      .filter(function(g){return !(g.metadata && g.metadata.hidden)})
+      .filter(function(g){return activeTabId == null || !g.tab_id || g.tab_id === activeTabId})
+      .sort(function(a,b){return a.order_index-b.order_index});
     var ungrouped = sortedPages.filter(function(p){return !p.nav_group_id});
 
     function renderPage(page) {
@@ -294,6 +299,56 @@ export function generateViewerScript(): string {
             h('div', {className:'nav-group-label'}, h('span', {dangerouslySetInnerHTML:{__html:group.title}})),
             h('div', {style:{display:'flex',flexDirection:'column',gap:'2px'}}, gPages.map(renderPage)));
         })));
+  }
+
+  // ── Top-bar tabs strip + dropdown nav ──
+  function TopBarNav(props) {
+    var tabs = props.tabs || [];
+    var navGroups = props.navGroups || [];
+    var activeTabId = props.activeTabId;
+    var onSelectTab = props.onSelectTab;
+    var pages = props.pages;
+    var onSelectPage = props.onSelectPage;
+
+    var dropdownGroups = navGroups.filter(function(g){return g.type === 'dropdown' && !(g.metadata && g.metadata.hidden)});
+    var sortedTabs = tabs.slice().sort(function(a,b){return a.order_index-b.order_index});
+
+    var s = useState(null), openDropdown = s[0], setOpenDropdown = s[1];
+
+    if (sortedTabs.length === 0 && dropdownGroups.length === 0) return null;
+
+    return h('div', {className:'topbar-nav'},
+      h('div', {className:'topbar-inner'},
+        sortedTabs.length > 0 ? h('div', {className:'tab-strip'},
+          sortedTabs.map(function(t) {
+            var isActive = activeTabId === t.id;
+            return h('button', {
+              key:t.id,
+              className:'tab-strip-btn'+(isActive?' active':''),
+              onClick:function(){onSelectTab(isActive ? null : t.id)}
+            }, t.label);
+          })) : null,
+        dropdownGroups.length > 0 ? h('div', {className:'dropdown-strip'},
+          dropdownGroups.map(function(g) {
+            var gPages = pages.filter(function(p){return p.nav_group_id===g.id})
+              .sort(function(a,b){return a.order_index-b.order_index});
+            var isOpen = openDropdown === g.id;
+            return h('div', {key:g.id, className:'dropdown-wrap'},
+              h('button', {
+                className:'dropdown-btn'+(isOpen?' open':''),
+                onClick:function(){setOpenDropdown(isOpen?null:g.id)}
+              },
+                h('span', {dangerouslySetInnerHTML:{__html:g.title}}),
+                h('span', {className:'dropdown-arrow'}, '▾')),
+              isOpen ? h('div', {className:'dropdown-menu', onMouseLeave:function(){setOpenDropdown(null)}},
+                gPages.length === 0
+                  ? h('div', {className:'dropdown-empty'}, 'Empty')
+                  : gPages.map(function(p) {
+                      return h('button', {key:p.id, className:'dropdown-item', onClick:function(){
+                        onSelectPage(p); setOpenDropdown(null);
+                      }}, h('span', {dangerouslySetInnerHTML:{__html:p.nav_title||p.title}}));
+                    })) : null);
+          })) : null));
   }
 
   // ── Table of Contents ──
