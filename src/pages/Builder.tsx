@@ -454,42 +454,43 @@ const Builder = () => {
               />
             )}
 
-          {/* Mode: Analytics */}
-          {mode === "analytics" && (
-            <AnalyticsContent projectName={project?.name} projectSlug={project?.slug} />
-          )}
+            {/* Mode: Analytics */}
+            {mode === "analytics" && (
+              <AnalyticsContent projectName={project?.name} projectSlug={project?.slug} />
+            )}
 
-          {/* Mode: Settings */}
-          {mode === "settings" && (
-            <SettingsContent projectId={projectId!} project={project} onSaved={refreshProject} />
-          )}
+            {/* Mode: Settings */}
+            {mode === "settings" && (
+              <SettingsContent projectId={projectId!} project={project} onSaved={refreshProject} />
+            )}
 
-          {/* Mode: Publish */}
-          {mode === "publish" && (
-            <PublishContent
-              editorChanges={publishPreview.editorChanges}
-              designChanges={publishPreview.designChanges}
-              nextVersion={publishPreview.nextVersion}
-              isFirstPublish={publishPreview.isFirstPublish}
-              publishing={publishing}
-              onPublish={handlePublish}
-              versions={publishedVersions}
-              onRevert={async (versionId) => {
-                await revertToVersion(versionId);
-                const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
-                toast({ title: "Version reverted", description: "The active published version has been updated." });
-              }}
-              projectSlug={project?.slug || ""}
-              customDomain={project?.custom_domain}
-              project={project}
-              pages={pages}
-              sections={sections}
-              blocks={blocks}
-              settings={settings}
-              navGroups={navGroups}
-              tabs={tabs}
-            />
-          )}
+            {/* Mode: Publish */}
+            {mode === "publish" && (
+              <PublishContent
+                editorChanges={publishPreview.editorChanges}
+                designChanges={publishPreview.designChanges}
+                nextVersion={publishPreview.nextVersion}
+                isFirstPublish={publishPreview.isFirstPublish}
+                publishing={publishing}
+                onPublish={handlePublish}
+                versions={publishedVersions}
+                onRevert={async (versionId) => {
+                  await revertToVersion(versionId);
+                  const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
+                  toast({ title: "Version reverted", description: "The active published version has been updated." });
+                }}
+                projectSlug={project?.slug || ""}
+                customDomain={project?.custom_domain}
+                project={project}
+                pages={pages}
+                sections={sections}
+                blocks={blocks}
+                settings={settings}
+                navGroups={navGroups}
+                tabs={tabs}
+              />
+            )}
+          </div>
         </div>
       </div>
 
