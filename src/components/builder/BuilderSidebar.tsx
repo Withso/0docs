@@ -707,6 +707,12 @@ const BuilderSidebar = ({
           {dragOverlayContent}
         </DragOverlay>
       </DndContext>
+
+      <GroupSettingsDialog
+        group={settingsGroup}
+        open={!!settingsGroup}
+        onOpenChange={(open) => !open && setSettingsGroup(null)}
+      />
     </aside>
   );
 };
