@@ -1,7 +1,11 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical, Settings as SettingsIcon, ChevronDown, Sliders } from "lucide-react";
+import {
+  Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical,
+  Settings as SettingsIcon, ChevronDown, ChevronRight,
+  Folder, FolderOpen, Layers, Languages, Box, GitBranch,
+} from "lucide-react";
 import GroupSettingsDialog from "./GroupSettingsDialog";
-import TabsManager from "./TabsManager";
+// Note: TabsManager is no longer rendered here — tabs render inline as collapsible group headers.
 import type { Page, Section, NavGroup, Tab } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import InlineRichText from "./InlineRichText";
@@ -37,7 +41,7 @@ interface BuilderSidebarProps {
   tabs: Tab[];
   activeTabId: string | null;
   onSelectTab: (tabId: string | null) => void;
-  onAddTab: (label?: string) => Promise<void> | void;
+  onAddTab: (label?: string, kind?: "tab" | "language" | "product" | "version") => Promise<void> | void;
   onUpdateTab: (tabId: string, updates: Partial<Tab>) => Promise<void> | void;
   onDeleteTab: (tabId: string) => Promise<void> | void;
   onReorderTabs: (reordered: Tab[]) => Promise<void> | void;
@@ -676,65 +680,123 @@ const BuilderSidebar = ({
     );
   }, [dragActiveId, flatItems, s]);
 
+  /* ─── Tab sections (Mintlify-style) ───
+   * Render each Tab as a collapsible top-level section containing its
+   * nav_groups + their pages. Plus a "General" pseudo-tab for items
+   * with no tab assignment.
+   */
+  const sortedTabs = useMemo(
+    () => [...tabs].sort((a, b) => a.order_index - b.order_index),
+    [tabs],
+  );
+
+  const [openTabs, setOpenTabs] = useState<Record<string, boolean>>({});
+  const isTabOpen = (id: string) => openTabs[id] ?? true;
+  const toggleTab = (id: string) =>
+    setOpenTabs((p) => ({ ...p, [id]: !isTabOpen(id) }));
+
+  const tabIcon = (kind?: string) => {
+    switch (kind) {
+      case "language": return Languages;
+      case "product":  return Box;
+      case "version":  return GitBranch;
+      default:         return Layers;
+    }
+  };
+
+  // Items belonging to a specific tab (or null = no tab)
+  const itemsForTab = useCallback(
+    (tabId: string | null): FlatItem[] => {
+      const items: FlatItem[] = [];
+      const groupsForTab = navGroups
+        .filter((g) => (tabId ? g.tab_id === tabId : !g.tab_id))
+        .sort((a, b) => a.order_index - b.order_index);
+
+      // Ungrouped pages only show in the "General" pseudo-tab (tabId === null)
+      if (tabId === null) {
+        const ungrouped = pages
+          .filter((p) => !p.nav_group_id)
+          .sort((a, b) => a.order_index - b.order_index);
+        ungrouped.forEach((p) =>
+          items.push({ sortId: toSortId("page", p.id), type: "page", pageData: p }),
+        );
+      }
+
+      groupsForTab.forEach((g) => {
+        const itemType: FlatItemType =
+          g.type === "text" ? "text" : g.type === "dropdown" ? "dropdown" : "label";
+        items.push({ sortId: toSortId("group", g.id), type: itemType, groupData: g });
+        const groupPages = pages
+          .filter((p) => p.nav_group_id === g.id)
+          .sort((a, b) => a.order_index - b.order_index);
+        groupPages.forEach((p) =>
+          items.push({ sortId: toSortId("page", p.id), type: "page", pageData: p }),
+        );
+      });
+
+      return items;
+    },
+    [navGroups, pages],
+  );
+
   return (
     <aside
       style={{
         width: `${s.sidebarWidth}px`,
         backgroundColor: `hsl(${s.sidebarBg})`,
-        top: "48px",
-        height: "calc(100vh - 48px)",
       }}
-      className="shrink-0 sticky overflow-y-auto py-8 pr-6 hidden lg:block"
+      className="shrink-0 overflow-y-auto py-5 pr-4 pl-1"
     >
-      {/* Tabs strip */}
-      <TabsManager
-        settings={s}
-        tabs={tabs}
-        activeTabId={activeTabId}
-        onSelectTab={onSelectTab}
-        onAddTab={onAddTab}
-        onUpdateTab={onUpdateTab}
-        onDeleteTab={onDeleteTab}
-        onReorderTabs={onReorderTabs}
-      />
-
+      {/* ─── Top bar: Title + Mintlify-style Add menu ─── */}
       <div
-        className="text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center justify-between"
-        style={{ color: `hsl(${s.sidebarTextColor})` }}
+        className="text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center justify-between px-2"
+        style={{ color: `hsl(${s.sidebarTextColor} / 0.6)` }}
       >
-        <span>Pages</span>
+        <span>Navigation</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="transition-colors hover:opacity-80"
+              className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-muted/60 transition-colors"
               style={{ color: `hsl(${s.sidebarTextColor})` }}
-              title="Add page or label"
+              title="Add"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[140px]">
-            <DropdownMenuItem onClick={() => onAddPage()} className="gap-2 text-[13px]">
-              <FileText className="h-3.5 w-3.5" />
-              Page
+          <DropdownMenuContent align="end" className="min-w-[200px] p-1.5">
+            <div className="px-2 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Add
+            </div>
+            <DropdownMenuItem onClick={() => onAddPage()} className="gap-2 text-[12.5px]">
+              <FileText className="h-3.5 w-3.5" /> Page
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAddNavGroup("label")} className="gap-2 text-[13px]">
-              <Tag className="h-3.5 w-3.5" />
-              Label
+            <DropdownMenuItem onClick={() => onAddNavGroup("label")} className="gap-2 text-[12.5px]">
+              <Tag className="h-3.5 w-3.5" /> Group
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAddNavGroup("text")} className="gap-2 text-[13px]">
-              <Type className="h-3.5 w-3.5" />
-              Text
+            <DropdownMenuItem onClick={() => onAddNavGroup("dropdown")} className="gap-2 text-[12.5px]">
+              <ChevronDown className="h-3.5 w-3.5" /> Dropdown
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAddNavGroup("dropdown")} className="gap-2 text-[13px]">
-              <ChevronDown className="h-3.5 w-3.5" />
-              Dropdown
+
+            <div className="px-2 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Wrap with
+            </div>
+            <DropdownMenuItem onClick={() => onAddTab("New Tab", "tab")} className="gap-2 text-[12.5px]">
+              <Layers className="h-3.5 w-3.5" /> Tab
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onAddTab("New Language", "language")} className="gap-2 text-[12.5px]">
+              <Languages className="h-3.5 w-3.5" /> Language
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onAddTab("New Product", "product")} className="gap-2 text-[12.5px]">
+              <Box className="h-3.5 w-3.5" /> Product
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onAddTab("v1.0", "version")} className="gap-2 text-[12.5px]">
+              <GitBranch className="h-3.5 w-3.5" /> Version
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {/* Single unified DndContext for ALL items */}
+      {/* ─── Single DnD context across all items in the visible tab ─── */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -742,8 +804,9 @@ const BuilderSidebar = ({
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={flatSortIds} strategy={verticalListSortingStrategy}>
-          <nav style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col">
-            {flatItems.map((item) => (
+          {/* General (no-tab) section: always rendered, no header chrome */}
+          <nav style={{ gap: `${s.sidebarPageGap}px` }} className="flex flex-col px-1">
+            {itemsForTab(null).map((item) => (
               <SortableItem key={item.sortId} id={item.sortId} dragHandleOnly>
                 {({ handleProps }) => {
                   if (item.type === "page") return renderPageItem(item.pageData!, handleProps);
@@ -754,6 +817,66 @@ const BuilderSidebar = ({
               </SortableItem>
             ))}
           </nav>
+
+          {/* One collapsible section per Tab */}
+          {sortedTabs.map((tab) => {
+            const TabIcon = tabIcon((tab.metadata as any)?.kind);
+            const open = isTabOpen(tab.id);
+            const tabItems = itemsForTab(tab.id);
+            return (
+              <div key={tab.id} className="mt-3 px-1 group/tab">
+                <div
+                  className="flex items-center gap-1 px-2 py-[5px] rounded-md hover:bg-muted/40"
+                >
+                  <button
+                    onClick={() => toggleTab(tab.id)}
+                    className="flex-1 flex items-center gap-1.5 text-left"
+                    style={{
+                      fontSize: `${s.sidebarFontSize}px`,
+                      color: `hsl(${s.sidebarActiveColor})`,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {open ? <ChevronDown className="h-3 w-3 opacity-60" /> : <ChevronRight className="h-3 w-3 opacity-60" />}
+                    <TabIcon className="h-3.5 w-3.5 opacity-70" />
+                    <span className="truncate">{tab.label}</span>
+                  </button>
+                  <button
+                    onClick={() => onDeleteTab(tab.id)}
+                    className="opacity-0 group-hover/tab:opacity-100 transition-opacity h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+                {open && (
+                  <nav
+                    style={{
+                      gap: `${s.sidebarPageGap}px`,
+                      borderLeft: `1px solid hsl(${s.borderColor} / 0.4)`,
+                    }}
+                    className="flex flex-col ml-[14px] pl-2 mt-1"
+                  >
+                    {tabItems.length === 0 && (
+                      <div className="text-[11px] italic text-muted-foreground/50 py-1 pl-2">
+                        Empty — drag items here
+                      </div>
+                    )}
+                    {tabItems.map((item) => (
+                      <SortableItem key={item.sortId} id={item.sortId} dragHandleOnly>
+                        {({ handleProps }) => {
+                          if (item.type === "page") return renderPageItem(item.pageData!, handleProps);
+                          if (item.type === "label") return renderLabelItem(item.groupData!, handleProps);
+                          if (item.type === "dropdown") return renderLabelItem(item.groupData!, handleProps);
+                          return renderTextItem(item.groupData!, handleProps);
+                        }}
+                      </SortableItem>
+                    ))}
+                  </nav>
+                )}
+              </div>
+            );
+          })}
         </SortableContext>
 
         <DragOverlay dropAnimation={{ duration: 200, easing: "ease" }}>

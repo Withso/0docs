@@ -20,6 +20,7 @@ type CategoryId =
   | "overview"
   | "branding"
   | "typography"
+  | "sidebar"
   | "header"
   | "footer"
   | "content"
@@ -32,6 +33,7 @@ const categories: { id: CategoryId; label: string; icon: any }[] = [
   { id: "overview",     label: "Overview",            icon: LayoutGrid },
   { id: "branding",     label: "Visual Branding",     icon: Palette },
   { id: "typography",   label: "Typography",          icon: TypeIcon },
+  { id: "sidebar",      label: "Sidebar",             icon: SidebarIcon },
   { id: "header",       label: "Header & Topbar",     icon: PanelTop },
   { id: "footer",       label: "Footer",              icon: PanelBottom },
   { id: "content",      label: "Content Features",    icon: Sparkles },
@@ -154,10 +156,17 @@ const ConfigurationsPanel = ({ projectName, settings, saving, saveSettings, rese
               </SettingsSection>
             )}
 
-            {active === "header" && (
+            {active === "sidebar" && (
               <SettingsSection title="Sidebar" icon={SidebarIcon} defaultOpen>
                 <SidebarControls local={local} update={update} />
               </SettingsSection>
+            )}
+
+            {active === "header" && (
+              <EmptyView
+                title="Header & Topbar"
+                description="Logo, navigation links, and topbar styling. Coming soon."
+              />
             )}
 
             {active === "footer" && (
