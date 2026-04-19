@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical } from "lucide-react";
+import { Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical, Settings as SettingsIcon } from "lucide-react";
+import GroupSettingsDialog from "./GroupSettingsDialog";
 import type { Page, Section, NavGroup } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import InlineRichText from "./InlineRichText";
@@ -118,6 +119,7 @@ const BuilderSidebar = ({
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
+  const [settingsGroup, setSettingsGroup] = useState<NavGroup | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   const sensors = useSensors(
@@ -510,6 +512,13 @@ const BuilderSidebar = ({
           <Pencil className="h-2 w-2" />
         </button>
         <button
+          onClick={() => setSettingsGroup(group)}
+          style={{ color: `hsl(${s.mutedForegroundColor})` }}
+          title="Group settings"
+        >
+          <SettingsIcon className="h-2.5 w-2.5" />
+        </button>
+        <button
           onClick={() => onDeleteNavGroup(group.id)}
           style={{ color: `hsl(${s.mutedForegroundColor})` }}
           title="Delete"
@@ -564,6 +573,13 @@ const BuilderSidebar = ({
           title="Edit"
         >
           <Pencil className="h-2 w-2" />
+        </button>
+        <button
+          onClick={() => setSettingsGroup(group)}
+          style={{ color: `hsl(${s.mutedForegroundColor})` }}
+          title="Group settings"
+        >
+          <SettingsIcon className="h-2.5 w-2.5" />
         </button>
         <button
           onClick={() => onDeleteNavGroup(group.id)}
