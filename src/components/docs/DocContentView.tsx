@@ -25,6 +25,15 @@ interface DocNavGroup {
   id: string;
   title: string;
   order_index: number;
+  type?: string;
+  tab_id?: string | null;
+  metadata?: Record<string, any>;
+}
+
+interface DocTab {
+  id: string;
+  label: string;
+  order_index: number;
 }
 
 interface DocSection {
