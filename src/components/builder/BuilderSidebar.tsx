@@ -620,7 +620,7 @@ const BuilderSidebar = ({
     const item = flatItems.find((i) => i.sortId === dragActiveId);
     if (!item) return null;
 
-    if (item.type === "label") {
+    if (item.type === "label" || item.type === "dropdown") {
       return (
         <div
           className="rounded-xl px-2 py-1 shadow-xl text-[10px] font-semibold uppercase tracking-widest"
