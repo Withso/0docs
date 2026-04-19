@@ -38,6 +38,7 @@ export function exportProject(
 
   const sortedPages = [...pages].sort((a, b) => a.order_index - b.order_index);
   const sortedGroups = [...navGroups].sort((a, b) => a.order_index - b.order_index);
+  const sortedTabs = [...tabs].sort((a, b) => a.order_index - b.order_index);
 
   // 1. index.html — the complete static site SPA
   const html = generateStaticHTML(
@@ -47,6 +48,7 @@ export function exportProject(
     blocks,
     navGroups,
     settings,
+    sortedTabs,
   );
   files.push({ path: "index.html", content: html });
 
@@ -80,6 +82,14 @@ export function exportProject(
       title: g.title,
       order_index: g.order_index,
       type: g.type || "label",
+      tab_id: g.tab_id || null,
+      metadata: g.metadata || {},
+    })),
+    tabs: sortedTabs.map((t) => ({
+      id: t.id,
+      label: t.label,
+      icon: t.icon || null,
+      order_index: t.order_index,
     })),
   };
   files.push({
