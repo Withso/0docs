@@ -38,6 +38,7 @@ interface DocSidebarNavProps<TPage extends SidebarPageBase = SidebarPageBase> {
   stickyTop?: number;
   hideHeaderLabel?: boolean;
   navGroups?: SidebarNavGroup[];
+  activeTabId?: string | null;
 }
 
 const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
