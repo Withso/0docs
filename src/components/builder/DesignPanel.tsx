@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   SettingsSection, SliderField, ColorField, ToggleField,
   FontSelect, WeightSelect, ColorControls, LayoutControls,
-  SidebarControls, TOCControls, SectionControls, BlockControls, fontOptions, codeFontOptions,
+  TOCControls, SectionControls, BlockControls, fontOptions, codeFontOptions,
   blockSections, type BlockKey,
 } from "@/components/builder/DesignControls";
 
@@ -198,7 +198,6 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
 
                     <SettingsSection title="Colors" icon={Palette}><ColorControls local={local} update={update} /></SettingsSection>
                     <SettingsSection title="Layout" icon={Layout}><LayoutControls local={local} update={update} /></SettingsSection>
-                    <SettingsSection title="Sidebar" icon={Sidebar}><SidebarControls local={local} update={update} /></SettingsSection>
                     <SettingsSection title="On This Page" icon={TOCIcon}><TOCControls local={local} update={update} /></SettingsSection>
                     <SettingsSection title="Section" icon={SectionIcon}><SectionControls local={local} update={update} /></SettingsSection>
 
