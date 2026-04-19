@@ -61,13 +61,11 @@ const GroupSettingsDialog = ({ group, open, onOpenChange, onSaved, tabs = [] }: 
       type,
       tab_id: tabId === "__none__" ? null : tabId,
     } as any;
-    console.log("[GroupSettingsDialog] saving", { groupId: group.id, updates });
     const { data, error } = await (supabase as any)
       .from("nav_groups")
       .update(updates)
       .eq("id", group.id)
       .select();
-    console.log("[GroupSettingsDialog] save result", { data, error });
     setSaving(false);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
