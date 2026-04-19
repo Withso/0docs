@@ -22,7 +22,9 @@ export interface SidebarNavGroup {
   id: string;
   title: string;
   order_index: number;
-  type?: "label" | "text";
+  type?: "label" | "text" | "dropdown" | string;
+  tab_id?: string | null;
+  metadata?: Record<string, any>;
 }
 
 interface DocSidebarNavProps<TPage extends SidebarPageBase = SidebarPageBase> {
