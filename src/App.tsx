@@ -74,6 +74,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/builder/:projectId/configurations"
+                element={
+                  <ProtectedRoute>
+                    <Builder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/builder/:projectId/publish"
                 element={
                   <ProtectedRoute>
