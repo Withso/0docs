@@ -98,6 +98,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/builder/:projectId/preview"
+                element={
+                  <ProtectedRoute>
+                    <Builder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/settings/profile"
                 element={
                   <ProtectedRoute>
