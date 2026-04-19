@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, Settings, ChevronRight, Upload, Eye, Code2 } from "lucide-react";
+import { ArrowLeft, FileText, ChevronRight, Upload, Eye, Code2 } from "lucide-react";
 import BranchSelector from "./BranchSelector";
 
 export type BuilderMode = "editor" | "design" | "preview" | "analytics" | "settings" | "publish" | "configurations" | "code";
@@ -23,14 +23,13 @@ interface BuilderHeaderProps {
   onBranchChange?: (branch: string) => void;
 }
 
-/** Visual / Code / Preview toggle — only shown in editor-related modes. */
+/** Visual / Code toggle — shown in editor-related modes. Preview is a separate button next to Publish. */
 const ViewToggle = ({ value, onChange }: { value: BuilderMode; onChange: (v: BuilderMode) => void }) => {
   const options: { label: string; value: BuilderMode; icon: typeof Eye }[] = [
     { label: "Visual", value: "editor", icon: FileText },
     { label: "Code", value: "code", icon: Code2 },
-    { label: "Preview", value: "preview", icon: Eye },
   ];
-  const activeValue = ["editor", "code", "preview"].includes(value) ? value : null;
+  const activeValue = ["editor", "code"].includes(value) ? value : null;
 
   return (
     <div className="flex items-center rounded-full bg-muted p-0.5">
@@ -69,6 +68,7 @@ const BuilderHeader = ({
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
   const showEditorTools = ["editor", "code", "preview"].includes(mode);
+  const isPreview = mode === "preview";
 
   return (
     <div className="sticky top-0 z-50 p-1.5 backdrop-blur-xl" style={{ backgroundColor: "hsl(var(--background) / 0.5)" }}>
@@ -109,25 +109,27 @@ const BuilderHeader = ({
             {showEditorTools && <ViewToggle value={mode} onChange={onModeChange} />}
           </div>
 
-          {/* Right */}
-          <div className="flex items-center gap-1 flex-1 justify-end">
-            <button
-              className={`h-8 rounded-lg px-2 flex items-center gap-1.5 text-[12px] font-medium transition-all ${
-                mode === "settings"
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-              title="Project Settings"
-              onClick={() => onModeChange("settings")}
-            >
-              <Settings className="h-4 w-4" />
-              {mode === "settings" && <span>Settings</span>}
-            </button>
+          {/* Right — Preview sits immediately to the left of Publish */}
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            {showEditorTools && (
+              <button
+                onClick={() => onModeChange(isPreview ? "editor" : "preview")}
+                title={isPreview ? "Back to editor" : "Preview"}
+                className={`h-8 rounded-lg px-2.5 flex items-center gap-1.5 text-[12px] font-medium transition-all ${
+                  isPreview
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                <Eye className="h-4 w-4" />
+                <span>{isPreview ? "Editing" : "Preview"}</span>
+              </button>
+            )}
 
             {onPublishClick && (
               <Button
                 size="sm"
-                className="h-8 rounded-xl px-4 text-[12px] font-medium ml-2 relative"
+                className="h-8 rounded-xl px-4 text-[12px] font-medium relative"
                 onClick={onPublishClick}
               >
                 <Upload className="h-3.5 w-3.5 mr-1.5" />
