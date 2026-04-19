@@ -52,6 +52,7 @@ const DocSidebarNav = <TPage extends SidebarPageBase = SidebarPageBase>({
   stickyTop = 48,
   hideHeaderLabel = false,
   navGroups = [],
+  activeTabId = null,
 }: DocSidebarNavProps<TPage>) => {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const rafRef = useRef<number | null>(null);
