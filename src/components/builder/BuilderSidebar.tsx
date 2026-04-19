@@ -34,11 +34,18 @@ interface BuilderSidebarProps {
   activePage: Page | null;
   sections: Section[];
   navGroups: NavGroup[];
+  tabs: Tab[];
+  activeTabId: string | null;
+  onSelectTab: (tabId: string | null) => void;
+  onAddTab: (label?: string) => Promise<void> | void;
+  onUpdateTab: (tabId: string, updates: Partial<Tab>) => Promise<void> | void;
+  onDeleteTab: (tabId: string) => Promise<void> | void;
+  onReorderTabs: (reordered: Tab[]) => Promise<void> | void;
   onSelectPage: (page: Page) => void;
   onAddPage: (navGroupId?: string) => void;
   onUpdatePage: (pageId: string, updates: Partial<Page>) => void;
   onDeletePage: (pageId: string) => void;
-  onAddNavGroup: (type?: "label" | "text") => void;
+  onAddNavGroup: (type?: "label" | "text" | "dropdown") => void;
   onUpdateNavGroup: (groupId: string, updates: Partial<NavGroup>) => void;
   onDeleteNavGroup: (groupId: string) => void;
   onReorderPages: (pages: Page[]) => void;
@@ -47,7 +54,7 @@ interface BuilderSidebarProps {
 }
 
 /* ─── Unified flat item types ─── */
-type FlatItemType = "page" | "label" | "text";
+type FlatItemType = "page" | "label" | "text" | "dropdown";
 
 interface FlatItem {
   sortId: string;         // unique id for dnd-kit
