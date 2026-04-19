@@ -1,7 +1,11 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical, Settings as SettingsIcon, ChevronDown, Sliders } from "lucide-react";
+import {
+  Plus, Trash2, Tag, FileText, Pencil, Type, GripVertical,
+  Settings as SettingsIcon, ChevronDown, ChevronRight,
+  Folder, FolderOpen, Layers, Languages, Box, GitBranch,
+} from "lucide-react";
 import GroupSettingsDialog from "./GroupSettingsDialog";
-import TabsManager from "./TabsManager";
+// Note: TabsManager is no longer rendered here — tabs render inline as collapsible group headers.
 import type { Page, Section, NavGroup, Tab } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import InlineRichText from "./InlineRichText";
