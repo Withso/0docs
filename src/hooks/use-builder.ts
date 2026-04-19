@@ -102,13 +102,21 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
         if (pagesData.length > 0) setActivePage(pagesData[0]);
       }
 
-      const { data: groupsData } = await supabase
-        .from("nav_groups")
-        .select("*")
-        .eq("project_id", projectId)
-        .order("order_index");
+      const [{ data: groupsData }, { data: tabsData }] = await Promise.all([
+        supabase
+          .from("nav_groups")
+          .select("*")
+          .eq("project_id", projectId)
+          .order("order_index"),
+        (supabase as any)
+          .from("tabs")
+          .select("*")
+          .eq("project_id", projectId)
+          .order("order_index"),
+      ]);
 
       if (groupsData) setNavGroups(groupsData as unknown as NavGroup[]);
+      if (tabsData) setTabs(tabsData as unknown as Tab[]);
 
       setLoading(false);
     };
