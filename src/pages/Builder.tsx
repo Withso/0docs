@@ -264,9 +264,9 @@ const Builder = () => {
           {/* Mode: Editor */}
           {mode === "editor" && (
             <DesignSettingsWrapper settings={settings} className="">
-              {/* Floating SEO panel — fixed top-left, to the left of the sidebar */}
+              {/* Floating page settings panel — fixed top-left, to the right of the rail */}
               {activePage && editorTab === "navigation" && (
-                <SeoFloatingPanel page={activePage} settings={settings} />
+                <PageSettingsPanel page={activePage} settings={settings} projectSlug={project?.slug} />
               )}
               <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
                 <div className="shrink-0" style={{ width: settings.sidebarWidth }}>
@@ -393,6 +393,18 @@ const Builder = () => {
               />
               <MadeWithBanner />
             </div>
+          )}
+
+          {/* Mode: Configurations */}
+          {mode === "configurations" && (
+            <ConfigurationsPanel
+              projectId={projectId!}
+              projectName={project?.name || ""}
+              settings={settings}
+              saving={saving}
+              saveSettings={saveSettings}
+              resetSettings={resetSettings}
+            />
           )}
 
           {/* Mode: Analytics */}
