@@ -1,96 +1,144 @@
 
 
-# Revised Export Engine: React-from-CDN Static Site
+# 0docs Product Vision & Mintlify Parity Plan
 
-## The Core Problem
+## Research Summary
 
-Vanilla JS translation of React components is **not sustainable**. Every new block type, every future feature (custom blocks, AI chat, search) would require maintaining two separate implementations. They will inevitably drift apart.
+### Mintlify Feature Map (from screenshots + web knowledge)
 
-## The Solution: Ship Real React, No Build Step
+**Per-project sidebar (vertical icon rail):**
+- Home, Editor, Analytics, Settings (+ Agents section: Agent, Assistant, Workflows, MCP — *deferred per user*)
+- Collapse toggle at bottom
+- Workspace switcher at top
 
-Instead of translating React to vanilla JS, the exported site **uses React directly** — loaded from a CDN. All viewer components are written as `React.createElement()` calls (no JSX, no bundler needed). This gives us:
+**Editor inner panel (the core experience):**
+- Two tabs: **Navigation** | **Files**
+- Top toolbar: Preview/Code toggle, Branch selector, Comments, Search (⌘K), Run/Preview, Publish button
+- Right side: contextual editor (visual or raw .mdx code view via Monaco)
 
-- **Exact behavioral parity** with the builder preview
-- **Zero dual-maintenance** — one rendering logic, one codebase
-- **Custom blocks work automatically** — HTML/CSS/JS rendered via `dangerouslySetInnerHTML`, same as the builder
-- **Future features slot in naturally** — AI chat, advanced search, MCP-generated content all use the same React patterns
+**Navigation tab features:**
+- Tree of: Documentation tab, Blog tab, Guides, nested Groups (folders), Pages
+- Add menu: Tab / Wrap with Dropdown / Language / Product / Version
+- Per-group settings panel: Title, Icon, Hidden, Tag, Expanded, OpenAPI spec, AsyncAPI spec
+- Per-page settings panel: Title, Slug, External URL, Description, Icon, Sidebar title, OG Image URL, Tag, Keywords, Mode, File path
 
-## How It Works
+**Files tab features:**
+- File explorer mirroring repo structure (mdx, json, svg, snippets/, images/, logo/)
+- `.mintignore`, `docs.json` config, `AGENTS.md`, `CONTRIBUTING.md`
+- Click file → opens settings or content editor
+
+**Configurations panel (bottom-left):**
+- Overview, Visual Branding (theme + primary/light/dark colors, logos, simple/advanced), Typography, Header & Topbar, Footer, Content Features, Assistant & Search, Integrations, API Documentation, Advanced
+
+**Branch / Git workflow:**
+- Branch dropdown ("main" + "Create new branch")
+- Commit dialog with comment thread
+- Code view (Monaco-style raw .mdx editor with frontmatter)
+
+**Other Mintlify capabilities:**
+- OpenAPI/AsyncAPI auto-generated reference, MDX components, snippets, multi-version docs, multi-language, search, AI assistant, analytics, custom domain, deploy preview per branch.
+
+### Current 0docs State
+
+- React+Vite SPA, Supabase backend (auth, postgres, edge functions, storage)
+- Builder uses tab-based mode switcher (`editor | design | settings | publish`) in `BuilderHeader`
+- `BuilderSidebar` shows pages + nav groups with drag-drop
+- Publishing flow → GitHub repo (docs-as-code) via `publish-to-github` edge function
+- Already has: design tokens system, versioning (`doc_versions`), OpenAPI import, design panel, AI ask-docs
+
+### Self-Hosting Research
+
+Mintlify is **closed-source**. Open-source competitors that self-host: Docusaurus, Nextra, Starlight, Fumadocs — but none are visual builders. **Opportunity: 0docs becomes the first OSS visual Mintlify alternative.**
+
+For self-hosting on Railway, we need:
+1. **Decouple from Lovable Cloud / hosted Supabase** — support self-hosted Supabase OR a portable Postgres + minimal API.
+2. **Containerization** — Dockerfile for the Vite frontend (served via nginx or a tiny Node static server).
+3. **Edge functions → portable runtime** — port the 4 edge functions to either Deno Deploy-compatible standalone or a small Hono/Express service.
+4. **Environment-driven config** — all Supabase URLs/keys via env vars at runtime (currently bundled at build time).
+5. **Migrations bundled** — SQL migrations runnable against any Postgres.
+6. **One-click templates** — Railway template (`railway.json` + `Dockerfile`), plus Render blueprint, Coolify, Docker Compose.
+
+---
+
+## Proposed Architecture
+
+### New Per-Project Sidebar (vertical rail)
 
 ```text
-Export Engine (doc-exporter.ts) produces:
-├── index.html          ← HTML shell + React from CDN + viewer script
-├── content.json        ← All pages, sections, blocks (structured data)
-├── theme.json          ← Design tokens (colors, fonts, spacing)
-├── docs.json           ← Navigation groups + page order
-└── .nojekyll           ← GitHub Pages compatibility
+┌────┬─────────────────────┬──────────────────────────┐
+│ 🏠 │  [Nav | Files]      │                          │
+│ ✏️ │  ─────────────      │   Content Editor         │
+│ 📊 │  Documentation      │   (visual or code)       │
+│ ⚙️ │  Blog               │                          │
+│    │  ▾ Guides           │                          │
+│    │    Getting started  │                          │
+│    │    Quickstart       │                          │
+│    │  ▾ Customization    │                          │
+│    │    Global Settings  │                          │
+│    │                     │                          │
+│    │  Configurations ⚙️  │                          │
+└────┴─────────────────────┴──────────────────────────┘
 ```
 
-`index.html` contains:
-1. `<script>` tags loading React 18 + ReactDOM from unpkg CDN (~45KB gzipped)
-2. A `<script>` block (~600-800 lines) containing the viewer app written with `React.createElement()` — direct translations of `DocContentView`, `DocBlockRenderer`, `DocSidebarNav`, `SearchDialog`, `TableOfContents`, `DocMobileNav`, `PageFeedback`
-3. Inlined `<style>` generated from the user's DesignSettings
-4. Google Fonts `<link>` for configured fonts
+- **Rail icons**: Home (→ dashboard), Editor, Analytics, Settings
+- **Editor mode** = current builder + new Files tab + Configurations entry
+- **Configurations** opens a full-width settings view with Mintlify's left-panel categories (Visual Branding, Typography, Header & Topbar, Footer, Content Features, Assistant & Search, Integrations, API Documentation, Advanced) — replaces the current Design tab's flat structure
 
-At boot, the viewer fetches `content.json` and renders the full doc site with hash-based routing (`#/page-slug`).
+### Phased Roadmap
 
-## Future-Proofing Analysis
+**Phase 0 — Vision doc & restructure (this phase)**
+- Create `product-vision.md` at repo root capturing positioning, OSS commitment, roadmap
+- No code changes yet
 
-| Future Feature | How It Works in This Architecture |
-|---|---|
-| **Custom blocks (HTML/CSS/JS)** | Block content stored in `content.json` with `type: "custom"`. Viewer renders via `dangerouslySetInnerHTML` + scoped `<style>` + inline `<script>`. Identical to builder behavior. |
-| **AI Chat widget** | Add the chat component to the viewer script. It calls the same `ask-docs` edge function. Works identically. |
-| **Advanced search (Cmd+K)** | Already planned. Fuzzy search over `content.json` data. Same logic as `SearchDialog.tsx`. |
-| **MCP-generated content** | MCP tools write to the database. Content flows through the same export pipeline into `content.json`. No viewer changes needed. |
-| **New block types** | Add rendering logic to `DocBlockRenderer` (React) → copy the same `createElement` pattern to the viewer script. One pattern, one translation. |
-| **Interactive embeds** | Rendered as iframes or raw HTML in custom blocks. Works in both builder and exported site. |
+**Phase 1 — Per-project sidebar + Nav/Files split**
+- New `ProjectRail` component (icon column) wrapping Builder
+- New `FilesPanel` component (file-explorer view of project: pages as `.mdx`, snippets, images, `docs.json`)
+- Move Editor / Design / Settings / Publish into rail items
+- Keep current `BuilderSidebar` as the Navigation tab content
 
-## Why Not Other Approaches
+**Phase 2 — Configurations panel (Mintlify parity)**
+- Restructure DesignPanel into 10 categories matching Mintlify
+- Add per-page settings panel (currently uses inline SEO floating panel) → expand to: External URL, Sidebar title, OG Image, Keywords, Mode, Tag, File path display
+- Add per-group settings panel: Hidden toggle, Tag, Expanded default, OpenAPI/AsyncAPI binding
 
-| Approach | Problem |
-|---|---|
-| **Vanilla JS translation** | Dual maintenance nightmare. Every feature needs two implementations. Custom blocks break. |
-| **Ship the entire React app source** | Requires a build step (Vite/npm). Users can't just host static files on GitHub Pages. |
-| **Pre-built viewer bundle** | Can't run Vite builds in Lovable at publish time. Would need a separate CI pipeline. |
-| **SSG (Docusaurus/Nextra)** | External dependency. Users need Node.js setup. Not "one-click." |
-| **React from CDN (this plan)** | No build step. Real React. Works on any static host. One-click. |
+**Phase 3 — Code view + Branches**
+- Add Monaco-based raw MDX editor toggle (Preview ↔ Code icons in header)
+- Branch selector UI; map to GitHub branches via existing `publish-to-github` function (extend to read branches, create branches, switch context)
+- Commits/comments thread per branch
 
-## Migration Path for New Features
+**Phase 4 — Nav primitives parity**
+- Add menu: Tab, Dropdown wrap, Language wrap, Product wrap, Version wrap (Version exists; others new)
+- Hidden pages, Tags on pages/groups, External URL pages, Expanded default
 
-When adding a new block type or feature:
-1. Build the React component in `src/components/docs/` (JSX, as usual)
-2. Add the equivalent `React.createElement()` version to the viewer generator in `doc-exporter.ts`
-3. Both use the same props, same logic, same styling — just different syntax
+**Phase 5 — Self-hostable architecture (OSS pivot)**
+- **Runtime config**: Replace build-time `VITE_SUPABASE_*` with `/config.json` fetched at boot; allow operator to point at any Supabase instance
+- **Dockerfile** for frontend (multi-stage: build → nginx alpine)
+- **Edge functions → Deno standalone service** (`/server` directory, runs as separate Railway service, or via `supabase functions serve` mode)
+- **Migration runner**: ship `supabase/migrations/*.sql` + a `bootstrap.sh` that runs them against any Postgres
+- **Railway template**: `railway.json` defining 3 services (frontend, functions, postgres) + supabase-self-hosted compose alternative
+- **Docs**: `SELF_HOSTING.md`, `DEPLOY_RAILWAY.md`, `DEPLOY_DOCKER.md`
+- **License**: add `LICENSE` (MIT or AGPL — to confirm with user)
 
-This is a **mechanical translation**, not a reimplementation. `createElement('div', {style: {...}}, children)` maps 1:1 to `<div style={{...}}>{children}</div>`.
+**Phase 6 — OSS hardening**
+- `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, GitHub Actions CI (lint, test, build, docker build)
+- Replace any Lovable-Cloud-only assumptions in code with abstractions
+- Optional: pluggable auth (allow disabling Google sign-in, supporting GitHub OAuth, magic links only)
 
-## Implementation Steps
+**Phase 7 — Mintlify advanced parity**
+- AsyncAPI support, multi-language docs, deploy previews per branch, advanced search (Algolia/Meilisearch pluggable), AI assistant configurability
 
-### Step 1: Rewrite `src/lib/doc-exporter.ts`
-- `generateContentJSON()` — structured JSON with all pages, sections, blocks
-- `generateStaticHTML(settings, navGroups)` — the main function that produces the complete `index.html`:
-  - CSS generation from DesignSettings (same logic as `DesignSettingsWrapper`)
-  - Viewer script with all doc components as `createElement` calls
-  - HTML shell with sidebar, main content, TOC, search modal, mobile nav containers
+---
 
-### Step 2: Implement viewer components in createElement syntax
-Translate these components (in priority order):
-1. `DocBlockRenderer` — all 20+ block types
-2. `DocSidebarNav` — navigation with scroll tracking
-3. `TableOfContents` — right sidebar
-4. `SearchDialog` — Cmd+K fuzzy search
-5. `DocMobileNav` — responsive hamburger menu
-6. `PageFeedback` — feedback widget
-7. `DesignSettingsWrapper` — CSS variable injection
+## Deliverables for THIS plan execution
 
-### Step 3: Keep edge function unchanged
-`publish-to-github` already handles pushing arbitrary files. No changes needed.
+1. `product-vision.md` (repo root) — positioning, OSS commitment, target users (devs, devtool startups, open-source maintainers), differentiators vs Mintlify (visual, OSS, self-hostable), full phased roadmap, success metrics, license decision placeholder
+2. Update `.lovable/memory/index.md` to record the OSS + self-hosting pivot
 
-## What Changes
+No application code is changed in this step — we lock the vision first, then implement Phase 1 in the next message.
 
-| File | Action |
-|---|---|
-| `src/lib/doc-exporter.ts` | **Rewrite** — generate `index.html` with React CDN viewer + `content.json` |
+## Open Questions Before Phase 1
 
-Everything else stays the same — the edge function, publish UI, settings UI, builder components.
+1. **License**: MIT (max adoption) vs AGPL (forces SaaS forks to open-source)?
+2. **Self-host backend strategy**: bundle self-hosted Supabase (heavy but feature-complete) vs build a minimal Hono+Postgres API (lighter, more work)?
+3. **Keep hosted SaaS at docs0.lovable.app alongside OSS, or pure OSS?**
 
