@@ -22,7 +22,7 @@ import ConfigurationsPanel from "@/components/builder/ConfigurationsPanel";
 import PageSettingsPanel from "@/components/builder/PageSettingsPanel";
 import CodeView from "@/components/builder/CodeView";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, FileJson, GripVertical } from "lucide-react";
+import { Plus, FileText, FileJson, GripVertical, SlidersHorizontal } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page, Section, Block } from "@/hooks/use-builder";
@@ -269,57 +269,76 @@ const Builder = () => {
       <div className="flex min-h-[calc(100vh-60px)]">
         <ProjectRail mode={mode} onModeChange={handleModeChange} />
 
-        <div className="flex-1 min-w-0">
-          {/* Mode: Editor */}
-          {mode === "editor" && (
-            <DesignSettingsWrapper settings={settings} className="">
-              {/* Floating page settings panel — fixed top-left, to the right of the rail */}
-              {activePage && editorTab === "navigation" && (
-                <PageSettingsPanel page={activePage} settings={settings} projectSlug={project?.slug} />
-              )}
-              <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-6">
-                <div className="shrink-0" style={{ width: settings.sidebarWidth }}>
-                  <EditorTabs value={editorTab} onChange={setEditorTab} />
-                  {editorTab === "navigation" ? (
-                    <BuilderSidebar
-                      settings={settings}
-                      pages={pages}
-                      activePage={activePage}
-                      sections={sections}
-                      navGroups={navGroups}
-                      tabs={tabs}
-                      activeTabId={activeTabId}
-                      onSelectTab={setActiveTabId}
-                      onAddTab={addTab}
-                      onUpdateTab={updateTab}
-                      onDeleteTab={deleteTab}
-                      onReorderTabs={reorderTabs}
-                      onSelectPage={setActivePage}
-                      onAddPage={addPage}
-                      onUpdatePage={updatePage}
-                      onDeletePage={deletePage}
-                      onAddNavGroup={addNavGroup}
-                      onUpdateNavGroup={updateNavGroup}
-                      onDeleteNavGroup={deleteNavGroup}
-                      onReorderPages={reorderPages}
-                      onReorderNavGroups={reorderNavGroups}
-                      onReorderSections={reorderSections}
-                    />
-                  ) : (
-                    <FilesPanel
-                      pages={pages}
-                      navGroups={navGroups}
-                      activePage={activePage}
-                      onSelectPage={(p) => {
-                        setActivePage(p);
-                        setEditorTab("navigation");
-                      }}
-                      projectSlug={project?.slug}
-                    />
-                  )}
-                </div>
+        <div className="flex-1 min-w-0 flex">
+          {/* ─── Shared Navigation column (Mintlify-style) ───
+           * Visible in both Visual (editor) and Code modes so the user can
+           * switch the active page without leaving Code view.
+           */}
+          {(mode === "editor" || mode === "code") && (
+            <aside
+              className="shrink-0 border-r border-border/40 bg-background/40 flex flex-col h-[calc(100vh-60px)] sticky top-[60px]"
+              style={{ width: settings.sidebarWidth + 24 }}
+            >
+              <EditorTabs value={editorTab} onChange={setEditorTab} />
+              <div className="flex-1 overflow-y-auto px-2 py-2">
+                {editorTab === "navigation" ? (
+                  <BuilderSidebar
+                    settings={settings}
+                    pages={pages}
+                    activePage={activePage}
+                    sections={sections}
+                    navGroups={navGroups}
+                    tabs={tabs}
+                    activeTabId={activeTabId}
+                    onSelectTab={setActiveTabId}
+                    onAddTab={addTab}
+                    onUpdateTab={updateTab}
+                    onDeleteTab={deleteTab}
+                    onReorderTabs={reorderTabs}
+                    onSelectPage={setActivePage}
+                    onAddPage={addPage}
+                    onUpdatePage={updatePage}
+                    onDeletePage={deletePage}
+                    onAddNavGroup={addNavGroup}
+                    onUpdateNavGroup={updateNavGroup}
+                    onDeleteNavGroup={deleteNavGroup}
+                    onReorderPages={reorderPages}
+                    onReorderNavGroups={reorderNavGroups}
+                    onReorderSections={reorderSections}
+                  />
+                ) : (
+                  <FilesPanel
+                    pages={pages}
+                    navGroups={navGroups}
+                    activePage={activePage}
+                    onSelectPage={(p) => {
+                      setActivePage(p);
+                      setEditorTab("navigation");
+                    }}
+                    projectSlug={project?.slug}
+                  />
+                )}
+              </div>
 
-                <main className="flex-1 min-w-0 py-10 lg:pl-4">
+              {/* Bottom-pinned: Page Settings + Configurations link (Mintlify style) */}
+              {activePage && editorTab === "navigation" && mode === "editor" && (
+                <PageSettingsPanel page={activePage} settings={settings} projectSlug={project?.slug} variant="bottomBar" />
+              )}
+              <button
+                onClick={() => handleModeChange("configurations")}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors border-t border-border/40"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span className="truncate flex-1 text-left">Configurations</span>
+              </button>
+            </aside>
+          )}
+
+          <div className="flex-1 min-w-0">
+            {/* Mode: Editor (Visual) */}
+            {mode === "editor" && (
+              <DesignSettingsWrapper settings={settings} className="">
+                <main className="mx-auto px-6 py-10" style={{ maxWidth: settings.contentMaxWidth + 48 }}>
                   {activePage ? (
                     <article style={{ maxWidth: `${settings.contentMaxWidth}px` }} className="animate-fade-in">
                       <PageTitleEditor
@@ -370,108 +389,108 @@ const Builder = () => {
                     </div>
                   )}
                 </main>
-              </div>
-            </DesignSettingsWrapper>
-          )}
+              </DesignSettingsWrapper>
+            )}
 
-          {/* Mode: Design */}
-          {mode === "design" && (
-            <DesignPanel
-              projectId={projectId!}
-              projectName={project?.name || ""}
-              settings={settings}
-              saving={saving}
-              saveSettings={saveSettings}
-              resetSettings={resetSettings}
-              designSubMode={designSubMode}
-              onDesignSubModeChange={setDesignSubMode}
-            />
-          )}
-
-          {/* Mode: Preview */}
-          {mode === "preview" && (
-            <div className="flex-1 relative">
-              <DocContentView
-                settings={settings}
+            {/* Mode: Design */}
+            {mode === "design" && (
+              <DesignPanel
+                projectId={projectId!}
                 projectName={project?.name || ""}
-                pages={pages}
-                activePage={activePage}
+                settings={settings}
+                saving={saving}
+                saveSettings={saveSettings}
+                resetSettings={resetSettings}
+                designSubMode={designSubMode}
+                onDesignSubModeChange={setDesignSubMode}
+              />
+            )}
+
+            {/* Mode: Preview */}
+            {mode === "preview" && (
+              <div className="flex-1 relative">
+                <DocContentView
+                  settings={settings}
+                  projectName={project?.name || ""}
+                  pages={pages}
+                  activePage={activePage}
+                  sections={sections}
+                  blocks={blocks}
+                  onSelectPage={(p) => {
+                    const full = pages.find((pg) => pg.id === p.id);
+                    if (full) setActivePage(full);
+                  }}
+                  headerStickyTop={0}
+                  navGroups={navGroups}
+                  hideHeaderLabel
+                  tabs={tabs}
+                  activeTabId={activeTabId}
+                  onSelectTab={setActiveTabId}
+                />
+                <MadeWithBanner />
+              </div>
+            )}
+
+            {/* Mode: Configurations */}
+            {mode === "configurations" && (
+              <ConfigurationsPanel
+                projectId={projectId!}
+                projectName={project?.name || ""}
+                settings={settings}
+                saving={saving}
+                saveSettings={saveSettings}
+                resetSettings={resetSettings}
+              />
+            )}
+
+            {/* Mode: Code (Monaco MDX) — sidebar above lets the user switch pages while staying in Code view */}
+            {mode === "code" && (
+              <CodeView
+                page={activePage}
                 sections={sections}
                 blocks={blocks}
-                onSelectPage={(p) => {
-                  const full = pages.find((pg) => pg.id === p.id);
-                  if (full) setActivePage(full);
-                }}
-                headerStickyTop={0}
-                navGroups={navGroups}
-                hideHeaderLabel
-                tabs={tabs}
-                activeTabId={activeTabId}
-                onSelectTab={setActiveTabId}
+                settings={settings}
+                projectSlug={project?.slug}
               />
-              <MadeWithBanner />
-            </div>
-          )}
+            )}
 
-          {/* Mode: Configurations */}
-          {mode === "configurations" && (
-            <ConfigurationsPanel
-              projectId={projectId!}
-              projectName={project?.name || ""}
-              settings={settings}
-              saving={saving}
-              saveSettings={saveSettings}
-              resetSettings={resetSettings}
-            />
-          )}
+            {/* Mode: Analytics */}
+            {mode === "analytics" && (
+              <AnalyticsContent projectName={project?.name} projectSlug={project?.slug} />
+            )}
 
-          {/* Mode: Code (Monaco MDX preview) */}
-          {mode === "code" && (
-            <CodeView
-              page={activePage}
-              sections={sections}
-              blocks={blocks}
-              settings={settings}
-              projectSlug={project?.slug}
-            />
-          )}
+            {/* Mode: Settings */}
+            {mode === "settings" && (
+              <SettingsContent projectId={projectId!} project={project} onSaved={refreshProject} />
+            )}
 
-          {/* Mode: Analytics */}
-          {mode === "analytics" && (
-            <AnalyticsContent projectName={project?.name} projectSlug={project?.slug} />
-          )}
-
-          {/* Mode: Settings */}
-          {mode === "settings" && (
-            <SettingsContent projectId={projectId!} project={project} onSaved={refreshProject} />
-          )}
-
-          {/* Mode: Publish */}
-          {mode === "publish" && (
-            <PublishContent
-              editorChanges={publishPreview.editorChanges}
-              designChanges={publishPreview.designChanges}
-              nextVersion={publishPreview.nextVersion}
-              isFirstPublish={publishPreview.isFirstPublish}
-              publishing={publishing}
-              onPublish={handlePublish}
-              versions={publishedVersions}
-              onRevert={async (versionId) => {
-                await revertToVersion(versionId);
-                const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
-                toast({ title: "Version reverted", description: "The active published version has been updated." });
-              }}
-              projectSlug={project?.slug || ""}
-              customDomain={project?.custom_domain}
-              project={project}
-              pages={pages}
-              sections={sections}
-              blocks={blocks}
-              settings={settings}
-              navGroups={navGroups}
-              tabs={tabs}
-            />
-          )}
+            {/* Mode: Publish */}
+            {mode === "publish" && (
+              <PublishContent
+                editorChanges={publishPreview.editorChanges}
+                designChanges={publishPreview.designChanges}
+                nextVersion={publishPreview.nextVersion}
+                isFirstPublish={publishPreview.isFirstPublish}
+                publishing={publishing}
+                onPublish={handlePublish}
+                versions={publishedVersions}
+                onRevert={async (versionId) => {
+                  await revertToVersion(versionId);
+                  const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
+                  toast({ title: "Version reverted", description: "The active published version has been updated." });
+                }}
+                projectSlug={project?.slug || ""}
+                customDomain={project?.custom_domain}
+                project={project}
+                pages={pages}
+                sections={sections}
+                blocks={blocks}
+                settings={settings}
+                navGroups={navGroups}
+                tabs={tabs}
+              />
+            )}
+          </div>
         </div>
       </div>
 
