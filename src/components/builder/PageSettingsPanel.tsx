@@ -15,6 +15,8 @@ interface Props {
   page: Page;
   settings: DesignSettings;
   projectSlug?: string;
+  /** When true, render as a bottom-pinned bar inside the navigation column (Mintlify style). */
+  variant?: "floating" | "bottomBar";
 }
 
 interface PageMetadata {
@@ -28,8 +30,8 @@ interface PageMetadata {
   hidden?: boolean;
 }
 
-/** Floating panel showing all per-page settings (Mintlify parity) */
-const PageSettingsPanel = ({ page, settings, projectSlug }: Props) => {
+/** Per-page settings panel — supports floating (legacy) and bottomBar (Mintlify-style) variants. */
+const PageSettingsPanel = ({ page, settings, projectSlug, variant = "floating" }: Props) => {
   const [collapsed, setCollapsed] = useState(true);
 
   const [slug, setSlug] = useState(page.slug || "");
@@ -60,6 +62,47 @@ const PageSettingsPanel = ({ page, settings, projectSlug }: Props) => {
 
   const filePath = `${projectSlug || "docs"}/${slug || "untitled"}.mdx`;
 
+  /* ─────────────────────────────────────────
+   * Variant: bottomBar (Mintlify-style)
+   * Pinned to the bottom of the navigation column. Expands upward on click.
+   * ───────────────────────────────────────── */
+  if (variant === "bottomBar") {
+    return (
+      <div className="border-t border-border/40 bg-background/80 backdrop-blur-sm">
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="w-full flex items-center gap-2 px-3 py-2.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <FileText className="h-3.5 w-3.5" />
+          <span className="truncate flex-1 text-left">Page Settings</span>
+          {collapsed ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
+        {!collapsed && (
+          <div
+            className="overflow-y-auto px-3 pb-3 pt-1 space-y-3 animate-fade-in"
+            style={{ maxHeight: "55vh" }}
+          >
+            <PageSettingsForm
+              page={page}
+              slug={slug}
+              setSlug={setSlug}
+              saveSlug={saveSlug}
+              metaDesc={metaDesc}
+              setMetaDesc={setMetaDesc}
+              saveMetaDesc={saveMetaDesc}
+              meta={meta}
+              updateMeta={updateMeta}
+              filePath={filePath}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* ─────────────────────────────────────────
+   * Variant: floating (legacy)
+   * ───────────────────────────────────────── */
   return (
     <div className="fixed z-50 hidden lg:block" style={{ top: "80px", left: "76px" }}>
       <button
