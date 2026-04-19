@@ -102,6 +102,9 @@ const DocContentView = ({
   navGroups = [],
   hideHeaderLabel = false,
   showMobileNav = true,
+  tabs = [],
+  activeTabId = null,
+  onSelectTab,
 }: DocContentViewProps) => {
   const [internalSearchOpen, setInternalSearchOpen] = useState(false);
   const searchOpen = externalSearchOpen !== undefined ? externalSearchOpen : internalSearchOpen;
