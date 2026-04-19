@@ -265,24 +265,26 @@ const Builder = () => {
 
   const frameMaxWidth = settings.contentMaxWidth + settings.sidebarWidth + 48;
 
+  // Header is scoped to the content area (Mintlify-style) and only shown for editor / code / preview modes.
+  const showContentHeader = mode === "editor" || mode === "code" || mode === "preview";
+
+  const contentHeader = showContentHeader ? (
+    <BuilderHeader
+      projectId={projectId!}
+      mode={mode}
+      onModeChange={handleModeChange}
+      onPublishClick={() => handleModeChange("publish")}
+      hasUnpublishedChanges={publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish}
+      onSearchClick={() => setSearchOpen(true)}
+      currentBranch={project?.github_branch || "main"}
+      hasGithub={!!project?.github_repo && !!project?.github_token_encrypted}
+      onBranchChange={() => refreshProject()}
+    />
+  ) : null;
+
   return (
     <div className={`min-h-screen bg-background ${mode === "design" ? "flex flex-col h-screen overflow-hidden" : ""}`}>
-      <BuilderHeader
-        projectId={projectId!}
-        projectName={project?.name || ""}
-        activePageTitle={activePage?.title || "No page"}
-        mode={mode}
-        onModeChange={handleModeChange}
-        designSubMode={designSubMode}
-        onDesignSubModeChange={setDesignSubMode}
-        onPublishClick={() => handleModeChange("publish")}
-        hasUnpublishedChanges={publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish}
-        currentBranch={project?.github_branch || "main"}
-        hasGithub={!!project?.github_repo && !!project?.github_token_encrypted}
-        onBranchChange={() => refreshProject()}
-      />
-
-      <div className="flex min-h-[calc(100vh-60px)]">
+      <div className="flex min-h-screen">
         <ProjectRail mode={mode} onModeChange={handleModeChange} />
 
         <div className="flex-1 min-w-0 flex">
@@ -292,7 +294,7 @@ const Builder = () => {
            */}
           {(mode === "editor" || mode === "code") && (
             <aside
-              className="shrink-0 border-r border-border/40 bg-background/40 flex flex-col h-[calc(100vh-60px)] sticky top-[60px]"
+              className="shrink-0 border-r border-border/40 bg-background/40 flex flex-col h-screen sticky top-0"
               style={{ width: settings.sidebarWidth + 24 }}
             >
               <EditorTabs value={editorTab} onChange={setEditorTab} />
@@ -321,6 +323,7 @@ const Builder = () => {
                     onReorderPages={reorderPages}
                     onReorderNavGroups={reorderNavGroups}
                     onReorderSections={reorderSections}
+                    onOpenPageSettings={(p) => setPageSettingsTarget(p)}
                   />
                 ) : (
                   <FilesPanel
@@ -336,10 +339,7 @@ const Builder = () => {
                 )}
               </div>
 
-              {/* Bottom-pinned: Page Settings + Configurations link (Mintlify style) */}
-              {activePage && editorTab === "navigation" && mode === "editor" && (
-                <PageSettingsPanel page={activePage} settings={settings} projectSlug={project?.slug} variant="bottomBar" />
-              )}
+              {/* Bottom-pinned: Configurations link (Mintlify style). Page settings now lives on each page row. */}
               <button
                 onClick={() => handleModeChange("configurations")}
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors border-t border-border/40"
@@ -350,8 +350,8 @@ const Builder = () => {
             </aside>
           )}
 
-          <div className="flex-1 min-w-0">
-            {/* Mode: Editor (Visual) */}
+          <div className="flex-1 min-w-0 flex flex-col">
+            {contentHeader}
             {mode === "editor" && (
               <DesignSettingsWrapper settings={settings} className="">
                 <main className="mx-auto px-6 py-10" style={{ maxWidth: settings.contentMaxWidth + 48 }}>
