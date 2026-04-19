@@ -14,6 +14,10 @@ import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SettingsContent from "@/components/builder/SettingsContent";
 import PublishContent from "@/components/builder/PublishContent";
+import ProjectRail from "@/components/builder/ProjectRail";
+import EditorTabs from "@/components/builder/EditorTabs";
+import FilesPanel from "@/components/builder/FilesPanel";
+import AnalyticsContent from "@/components/builder/AnalyticsContent";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
@@ -66,6 +70,7 @@ const Builder = () => {
 
   const [mode, setMode] = useState<BuilderMode>(getInitialMode);
   const [designSubMode, setDesignSubMode] = useState<DesignSubMode>("live");
+  const [editorTab, setEditorTab] = useState<"navigation" | "files">("navigation");
 
   // Sync URL when mode changes
   const handleModeChange = useCallback((newMode: BuilderMode) => {
