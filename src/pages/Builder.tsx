@@ -287,6 +287,13 @@ const Builder = () => {
                       activePage={activePage}
                       sections={sections}
                       navGroups={navGroups}
+                      tabs={tabs}
+                      activeTabId={activeTabId}
+                      onSelectTab={setActiveTabId}
+                      onAddTab={addTab}
+                      onUpdateTab={updateTab}
+                      onDeleteTab={deleteTab}
+                      onReorderTabs={reorderTabs}
                       onSelectPage={setActivePage}
                       onAddPage={addPage}
                       onUpdatePage={updatePage}
