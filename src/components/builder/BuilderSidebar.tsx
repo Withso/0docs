@@ -41,7 +41,7 @@ interface BuilderSidebarProps {
   tabs: Tab[];
   activeTabId: string | null;
   onSelectTab: (tabId: string | null) => void;
-  onAddTab: (label?: string) => Promise<void> | void;
+  onAddTab: (label?: string, kind?: "tab" | "language" | "product" | "version") => Promise<void> | void;
   onUpdateTab: (tabId: string, updates: Partial<Tab>) => Promise<void> | void;
   onDeleteTab: (tabId: string) => Promise<void> | void;
   onReorderTabs: (reordered: Tab[]) => Promise<void> | void;
