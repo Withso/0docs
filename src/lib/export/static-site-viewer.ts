@@ -642,11 +642,13 @@ export function generateViewerScript(): string {
           h('button', {className:'search-btn', onClick:function(){setSearchOpen(true)}},
             h(SearchIcon),
             h('span', {className:'search-label'}, 'Search'),
-            h('kbd', null, '⌘K')))),
+            h('kbd', null, '⌘K'))),
+        h(TopBarNav, {tabs:tabs, navGroups:navGroups, activeTabId:activeTabId,
+          onSelectTab:setActiveTabId, pages:pages, onSelectPage:handleSelectPage})),
       // Body
       h('div', {className:'site-body'},
         h(Sidebar, {pages:pages,activePage:activePage,sections:pageSections,navGroups:navGroups,
-          onSelectPage:handleSelectPage, activeSectionId:activeSectionId}),
+          onSelectPage:handleSelectPage, activeSectionId:activeSectionId, activeTabId:activeTabId}),
         h('main', {className:'main-content'},
           activePage
             ? h('article', null,
