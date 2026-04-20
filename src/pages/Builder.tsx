@@ -20,6 +20,7 @@ import FilesPanel from "@/components/builder/FilesPanel";
 import AnalyticsContent from "@/components/builder/AnalyticsContent";
 import ConfigurationsPanel from "@/components/builder/ConfigurationsPanel";
 import PageSettingsPanel from "@/components/builder/PageSettingsPanel";
+import NavigationTree, { type NavSettingsTarget } from "@/components/builder/NavigationTree";
 import SettingsSidePanel, { type SettingsTarget } from "@/components/builder/SettingsSidePanel";
 import CodeView from "@/components/builder/CodeView";
 import SearchDialog from "@/components/docs/SearchDialog";
