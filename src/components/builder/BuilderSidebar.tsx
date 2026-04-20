@@ -111,6 +111,64 @@ const SortableItem = ({
   );
 };
 
+/* ─── Reusable Add menu (Page / Group / Dropdown) ───
+ * Used in two places:
+ *   1. Top of the navigation panel (adds to General/root).
+ *   2. Inside each Tab header (adds Group/Dropdown directly into that tab).
+ * Pass `compact` to hide the "Page" entry — used inside Tab headers where
+ * pages live within a group (matches Mintlify's mental model).
+ */
+const AddItemMenu = ({
+  onAddPage,
+  onAddGroup,
+  onAddDropdown,
+  textColor,
+  title = "Add",
+  compact,
+  size = "sm",
+}: {
+  onAddPage?: () => void;
+  onAddGroup: () => void;
+  onAddDropdown: () => void;
+  textColor: string;
+  title?: string;
+  compact?: boolean;
+  size?: "sm" | "xs";
+}) => {
+  const dim = size === "xs" ? "h-5 w-5" : "h-6 w-6";
+  const ic  = size === "xs" ? "h-3 w-3" : "h-3.5 w-3.5";
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={`${dim} rounded-md flex items-center justify-center hover:bg-muted/60 transition-colors`}
+          style={{ color: `hsl(${textColor})` }}
+          title={title}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Plus className={ic} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[180px] p-1.5" onClick={(e) => e.stopPropagation()}>
+        <div className="px-2 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+          Add
+        </div>
+        {!compact && onAddPage && (
+          <DropdownMenuItem onClick={onAddPage} className="gap-2 text-[12.5px]">
+            <FileText className="h-3.5 w-3.5" /> Page
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onClick={onAddGroup} className="gap-2 text-[12.5px]">
+          <Tag className="h-3.5 w-3.5" /> Group
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onAddDropdown} className="gap-2 text-[12.5px]">
+          <ChevronDown className="h-3.5 w-3.5" /> Dropdown
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 const BuilderSidebar = ({
   settings: s,
   pages,
