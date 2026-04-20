@@ -265,7 +265,10 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     }
   }, [projectId]);
 
-  const addNavGroup = async (type: "label" | "text" | "dropdown" = "label") => {
+  const addNavGroup = async (
+    type: "label" | "text" | "dropdown" = "label",
+    tabId?: string | null,
+  ) => {
     if (!projectId) return;
     const titleByType: Record<string, string> = {
       text: "Static text",
@@ -273,9 +276,11 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
       label: "New Label",
     };
     const title = titleByType[type] || "New Label";
+    const insertData: any = { project_id: projectId, title, order_index: navGroups.length, type };
+    if (tabId) insertData.tab_id = tabId;
     const { data } = await supabase
       .from("nav_groups")
-      .insert({ project_id: projectId, title, order_index: navGroups.length, type } as any)
+      .insert(insertData)
       .select()
       .single();
     if (data) setNavGroups((g) => [...g, data as any]);
