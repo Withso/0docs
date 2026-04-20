@@ -49,7 +49,7 @@ interface BuilderSidebarProps {
   onAddPage: (navGroupId?: string) => void;
   onUpdatePage: (pageId: string, updates: Partial<Page>) => void;
   onDeletePage: (pageId: string) => void;
-  onAddNavGroup: (type?: "label" | "text" | "dropdown") => void;
+  onAddNavGroup: (type?: "label" | "text" | "dropdown", tabId?: string | null) => void;
   onUpdateNavGroup: (groupId: string, updates: Partial<NavGroup>) => void;
   onDeleteNavGroup: (groupId: string) => void;
   onReorderPages: (pages: Page[]) => void;
