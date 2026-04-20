@@ -164,7 +164,9 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     loadPageContent();
   }, [loadPageContent]);
 
-  const addPage = async (navGroupId?: string) => {
+  const addPage = async (navGroupId?: string, _tabId?: string | null) => {
+    // Note: pages currently belong to a nav_group, not directly to a tab.
+    // tabId is reserved for future direct-tab pages; today it's a no-op.
     if (!projectId) return;
     const title = "New Page";
     const slug = `page-${Date.now()}`;
