@@ -4,7 +4,7 @@ import {
   Settings as SettingsIcon, ChevronDown, ChevronRight,
   Folder, FolderOpen, Layers, Languages, Box, GitBranch,
 } from "lucide-react";
-import GroupSettingsDialog from "./GroupSettingsDialog";
+// GroupSettingsDialog removed — settings now open in a side panel managed by Builder.tsx
 // Note: TabsManager is no longer rendered here — tabs render inline as collapsible group headers.
 import type { Page, Section, NavGroup, Tab } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -55,8 +55,10 @@ interface BuilderSidebarProps {
   onReorderPages: (pages: Page[]) => void;
   onReorderNavGroups: (groups: NavGroup[]) => void;
   onReorderSections: (sections: Section[]) => void;
-  /** Open the per-page settings dialog (Mintlify-style gear icon on each row). */
+  /** Open the per-page settings side panel (Mintlify-style). */
   onOpenPageSettings?: (page: Page) => void;
+  /** Open the per-group settings side panel. */
+  onOpenGroupSettings?: (group: NavGroup) => void;
 }
 
 /* ─── Unified flat item types ─── */
@@ -193,13 +195,13 @@ const BuilderSidebar = ({
   onReorderNavGroups,
   onReorderSections,
   onOpenPageSettings,
+  onOpenGroupSettings,
 }: BuilderSidebarProps) => {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
-  const [settingsGroup, setSettingsGroup] = useState<NavGroup | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   const sensors = useSensors(
@@ -610,7 +612,7 @@ const BuilderSidebar = ({
           <Pencil className="h-2 w-2" />
         </button>
         <button
-          onClick={() => setSettingsGroup(group)}
+          onClick={() => onOpenGroupSettings?.(group)}
           style={{ color: `hsl(${s.mutedForegroundColor})` }}
           title="Group settings"
         >
@@ -673,7 +675,7 @@ const BuilderSidebar = ({
           <Pencil className="h-2 w-2" />
         </button>
         <button
-          onClick={() => setSettingsGroup(group)}
+          onClick={() => onOpenGroupSettings?.(group)}
           style={{ color: `hsl(${s.mutedForegroundColor})` }}
           title="Group settings"
         >
@@ -973,24 +975,7 @@ const BuilderSidebar = ({
         </DragOverlay>
       </DndContext>
 
-      <GroupSettingsDialog
-        group={settingsGroup}
-        tabs={tabs}
-        open={!!settingsGroup}
-        onOpenChange={(open) => !open && setSettingsGroup(null)}
-        onSaved={(updated) => {
-          // Sync the freshly-saved row into the parent useBuilder state so
-          // tab filtering, dropdown rendering, etc. reflect the change immediately.
-          if (updated && settingsGroup) {
-            onUpdateNavGroup(settingsGroup.id, {
-              title: updated.title,
-              type: updated.type,
-              tab_id: updated.tab_id,
-              metadata: updated.metadata,
-            });
-          }
-        }}
-      />
+      {/* Group settings now open in the SettingsSidePanel managed by Builder.tsx */}
     </aside>
   );
 };

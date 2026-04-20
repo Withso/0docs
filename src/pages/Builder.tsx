@@ -20,7 +20,7 @@ import FilesPanel from "@/components/builder/FilesPanel";
 import AnalyticsContent from "@/components/builder/AnalyticsContent";
 import ConfigurationsPanel from "@/components/builder/ConfigurationsPanel";
 import PageSettingsPanel from "@/components/builder/PageSettingsPanel";
-import PageSettingsDialog from "@/components/builder/PageSettingsDialog";
+import SettingsSidePanel, { type SettingsTarget } from "@/components/builder/SettingsSidePanel";
 import CodeView from "@/components/builder/CodeView";
 import SearchDialog from "@/components/docs/SearchDialog";
 import { Button } from "@/components/ui/button";
@@ -80,7 +80,7 @@ const Builder = () => {
   const [mode, setMode] = useState<BuilderMode>(getInitialMode);
   const [designSubMode, setDesignSubMode] = useState<DesignSubMode>("live");
   const [editorTab, setEditorTab] = useState<"navigation" | "files">("navigation");
-  const [pageSettingsTarget, setPageSettingsTarget] = useState<Page | null>(null);
+  const [settingsTarget, setSettingsTarget] = useState<SettingsTarget | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Global ⌘K / Ctrl+K to open search
@@ -323,7 +323,8 @@ const Builder = () => {
                     onReorderPages={reorderPages}
                     onReorderNavGroups={reorderNavGroups}
                     onReorderSections={reorderSections}
-                    onOpenPageSettings={(p) => setPageSettingsTarget(p)}
+                    onOpenPageSettings={(p) => setSettingsTarget({ kind: "page", page: p })}
+                    onOpenGroupSettings={(g) => setSettingsTarget({ kind: "group", group: g })}
                   />
                 ) : (
                   <FilesPanel
@@ -350,6 +351,20 @@ const Builder = () => {
                 <span className="truncate flex-1 text-left">Configurations</span>
               </button>
             </aside>
+          )}
+
+          {/* Mintlify-style settings side panel — slides in next to the Navigation column */}
+          {(mode === "editor" || mode === "code") && settingsTarget && (
+            <SettingsSidePanel
+              target={settingsTarget}
+              onClose={() => setSettingsTarget(null)}
+              projectSlug={project?.slug}
+              tabs={tabs}
+              onPageUpdated={(id, updates) => updatePage(id, updates)}
+              onGroupUpdated={(id, updates) => updateNavGroup(id, updates)}
+              onDeletePage={(id) => deletePage(id)}
+              onDeleteGroup={(id) => deleteNavGroup(id)}
+            />
           )}
 
           <div className="flex-1 min-w-0 flex flex-col">
@@ -514,12 +529,7 @@ const Builder = () => {
 
       <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
 
-      <PageSettingsDialog
-        page={pageSettingsTarget}
-        open={!!pageSettingsTarget}
-        onOpenChange={(o) => { if (!o) setPageSettingsTarget(null); }}
-        projectSlug={project?.slug}
-      />
+      {/* Settings side panel rendered at top-level so it floats next to the navigation column on desktop */}
 
       <SearchDialog
         open={searchOpen}
