@@ -75,7 +75,7 @@ const SettingsSidePanel = ({
   const handleDelete = () => {
     if (target.kind === "page") onDeletePage?.(target.page.id);
     else if (target.kind === "group" || target.kind === "dropdown") onDeleteGroup?.(target.group.id);
-    else onDeleteTab?.(target.tab.id);
+    else if (target.kind === "tab" || target.kind === "language" || target.kind === "product" || target.kind === "version") onDeleteTab?.(target.tab.id);
     onClose();
   };
 
