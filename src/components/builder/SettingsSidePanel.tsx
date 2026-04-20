@@ -1,5 +1,9 @@
-import { useEffect, useState } from "react";
-import { X, Trash2, Type, Image as ImageIcon, Pipette, EyeOff, Globe, FileText, Tag as TagIcon, Hash, Sparkles, Layers as LayersIcon, ChevronDown } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import {
+  X, Trash2, Type, Image as ImageIcon, Pipette, EyeOff, Globe,
+  FileText, Tag as TagIcon, Hash, Sparkles, Layers as LayersIcon,
+  ChevronDown, GripVertical, Plus, Languages, Box, GitBranch,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -7,21 +11,25 @@ import {
 } from "@/components/ui/select";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
 import { supabase } from "@/integrations/supabase/client";
-import type { Page, NavGroup, Tab } from "@/hooks/use-builder";
+import type { Page, NavGroup, Tab, Section } from "@/hooks/use-builder";
+import type { NavSettingsKind } from "./NavigationTree";
 
 /**
  * Mintlify-style **side** settings panel.
- * Slides in next to the Navigation column (NOT a modal dialog).
- * Supports two targets:
- *   - kind "page"  → edit a Page
- *   - kind "group" → edit a NavGroup (label / text / dropdown)
+ * Slides in next to the Navigation column. Auto-saves with debouncing.
  *
- * Auto-saves with debouncing — no Save button.
+ * Now supports ALL nav item kinds:
+ *   page | group | dropdown | tab | language | product | version
+ *
+ * Page settings additionally include an editable "Sections" list (the
+ * sections of that page). Sections are NOT shown in the navigation tree
+ * anymore — they live here.
  */
 
 export type SettingsTarget =
   | { kind: "page"; page: Page }
-  | { kind: "group"; group: NavGroup };
+  | { kind: "group" | "dropdown"; group: NavGroup }
+  | { kind: "tab" | "language" | "product" | "version"; tab: Tab };
 
 interface Props {
   target: SettingsTarget | null;
@@ -29,73 +37,58 @@ interface Props {
   width?: number;
   projectSlug?: string;
   tabs?: Tab[];
-  /** Sync newly-saved row back into builder state. */
   onPageUpdated?: (pageId: string, updates: Partial<Page>) => void;
   onGroupUpdated?: (groupId: string, updates: Partial<NavGroup>) => void;
+  onTabUpdated?: (tabId: string, updates: Partial<Tab>) => void;
   onDeletePage?: (pageId: string) => void;
   onDeleteGroup?: (groupId: string) => void;
+  onDeleteTab?: (tabId: string) => void;
 }
 
-interface PageMetadata {
-  externalUrl?: string;
-  sidebarTitle?: string;
-  ogImage?: string;
-  keywords?: string;
-  mode?: "default" | "wide" | "custom";
-  tag?: string;
-  icon?: string;
-  hidden?: boolean;
-}
-
-interface GroupMetadata {
-  hidden?: boolean;
-  expanded?: boolean;
-  tag?: string;
-  icon?: string;
-  openapiSpec?: string;
-  asyncapiSpec?: string;
-  color?: string;
-}
+const headerLabelFor = (target: SettingsTarget) => {
+  switch (target.kind) {
+    case "page":     return "Page settings";
+    case "group":    return "Group settings";
+    case "dropdown": return "Dropdown settings";
+    case "tab":      return "Tab settings";
+    case "language": return "Language settings";
+    case "product":  return "Product settings";
+    case "version":  return "Version settings";
+  }
+};
 
 const SettingsSidePanel = ({
   target,
   onClose,
-  width = 340,
+  width = 360,
   projectSlug,
   tabs = [],
   onPageUpdated,
   onGroupUpdated,
+  onTabUpdated,
   onDeletePage,
   onDeleteGroup,
+  onDeleteTab,
 }: Props) => {
   if (!target) return null;
 
-  const headerLabel =
-    target.kind === "page"
-      ? "Page settings"
-      : target.kind === "group"
-        ? target.group.type === "dropdown"
-          ? "Dropdown settings"
-          : target.group.type === "text"
-            ? "Text settings"
-            : "Group settings"
-        : "Settings";
+  const handleDelete = () => {
+    if (target.kind === "page") onDeletePage?.(target.page.id);
+    else if (target.kind === "group" || target.kind === "dropdown") onDeleteGroup?.(target.group.id);
+    else if (target.kind === "tab" || target.kind === "language" || target.kind === "product" || target.kind === "version") onDeleteTab?.(target.tab.id);
+    onClose();
+  };
 
   return (
     <aside
       className="shrink-0 border-r border-border/40 bg-background flex flex-col h-screen sticky top-0 animate-slide-in-right"
       style={{ width }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 h-11 border-b border-border/40 shrink-0">
-        <span className="text-[13px] font-medium text-foreground truncate">{headerLabel}</span>
+      <div className="flex items-center justify-between px-3 h-10 border-b border-border/40 shrink-0">
+        <span className="text-[12.5px] font-medium text-foreground truncate">{headerLabelFor(target)}</span>
         <div className="flex items-center gap-0.5">
           <button
-            onClick={() => {
-              if (target.kind === "page") onDeletePage?.(target.page.id);
-              else onDeleteGroup?.(target.group.id);
-              onClose();
-            }}
+            onClick={handleDelete}
             className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-muted/50 transition-colors"
             title="Delete"
           >
@@ -111,36 +104,40 @@ const SettingsSidePanel = ({
         </div>
       </div>
 
-      {/* Body */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
-        {target.kind === "page" ? (
-          <PageSettingsBody
-            page={target.page}
-            projectSlug={projectSlug}
-            onPageUpdated={onPageUpdated}
-          />
-        ) : (
-          <GroupSettingsBody
-            group={target.group}
-            tabs={tabs}
-            onGroupUpdated={onGroupUpdated}
-          />
+        {target.kind === "page" && (
+          <PageBody page={target.page} projectSlug={projectSlug} onPageUpdated={onPageUpdated} />
+        )}
+        {(target.kind === "group" || target.kind === "dropdown") && (
+          <GroupBody group={target.group} tabs={tabs} onGroupUpdated={onGroupUpdated} />
+        )}
+        {(target.kind === "tab" || target.kind === "language" || target.kind === "product" || target.kind === "version") && (
+          <TabBody tab={target.tab} kind={target.kind} onTabUpdated={onTabUpdated} />
         )}
       </div>
     </aside>
   );
 };
 
-/* ───────────────────────────────────────── PAGE BODY ───────────────────────────────────────── */
+/* ───────────────────────── PAGE BODY ───────────────────────── */
 
-const PageSettingsBody = ({
-  page,
-  projectSlug,
-  onPageUpdated,
+interface PageMetadata {
+  externalUrl?: string;
+  sidebarTitle?: string;
+  ogImage?: string;
+  keywords?: string;
+  mode?: "default" | "wide" | "custom";
+  tag?: string;
+  icon?: string;
+  hidden?: boolean;
+}
+
+const PageBody = ({
+  page, projectSlug, onPageUpdated,
 }: {
   page: Page;
   projectSlug?: string;
-  onPageUpdated?: (pageId: string, updates: Partial<Page>) => void;
+  onPageUpdated?: (id: string, u: Partial<Page>) => void;
 }) => {
   const [title, setTitle] = useState(page.title);
   const [slug, setSlug] = useState(page.slug || "");
@@ -181,107 +178,70 @@ const PageSettingsBody = ({
 
   return (
     <>
-      <Row icon={Type} label="Title">
-        <PlainInput
-          value={title}
-          onChange={(v) => { setTitle(v); saveTitle(v); }}
-        />
-      </Row>
+      <Section title="General">
+        <Row icon={Type} label="Title">
+          <PlainInput value={title} onChange={(v) => { setTitle(v); saveTitle(v); }} />
+        </Row>
+        <Row icon={Hash} label="Slug">
+          <PlainInput value={slug} onChange={(v) => { setSlug(v); saveSlug(v); }} mono placeholder="page-slug" />
+        </Row>
+        <Row icon={ImageIcon} label="Icon">
+          <PlainInput value={meta.icon || ""} onChange={(v) => updateMeta("icon", v)} placeholder="lucide name" />
+        </Row>
+        <Row icon={TagIcon} label="Tag">
+          <PlainInput value={meta.tag || ""} onChange={(v) => updateMeta("tag", v)} placeholder="NEW, Beta…" />
+        </Row>
+        <Row icon={EyeOff} label="Hidden">
+          <Switch checked={meta.hidden === true} onCheckedChange={(v) => updateMeta("hidden", v)} />
+        </Row>
+      </Section>
 
-      <Row icon={Hash} label="Slug">
-        <PlainInput
-          value={slug}
-          onChange={(v) => { setSlug(v); saveSlug(v); }}
-          mono
-          placeholder="page-slug"
-        />
-      </Row>
+      <Section title="Sections">
+        <SectionsList pageId={page.id} />
+      </Section>
 
-      <Row icon={ImageIcon} label="Icon">
-        <PlainInput
-          value={meta.icon || ""}
-          onChange={(v) => updateMeta("icon", v)}
-          placeholder="lucide icon name"
-        />
-      </Row>
+      <Section title="SEO">
+        <Row icon={Sparkles} label="Description" stack>
+          <textarea
+            value={metaDesc}
+            onChange={(e) => { setMetaDesc(e.target.value); saveMetaDesc(e.target.value); }}
+            rows={2}
+            maxLength={160}
+            className="w-full rounded-md bg-muted/40 border border-transparent hover:border-border/60 focus:border-border px-2.5 py-1.5 text-[12px] resize-none outline-none"
+            placeholder="Brief page description…"
+          />
+          <div className="text-right text-[10px] text-muted-foreground mt-0.5">{metaDesc.length}/160</div>
+        </Row>
+        <Row icon={ImageIcon} label="OG image">
+          <PlainInput value={meta.ogImage || ""} onChange={(v) => updateMeta("ogImage", v)} placeholder="https://…/og.png" />
+        </Row>
+        <Row icon={TagIcon} label="Keywords">
+          <PlainInput value={meta.keywords || ""} onChange={(v) => updateMeta("keywords", v)} placeholder="comma, separated" />
+        </Row>
+        <Row icon={FileText} label="Sidebar title">
+          <PlainInput value={meta.sidebarTitle || ""} onChange={(v) => updateMeta("sidebarTitle", v)} placeholder="Defaults to title" />
+        </Row>
+      </Section>
 
-      <Row icon={TagIcon} label="Tag">
-        <PlainInput
-          value={meta.tag || ""}
-          onChange={(v) => updateMeta("tag", v)}
-          placeholder="NEW, Beta…"
-        />
-      </Row>
+      <Section title="Advanced">
+        <Row icon={Globe} label="External URL">
+          <PlainInput value={meta.externalUrl || ""} onChange={(v) => updateMeta("externalUrl", v)} placeholder="https://example.com" />
+        </Row>
+        <Row icon={LayersIcon} label="Mode">
+          <Select value={meta.mode || "default"} onValueChange={(v) => updateMeta("mode", v as PageMetadata["mode"])}>
+            <SelectTrigger className="h-8 text-[12px] bg-muted/40 border-transparent hover:border-border/60 focus:border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default" className="text-[12px]">Default</SelectItem>
+              <SelectItem value="wide" className="text-[12px]">Wide</SelectItem>
+              <SelectItem value="custom" className="text-[12px]">Custom</SelectItem>
+            </SelectContent>
+          </Select>
+        </Row>
+      </Section>
 
-      <Divider />
-
-      <Row icon={EyeOff} label="Hidden">
-        <Switch checked={meta.hidden === true} onCheckedChange={(v) => updateMeta("hidden", v)} />
-      </Row>
-
-      <Row icon={Globe} label="External URL">
-        <PlainInput
-          value={meta.externalUrl || ""}
-          onChange={(v) => updateMeta("externalUrl", v)}
-          placeholder="https://example.com"
-        />
-      </Row>
-
-      <Divider />
-
-      <Row icon={FileText} label="Sidebar title">
-        <PlainInput
-          value={meta.sidebarTitle || ""}
-          onChange={(v) => updateMeta("sidebarTitle", v)}
-          placeholder="Defaults to page title"
-        />
-      </Row>
-
-      <Row icon={Sparkles} label="Description" stack>
-        <textarea
-          value={metaDesc}
-          onChange={(e) => { setMetaDesc(e.target.value); saveMetaDesc(e.target.value); }}
-          rows={2}
-          maxLength={160}
-          className="w-full rounded-md bg-muted/40 border border-transparent hover:border-border/60 focus:border-border px-2.5 py-1.5 text-[12px] resize-none outline-none"
-          placeholder="Brief page description…"
-        />
-        <div className="text-right text-[10px] text-muted-foreground mt-0.5">{metaDesc.length}/160</div>
-      </Row>
-
-      <Row icon={ImageIcon} label="OG image">
-        <PlainInput
-          value={meta.ogImage || ""}
-          onChange={(v) => updateMeta("ogImage", v)}
-          placeholder="https://…/og.png"
-        />
-      </Row>
-
-      <Row icon={TagIcon} label="Keywords">
-        <PlainInput
-          value={meta.keywords || ""}
-          onChange={(v) => updateMeta("keywords", v)}
-          placeholder="comma, separated"
-        />
-      </Row>
-
-      <Row icon={LayersIcon} label="Mode">
-        <Select
-          value={meta.mode || "default"}
-          onValueChange={(v) => updateMeta("mode", v as PageMetadata["mode"])}
-        >
-          <SelectTrigger className="h-8 text-[12px] bg-muted/40 border-transparent hover:border-border/60 focus:border-border">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="default" className="text-[12px]">Default</SelectItem>
-            <SelectItem value="wide" className="text-[12px]">Wide</SelectItem>
-            <SelectItem value="custom" className="text-[12px]">Custom</SelectItem>
-          </SelectContent>
-        </Select>
-      </Row>
-
-      <div className="pt-3 mt-2 border-t border-border/40">
+      <div className="pt-2 mt-2 border-t border-border/40">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">File path</div>
         <div className="px-2 py-1.5 rounded-md bg-muted/40 text-[11px] font-mono text-muted-foreground truncate">
           {filePath}
@@ -291,16 +251,108 @@ const PageSettingsBody = ({
   );
 };
 
-/* ───────────────────────────────────────── GROUP BODY ───────────────────────────────────────── */
+/* ─── Sections list (inside Page settings) ─── */
+const SectionsList = ({ pageId }: { pageId: string }) => {
+  const [sections, setSections] = useState<Section[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const GroupSettingsBody = ({
-  group,
-  tabs,
-  onGroupUpdated,
+  const load = useCallback(async () => {
+    const { data } = await supabase
+      .from("sections")
+      .select("*")
+      .eq("page_id", pageId)
+      .order("order_index");
+    setSections((data || []) as Section[]);
+    setLoading(false);
+  }, [pageId]);
+
+  useEffect(() => {
+    setLoading(true);
+    load();
+  }, [load]);
+
+  const addSection = async () => {
+    const { data } = await supabase
+      .from("sections")
+      .insert({ page_id: pageId, title: "New Section", order_index: sections.length })
+      .select()
+      .single();
+    if (data) {
+      setSections((s) => [...s, data as Section]);
+      // Notify the editor so it reloads page content
+      window.dispatchEvent(new CustomEvent("builder:reloadActivePage"));
+    }
+  };
+
+  const renameSection = useDebouncedCallback(async (id: string, title: string) => {
+    await supabase.from("sections").update({ title }).eq("id", id);
+    window.dispatchEvent(new CustomEvent("builder:updateSection", { detail: { id, updates: { title } } }));
+  }, 500);
+
+  const deleteSection = async (id: string) => {
+    await supabase.from("sections").delete().eq("id", id);
+    setSections((s) => s.filter((x) => x.id !== id));
+    window.dispatchEvent(new CustomEvent("builder:reloadActivePage"));
+  };
+
+  if (loading) {
+    return <div className="text-[11.5px] text-muted-foreground/70 px-1 py-2">Loading…</div>;
+  }
+
+  return (
+    <div className="space-y-1">
+      {sections.length === 0 && (
+        <div className="text-[11.5px] text-muted-foreground/70 italic px-1 py-1">
+          No sections yet on this page.
+        </div>
+      )}
+      {sections.map((sec) => (
+        <div key={sec.id} className="group flex items-center gap-1 px-1 py-0.5 rounded-md hover:bg-muted/40">
+          <GripVertical className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+          <input
+            defaultValue={sec.title.replace(/<[^>]+>/g, "")}
+            onChange={(e) => renameSection(sec.id, e.target.value)}
+            className="flex-1 min-w-0 bg-transparent text-[12px] outline-none border-none focus:bg-background/50 rounded px-1"
+          />
+          <button
+            onClick={() => deleteSection(sec.id)}
+            className="opacity-0 group-hover:opacity-100 transition-opacity h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-destructive"
+            title="Delete section"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      ))}
+      <button
+        onClick={addSection}
+        className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+      >
+        <Plus className="h-3 w-3" /> Add section
+      </button>
+    </div>
+  );
+};
+
+/* ───────────────────────── GROUP BODY ───────────────────────── */
+
+interface GroupMetadata {
+  hidden?: boolean;
+  expanded?: boolean;
+  tag?: string;
+  icon?: string;
+  openapiSpec?: string;
+  asyncapiSpec?: string;
+  color?: string;
+  description?: string;
+  link?: string;
+}
+
+const GroupBody = ({
+  group, tabs, onGroupUpdated,
 }: {
   group: NavGroup;
   tabs: Tab[];
-  onGroupUpdated?: (groupId: string, updates: Partial<NavGroup>) => void;
+  onGroupUpdated?: (id: string, u: Partial<NavGroup>) => void;
 }) => {
   const [title, setTitle] = useState(group.title);
   const [type, setType] = useState<"label" | "text" | "dropdown">((group.type as any) || "label");
@@ -340,117 +392,252 @@ const GroupSettingsBody = ({
     saveMeta(next);
   };
 
+  const isDropdown = group.type === "dropdown";
+
   return (
     <>
-      <Row icon={Type} label="Title">
-        <PlainInput value={title} onChange={(v) => { setTitle(v); saveTitle(v); }} />
-      </Row>
-
-      <Row icon={LayersIcon} label="Type">
-        <Select value={type} onValueChange={(v) => saveType(v as any)}>
-          <SelectTrigger className="h-8 text-[12px] bg-muted/40 border-transparent hover:border-border/60 focus:border-border">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="label" className="text-[12px]">Label (header)</SelectItem>
-            <SelectItem value="text" className="text-[12px]">Text (plain row)</SelectItem>
-            <SelectItem value="dropdown" className="text-[12px]">Dropdown</SelectItem>
-          </SelectContent>
-        </Select>
-      </Row>
-
-      <Row icon={ImageIcon} label="Icon">
-        <PlainInput
-          value={meta.icon || ""}
-          onChange={(v) => updateMeta("icon", v)}
-          placeholder="lucide icon name"
-        />
-      </Row>
-
-      <Row icon={Pipette} label="Color">
-        <div className="flex items-center gap-1.5 w-full">
-          <div
-            className="h-6 w-7 rounded-md border border-border/60 shrink-0"
-            style={{ background: meta.color || "transparent" }}
-          />
-          <PlainInput
-            value={meta.color || ""}
-            onChange={(v) => updateMeta("color", v)}
-            placeholder="#16A34A"
-            mono
-          />
-        </div>
-      </Row>
-
-      <Divider />
-
-      <Row icon={EyeOff} label="Hidden">
-        <Switch checked={meta.hidden === true} onCheckedChange={(v) => updateMeta("hidden", v)} />
-      </Row>
-
-      <Row icon={ChevronDown} label="Expanded by default">
-        <Switch checked={meta.expanded !== false} onCheckedChange={(v) => updateMeta("expanded", v)} />
-      </Row>
-
-      <Row icon={TagIcon} label="Tag">
-        <PlainInput
-          value={meta.tag || ""}
-          onChange={(v) => updateMeta("tag", v)}
-          placeholder="NEW, Beta…"
-        />
-      </Row>
-
-      {tabs.length > 0 && (
-        <Row icon={LayersIcon} label="Belongs to tab">
-          <Select value={tabId} onValueChange={saveTab}>
+      <Section title="General">
+        <Row icon={Type} label="Title">
+          <PlainInput value={title} onChange={(v) => { setTitle(v); saveTitle(v); }} />
+        </Row>
+        {isDropdown && (
+          <Row icon={FileText} label="Description" stack>
+            <textarea
+              value={meta.description || ""}
+              onChange={(e) => updateMeta("description", e.target.value)}
+              rows={2}
+              className="w-full rounded-md bg-muted/40 border border-transparent hover:border-border/60 focus:border-border px-2.5 py-1.5 text-[12px] resize-none outline-none"
+              placeholder="Enter description"
+            />
+          </Row>
+        )}
+        <Row icon={LayersIcon} label="Type">
+          <Select value={type} onValueChange={(v) => saveType(v as any)}>
             <SelectTrigger className="h-8 text-[12px] bg-muted/40 border-transparent hover:border-border/60 focus:border-border">
-              <SelectValue placeholder="No tab" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__" className="text-[12px]">— None —</SelectItem>
-              {tabs.map((t) => (
-                <SelectItem key={t.id} value={t.id} className="text-[12px]">{t.label}</SelectItem>
-              ))}
+              <SelectItem value="label" className="text-[12px]">Label</SelectItem>
+              <SelectItem value="text" className="text-[12px]">Text</SelectItem>
+              <SelectItem value="dropdown" className="text-[12px]">Dropdown</SelectItem>
             </SelectContent>
           </Select>
         </Row>
+        <Row icon={ImageIcon} label="Icon">
+          <PlainInput value={meta.icon || ""} onChange={(v) => updateMeta("icon", v)} placeholder="lucide name" />
+        </Row>
+        <Row icon={Pipette} label="Color">
+          <div className="flex items-center gap-1.5 w-full">
+            <div className="h-6 w-7 rounded-md border border-border/60 shrink-0" style={{ background: meta.color || "transparent" }} />
+            <PlainInput value={meta.color || ""} onChange={(v) => updateMeta("color", v)} placeholder="#16A34A" mono />
+          </div>
+        </Row>
+        <Row icon={EyeOff} label="Hidden">
+          <Switch checked={meta.hidden === true} onCheckedChange={(v) => updateMeta("hidden", v)} />
+        </Row>
+        {!isDropdown && (
+          <Row icon={ChevronDown} label="Expanded">
+            <Switch checked={meta.expanded !== false} onCheckedChange={(v) => updateMeta("expanded", v)} />
+          </Row>
+        )}
+        <Row icon={TagIcon} label="Tag">
+          <PlainInput value={meta.tag || ""} onChange={(v) => updateMeta("tag", v)} placeholder="NEW, Beta…" />
+        </Row>
+      </Section>
+
+      {tabs.length > 0 && (
+        <Section title="Placement">
+          <Row icon={LayersIcon} label="Belongs to">
+            <Select value={tabId} onValueChange={saveTab}>
+              <SelectTrigger className="h-8 text-[12px] bg-muted/40 border-transparent hover:border-border/60 focus:border-border">
+                <SelectValue placeholder="Root" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__" className="text-[12px]">— Root —</SelectItem>
+                {tabs.map((t) => (
+                  <SelectItem key={t.id} value={t.id} className="text-[12px]">{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Row>
+        </Section>
       )}
 
-      <Divider />
-
-      <Row icon={Globe} label="OpenAPI spec">
-        <PlainInput
-          value={meta.openapiSpec || ""}
-          onChange={(v) => updateMeta("openapiSpec", v)}
-          placeholder="https://…/openapi.json"
-        />
-      </Row>
-
-      <Row icon={Globe} label="AsyncAPI spec">
-        <PlainInput
-          value={meta.asyncapiSpec || ""}
-          onChange={(v) => updateMeta("asyncapiSpec", v)}
-          placeholder="https://…/asyncapi.json"
-        />
-      </Row>
+      <Section title="API specs">
+        <Row icon={Globe} label="OpenAPI">
+          <PlainInput value={meta.openapiSpec || ""} onChange={(v) => updateMeta("openapiSpec", v)} placeholder="https://…/openapi.json" />
+        </Row>
+        <Row icon={Globe} label="AsyncAPI">
+          <PlainInput value={meta.asyncapiSpec || ""} onChange={(v) => updateMeta("asyncapiSpec", v)} placeholder="https://…/asyncapi.json" />
+        </Row>
+      </Section>
     </>
   );
 };
 
-/* ───────────────────────────────────────── PRIMITIVES ───────────────────────────────────────── */
+/* ───────────────────────── TAB BODY (Tab/Language/Product/Version) ───────────────────────── */
+
+interface TabMetadata {
+  kind?: "tab" | "language" | "product" | "version";
+  hidden?: boolean;
+  isDefault?: boolean;
+  locale?: string;            // language only
+  badge?: string;
+  link?: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+}
+
+const TabBody = ({
+  tab, kind, onTabUpdated,
+}: {
+  tab: Tab;
+  kind: NavSettingsKind;
+  onTabUpdated?: (id: string, u: Partial<Tab>) => void;
+}) => {
+  const [label, setLabel] = useState(tab.label);
+  const [meta, setMeta] = useState<TabMetadata>(((tab.metadata as any) || {}) as TabMetadata);
+
+  useEffect(() => {
+    setLabel(tab.label);
+    setMeta(((tab.metadata as any) || {}) as TabMetadata);
+  }, [tab.id]);
+
+  const saveLabel = useDebouncedCallback((v: string) => {
+    (supabase as any).from("tabs").update({ label: v }).eq("id", tab.id).then(() => {});
+    onTabUpdated?.(tab.id, { label: v });
+  }, 500);
+  const saveMeta = useDebouncedCallback((next: TabMetadata) => {
+    (supabase as any).from("tabs").update({ metadata: next }).eq("id", tab.id).then(() => {});
+    onTabUpdated?.(tab.id, { metadata: next } as any);
+  }, 500);
+
+  const updateMeta = <K extends keyof TabMetadata>(key: K, value: TabMetadata[K]) => {
+    const next = { ...meta, [key]: value };
+    setMeta(next);
+    saveMeta(next);
+  };
+
+  const KindIcon = kind === "language" ? Languages
+    : kind === "product" ? Box
+    : kind === "version" ? GitBranch
+    : LayersIcon;
+
+  return (
+    <>
+      <Section title="General">
+        <Row icon={Type} label="Title">
+          <PlainInput value={label} onChange={(v) => { setLabel(v); saveLabel(v); }} />
+        </Row>
+        <Row icon={KindIcon} label="Kind">
+          <Select
+            value={meta.kind || (kind === "group" ? "tab" : kind)}
+            onValueChange={(v) => updateMeta("kind", v as TabMetadata["kind"])}
+          >
+            <SelectTrigger className="h-8 text-[12px] bg-muted/40 border-transparent hover:border-border/60 focus:border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tab" className="text-[12px]">Tab</SelectItem>
+              <SelectItem value="language" className="text-[12px]">Language</SelectItem>
+              <SelectItem value="product" className="text-[12px]">Product</SelectItem>
+              <SelectItem value="version" className="text-[12px]">Version</SelectItem>
+            </SelectContent>
+          </Select>
+        </Row>
+        <Row icon={ImageIcon} label="Icon">
+          <PlainInput value={meta.icon || ""} onChange={(v) => updateMeta("icon", v)} placeholder="lucide name" />
+        </Row>
+        <Row icon={Pipette} label="Color">
+          <div className="flex items-center gap-1.5 w-full">
+            <div className="h-6 w-7 rounded-md border border-border/60 shrink-0" style={{ background: meta.color || "transparent" }} />
+            <PlainInput value={meta.color || ""} onChange={(v) => updateMeta("color", v)} placeholder="#3B82F6" mono />
+          </div>
+        </Row>
+        <Row icon={EyeOff} label="Hidden">
+          <Switch checked={meta.hidden === true} onCheckedChange={(v) => updateMeta("hidden", v)} />
+        </Row>
+      </Section>
+
+      {kind === "language" && (
+        <Section title="Language">
+          <Row icon={Globe} label="Locale">
+            <PlainInput
+              value={meta.locale || ""}
+              onChange={(v) => updateMeta("locale", v)}
+              placeholder="en, ja, es-MX…"
+              mono
+            />
+          </Row>
+          <Row icon={Sparkles} label="Default">
+            <Switch checked={meta.isDefault === true} onCheckedChange={(v) => updateMeta("isDefault", v)} />
+          </Row>
+        </Section>
+      )}
+
+      {kind === "version" && (
+        <Section title="Version">
+          <Row icon={Sparkles} label="Default">
+            <Switch checked={meta.isDefault === true} onCheckedChange={(v) => updateMeta("isDefault", v)} />
+          </Row>
+          <Row icon={TagIcon} label="Badge">
+            <PlainInput
+              value={meta.badge || ""}
+              onChange={(v) => updateMeta("badge", v)}
+              placeholder="latest, beta…"
+            />
+          </Row>
+        </Section>
+      )}
+
+      {kind === "product" && (
+        <Section title="Product">
+          <Row icon={FileText} label="Description" stack>
+            <textarea
+              value={meta.description || ""}
+              onChange={(e) => updateMeta("description", e.target.value)}
+              rows={2}
+              className="w-full rounded-md bg-muted/40 border border-transparent hover:border-border/60 focus:border-border px-2.5 py-1.5 text-[12px] resize-none outline-none"
+              placeholder="Short product description…"
+            />
+          </Row>
+        </Section>
+      )}
+
+      <Section title="Link">
+        <Row icon={Globe} label="External URL">
+          <PlainInput
+            value={meta.link || ""}
+            onChange={(v) => updateMeta("link", v)}
+            placeholder="https://…"
+          />
+        </Row>
+      </Section>
+    </>
+  );
+};
+
+/* ───────────────────────── PRIMITIVES ───────────────────────── */
+
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="pb-2 mb-2 border-b border-border/30 last:border-0">
+    <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 px-1 mb-1">
+      {title}
+    </div>
+    <div className="space-y-0.5">{children}</div>
+  </div>
+);
 
 const Row = ({
-  icon: Icon,
-  label,
-  children,
-  stack,
+  icon: Icon, label, children, stack,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   children: React.ReactNode;
   stack?: boolean;
 }) => (
-  <div className={`flex ${stack ? "flex-col gap-1.5" : "items-center gap-3"} py-1.5 px-1`}>
+  <div className={`flex ${stack ? "flex-col gap-1.5" : "items-center gap-3"} py-1 px-1`}>
     <div className={`flex items-center gap-2 text-[12px] text-muted-foreground ${stack ? "" : "w-[110px] shrink-0"}`}>
       <Icon className="h-3.5 w-3.5 opacity-70" />
       <span className="truncate">{label}</span>
@@ -459,13 +646,8 @@ const Row = ({
   </div>
 );
 
-const Divider = () => <div className="h-px bg-border/40 my-1.5 -mx-1" />;
-
 const PlainInput = ({
-  value,
-  onChange,
-  placeholder,
-  mono,
+  value, onChange, placeholder, mono,
 }: {
   value: string;
   onChange: (v: string) => void;

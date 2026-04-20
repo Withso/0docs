@@ -5,7 +5,7 @@ import { useBuilder } from "@/hooks/use-builder";
 import { useDesignSettings } from "@/hooks/use-design-settings";
 import { usePublish } from "@/hooks/use-publish";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
-import BuilderSidebar from "@/components/builder/BuilderSidebar";
+// BuilderSidebar replaced by NavigationTree (Mintlify-style compact tree)
 import SectionEditor from "@/components/builder/SectionEditor";
 import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
@@ -20,6 +20,7 @@ import FilesPanel from "@/components/builder/FilesPanel";
 import AnalyticsContent from "@/components/builder/AnalyticsContent";
 import ConfigurationsPanel from "@/components/builder/ConfigurationsPanel";
 import PageSettingsPanel from "@/components/builder/PageSettingsPanel";
+import NavigationTree, { type NavSettingsTarget } from "@/components/builder/NavigationTree";
 import SettingsSidePanel, { type SettingsTarget } from "@/components/builder/SettingsSidePanel";
 import CodeView from "@/components/builder/CodeView";
 import SearchDialog from "@/components/docs/SearchDialog";
@@ -192,15 +193,20 @@ const Builder = () => {
     }
   }, [projectId, user?.id, getCompleteSnapshot, publish, pages, settings, navGroups]);
 
-  // Listen for sidebar section title edits and sync to builder state
+  // Listen for sidebar section title edits and full-reload events
   useEffect(() => {
-    const handler = (e: Event) => {
+    const updateHandler = (e: Event) => {
       const { id, updates } = (e as CustomEvent).detail;
       updateSection(id, updates);
     };
-    window.addEventListener("builder:updateSection", handler);
-    return () => window.removeEventListener("builder:updateSection", handler);
-  }, [updateSection]);
+    const reloadHandler = () => { loadPageContent(); };
+    window.addEventListener("builder:updateSection", updateHandler);
+    window.addEventListener("builder:reloadActivePage", reloadHandler);
+    return () => {
+      window.removeEventListener("builder:updateSection", updateHandler);
+      window.removeEventListener("builder:reloadActivePage", reloadHandler);
+    };
+  }, [updateSection, loadPageContent]);
 
   // Block-level import
   const handleBlockLevelImport = useCallback(async (parsed: ParsedOpenAPI) => {
@@ -294,25 +300,18 @@ const Builder = () => {
            */}
           {(mode === "editor" || mode === "code") && (
             <aside
-              className="shrink-0 border-r border-border/40 bg-background/40 flex flex-col h-screen sticky top-0"
-              style={{ width: settings.sidebarWidth + 24 }}
+              className="shrink-0 border-r border-border/40 bg-background flex flex-col h-screen sticky top-0"
+              style={{ width: settings.sidebarWidth + 16 }}
             >
               <EditorTabs value={editorTab} onChange={setEditorTab} />
-              <div className="flex-1 overflow-y-auto px-2 py-2">
+              <div className="flex-1 overflow-y-auto">
                 {editorTab === "navigation" ? (
-                  <BuilderSidebar
+                  <NavigationTree
                     settings={settings}
                     pages={pages}
                     activePage={activePage}
-                    sections={sections}
                     navGroups={navGroups}
                     tabs={tabs}
-                    activeTabId={activeTabId}
-                    onSelectTab={setActiveTabId}
-                    onAddTab={addTab}
-                    onUpdateTab={updateTab}
-                    onDeleteTab={deleteTab}
-                    onReorderTabs={reorderTabs}
                     onSelectPage={setActivePage}
                     onAddPage={addPage}
                     onUpdatePage={updatePage}
@@ -320,11 +319,20 @@ const Builder = () => {
                     onAddNavGroup={addNavGroup}
                     onUpdateNavGroup={updateNavGroup}
                     onDeleteNavGroup={deleteNavGroup}
+                    onAddTab={addTab}
+                    onDeleteTab={deleteTab}
                     onReorderPages={reorderPages}
                     onReorderNavGroups={reorderNavGroups}
-                    onReorderSections={reorderSections}
-                    onOpenPageSettings={(p) => setSettingsTarget({ kind: "page", page: p })}
-                    onOpenGroupSettings={(g) => setSettingsTarget({ kind: "group", group: g })}
+                    onOpenSettings={(t: NavSettingsTarget) => {
+                      if (t.kind === "page" && t.page) setSettingsTarget({ kind: "page", page: t.page });
+                      else if ((t.kind === "group" || t.kind === "dropdown") && t.group) setSettingsTarget({ kind: t.kind, group: t.group });
+                      else if (t.tab) setSettingsTarget({ kind: t.kind as any, tab: t.tab });
+                    }}
+                    selectedSettingsId={
+                      settingsTarget?.kind === "page" ? (settingsTarget as any).page.id
+                      : settingsTarget?.kind === "group" || settingsTarget?.kind === "dropdown" ? (settingsTarget as any).group.id
+                      : settingsTarget ? (settingsTarget as any).tab?.id : null
+                    }
                   />
                 ) : (
                   <FilesPanel
@@ -342,10 +350,9 @@ const Builder = () => {
                 )}
               </div>
 
-              {/* Bottom-pinned: Configurations link (Mintlify style). Page settings now lives on each page row. */}
               <button
                 onClick={() => handleModeChange("configurations")}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors border-t border-border/40"
+                className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors border-t border-border/40"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span className="truncate flex-1 text-left">Configurations</span>
@@ -353,7 +360,6 @@ const Builder = () => {
             </aside>
           )}
 
-          {/* Mintlify-style settings side panel — slides in next to the Navigation column */}
           {(mode === "editor" || mode === "code") && settingsTarget && (
             <SettingsSidePanel
               target={settingsTarget}
@@ -362,8 +368,10 @@ const Builder = () => {
               tabs={tabs}
               onPageUpdated={(id, updates) => updatePage(id, updates)}
               onGroupUpdated={(id, updates) => updateNavGroup(id, updates)}
+              onTabUpdated={(id, updates) => updateTab(id, updates)}
               onDeletePage={(id) => deletePage(id)}
               onDeleteGroup={(id) => deleteNavGroup(id)}
+              onDeleteTab={(id) => deleteTab(id)}
             />
           )}
 
