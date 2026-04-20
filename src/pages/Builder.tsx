@@ -20,7 +20,7 @@ import FilesPanel from "@/components/builder/FilesPanel";
 import AnalyticsContent from "@/components/builder/AnalyticsContent";
 import ConfigurationsPanel from "@/components/builder/ConfigurationsPanel";
 import PageSettingsPanel from "@/components/builder/PageSettingsPanel";
-import PageSettingsDialog from "@/components/builder/PageSettingsDialog";
+import SettingsSidePanel, { type SettingsTarget } from "@/components/builder/SettingsSidePanel";
 import CodeView from "@/components/builder/CodeView";
 import SearchDialog from "@/components/docs/SearchDialog";
 import { Button } from "@/components/ui/button";
@@ -80,7 +80,7 @@ const Builder = () => {
   const [mode, setMode] = useState<BuilderMode>(getInitialMode);
   const [designSubMode, setDesignSubMode] = useState<DesignSubMode>("live");
   const [editorTab, setEditorTab] = useState<"navigation" | "files">("navigation");
-  const [pageSettingsTarget, setPageSettingsTarget] = useState<Page | null>(null);
+  const [settingsTarget, setSettingsTarget] = useState<SettingsTarget | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Global ⌘K / Ctrl+K to open search
