@@ -5,7 +5,7 @@ import { useBuilder } from "@/hooks/use-builder";
 import { useDesignSettings } from "@/hooks/use-design-settings";
 import { usePublish } from "@/hooks/use-publish";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
-import BuilderSidebar from "@/components/builder/BuilderSidebar";
+// BuilderSidebar replaced by NavigationTree (Mintlify-style compact tree)
 import SectionEditor from "@/components/builder/SectionEditor";
 import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
