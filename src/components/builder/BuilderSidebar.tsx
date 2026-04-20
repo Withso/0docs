@@ -4,7 +4,7 @@ import {
   Settings as SettingsIcon, ChevronDown, ChevronRight,
   Folder, FolderOpen, Layers, Languages, Box, GitBranch,
 } from "lucide-react";
-import GroupSettingsDialog from "./GroupSettingsDialog";
+// GroupSettingsDialog removed — settings now open in a side panel managed by Builder.tsx
 // Note: TabsManager is no longer rendered here — tabs render inline as collapsible group headers.
 import type { Page, Section, NavGroup, Tab } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -195,13 +195,13 @@ const BuilderSidebar = ({
   onReorderNavGroups,
   onReorderSections,
   onOpenPageSettings,
+  onOpenGroupSettings,
 }: BuilderSidebarProps) => {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
-  const [settingsGroup, setSettingsGroup] = useState<NavGroup | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   const sensors = useSensors(
