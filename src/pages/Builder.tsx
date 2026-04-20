@@ -353,6 +353,20 @@ const Builder = () => {
             </aside>
           )}
 
+          {/* Mintlify-style settings side panel — slides in next to the Navigation column */}
+          {(mode === "editor" || mode === "code") && settingsTarget && (
+            <SettingsSidePanel
+              target={settingsTarget}
+              onClose={() => setSettingsTarget(null)}
+              projectSlug={project?.slug}
+              tabs={tabs}
+              onPageUpdated={(id, updates) => updatePage(id, updates)}
+              onGroupUpdated={(id, updates) => updateNavGroup(id, updates)}
+              onDeletePage={(id) => deletePage(id)}
+              onDeleteGroup={(id) => deleteNavGroup(id)}
+            />
+          )}
+
           <div className="flex-1 min-w-0 flex flex-col">
             {contentHeader}
             {mode === "editor" && (

@@ -55,8 +55,10 @@ interface BuilderSidebarProps {
   onReorderPages: (pages: Page[]) => void;
   onReorderNavGroups: (groups: NavGroup[]) => void;
   onReorderSections: (sections: Section[]) => void;
-  /** Open the per-page settings dialog (Mintlify-style gear icon on each row). */
+  /** Open the per-page settings side panel (Mintlify-style). */
   onOpenPageSettings?: (page: Page) => void;
+  /** Open the per-group settings side panel. */
+  onOpenGroupSettings?: (group: NavGroup) => void;
 }
 
 /* ─── Unified flat item types ─── */
