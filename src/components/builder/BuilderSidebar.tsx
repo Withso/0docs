@@ -747,53 +747,71 @@ const BuilderSidebar = ({
       }}
       className="shrink-0 overflow-y-auto py-5 pr-4 pl-1"
     >
-      {/* ─── Top bar: Title + Mintlify-style Add menu ─── */}
+      {/* ─── Top bar: Title + (Add to General) + (Wrap-with structural menu) ───
+       *  Simplified UX:
+       *    - The "+" button = add a page/group/dropdown to the General (root) section.
+       *    - The Layers (▤) button = wrap the navigation with a structural container
+       *      (Tab / Language / Product / Version). Tabs/Languages/etc. then have
+       *      their OWN inline "+ Add" inside their header — see below.
+       */}
       <div
-        className="text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center justify-between px-2"
+        className="mb-3 flex items-center justify-between px-2"
         style={{ color: `hsl(${s.sidebarTextColor} / 0.6)` }}
       >
-        <span>Navigation</span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-muted/60 transition-colors"
-              style={{ color: `hsl(${s.sidebarTextColor})` }}
-              title="Add"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[200px] p-1.5">
-            <div className="px-2 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              Add
-            </div>
-            <DropdownMenuItem onClick={() => onAddPage()} className="gap-2 text-[12.5px]">
-              <FileText className="h-3.5 w-3.5" /> Page
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAddNavGroup("label")} className="gap-2 text-[12.5px]">
-              <Tag className="h-3.5 w-3.5" /> Group
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAddNavGroup("dropdown")} className="gap-2 text-[12.5px]">
-              <ChevronDown className="h-3.5 w-3.5" /> Dropdown
-            </DropdownMenuItem>
-
-            <div className="px-2 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              Wrap with
-            </div>
-            <DropdownMenuItem onClick={() => onAddTab("New Tab", "tab")} className="gap-2 text-[12.5px]">
-              <Layers className="h-3.5 w-3.5" /> Tab
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAddTab("New Language", "language")} className="gap-2 text-[12.5px]">
-              <Languages className="h-3.5 w-3.5" /> Language
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAddTab("New Product", "product")} className="gap-2 text-[12.5px]">
-              <Box className="h-3.5 w-3.5" /> Product
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAddTab("v1.0", "version")} className="gap-2 text-[12.5px]">
-              <GitBranch className="h-3.5 w-3.5" /> Version
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <span className="text-[10px] font-semibold uppercase tracking-widest">Navigation</span>
+        <div className="flex items-center gap-0.5">
+          <AddItemMenu
+            onAddPage={() => onAddPage()}
+            onAddGroup={() => onAddNavGroup("label")}
+            onAddDropdown={() => onAddNavGroup("dropdown")}
+            textColor={s.sidebarTextColor}
+            title="Add page, group, or dropdown"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-muted/60 transition-colors"
+                style={{ color: `hsl(${s.sidebarTextColor})` }}
+                title="Wrap with a structural container"
+              >
+                <Layers className="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[220px] p-1.5">
+              <div className="px-2 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                Wrap with
+              </div>
+              <DropdownMenuItem onClick={() => onAddTab("New Tab", "tab")} className="gap-2 text-[12.5px]">
+                <Layers className="h-3.5 w-3.5" />
+                <div className="flex flex-col">
+                  <span>Tab</span>
+                  <span className="text-[10.5px] text-muted-foreground/70">Group sections under top-level tabs</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAddTab("English", "language")} className="gap-2 text-[12.5px]">
+                <Languages className="h-3.5 w-3.5" />
+                <div className="flex flex-col">
+                  <span>Language</span>
+                  <span className="text-[10.5px] text-muted-foreground/70">Localize docs per language</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAddTab("New Product", "product")} className="gap-2 text-[12.5px]">
+                <Box className="h-3.5 w-3.5" />
+                <div className="flex flex-col">
+                  <span>Product</span>
+                  <span className="text-[10.5px] text-muted-foreground/70">Split docs across products</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAddTab("v1.0", "version")} className="gap-2 text-[12.5px]">
+                <GitBranch className="h-3.5 w-3.5" />
+                <div className="flex flex-col">
+                  <span>Version</span>
+                  <span className="text-[10.5px] text-muted-foreground/70">Maintain multiple doc versions</span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* ─── Single DnD context across all items in the visible tab ─── */}
