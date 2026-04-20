@@ -906,24 +906,34 @@ const BuilderSidebar = ({
                 >
                   <button
                     onClick={() => toggleTab(tab.id)}
-                    className="flex-1 flex items-center gap-1.5 text-left"
+                    className="flex-1 flex items-center gap-1.5 text-left min-w-0"
                     style={{
                       fontSize: `${s.sidebarFontSize}px`,
                       color: `hsl(${s.sidebarActiveColor})`,
                       fontWeight: 600,
                     }}
                   >
-                    {open ? <ChevronDown className="h-3 w-3 opacity-60" /> : <ChevronRight className="h-3 w-3 opacity-60" />}
-                    <TabIcon className="h-3.5 w-3.5 opacity-70" />
+                    {open ? <ChevronDown className="h-3 w-3 opacity-60 shrink-0" /> : <ChevronRight className="h-3 w-3 opacity-60 shrink-0" />}
+                    <TabIcon className="h-3.5 w-3.5 opacity-70 shrink-0" />
                     <span className="truncate">{tab.label}</span>
                   </button>
-                  <button
-                    onClick={() => onDeleteTab(tab.id)}
-                    className="opacity-0 group-hover/tab:opacity-100 transition-opacity h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover/tab:opacity-100 transition-opacity shrink-0">
+                    <AddItemMenu
+                      onAddGroup={() => onAddNavGroup("label", tab.id)}
+                      onAddDropdown={() => onAddNavGroup("dropdown", tab.id)}
+                      textColor={s.mutedForegroundColor}
+                      title={`Add to ${tab.label}`}
+                      compact
+                      size="xs"
+                    />
+                    <button
+                      onClick={() => onDeleteTab(tab.id)}
+                      className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/60"
+                      title="Delete tab"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
                 {open && (
                   <nav
@@ -934,9 +944,12 @@ const BuilderSidebar = ({
                     className="flex flex-col ml-[14px] pl-2 mt-1"
                   >
                     {tabItems.length === 0 && (
-                      <div className="text-[11px] italic text-muted-foreground/50 py-1 pl-2">
-                        Empty — drag items here
-                      </div>
+                      <button
+                        onClick={() => onAddNavGroup("label", tab.id)}
+                        className="text-[11px] italic text-muted-foreground/60 hover:text-foreground py-1.5 pl-2 text-left transition-colors"
+                      >
+                        + Add a group to get started
+                      </button>
                     )}
                     {tabItems.map((item) => (
                       <SortableItem key={item.sortId} id={item.sortId} dragHandleOnly>
