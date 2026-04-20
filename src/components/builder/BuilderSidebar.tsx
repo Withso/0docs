@@ -975,24 +975,7 @@ const BuilderSidebar = ({
         </DragOverlay>
       </DndContext>
 
-      <GroupSettingsDialog
-        group={settingsGroup}
-        tabs={tabs}
-        open={!!settingsGroup}
-        onOpenChange={(open) => !open && setSettingsGroup(null)}
-        onSaved={(updated) => {
-          // Sync the freshly-saved row into the parent useBuilder state so
-          // tab filtering, dropdown rendering, etc. reflect the change immediately.
-          if (updated && settingsGroup) {
-            onUpdateNavGroup(settingsGroup.id, {
-              title: updated.title,
-              type: updated.type,
-              tab_id: updated.tab_id,
-              metadata: updated.metadata,
-            });
-          }
-        }}
-      />
+      {/* Group settings now open in the SettingsSidePanel managed by Builder.tsx */}
     </aside>
   );
 };
