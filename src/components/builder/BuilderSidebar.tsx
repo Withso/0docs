@@ -612,7 +612,7 @@ const BuilderSidebar = ({
           <Pencil className="h-2 w-2" />
         </button>
         <button
-          onClick={() => setSettingsGroup(group)}
+          onClick={() => onOpenGroupSettings?.(group)}
           style={{ color: `hsl(${s.mutedForegroundColor})` }}
           title="Group settings"
         >
@@ -675,7 +675,7 @@ const BuilderSidebar = ({
           <Pencil className="h-2 w-2" />
         </button>
         <button
-          onClick={() => setSettingsGroup(group)}
+          onClick={() => onOpenGroupSettings?.(group)}
           style={{ color: `hsl(${s.mutedForegroundColor})` }}
           title="Group settings"
         >
