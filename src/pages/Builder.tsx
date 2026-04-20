@@ -323,7 +323,8 @@ const Builder = () => {
                     onReorderPages={reorderPages}
                     onReorderNavGroups={reorderNavGroups}
                     onReorderSections={reorderSections}
-                    onOpenPageSettings={(p) => setPageSettingsTarget(p)}
+                    onOpenPageSettings={(p) => setSettingsTarget({ kind: "page", page: p })}
+                    onOpenGroupSettings={(g) => setSettingsTarget({ kind: "group", group: g })}
                   />
                 ) : (
                   <FilesPanel
@@ -514,12 +515,7 @@ const Builder = () => {
 
       <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
 
-      <PageSettingsDialog
-        page={pageSettingsTarget}
-        open={!!pageSettingsTarget}
-        onOpenChange={(o) => { if (!o) setPageSettingsTarget(null); }}
-        projectSlug={project?.slug}
-      />
+      {/* Settings side panel rendered at top-level so it floats next to the navigation column on desktop */}
 
       <SearchDialog
         open={searchOpen}
