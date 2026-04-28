@@ -479,6 +479,7 @@ const NavigationTree = ({
     const kind = tabKind(tab);
     const selected = selectedSettingsId === tab.id;
     const groups = groupsForTab(tab.id);
+    const isEditing = editing?.kind === "tab" && editing.id === tab.id;
     return (
       <div key={tab.id}>
         <TreeRow
@@ -487,9 +488,15 @@ const NavigationTree = ({
           iconColor={`hsl(${s.sidebarActiveColor})`}
           label={tab.label}
           selected={selected}
+          badges={<MetadataBadges meta={(tab as any).metadata} />}
           expandable
           expanded={open}
           onToggle={() => setExpandedTabs((p) => ({ ...p, [tab.id]: !open }))}
+          editing={isEditing}
+          editValue={editing?.value ?? ""}
+          onEditChange={(v) => setEditing({ kind: "tab", id: tab.id, value: v })}
+          onEditDone={commitEdit}
+          onDoubleClick={() => setEditing({ kind: "tab", id: tab.id, value: tab.label })}
           rightActions={
             <>
               <RowAddMenu
