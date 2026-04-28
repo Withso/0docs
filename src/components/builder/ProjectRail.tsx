@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Home, Pencil, BarChart3, Settings, SlidersHorizontal } from "lucide-react";
 import type { BuilderMode } from "./BuilderHeader";
 
@@ -22,7 +23,7 @@ const items: RailItem[] = [
   { id: "settings", label: "Settings", icon: Settings, target: "settings" },
 ];
 
-const ProjectRail = ({ mode, onModeChange, hasUnpublishedChanges }: ProjectRailProps) => {
+const ProjectRail = forwardRef<HTMLElement, ProjectRailProps>(({ mode, onModeChange, hasUnpublishedChanges }, ref) => {
   // map current mode → which rail item is active
   const activeId: string =
     mode === "editor" || mode === "design" || mode === "preview" || mode === "publish" || mode === "code"
@@ -31,6 +32,7 @@ const ProjectRail = ({ mode, onModeChange, hasUnpublishedChanges }: ProjectRailP
 
   return (
     <aside
+      ref={ref}
       className="shrink-0 bg-sidebar-background flex flex-col px-2 py-1.5 gap-0.5 transition-all"
     >
       <div className="px-2.5 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/60">
@@ -63,6 +65,8 @@ const ProjectRail = ({ mode, onModeChange, hasUnpublishedChanges }: ProjectRailP
       })}
     </aside>
   );
-};
+});
+
+ProjectRail.displayName = "ProjectRail";
 
 export default ProjectRail;
