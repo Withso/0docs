@@ -119,6 +119,8 @@ For self-hosting on Railway, we need:
 - **Docs**: `SELF_HOSTING.md`, `DEPLOY_RAILWAY.md`, `DEPLOY_DOCKER.md`
 - **License**: add `LICENSE` (MIT or AGPL — to confirm with user)
 
+Status: implemented frontend/runtime/container/docs scaffolding. License decision remains open for Phase 6/OSS hardening.
+
 **Phase 6 — OSS hardening**
 - `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, GitHub Actions CI (lint, test, build, docker build)
 - Replace any Lovable-Cloud-only assumptions in code with abstractions
