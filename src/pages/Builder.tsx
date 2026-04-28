@@ -543,7 +543,6 @@ const Builder = () => {
             )}
           </div>
         </div>
-      </div>
 
       <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
 
@@ -571,7 +570,7 @@ const Builder = () => {
           }, 200);
         }}
       />
-    </div>
+    </WorkspaceShell>
   );
 };
 
