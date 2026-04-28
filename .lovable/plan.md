@@ -126,6 +126,8 @@ Status: implemented frontend/runtime/container/docs scaffolding. License decisio
 - Replace any Lovable-Cloud-only assumptions in code with abstractions
 - Optional: pluggable auth (allow disabling Google sign-in, supporting GitHub OAuth, magic links only)
 
+Status: implemented community docs, security policy, issue/PR templates, env template, CI, dependency review, and Docker build checks. Pluggable auth remains a Phase 7+ product decision.
+
 **Phase 7 — Mintlify advanced parity**
 - AsyncAPI support, multi-language docs, deploy previews per branch, advanced search (Algolia/Meilisearch pluggable), AI assistant configurability
 
