@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useDebouncedCallback } from "@/hooks/use-debounce";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
 import { defaultDesignSettings } from "@/hooks/use-design-settings";
 import { useToast } from "@/hooks/use-toast";
@@ -7,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   LayoutGrid, Palette, Type as TypeIcon, PanelTop, PanelBottom,
   Sparkles, MessageSquareText, Plug, Code2, Settings2,
-  Save, RotateCcw, Sidebar as SidebarIcon, Layout as LayoutIcon, Minus,
+  RotateCcw, Sidebar as SidebarIcon, Layout as LayoutIcon, Minus,
 } from "lucide-react";
 import {
   SettingsSection, SliderField, FontSelect, WeightSelect,
@@ -72,10 +73,24 @@ const ConfigurationsPanel = ({ projectName, settings, saving, saveSettings, rese
     }));
 
   const hasChanges = JSON.stringify(local) !== JSON.stringify(settings);
-  const handleSave = async () => {
-    await saveSettings(local);
-    toast({ title: "Configurations saved" });
+  const debouncedSave = useDebouncedCallback((next: DS) => {
+    saveSettings(next);
+  }, 700);
+  const updateAndSave = (next: DS) => {
+    setLocal(next);
+    debouncedSave(next);
   };
+  const update = <K extends keyof DS>(key: K, value: DS[K]) =>
+    updateAndSave({ ...local, [key]: value });
+  const updateBlockStyle = (
+    block: keyof DS["blockStyles"],
+    key: keyof BlockStyleSettings,
+    value: any,
+  ) =>
+    updateAndSave({
+      ...local,
+      blockStyles: { ...local.blockStyles, [block]: { ...local.blockStyles[block], [key]: value } },
+    });
   const handleReset = () => {
     setLocal(defaultDesignSettings);
     resetSettings();
@@ -116,20 +131,15 @@ const ConfigurationsPanel = ({ projectName, settings, saving, saveSettings, rese
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Header bar */}
         <div className="h-12 px-5 flex items-center justify-between border-b border-border/40 shrink-0">
-          <h3 className="text-[14px] font-semibold text-foreground">
-            {categories.find((c) => c.id === active)?.label}
-          </h3>
+          <div>
+            <h3 className="text-[14px] font-semibold text-foreground">
+              {categories.find((c) => c.id === active)?.label}
+            </h3>
+            <p className="text-[11px] text-muted-foreground">{saving ? "Saving…" : hasChanges ? "Autosave pending" : "Saved"}</p>
+          </div>
           <div className="flex items-center gap-1.5">
             <Button variant="ghost" size="sm" className="h-7 text-[11px] rounded-lg gap-1" onClick={handleReset}>
               <RotateCcw className="h-3 w-3" /> Reset
-            </Button>
-            <Button
-              size="sm"
-              className="h-7 text-[11px] rounded-lg gap-1"
-              disabled={!hasChanges || saving}
-              onClick={handleSave}
-            >
-              <Save className="h-3 w-3" /> {saving ? "Saving…" : "Save"}
             </Button>
           </div>
         </div>
