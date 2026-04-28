@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchGitHubBranches } from "@/app/api/github-branches";
 
 interface Props {
   projectId: string;
@@ -47,20 +48,9 @@ const BranchSelector = ({ projectId, currentBranch, hasGithub, onBranchChange }:
       // Fallback: GET via direct fetch
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/github-branches?projectId=${projectId}`;
-        const res = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${session?.access_token || ""}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-        });
-        const j = await res.json();
-        if (res.ok) {
-          setBranches(j.branches || []);
-          setDefaultBranch(j.default || "main");
-        } else {
-          throw new Error(j.error || "Failed");
-        }
+        const j = await fetchGitHubBranches(projectId, session?.access_token);
+        setBranches(j.branches || []);
+        setDefaultBranch(j.default || "main");
       } catch (err: any) {
         toast({ title: "Could not load branches", description: err.message, variant: "destructive" });
       }
