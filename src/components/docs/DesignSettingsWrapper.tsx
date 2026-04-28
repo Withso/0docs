@@ -1,17 +1,19 @@
-import { useMemo } from "react";
+import { forwardRef, useMemo } from "react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import { designSettingsToCSSVars } from "@/hooks/use-design-settings";
 
 /** Wraps children with CSS custom properties derived from design settings */
-const DesignSettingsWrapper = ({
-  settings,
-  children,
-  className = "",
-}: {
+interface DesignSettingsWrapperProps {
   settings: DesignSettings;
   children: React.ReactNode;
   className?: string;
-}) => {
+}
+
+const DesignSettingsWrapper = forwardRef<HTMLDivElement, DesignSettingsWrapperProps>(({
+  settings,
+  children,
+  className = "",
+}, ref) => {
   const cssVars = useMemo(() => designSettingsToCSSVars(settings), [settings]);
 
   const style: React.CSSProperties = {
@@ -38,10 +40,12 @@ const DesignSettingsWrapper = ({
   } as React.CSSProperties;
 
   return (
-    <div style={style} className={className}>
+    <div ref={ref} style={style} className={className}>
       {children}
     </div>
   );
-};
+});
+
+DesignSettingsWrapper.displayName = "DesignSettingsWrapper";
 
 export default DesignSettingsWrapper;
