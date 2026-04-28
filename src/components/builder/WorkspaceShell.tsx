@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Check, ChevronsUpDown, FileText, Home, Inbox, LogOut, Plus, User } from "lucide-react";
+import { Check, ChevronsUpDown, FileText, Home, Inbox, LogOut, Plus, Search, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { listWorkspaceProjects, type WorkspaceProject } from "@/app/api/projects";
 import type { BuilderMode } from "./BuilderHeader";
@@ -86,8 +86,8 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
             <button className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors" title="Inbox" aria-label="Inbox">
               <Inbox className="h-4 w-4" />
             </button>
-            <button className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors" title="Notifications" aria-label="Notifications">
-              <Bell className="h-4 w-4" />
+            <button className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors" title="Search" aria-label="Search">
+              <Search className="h-4 w-4" />
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

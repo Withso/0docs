@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronRight, ChevronDown, FileText, FileJson, Folder, FolderOpen,
   Image as ImageIcon, Plus, FilePlus2, FolderPlus,
@@ -39,6 +39,22 @@ const FilesPanel = ({
   onAddPage,
   onAddNavGroup,
 }: FilesPanelProps) => {
+  const storageKey = `zdocs-files-tree:${pages[0]?.project_id || navGroups[0]?.project_id || "empty"}`;
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      if (saved) setOpenFolders(JSON.parse(saved));
+    } catch {
+      setOpenFolders({});
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    window.localStorage.setItem(storageKey, JSON.stringify(openFolders));
+  }, [storageKey, openFolders]);
+
   const tree = useMemo<FileNode[]>(() => {
     const nodes: FileNode[] = [];
 
@@ -93,9 +109,9 @@ const FilesPanel = ({
   }, [pages, navGroups]);
 
   return (
-    <div>
+    <div className="px-1 py-1.5 select-none">
       {/* Header with Mintlify-style + menu */}
-      <div className="flex items-center justify-between px-2 py-1 mb-1">
+      <div className="flex items-center justify-between px-1.5 h-7 mb-0.5">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
           File Explorer
         </span>
@@ -127,7 +143,7 @@ const FilesPanel = ({
         </DropdownMenu>
       </div>
 
-      <div className="px-1 pb-2 text-[12.5px]">
+      <div className="pb-2 text-[12.5px]">
         {tree.map((node) => (
           <FileTreeNode
             key={node.id}
@@ -136,6 +152,8 @@ const FilesPanel = ({
             activePageId={activePage?.id}
             onSelectPage={onSelectPage}
             onAddPage={onAddPage}
+            openFolders={openFolders}
+            setOpenFolders={setOpenFolders}
           />
         ))}
       </div>
@@ -149,14 +167,18 @@ const FileTreeNode = ({
   activePageId,
   onSelectPage,
   onAddPage,
+  openFolders,
+  setOpenFolders,
 }: {
   node: FileNode;
   depth: number;
   activePageId?: string;
   onSelectPage: (page: Page) => void;
   onAddPage?: (navGroupId?: string) => void;
+  openFolders: Record<string, boolean>;
+  setOpenFolders: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }) => {
-  const [open, setOpen] = useState(true);
+  const open = openFolders[node.id] ?? true;
   const padLeft = 6 + depth * 12;
 
   if (node.kind === "folder") {
@@ -165,11 +187,11 @@ const FileTreeNode = ({
     return (
       <div className="group/folder">
         <div
-          className="w-full flex items-center gap-1 py-1 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+          className="w-full flex items-center gap-1 h-7 rounded-sm hover:bg-muted/45 text-muted-foreground hover:text-foreground transition-colors"
           style={{ paddingLeft: padLeft }}
         >
           <button
-            onClick={() => setOpen((o) => !o)}
+            onClick={() => setOpenFolders((p) => ({ ...p, [node.id]: !open }))}
             className="flex items-center gap-1 flex-1 min-w-0 text-left"
           >
             <Chevron className="h-3 w-3 shrink-0" />
@@ -181,7 +203,7 @@ const FileTreeNode = ({
               onClick={(e) => {
                 e.stopPropagation();
                 onAddPage(node.navGroupId);
-                setOpen(true);
+                setOpenFolders((p) => ({ ...p, [node.id]: true }));
               }}
               className="opacity-0 group-hover/folder:opacity-100 transition-opacity h-5 w-5 mr-1 rounded flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground"
               title="Create page in this folder"
@@ -200,6 +222,8 @@ const FileTreeNode = ({
                 activePageId={activePageId}
                 onSelectPage={onSelectPage}
                 onAddPage={onAddPage}
+                openFolders={openFolders}
+                setOpenFolders={setOpenFolders}
               />
             ))}
           </div>
@@ -225,7 +249,7 @@ const FileTreeNode = ({
       disabled={!node.page}
       className={`w-full flex items-center gap-1.5 py-1 rounded transition-colors text-left ${
         isActive
-          ? "bg-muted text-foreground font-medium"
+          ? "bg-primary/10 text-foreground font-medium"
           : node.page
             ? "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             : "text-muted-foreground/60 cursor-default"
