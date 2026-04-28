@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { forwardRef, useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   ChevronRight, ChevronDown, FileText, Folder, FolderOpen, Layers,
   Languages, Box, GitBranch, Plus, Settings as SettingsIcon,
@@ -304,7 +304,7 @@ const tabKind = (t: Tab): NavSettingsKind => {
   return "tab";
 };
 
-const NavigationTree = ({
+const NavigationTree = forwardRef<HTMLDivElement, Props>(({
   settings: s,
   pages,
   activePage,
@@ -324,7 +324,7 @@ const NavigationTree = ({
   onReorderNavGroups,
   onOpenSettings,
   selectedSettingsId,
-}: Props) => {
+}, ref) => {
   const storageKey = `zdocs-nav-tree:${pages[0]?.project_id || navGroups[0]?.project_id || tabs[0]?.project_id || "empty"}`;
   const [expandedTabs, setExpandedTabs] = useState<Record<string, boolean>>({});
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -574,7 +574,7 @@ const NavigationTree = ({
   const rootPages = pagesForGroup(null);
 
   return (
-    <div className="flex flex-col gap-px px-1 py-1.5 select-none">
+    <div ref={ref} className="flex flex-col gap-px px-1 py-1.5 select-none">
       {/* Compact header row */}
       <div className="flex items-center justify-between px-1.5 h-7 mb-0.5">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Navigation</span>
@@ -664,6 +664,8 @@ const NavigationTree = ({
       )}
     </div>
   );
-};
+});
+
+NavigationTree.displayName = "NavigationTree";
 
 export default NavigationTree;
