@@ -2,9 +2,10 @@ import { ArrowUpRight, BarChart3, BookOpen, Boxes, Code2, FileText, GitBranch, G
 import { Button } from "@/components/ui/button";
 import type { BuilderMode } from "./BuilderHeader";
 import type { Page, NavGroup, Tab } from "@/hooks/use-builder";
+import type { WorkspaceProject } from "@/app/api/projects";
 
 interface ProjectHomeProps {
-  project: any;
+  project: WorkspaceProject;
   pages: Page[];
   navGroups: NavGroup[];
   tabs: Tab[];
