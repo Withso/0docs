@@ -50,6 +50,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/builder/:projectId/editor"
+                element={
+                  <ProtectedRoute>
+                    <Builder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/builder/:projectId/design"
                 element={
                   <ProtectedRoute>
