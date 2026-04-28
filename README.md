@@ -6,6 +6,10 @@
 
 **Lovable project ID**: 3c397bbe-104a-466c-b9a2-4dfe441b0bbf
 
+## Open-source status
+
+0docs is being hardened for an OSS release. The final license is still pending; see [`LICENSE`](./LICENSE) and [`product-vision.md`](./product-vision.md).
+
 ## How can I edit this code?
 
 There are several ways of editing your application.
@@ -70,6 +74,13 @@ Phase 5 adds Docker/Railway scaffolding and runtime configuration support.
 - Docker: [`DEPLOY_DOCKER.md`](./DEPLOY_DOCKER.md)
 - Railway: [`DEPLOY_RAILWAY.md`](./DEPLOY_RAILWAY.md)
 - Runtime config template: [`public/config.example.json`](./public/config.example.json)
+
+## Contributing and security
+
+- Contributing guide: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
+- Code of conduct: [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md)
+- Security policy: [`SECURITY.md`](./SECURITY.md)
+- Environment template: [`.env.example`](./.env.example)
 
 ## How can I deploy this project?
 

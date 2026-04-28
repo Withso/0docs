@@ -18,6 +18,8 @@ At startup the app tries to load `/config.json`:
 
 The managed Lovable environment still uses the generated client configuration. Self-hosted deployments can inject the same values at container startup through environment variables.
 
+Use `.env.example` as the complete variable checklist for local/self-hosted operators. Do not commit filled secret files.
+
 ## Required services
 
 1. Static frontend container from this repo.
@@ -53,3 +55,4 @@ They require `SUPABASE_URL` and `SUPABASE_ANON_KEY`; seed/admin functions may re
 - Keep row-level security enabled from the migrations.
 - Do not expose private GitHub tokens to the frontend.
 - User roles must remain in `user_roles`, never on profiles/users.
+- Follow `SECURITY.md` for private vulnerability reports.

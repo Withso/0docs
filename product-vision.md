@@ -112,6 +112,8 @@ own database.
 - Pluggable auth (email-only, GitHub OAuth, Google OAuth, magic links).
 - Remove all Lovable-Cloud-only assumptions; document required env vars.
 
+Status: community docs, security policy, issue/PR templates, CI, dependency review, Docker build checks, and environment templates are in place. License and pluggable auth remain open decisions.
+
 ### Phase 7 — Advanced parity & differentiation
 - AsyncAPI support.
 - Multi-language docs.
