@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { ArrowUpRight, BarChart3, BookOpen, Boxes, Code2, FileText, GitBranch, Globe2, Layers3, Palette, Rocket, Search, Settings, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BuilderMode } from "./BuilderHeader";
@@ -23,12 +24,12 @@ const features = [
   { label: "Publish", description: "Ship docs to GitHub and your domain", icon: Rocket, mode: "publish" as BuilderMode },
 ];
 
-const ProjectHome = ({ project, pages, navGroups, tabs, onModeChange }: ProjectHomeProps) => {
+const ProjectHome = forwardRef<HTMLElement, ProjectHomeProps>(({ project, pages, navGroups, tabs, onModeChange }, ref) => {
   const published = Boolean(project?.published_version_id);
   const liveUrl = project?.custom_domain ? `https://${project.custom_domain}` : `/docs/${project?.slug}`;
 
   return (
-    <main className="flex-1 overflow-auto bg-background">
+    <main ref={ref} className="flex-1 overflow-auto bg-background">
       <div className="max-w-6xl mx-auto px-8 py-8">
         <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 items-start">
           <div className="min-w-0">
@@ -143,6 +144,8 @@ const ProjectHome = ({ project, pages, navGroups, tabs, onModeChange }: ProjectH
       </div>
     </main>
   );
-};
+});
+
+ProjectHome.displayName = "ProjectHome";
 
 export default ProjectHome;

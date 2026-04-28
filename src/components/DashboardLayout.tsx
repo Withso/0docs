@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { forwardRef, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { FileText, FolderOpen, LogOut, User } from "lucide-react";
@@ -10,7 +10,7 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+const DashboardLayout = forwardRef<HTMLDivElement, DashboardLayoutProps>(({ children }, ref) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,7 +23,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const isProfileActive = location.pathname === "/settings/profile";
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div ref={ref} className="min-h-screen bg-background flex">
       {/* Sidebar — borderless, uses background separation */}
       <div className="hidden md:flex shrink-0">
         <aside className="w-[var(--platform-sidebar-width)] bg-sidebar-background flex flex-col overflow-hidden border-r border-border/40">
@@ -113,6 +113,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </div>
     </div>
   );
-};
+});
+
+DashboardLayout.displayName = "DashboardLayout";
 
 export default DashboardLayout;
