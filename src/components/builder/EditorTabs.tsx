@@ -12,15 +12,15 @@ const EditorTabs = ({ value, onChange, rightSlot }: EditorTabsProps) => {
     { id: "files", label: "Files" },
   ];
   return (
-    <div className="flex items-center justify-between border-b border-border/40 px-2 py-1.5">
-      <div className="flex items-center gap-0.5">
+    <div className="flex items-center justify-between border-b border-border/40 px-1.5 py-1 bg-muted/15">
+      <div className="flex items-center gap-0.5 w-full rounded-md bg-muted/50 p-0.5">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => onChange(t.id)}
-            className={`px-2.5 py-1 rounded-md text-[12px] font-medium transition-all ${
+            className={`flex-1 px-2 py-1 rounded text-[12px] font-medium transition-all ${
               value === t.id
-                ? "bg-muted text-foreground"
+                ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
             }`}
           >
