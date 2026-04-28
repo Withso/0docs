@@ -273,10 +273,9 @@ const Builder = () => {
     return null;
   }
 
-  const frameMaxWidth = settings.contentMaxWidth + settings.sidebarWidth + 48;
-
   // Header is scoped to the content area (Mintlify-style) and only shown for editor / code / preview modes.
   const showContentHeader = mode === "editor" || mode === "code" || mode === "preview";
+  const hasUnpublishedChanges = publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish;
 
   const contentHeader = showContentHeader ? (
     <BuilderHeader
@@ -284,7 +283,7 @@ const Builder = () => {
       mode={mode}
       onModeChange={handleModeChange}
       onPublishClick={() => handleModeChange("publish")}
-      hasUnpublishedChanges={publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish}
+      hasUnpublishedChanges={hasUnpublishedChanges}
       onSearchClick={() => setSearchOpen(true)}
       currentBranch={project?.github_branch || "main"}
       hasGithub={!!project?.github_repo && !!project?.github_token_encrypted}
@@ -293,7 +292,7 @@ const Builder = () => {
   ) : null;
 
   return (
-    <WorkspaceShell project={project} mode={mode} onModeChange={handleModeChange}>
+    <WorkspaceShell project={project} mode={mode} onModeChange={handleModeChange} hasUnpublishedChanges={hasUnpublishedChanges}>
         <div className="flex-1 min-w-0 flex min-h-0">
           {/* ─── Shared Navigation column (Mintlify-style) ───
            * Visible in both Visual (editor) and Code modes so the user can
@@ -301,11 +300,11 @@ const Builder = () => {
            */}
           {(mode === "editor" || mode === "code") && (
             <aside
-              className="shrink-0 border-r border-border/40 bg-background flex flex-col h-screen sticky top-0"
-              style={{ width: settings.sidebarWidth + 16 }}
+              className="shrink-0 border-r border-border/40 bg-background flex flex-col min-h-0"
+              style={{ width: settings.sidebarWidth + 8 }}
             >
               <EditorTabs value={editorTab} onChange={setEditorTab} />
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-y-auto">
                 {editorTab === "navigation" ? (
                   <NavigationTree
                     settings={settings}
@@ -389,7 +388,7 @@ const Builder = () => {
             {contentHeader}
             {mode === "editor" && (
               <DesignSettingsWrapper settings={settings} className="">
-                <main className="mx-auto px-6 py-10" style={{ maxWidth: settings.contentMaxWidth + 48 }}>
+                <main className="mx-auto px-5 py-8" style={{ maxWidth: settings.contentMaxWidth + 40 }}>
                   {activePage ? (
                     <article style={{ maxWidth: `${settings.contentMaxWidth}px` }} className="animate-fade-in">
                       <PageTitleEditor
