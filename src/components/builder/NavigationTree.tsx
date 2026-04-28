@@ -580,6 +580,9 @@ const NavigationTree = ({
               <DropdownMenuItem onClick={() => onAddTab("New Tab", "tab")} className="gap-2 text-[12px]">
                 <Layers className="h-3.5 w-3.5" /> Tab
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAddNavGroup("dropdown")} className="gap-2 text-[12px]">
+                <ChevronDown className="h-3.5 w-3.5" /> Dropdown
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onAddTab("English", "language")} className="gap-2 text-[12px]">
                 <Languages className="h-3.5 w-3.5" /> Language
               </DropdownMenuItem>
