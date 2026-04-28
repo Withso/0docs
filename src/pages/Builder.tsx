@@ -293,11 +293,8 @@ const Builder = () => {
   ) : null;
 
   return (
-    <div className={`min-h-screen bg-background ${mode === "design" ? "flex flex-col h-screen overflow-hidden" : ""}`}>
-      <div className="flex min-h-screen">
-        <ProjectRail mode={mode} onModeChange={handleModeChange} />
-
-        <div className="flex-1 min-w-0 flex">
+    <WorkspaceShell project={project} mode={mode} onModeChange={handleModeChange}>
+        <div className="flex-1 min-w-0 flex min-h-0">
           {/* ─── Shared Navigation column (Mintlify-style) ───
            * Visible in both Visual (editor) and Code modes so the user can
            * switch the active page without leaving Code view.
@@ -379,7 +376,16 @@ const Builder = () => {
             />
           )}
 
-          <div className="flex-1 min-w-0 flex flex-col">
+          <div className="flex-1 min-w-0 flex flex-col min-h-0">
+            {mode === "home" && (
+              <ProjectHome
+                project={project}
+                pages={pages}
+                navGroups={navGroups}
+                tabs={tabs}
+                onModeChange={handleModeChange}
+              />
+            )}
             {contentHeader}
             {mode === "editor" && (
               <DesignSettingsWrapper settings={settings} className="">
