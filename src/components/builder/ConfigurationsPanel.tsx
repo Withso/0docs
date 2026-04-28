@@ -88,7 +88,7 @@ const ConfigurationsPanel = ({ projectName, settings, saving, saveSettings, rese
   return (
     <div className="flex h-[calc(100vh-60px)] min-h-0 bg-background">
       {/* Left: Category nav */}
-      <aside className="w-[220px] shrink-0 border-r border-border/40 py-4 px-2 overflow-y-auto">
+      <aside className="w-[224px] shrink-0 border-r border-border/40 py-3 px-2 overflow-y-auto bg-muted/10">
         <div className="px-2 pb-3">
           <h2 className="text-[13px] font-semibold text-foreground">Configurations</h2>
           <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{projectName}</p>
@@ -101,12 +101,13 @@ const ConfigurationsPanel = ({ projectName, settings, saving, saveSettings, rese
               <button
                 key={c.id}
                 onClick={() => setActive(c.id)}
-                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium transition-colors text-left ${
+                className={`relative flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[12.5px] font-medium transition-colors text-left ${
                   isActive
-                    ? "bg-muted text-foreground"
+                    ? "bg-primary/10 text-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                 }`}
               >
+                {isActive && <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r bg-primary" />}
                 <Icon className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{c.label}</span>
               </button>
