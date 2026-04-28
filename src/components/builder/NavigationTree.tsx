@@ -130,11 +130,14 @@ const TreeRow = ({
       {...handleProps}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
-      className={`group/row relative flex items-center h-7 cursor-pointer select-none transition-colors ${
-        active ? "bg-muted/70" : selected ? "bg-muted/50" : "hover:bg-muted/40"
+      className={`group/row relative flex items-center h-7 cursor-pointer select-none rounded-sm transition-colors ${
+        active ? "bg-primary/10" : selected ? "bg-muted/70 ring-1 ring-border/50" : "hover:bg-muted/45"
       }`}
       style={{ paddingLeft, paddingRight: 4 }}
     >
+      {(active || selected) && (
+        <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r bg-primary" />
+      )}
       {/* Chevron (or spacer) */}
       {expandable ? (
         <button
@@ -277,9 +280,27 @@ const NavigationTree = ({
   onOpenSettings,
   selectedSettingsId,
 }: Props) => {
+  const storageKey = `zdocs-nav-tree:${pages[0]?.project_id || navGroups[0]?.project_id || tabs[0]?.project_id || "empty"}`;
   const [expandedTabs, setExpandedTabs] = useState<Record<string, boolean>>({});
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState<{ kind: "page" | "group"; id: string; value: string } | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as { tabs?: Record<string, boolean>; groups?: Record<string, boolean> };
+      setExpandedTabs(parsed.tabs || {});
+      setExpandedGroups(parsed.groups || {});
+    } catch {
+      setExpandedTabs({});
+      setExpandedGroups({});
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    window.localStorage.setItem(storageKey, JSON.stringify({ tabs: expandedTabs, groups: expandedGroups }));
+  }, [storageKey, expandedTabs, expandedGroups]);
 
   const isTabOpen = (id: string) => expandedTabs[id] ?? true;
   const isGroupOpen = (id: string) => expandedGroups[id] ?? true;
@@ -312,8 +333,11 @@ const NavigationTree = ({
 
   const commitEdit = () => {
     if (!editing) return;
-    if (editing.kind === "page") onUpdatePage(editing.id, { nav_title: editing.value });
-    else onUpdateNavGroup(editing.id, { title: editing.value });
+    const value = editing.value.trim();
+    if (value) {
+      if (editing.kind === "page") onUpdatePage(editing.id, { nav_title: value });
+      else onUpdateNavGroup(editing.id, { title: value });
+    }
     setEditing(null);
   };
 
@@ -495,9 +519,9 @@ const NavigationTree = ({
   const rootPages = pagesForGroup(null);
 
   return (
-    <div className="flex flex-col py-1.5 select-none">
+    <div className="flex flex-col gap-px px-1 py-1.5 select-none">
       {/* Compact header row */}
-      <div className="flex items-center justify-between px-2 h-7 mb-0.5">
+      <div className="flex items-center justify-between px-1.5 h-7 mb-0.5">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Navigation</span>
         <div className="flex items-center gap-0.5">
           <RowAddMenu

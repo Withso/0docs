@@ -17,10 +17,11 @@ interface WorkspaceShellProps {
   project: WorkspaceProject;
   mode: BuilderMode;
   onModeChange: (mode: BuilderMode) => void;
+  hasUnpublishedChanges?: boolean;
   children: ReactNode;
 }
 
-const WorkspaceShell = ({ project, mode, onModeChange, children }: WorkspaceShellProps) => {
+const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, children }: WorkspaceShellProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [projects, setProjects] = useState<WorkspaceProject[]>([]);
@@ -39,12 +40,12 @@ const WorkspaceShell = ({ project, mode, onModeChange, children }: WorkspaceShel
 
   return (
     <div className="min-h-screen bg-background flex">
-      <aside className="w-[220px] shrink-0 bg-sidebar-background text-sidebar-foreground border-r border-sidebar-border flex flex-col">
-        <div className="h-[52px] px-3 flex items-center">
+      <aside className="w-[224px] shrink-0 bg-sidebar-background text-sidebar-foreground border-r border-sidebar-border flex flex-col">
+        <div className="h-[48px] px-2 flex items-center border-b border-sidebar-border/50">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-full h-9 rounded-lg flex items-center gap-2 px-2 text-left hover:bg-sidebar-accent transition-colors">
-                <div className="h-6 w-6 rounded-md bg-sidebar-accent flex items-center justify-center shrink-0">
+              <button className="w-full h-8 rounded-md flex items-center gap-2 px-2 text-left hover:bg-sidebar-accent transition-colors">
+                <div className="h-5.5 w-5.5 rounded bg-sidebar-accent flex items-center justify-center shrink-0">
                   <FileText className="h-3.5 w-3.5 text-sidebar-accent-foreground" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -72,11 +73,11 @@ const WorkspaceShell = ({ project, mode, onModeChange, children }: WorkspaceShel
           </DropdownMenu>
         </div>
 
-        <ProjectRail mode={mode} onModeChange={onModeChange} />
+        <ProjectRail mode={mode} onModeChange={onModeChange} hasUnpublishedChanges={hasUnpublishedChanges} />
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-[52px] shrink-0 border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 flex items-center justify-between">
+        <header className="h-[48px] shrink-0 border-b border-border/40 bg-background/80 backdrop-blur-xl px-3 flex items-center justify-between">
           <div className="min-w-0">
             <p className="text-[13px] font-medium text-foreground truncate">{project.name}</p>
             <p className="text-[11px] text-muted-foreground truncate">{project.slug}</p>
