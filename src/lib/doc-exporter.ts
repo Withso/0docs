@@ -62,6 +62,7 @@ export function exportProject(
       nav_group_id: p.nav_group_id || null,
       nav_title: p.nav_title || null,
       meta_description: p.meta_description || null,
+      metadata: p.metadata || {},
     })),
     sections: sections.map((s) => ({
       id: s.id,
@@ -90,6 +91,7 @@ export function exportProject(
       label: t.label,
       icon: t.icon || null,
       order_index: t.order_index,
+      metadata: t.metadata || {},
     })),
   };
   files.push({
@@ -99,20 +101,23 @@ export function exportProject(
 
   // 3. docs.json — navigation metadata
   const docsJson = {
-    navigation: sortedGroups.map((group) => ({
+    navigation: sortedGroups.filter((group) => !group.metadata?.hidden).map((group) => ({
       group: group.title,
+      metadata: group.metadata || {},
       pages: sortedPages
-        .filter((p) => p.nav_group_id === group.id)
+        .filter((p) => p.nav_group_id === group.id && !p.metadata?.hidden)
         .map((p) => ({
           title: p.nav_title || p.title,
           slug: p.slug,
+          metadata: p.metadata || {},
         })),
     })),
     ungrouped: sortedPages
-      .filter((p) => !p.nav_group_id)
+      .filter((p) => !p.nav_group_id && !p.metadata?.hidden)
       .map((p) => ({
         title: p.nav_title || p.title,
         slug: p.slug,
+        metadata: p.metadata || {},
       })),
   };
   files.push({

@@ -320,6 +320,7 @@ const Builder = () => {
                     onUpdateNavGroup={updateNavGroup}
                     onDeleteNavGroup={deleteNavGroup}
                     onAddTab={addTab}
+                    onUpdateTab={updateTab}
                     onDeleteTab={deleteTab}
                     onReorderPages={reorderPages}
                     onReorderNavGroups={reorderNavGroups}

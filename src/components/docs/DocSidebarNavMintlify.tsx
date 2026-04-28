@@ -112,7 +112,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
       : prev);
   }, [activePage?.nav_group_id]);
 
-  const isGroupOpen = (g: SidebarNavGroup) => openGroups[g.id] ?? true;
+  const isGroupOpen = (g: SidebarNavGroup) => openGroups[g.id] ?? (g.metadata?.expanded !== false);
   const toggleGroup = (g: SidebarNavGroup) =>
     setOpenGroups((prev) => ({ ...prev, [g.id]: !isGroupOpen(g) }));
 
@@ -139,7 +139,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
   const renderPageRow = (page: TPage, indent = false) => {
     const meta = (page as any).metadata || {};
     const isActive = activePage?.id === page.id;
-    const externalUrl = meta.external_url as string | undefined;
+    const externalUrl = (meta.externalUrl || meta.external_url) as string | undefined;
     const tag = meta.tag as string | undefined;
     const pageSections = isActive ? sections : [];
 

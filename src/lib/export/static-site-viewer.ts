@@ -291,7 +291,7 @@ export function generateViewerScript(): string {
     function renderPage(page) {
       var isActive = activePage && activePage.id === page.id;
       var pageSections = isActive ? sections.filter(function(s){return s.page_id===page.id}) : [];
-      var ext = page.metadata && page.metadata.external_url;
+      var ext = page.metadata && (page.metadata.externalUrl || page.metadata.external_url);
       if (ext) {
         return h('a', {key:page.id, href:ext, target:'_blank', rel:'noopener noreferrer', className:'page-link'},
           h('span', {dangerouslySetInnerHTML:{__html:page.nav_title||page.title}}));
@@ -347,7 +347,7 @@ export function generateViewerScript(): string {
         next[activePage.nav_group_id] = true; setOpen(next);
       }
     }, [activePage && activePage.nav_group_id]);
-    function isOpen(g) { return open[g.id] !== undefined ? open[g.id] : true; }
+    function isOpen(g) { return open[g.id] !== undefined ? open[g.id] : !(g.metadata && g.metadata.expanded === false); }
     function toggle(g) { var n = {}; for (var k in open) n[k]=open[k]; n[g.id]=!isOpen(g); setOpen(n); }
 
     function renderTag(tag) {
@@ -360,7 +360,7 @@ export function generateViewerScript(): string {
       var isActive = activePage && activePage.id === page.id;
       var pageSections = isActive ? sections.filter(function(s){return s.page_id===page.id}) : [];
       var meta = page.metadata || {};
-      var ext = meta.external_url;
+      var ext = meta.externalUrl || meta.external_url;
       var tag = meta.tag;
 
       if (ext) {

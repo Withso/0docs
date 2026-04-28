@@ -20,6 +20,7 @@ interface DocPage {
   order_index: number;
   nav_group_id?: string | null;
   nav_title?: string | null;
+  metadata?: Record<string, any>;
 }
 
 interface DocNavGroup {
@@ -35,6 +36,7 @@ interface DocTab {
   id: string;
   label: string;
   order_index: number;
+  metadata?: Record<string, any>;
 }
 
 interface DocSection {
@@ -201,7 +203,10 @@ const DocContentView = ({
               style={{ maxWidth: `${frameMaxWidth}px` }}
               className="mx-auto px-4 sm:px-6 flex items-center gap-1 h-9 border-t"
             >
-              {[...tabs].sort((a, b) => a.order_index - b.order_index).map((tab) => {
+              {[...tabs]
+                .filter((tab) => !tab.metadata?.hidden)
+                .sort((a, b) => a.order_index - b.order_index)
+                .map((tab) => {
                 const isActive = activeTabId === tab.id;
                 return (
                   <button

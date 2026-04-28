@@ -6,6 +6,7 @@ export interface ExportPage {
   meta_description?: string | null;
   nav_group_id?: string | null;
   nav_title?: string | null;
+  metadata?: Record<string, any>;
 }
 
 export interface ExportSection {
@@ -38,6 +39,7 @@ export interface ExportTab {
   label: string;
   icon?: string | null;
   order_index: number;
+  metadata?: Record<string, any>;
 }
 
 export interface ExportResult {

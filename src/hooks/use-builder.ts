@@ -11,6 +11,7 @@ export interface Page {
   version_id?: string | null;
   nav_group_id?: string | null;
   nav_title?: string | null;
+  metadata?: any;
 }
 
 export interface Section {

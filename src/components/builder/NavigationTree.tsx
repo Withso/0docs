@@ -1,8 +1,8 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   ChevronRight, ChevronDown, FileText, Folder, FolderOpen, Layers,
-  Languages, Box, GitBranch, Plus, MoreHorizontal, Settings as SettingsIcon,
-  Trash2, Pencil, Tag,
+  Languages, Box, GitBranch, Plus, Settings as SettingsIcon,
+  Trash2, Tag, EyeOff, Globe,
 } from "lucide-react";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
@@ -14,9 +14,8 @@ import {
 } from "@dnd-kit/sortable";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuTrigger, DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import InlineRichText from "./InlineRichText";
 import type { Page, NavGroup, Tab } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
@@ -57,6 +56,7 @@ interface Props {
   onUpdateNavGroup: (id: string, updates: Partial<NavGroup>) => void;
   onDeleteNavGroup: (id: string) => void;
   onAddTab: (label?: string, kind?: "tab" | "language" | "product" | "version") => Promise<void> | void;
+  onUpdateTab: (id: string, updates: Partial<Tab>) => void;
   onDeleteTab: (id: string) => Promise<void> | void;
   onReorderPages: (pages: Page[]) => void;
   onReorderNavGroups: (groups: NavGroup[]) => void;
@@ -99,6 +99,7 @@ const TreeRow = ({
   onClick,
   onDoubleClick,
   rightActions,
+  badges,
   handleProps,
   editing,
   onEditDone,
@@ -117,6 +118,7 @@ const TreeRow = ({
   onClick?: () => void;
   onDoubleClick?: () => void;
   rightActions?: React.ReactNode;
+  badges?: React.ReactNode;
   handleProps?: Record<string, any>;
   editing?: boolean;
   onEditChange?: (v: string) => void;
@@ -174,6 +176,12 @@ const TreeRow = ({
           className={`flex-1 min-w-0 truncate text-[12.5px] ${active ? "font-medium text-foreground" : "text-foreground/85"}`}
           dangerouslySetInnerHTML={{ __html: label || "Untitled" }}
         />
+      )}
+
+      {!editing && badges && (
+        <div className="ml-1 flex items-center gap-0.5 shrink-0 text-muted-foreground/65">
+          {badges}
+        </div>
       )}
 
       {/* Hover-only right actions */}
@@ -244,6 +252,22 @@ const RowAddMenu = ({
   </DropdownMenu>
 );
 
+const MetadataBadges = ({ meta }: { meta?: Record<string, any> | null }) => {
+  if (!meta) return null;
+  return (
+    <>
+      {meta.externalUrl || meta.link ? <Globe className="h-3 w-3" /> : null}
+      {meta.tag || meta.badge ? (
+        <span className="inline-flex max-w-[54px] items-center gap-0.5 truncate rounded-sm bg-primary/10 px-1 text-[9px] font-medium text-primary">
+          <Tag className="h-2.5 w-2.5 shrink-0" />
+          <span className="truncate">{meta.tag || meta.badge}</span>
+        </span>
+      ) : null}
+      {meta.hidden ? <EyeOff className="h-3 w-3" /> : null}
+    </>
+  );
+};
+
 /* ─── Main component ─── */
 const tabIcon = (kind?: string) => {
   switch (kind) {
@@ -274,6 +298,7 @@ const NavigationTree = ({
   onUpdateNavGroup,
   onDeleteNavGroup,
   onAddTab,
+  onUpdateTab,
   onDeleteTab,
   onReorderPages,
   onReorderNavGroups,
@@ -283,7 +308,7 @@ const NavigationTree = ({
   const storageKey = `zdocs-nav-tree:${pages[0]?.project_id || navGroups[0]?.project_id || tabs[0]?.project_id || "empty"}`;
   const [expandedTabs, setExpandedTabs] = useState<Record<string, boolean>>({});
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const [editing, setEditing] = useState<{ kind: "page" | "group"; id: string; value: string } | null>(null);
+  const [editing, setEditing] = useState<{ kind: "page" | "group" | "tab"; id: string; value: string } | null>(null);
 
   useEffect(() => {
     try {
@@ -303,7 +328,7 @@ const NavigationTree = ({
   }, [storageKey, expandedTabs, expandedGroups]);
 
   const isTabOpen = (id: string) => expandedTabs[id] ?? true;
-  const isGroupOpen = (id: string) => expandedGroups[id] ?? true;
+  const isGroupOpen = (group: NavGroup) => expandedGroups[group.id] ?? ((group.metadata as any)?.expanded !== false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -336,7 +361,8 @@ const NavigationTree = ({
     const value = editing.value.trim();
     if (value) {
       if (editing.kind === "page") onUpdatePage(editing.id, { nav_title: value });
-      else onUpdateNavGroup(editing.id, { title: value });
+      else if (editing.kind === "group") onUpdateNavGroup(editing.id, { title: value });
+      else onUpdateTab(editing.id, { label: value });
     }
     setEditing(null);
   };
@@ -371,6 +397,7 @@ const NavigationTree = ({
         label={page.nav_title || page.title}
         active={active}
         selected={selected}
+        badges={<MetadataBadges meta={(page as any).metadata} />}
         handleProps={handleProps}
         editing={isEditing}
         editValue={editing?.value ?? ""}
@@ -389,7 +416,7 @@ const NavigationTree = ({
   };
 
   const renderGroup = (g: NavGroup, depth: number, handleProps: Record<string, any>) => {
-    const open = isGroupOpen(g.id);
+    const open = isGroupOpen(g);
     const selected = selectedSettingsId === g.id;
     const groupPages = pagesForGroup(g.id);
     const isEditing = editing?.kind === "group" && editing.id === g.id;
@@ -403,6 +430,7 @@ const NavigationTree = ({
           iconColor={(g.metadata as any)?.color || `hsl(${s.mutedForegroundColor})`}
           label={g.title}
           selected={selected}
+          badges={<MetadataBadges meta={(g as any).metadata} />}
           expandable
           expanded={open}
           onToggle={() => setExpandedGroups((p) => ({ ...p, [g.id]: !open }))}
@@ -451,6 +479,7 @@ const NavigationTree = ({
     const kind = tabKind(tab);
     const selected = selectedSettingsId === tab.id;
     const groups = groupsForTab(tab.id);
+    const isEditing = editing?.kind === "tab" && editing.id === tab.id;
     return (
       <div key={tab.id}>
         <TreeRow
@@ -459,9 +488,15 @@ const NavigationTree = ({
           iconColor={`hsl(${s.sidebarActiveColor})`}
           label={tab.label}
           selected={selected}
+          badges={<MetadataBadges meta={(tab as any).metadata} />}
           expandable
           expanded={open}
           onToggle={() => setExpandedTabs((p) => ({ ...p, [tab.id]: !open }))}
+          editing={isEditing}
+          editValue={editing?.value ?? ""}
+          onEditChange={(v) => setEditing({ kind: "tab", id: tab.id, value: v })}
+          onEditDone={commitEdit}
+          onDoubleClick={() => setEditing({ kind: "tab", id: tab.id, value: tab.label })}
           rightActions={
             <>
               <RowAddMenu
@@ -544,6 +579,9 @@ const NavigationTree = ({
               </div>
               <DropdownMenuItem onClick={() => onAddTab("New Tab", "tab")} className="gap-2 text-[12px]">
                 <Layers className="h-3.5 w-3.5" /> Tab
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAddNavGroup("dropdown")} className="gap-2 text-[12px]">
+                <ChevronDown className="h-3.5 w-3.5" /> Dropdown
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onAddTab("English", "language")} className="gap-2 text-[12px]">
                 <Languages className="h-3.5 w-3.5" /> Language

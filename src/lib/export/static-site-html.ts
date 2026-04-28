@@ -39,6 +39,7 @@ export function generateStaticHTML(
       nav_group_id: p.nav_group_id || null,
       nav_title: p.nav_title || null,
       meta_description: p.meta_description || null,
+      metadata: p.metadata || {},
     })),
     sections: sections.map((s) => ({
       id: s.id,
@@ -67,6 +68,7 @@ export function generateStaticHTML(
       label: t.label,
       icon: t.icon || null,
       order_index: t.order_index,
+      metadata: t.metadata || {},
     })),
   });
 
