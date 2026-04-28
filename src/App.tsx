@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, forwardRef } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,7 +22,8 @@ const LazyFallback = () => (
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = forwardRef<HTMLDivElement>((_, ref) => (
+  <div ref={ref} className="contents">
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
@@ -128,6 +129,9 @@ const App = () => (
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
-);
+  </div>
+));
+
+App.displayName = "App";
 
 export default App;
