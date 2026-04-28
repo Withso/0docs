@@ -60,18 +60,6 @@ const ConfigurationsPanel = ({ projectName, settings, saving, saveSettings, rese
 
   useEffect(() => setLocal(settings), [settings]);
 
-  const update = <K extends keyof DS>(key: K, value: DS[K]) =>
-    setLocal((p) => ({ ...p, [key]: value }));
-  const updateBlockStyle = (
-    block: keyof DS["blockStyles"],
-    key: keyof BlockStyleSettings,
-    value: any,
-  ) =>
-    setLocal((p) => ({
-      ...p,
-      blockStyles: { ...p.blockStyles, [block]: { ...p.blockStyles[block], [key]: value } },
-    }));
-
   const hasChanges = JSON.stringify(local) !== JSON.stringify(settings);
   const debouncedSave = useDebouncedCallback((next: DS) => {
     saveSettings(next);
