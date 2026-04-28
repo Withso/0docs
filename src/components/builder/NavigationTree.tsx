@@ -328,7 +328,7 @@ const NavigationTree = ({
   }, [storageKey, expandedTabs, expandedGroups]);
 
   const isTabOpen = (id: string) => expandedTabs[id] ?? true;
-  const isGroupOpen = (id: string) => expandedGroups[id] ?? true;
+  const isGroupOpen = (group: NavGroup) => expandedGroups[group.id] ?? ((group.metadata as any)?.expanded !== false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -397,6 +397,7 @@ const NavigationTree = ({
         label={page.nav_title || page.title}
         active={active}
         selected={selected}
+        badges={<MetadataBadges meta={(page as any).metadata} />}
         handleProps={handleProps}
         editing={isEditing}
         editValue={editing?.value ?? ""}
@@ -415,7 +416,7 @@ const NavigationTree = ({
   };
 
   const renderGroup = (g: NavGroup, depth: number, handleProps: Record<string, any>) => {
-    const open = isGroupOpen(g.id);
+    const open = isGroupOpen(g);
     const selected = selectedSettingsId === g.id;
     const groupPages = pagesForGroup(g.id);
     const isEditing = editing?.kind === "group" && editing.id === g.id;
@@ -429,6 +430,7 @@ const NavigationTree = ({
           iconColor={(g.metadata as any)?.color || `hsl(${s.mutedForegroundColor})`}
           label={g.title}
           selected={selected}
+          badges={<MetadataBadges meta={(g as any).metadata} />}
           expandable
           expanded={open}
           onToggle={() => setExpandedGroups((p) => ({ ...p, [g.id]: !open }))}
