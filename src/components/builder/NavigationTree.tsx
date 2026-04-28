@@ -1,8 +1,8 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   ChevronRight, ChevronDown, FileText, Folder, FolderOpen, Layers,
-  Languages, Box, GitBranch, Plus, MoreHorizontal, Settings as SettingsIcon,
-  Trash2, Pencil, Tag,
+  Languages, Box, GitBranch, Plus, Settings as SettingsIcon,
+  Trash2, Tag, EyeOff, Globe,
 } from "lucide-react";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
@@ -14,9 +14,8 @@ import {
 } from "@dnd-kit/sortable";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuTrigger, DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import InlineRichText from "./InlineRichText";
 import type { Page, NavGroup, Tab } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
