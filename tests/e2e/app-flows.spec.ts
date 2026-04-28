@@ -12,6 +12,12 @@ const runtimeProblems = [
   /ReferenceError/i,
 ];
 
+async function isAuthenticated(page: Page) {
+  await page.goto("/dashboard");
+  await expect(page.locator("body")).not.toBeEmpty();
+  return !/\/auth(?:$|[?#])/.test(page.url()) && !(await page.getByRole("heading", { name: /welcome back/i }).isVisible().catch(() => false));
+}
+
 async function collectConsoleProblems(page: Page) {
   const problems: string[] = [];
 
@@ -63,6 +69,8 @@ test.describe("0docs application E2E smoke flows", () => {
 
   test("builder workspace routes render home, editor, settings, analytics, configurations and code", async ({ page }) => {
     const problems = await collectConsoleProblems(page);
+
+    test.skip(!(await isAuthenticated(page)), "Builder workspace E2E requires an authenticated preview session.");
 
     await expectCleanRoute(page, `/builder/${projectId}`, /Home|Project/);
     await expect(page.getByRole("button", { name: /editor/i })).toBeVisible();
