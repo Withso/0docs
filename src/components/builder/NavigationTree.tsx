@@ -98,6 +98,7 @@ const TreeRow = ({
   onClick,
   onDoubleClick,
   rightActions,
+  badges,
   handleProps,
   editing,
   onEditDone,
@@ -116,6 +117,7 @@ const TreeRow = ({
   onClick?: () => void;
   onDoubleClick?: () => void;
   rightActions?: React.ReactNode;
+  badges?: React.ReactNode;
   handleProps?: Record<string, any>;
   editing?: boolean;
   onEditChange?: (v: string) => void;
@@ -173,6 +175,12 @@ const TreeRow = ({
           className={`flex-1 min-w-0 truncate text-[12.5px] ${active ? "font-medium text-foreground" : "text-foreground/85"}`}
           dangerouslySetInnerHTML={{ __html: label || "Untitled" }}
         />
+      )}
+
+      {!editing && badges && (
+        <div className="ml-1 flex items-center gap-0.5 shrink-0 text-muted-foreground/65">
+          {badges}
+        </div>
       )}
 
       {/* Hover-only right actions */}
