@@ -14,7 +14,8 @@ import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SettingsContent from "@/components/builder/SettingsContent";
 import PublishContent from "@/components/builder/PublishContent";
-import ProjectRail from "@/components/builder/ProjectRail";
+import WorkspaceShell from "@/components/builder/WorkspaceShell";
+import ProjectHome from "@/components/builder/ProjectHome";
 import EditorTabs from "@/components/builder/EditorTabs";
 import FilesPanel from "@/components/builder/FilesPanel";
 import AnalyticsContent from "@/components/builder/AnalyticsContent";
@@ -69,13 +70,14 @@ const Builder = () => {
   // Derive initial mode from URL path
   const getInitialMode = (): BuilderMode => {
     if (location.pathname.endsWith("/settings")) return "settings";
+    if (location.pathname.endsWith("/editor")) return "editor";
     if (location.pathname.endsWith("/design")) return "design";
     if (location.pathname.endsWith("/configurations")) return "configurations";
     if (location.pathname.endsWith("/publish")) return "publish";
     if (location.pathname.endsWith("/analytics")) return "analytics";
     if (location.pathname.endsWith("/code")) return "code";
     if (location.pathname.endsWith("/preview")) return "preview";
-    return "editor";
+    return "home";
   };
 
   const [mode, setMode] = useState<BuilderMode>(getInitialMode);
@@ -101,7 +103,9 @@ const Builder = () => {
     setMode(newMode);
     if (!projectId) return;
     const base = `/builder/${projectId}`;
-    if (newMode === "settings") navigate(`${base}/settings`, { replace: true });
+    if (newMode === "home") navigate(base, { replace: true });
+    else if (newMode === "settings") navigate(`${base}/settings`, { replace: true });
+    else if (newMode === "editor") navigate(`${base}/editor`, { replace: true });
     else if (newMode === "design") navigate(`${base}/design`, { replace: true });
     else if (newMode === "configurations") navigate(`${base}/configurations`, { replace: true });
     else if (newMode === "publish") navigate(`${base}/publish`, { replace: true });
@@ -289,11 +293,8 @@ const Builder = () => {
   ) : null;
 
   return (
-    <div className={`min-h-screen bg-background ${mode === "design" ? "flex flex-col h-screen overflow-hidden" : ""}`}>
-      <div className="flex min-h-screen">
-        <ProjectRail mode={mode} onModeChange={handleModeChange} />
-
-        <div className="flex-1 min-w-0 flex">
+    <WorkspaceShell project={project} mode={mode} onModeChange={handleModeChange}>
+        <div className="flex-1 min-w-0 flex min-h-0">
           {/* ─── Shared Navigation column (Mintlify-style) ───
            * Visible in both Visual (editor) and Code modes so the user can
            * switch the active page without leaving Code view.
@@ -375,7 +376,16 @@ const Builder = () => {
             />
           )}
 
-          <div className="flex-1 min-w-0 flex flex-col">
+          <div className="flex-1 min-w-0 flex flex-col min-h-0">
+            {mode === "home" && (
+              <ProjectHome
+                project={project}
+                pages={pages}
+                navGroups={navGroups}
+                tabs={tabs}
+                onModeChange={handleModeChange}
+              />
+            )}
             {contentHeader}
             {mode === "editor" && (
               <DesignSettingsWrapper settings={settings} className="">
@@ -533,7 +543,6 @@ const Builder = () => {
             )}
           </div>
         </div>
-      </div>
 
       <OpenAPIImportDialog open={openApiOpen} onOpenChange={setOpenApiOpen} onImport={handleOpenAPIImport} />
 
@@ -561,7 +570,7 @@ const Builder = () => {
           }, 200);
         }}
       />
-    </div>
+    </WorkspaceShell>
   );
 };
 

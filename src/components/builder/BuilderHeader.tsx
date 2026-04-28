@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, Eye, Code2, FileText, Search } from "lucide-react";
 import BranchSelector from "./BranchSelector";
 
-export type BuilderMode = "editor" | "design" | "preview" | "analytics" | "settings" | "publish" | "configurations" | "code";
+export type BuilderMode = "home" | "editor" | "design" | "preview" | "analytics" | "settings" | "publish" | "configurations" | "code";
 export type EditorTab = "navigation" | "files";
 export type DesignSubMode = "live" | "examples";
 
