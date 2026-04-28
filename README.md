@@ -1,8 +1,10 @@
-# Welcome to your Lovable project
+# 0docs
+
+0docs is a visual documentation builder inspired by Mintlify: project workspaces, a dense navigation tree, design controls, code view, and docs-as-code publishing.
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**Lovable project ID**: 3c397bbe-104a-466c-b9a2-4dfe441b0bbf
 
 ## How can I edit this code?
 
@@ -60,9 +62,18 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Self-hosting
+
+Phase 5 adds Docker/Railway scaffolding and runtime configuration support.
+
+- Start here: [`SELF_HOSTING.md`](./SELF_HOSTING.md)
+- Docker: [`DEPLOY_DOCKER.md`](./DEPLOY_DOCKER.md)
+- Railway: [`DEPLOY_RAILWAY.md`](./DEPLOY_RAILWAY.md)
+- Runtime config template: [`public/config.example.json`](./public/config.example.json)
+
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+In Lovable, use Share -> Publish. For self-hosting, build the Docker image and provide the runtime backend variables described above.
 
 ## Can I connect a custom domain to my Lovable project?
 

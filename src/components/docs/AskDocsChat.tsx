@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, Bot, User, Loader2 } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
+import { sendAskDocsRequest } from "@/app/api/ask-docs";
 
 interface Message {
   role: "user" | "assistant";
@@ -11,8 +12,6 @@ interface AskDocsChatProps {
   projectId: string;
   settings: DesignSettings;
 }
-
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ask-docs`;
 
 const AskDocsChat = ({ projectId, settings: s }: AskDocsChatProps) => {
   const [open, setOpen] = useState(false);
@@ -45,14 +44,7 @@ const AskDocsChat = ({ projectId, settings: s }: AskDocsChatProps) => {
     const allMessages = [...messages, userMsg];
 
     try {
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ messages: allMessages, projectId }),
-      });
+      const resp = await sendAskDocsRequest(projectId, allMessages);
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: "Failed to connect" }));

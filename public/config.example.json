@@ -1,0 +1,6 @@
+{
+  "backendUrl": "https://your-backend.example.com",
+  "publishableKey": "your-publishable-key",
+  "projectId": "your-project-ref",
+  "functionsUrl": "https://your-backend.example.com/functions/v1"
+}
