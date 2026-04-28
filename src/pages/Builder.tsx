@@ -724,10 +724,21 @@ const PageTitleEditor = ({
   onAddSection?: () => void;
 }) => {
   const [title, setTitle] = useState(page.title);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setTitle(page.title);
   }, [page.id, page.title]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [menuOpen]);
 
   const debouncedSave = useDebouncedCallback((value: string) => {
     const slug = value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
@@ -748,25 +759,26 @@ const PageTitleEditor = ({
           onChange={(e) => { setTitle(e.target.value); debouncedSave(e.target.value); }}
           placeholder="Page title..."
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="shrink-0 h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-              <Plus className="h-4 w-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[180px]">
-            {onAddSection && (
-              <DropdownMenuItem onClick={onAddSection} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Section
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={onImportOpenAPI} className="gap-2">
-              <FileJson className="h-4 w-4" />
-              Import OpenAPI
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div ref={menuRef} className="relative shrink-0">
+          <button
+            onClick={() => setMenuOpen((value) => !value)}
+            className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-8 z-50 min-w-[180px] overflow-hidden rounded-lg border border-border/40 bg-popover p-1 text-popover-foreground shadow-md">
+              {onAddSection && (
+                <button onClick={() => { setMenuOpen(false); onAddSection(); }} className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground">
+                  <Plus className="h-4 w-4" /> Add Section
+                </button>
+              )}
+              <button onClick={() => { setMenuOpen(false); onImportOpenAPI?.(); }} className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground">
+                <FileJson className="h-4 w-4" /> Import OpenAPI
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
