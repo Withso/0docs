@@ -56,6 +56,7 @@ interface Props {
   onUpdateNavGroup: (id: string, updates: Partial<NavGroup>) => void;
   onDeleteNavGroup: (id: string) => void;
   onAddTab: (label?: string, kind?: "tab" | "language" | "product" | "version") => Promise<void> | void;
+  onUpdateTab: (id: string, updates: Partial<Tab>) => void;
   onDeleteTab: (id: string) => Promise<void> | void;
   onReorderPages: (pages: Page[]) => void;
   onReorderNavGroups: (groups: NavGroup[]) => void;
@@ -297,6 +298,7 @@ const NavigationTree = ({
   onUpdateNavGroup,
   onDeleteNavGroup,
   onAddTab,
+  onUpdateTab,
   onDeleteTab,
   onReorderPages,
   onReorderNavGroups,
@@ -306,7 +308,7 @@ const NavigationTree = ({
   const storageKey = `zdocs-nav-tree:${pages[0]?.project_id || navGroups[0]?.project_id || tabs[0]?.project_id || "empty"}`;
   const [expandedTabs, setExpandedTabs] = useState<Record<string, boolean>>({});
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const [editing, setEditing] = useState<{ kind: "page" | "group"; id: string; value: string } | null>(null);
+  const [editing, setEditing] = useState<{ kind: "page" | "group" | "tab"; id: string; value: string } | null>(null);
 
   useEffect(() => {
     try {
@@ -359,7 +361,8 @@ const NavigationTree = ({
     const value = editing.value.trim();
     if (value) {
       if (editing.kind === "page") onUpdatePage(editing.id, { nav_title: value });
-      else onUpdateNavGroup(editing.id, { title: value });
+      else if (editing.kind === "group") onUpdateNavGroup(editing.id, { title: value });
+      else onUpdateTab(editing.id, { label: value });
     }
     setEditing(null);
   };
