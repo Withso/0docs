@@ -251,6 +251,22 @@ const RowAddMenu = ({
   </DropdownMenu>
 );
 
+const MetadataBadges = ({ meta }: { meta?: Record<string, any> | null }) => {
+  if (!meta) return null;
+  return (
+    <>
+      {meta.externalUrl || meta.link ? <Globe className="h-3 w-3" /> : null}
+      {meta.tag || meta.badge ? (
+        <span className="inline-flex max-w-[54px] items-center gap-0.5 truncate rounded-sm bg-primary/10 px-1 text-[9px] font-medium text-primary">
+          <Tag className="h-2.5 w-2.5 shrink-0" />
+          <span className="truncate">{meta.tag || meta.badge}</span>
+        </span>
+      ) : null}
+      {meta.hidden ? <EyeOff className="h-3 w-3" /> : null}
+    </>
+  );
+};
+
 /* ─── Main component ─── */
 const tabIcon = (kind?: string) => {
   switch (kind) {
