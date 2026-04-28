@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { forwardRef, useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   ChevronRight, ChevronDown, FileText, Folder, FolderOpen, Layers,
   Languages, Box, GitBranch, Plus, Settings as SettingsIcon,
@@ -221,36 +221,56 @@ const RowAddMenu = ({
   onPage?: () => void;
   onGroup?: () => void;
   onDropdown?: () => void;
-}) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
+}) => {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const run = (action?: () => void) => (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setOpen(false);
+    action?.();
+  };
+
+  return (
+    <div ref={menuRef} className="relative">
       <button
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); setOpen((value) => !value); }}
         title="Add"
         className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80"
       >
         <Plus className="h-3 w-3" />
       </button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" className="min-w-[160px] p-1">
-      {onPage && (
-        <DropdownMenuItem onClick={onPage} className="gap-2 text-[12px]">
-          <FileText className="h-3.5 w-3.5" /> Page
-        </DropdownMenuItem>
+      {open && (
+        <div className="absolute right-0 top-6 z-50 min-w-[160px] overflow-hidden rounded-lg border border-border/40 bg-popover p-1 text-popover-foreground shadow-md">
+          {onPage && (
+            <button onClick={run(onPage)} className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[12px] hover:bg-accent hover:text-accent-foreground">
+              <FileText className="h-3.5 w-3.5" /> Page
+            </button>
+          )}
+          {onGroup && (
+            <button onClick={run(onGroup)} className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[12px] hover:bg-accent hover:text-accent-foreground">
+              <Folder className="h-3.5 w-3.5" /> Group
+            </button>
+          )}
+          {onDropdown && (
+            <button onClick={run(onDropdown)} className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[12px] hover:bg-accent hover:text-accent-foreground">
+              <ChevronDown className="h-3.5 w-3.5" /> Dropdown
+            </button>
+          )}
+        </div>
       )}
-      {onGroup && (
-        <DropdownMenuItem onClick={onGroup} className="gap-2 text-[12px]">
-          <Folder className="h-3.5 w-3.5" /> Group
-        </DropdownMenuItem>
-      )}
-      {onDropdown && (
-        <DropdownMenuItem onClick={onDropdown} className="gap-2 text-[12px]">
-          <ChevronDown className="h-3.5 w-3.5" /> Dropdown
-        </DropdownMenuItem>
-      )}
-    </DropdownMenuContent>
-  </DropdownMenu>
-);
+    </div>
+  );
+};
 
 const MetadataBadges = ({ meta }: { meta?: Record<string, any> | null }) => {
   if (!meta) return null;
@@ -284,7 +304,7 @@ const tabKind = (t: Tab): NavSettingsKind => {
   return "tab";
 };
 
-const NavigationTree = ({
+const NavigationTree = forwardRef<HTMLDivElement, Props>(({
   settings: s,
   pages,
   activePage,
@@ -304,7 +324,7 @@ const NavigationTree = ({
   onReorderNavGroups,
   onOpenSettings,
   selectedSettingsId,
-}: Props) => {
+}, ref) => {
   const storageKey = `zdocs-nav-tree:${pages[0]?.project_id || navGroups[0]?.project_id || tabs[0]?.project_id || "empty"}`;
   const [expandedTabs, setExpandedTabs] = useState<Record<string, boolean>>({});
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -554,7 +574,7 @@ const NavigationTree = ({
   const rootPages = pagesForGroup(null);
 
   return (
-    <div className="flex flex-col gap-px px-1 py-1.5 select-none">
+    <div ref={ref} className="flex flex-col gap-px px-1 py-1.5 select-none">
       {/* Compact header row */}
       <div className="flex items-center justify-between px-1.5 h-7 mb-0.5">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Navigation</span>
@@ -644,6 +664,8 @@ const NavigationTree = ({
       )}
     </div>
   );
-};
+});
+
+NavigationTree.displayName = "NavigationTree";
 
 export default NavigationTree;

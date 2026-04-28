@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import { Menu, X, Search, ChevronRight } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
@@ -37,7 +37,7 @@ interface DocMobileNavProps {
   projectName?: string;
 }
 
-const DocMobileNav = ({
+const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
   settings: s,
   pages,
   activePage,
@@ -46,7 +46,7 @@ const DocMobileNav = ({
   onSearchOpen,
   navGroups = [],
   projectName,
-}: DocMobileNavProps) => {
+}, ref) => {
   const [open, setOpen] = useState(false);
   const [showTOC, setShowTOC] = useState(false);
 
@@ -73,7 +73,7 @@ const DocMobileNav = ({
   };
 
   return (
-    <div className="lg:hidden">
+    <div ref={ref} className="lg:hidden">
       <button
         onClick={() => setOpen(true)}
         className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-accent transition-colors"
@@ -262,6 +262,8 @@ const DocMobileNav = ({
       )}
     </div>
   );
-};
+});
+
+DocMobileNav.displayName = "DocMobileNav";
 
 export default DocMobileNav;
