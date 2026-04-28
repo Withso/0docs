@@ -215,13 +215,13 @@ const RowAction = ({
 );
 
 /* ─── Add menu (compact tree-style) ─── */
-const RowAddMenu = ({
-  onPage, onGroup, onDropdown,
-}: {
+const RowAddMenu = forwardRef<HTMLDivElement, {
   onPage?: () => void;
   onGroup?: () => void;
   onDropdown?: () => void;
-}) => {
+}>(({
+  onPage, onGroup, onDropdown,
+}, ref) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -241,7 +241,7 @@ const RowAddMenu = ({
   };
 
   return (
-    <div ref={menuRef} className="relative">
+    <div ref={(node) => { menuRef.current = node; if (typeof ref === "function") ref(node); else if (ref) ref.current = node; }} className="relative">
       <button
         onClick={(e) => { e.stopPropagation(); setOpen((value) => !value); }}
         title="Add"
@@ -270,7 +270,9 @@ const RowAddMenu = ({
       )}
     </div>
   );
-};
+});
+
+RowAddMenu.displayName = "RowAddMenu";
 
 const MetadataBadges = ({ meta }: { meta?: Record<string, any> | null }) => {
   if (!meta) return null;
