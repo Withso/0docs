@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { parseOpenAPI, type ParsedOpenAPI } from "@/lib/openapi-parser";
@@ -10,7 +10,7 @@ interface OpenAPIImportDialogProps {
   onImport: (parsed: ParsedOpenAPI) => Promise<void>;
 }
 
-const OpenAPIImportDialog = ({ open, onOpenChange, onImport }: OpenAPIImportDialogProps) => {
+const OpenAPIImportDialog = forwardRef<HTMLDivElement, OpenAPIImportDialogProps>(({ open, onOpenChange, onImport }, ref) => {
   const [rawInput, setRawInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<ParsedOpenAPI | null>(null);
@@ -65,7 +65,8 @@ const OpenAPIImportDialog = ({ open, onOpenChange, onImport }: OpenAPIImportDial
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
+    <div ref={ref}>
+      <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -146,8 +147,11 @@ const OpenAPIImportDialog = ({ open, onOpenChange, onImport }: OpenAPIImportDial
           )}
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+    </div>
   );
-};
+});
+
+OpenAPIImportDialog.displayName = "OpenAPIImportDialog";
 
 export default OpenAPIImportDialog;
