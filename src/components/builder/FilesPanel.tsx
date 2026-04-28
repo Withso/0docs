@@ -191,7 +191,7 @@ const FileTreeNode = ({
           style={{ paddingLeft: padLeft }}
         >
           <button
-            onClick={() => setOpen((o) => !o)}
+            onClick={() => setOpenFolders((p) => ({ ...p, [node.id]: !open }))}
             className="flex items-center gap-1 flex-1 min-w-0 text-left"
           >
             <Chevron className="h-3 w-3 shrink-0" />
