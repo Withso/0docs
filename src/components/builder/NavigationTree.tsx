@@ -277,9 +277,27 @@ const NavigationTree = ({
   onOpenSettings,
   selectedSettingsId,
 }: Props) => {
+  const storageKey = `zdocs-nav-tree:${pages[0]?.project_id || navGroups[0]?.project_id || tabs[0]?.project_id || "empty"}`;
   const [expandedTabs, setExpandedTabs] = useState<Record<string, boolean>>({});
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState<{ kind: "page" | "group"; id: string; value: string } | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as { tabs?: Record<string, boolean>; groups?: Record<string, boolean> };
+      setExpandedTabs(parsed.tabs || {});
+      setExpandedGroups(parsed.groups || {});
+    } catch {
+      setExpandedTabs({});
+      setExpandedGroups({});
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    window.localStorage.setItem(storageKey, JSON.stringify({ tabs: expandedTabs, groups: expandedGroups }));
+  }, [storageKey, expandedTabs, expandedGroups]);
 
   const isTabOpen = (id: string) => expandedTabs[id] ?? true;
   const isGroupOpen = (id: string) => expandedGroups[id] ?? true;
@@ -312,8 +330,11 @@ const NavigationTree = ({
 
   const commitEdit = () => {
     if (!editing) return;
-    if (editing.kind === "page") onUpdatePage(editing.id, { nav_title: editing.value });
-    else onUpdateNavGroup(editing.id, { title: editing.value });
+    const value = editing.value.trim();
+    if (value) {
+      if (editing.kind === "page") onUpdatePage(editing.id, { nav_title: value });
+      else onUpdateNavGroup(editing.id, { title: value });
+    }
     setEditing(null);
   };
 
