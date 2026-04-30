@@ -7,7 +7,7 @@ import { usePublish } from "@/hooks/use-publish";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
 // BuilderSidebar replaced by NavigationTree (Mintlify-style compact tree)
 import SectionEditor from "@/components/builder/SectionEditor";
-import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
+import DesignSettingsWrapper, { useResolvedDesignSettings } from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import DesignPanel from "@/components/builder/DesignPanel";
 import DocContentView from "@/components/docs/DocContentView";
@@ -120,6 +120,7 @@ const Builder = () => {
   } = useBuilder(projectId, user?.id);
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
+  const { resolved: resolvedSettings } = useResolvedDesignSettings(settings);
 
   // Publish system
   const {
