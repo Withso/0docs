@@ -259,7 +259,13 @@ const Index = () => {
       : pages.filter((p) => p.version_id === activeVersion.id || !p.version_id);
 
   const { settings: liveSettings } = useDesignSettings(project?.id);
-  const settings = publishedDesign || liveSettings;
+  const rawSettings = publishedDesign || liveSettings;
+  // Resolve to the current platform theme so the homepage chrome (header,
+  // toggle, search button) recolours when the user toggles light/dark —
+  // keeps the entire homepage in sync with the doc preview below.
+  const { resolved: settings } = useResolvedDesignSettings(rawSettings);
+  const { theme: platformTheme, toggle: togglePlatformTheme } = usePlatformTheme();
+  const showThemeToggle = !getAppearance(rawSettings).strict;
 
   const [searchOpen, setSearchOpen] = useState(false);
 
