@@ -135,6 +135,7 @@ const BuilderHeader = ({
           <PlatformThemeToggle />
 
           <button
+            onClick={() => onModeChange(isPreview ? "editor" : "preview")}
             title={isPreview ? "Back to editor" : "Preview"}
             aria-label={isPreview ? "Back to editor" : "Preview"}
             className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all border ${
