@@ -7,7 +7,7 @@ import { usePublish } from "@/hooks/use-publish";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
 // BuilderSidebar replaced by NavigationTree (Mintlify-style compact tree)
 import SectionEditor from "@/components/builder/SectionEditor";
-import DesignSettingsWrapper from "@/components/docs/DesignSettingsWrapper";
+import DesignSettingsWrapper, { useResolvedDesignSettings } from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import DesignPanel from "@/components/builder/DesignPanel";
 import DocContentView from "@/components/docs/DocContentView";
@@ -120,6 +120,7 @@ const Builder = () => {
   } = useBuilder(projectId, user?.id);
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
+  const { resolved: resolvedSettings } = useResolvedDesignSettings(settings);
 
   // Publish system
   const {
@@ -301,7 +302,7 @@ const Builder = () => {
               <div className="flex-1 min-h-0 overflow-y-auto">
                 {editorTab === "navigation" ? (
                   <NavigationTree
-                    settings={settings}
+                    settings={resolvedSettings}
                     pages={pages}
                     activePage={activePage}
                     navGroups={navGroups}
@@ -383,13 +384,13 @@ const Builder = () => {
             {contentHeader}
             {mode === "editor" && (
               <DesignSettingsWrapper settings={settings} className="">
-                <main className="mx-auto px-5 py-8" style={{ maxWidth: settings.contentMaxWidth + 40 }}>
+                <main className="mx-auto px-5 py-8" style={{ maxWidth: resolvedSettings.contentMaxWidth + 40 }}>
                   {activePage ? (
-                    <article style={{ maxWidth: `${settings.contentMaxWidth}px` }} className="animate-fade-in">
+                    <article style={{ maxWidth: `${resolvedSettings.contentMaxWidth}px` }} className="animate-fade-in">
                       <PageTitleEditor
                         page={activePage}
                         onUpdate={updatePage}
-                        settings={settings}
+                        settings={resolvedSettings}
                         onAddSection={addSection}
                         onImportOpenAPI={() => {
                           setOpenApiMode("page");
@@ -400,7 +401,7 @@ const Builder = () => {
                       <SectionsDndWrapper
                         sections={sections}
                         blocks={blocks}
-                        settings={settings}
+                        settings={resolvedSettings}
                         onUpdateSection={updateSection}
                         onDeleteSection={deleteSection}
                         onAddBlock={addBlock}
@@ -423,7 +424,7 @@ const Builder = () => {
                       </button>
                     </article>
                   ) : (
-                    <div className="text-center py-20 animate-fade-in" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
+                    <div className="text-center py-20 animate-fade-in" style={{ color: `hsl(${resolvedSettings.mutedForegroundColor})` }}>
                       <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-5">
                         <FileText className="h-7 w-7 text-muted-foreground" />
                       </div>
@@ -442,7 +443,7 @@ const Builder = () => {
               <DesignPanel
                 projectId={projectId!}
                 projectName={project?.name || ""}
-                settings={settings}
+                settings={resolvedSettings}
                 saving={saving}
                 saveSettings={saveSettings}
                 resetSettings={resetSettings}
@@ -455,7 +456,7 @@ const Builder = () => {
             {mode === "preview" && (
               <div className="flex-1 relative">
                 <DocContentView
-                  settings={settings}
+                  settings={resolvedSettings}
                   projectName={project?.name || ""}
                   pages={pages}
                   activePage={activePage}
@@ -481,7 +482,7 @@ const Builder = () => {
               <ConfigurationsPanel
                 projectId={projectId!}
                 projectName={project?.name || ""}
-                settings={settings}
+                  settings={resolvedSettings}
                 saving={saving}
                 saveSettings={saveSettings}
                 resetSettings={resetSettings}
@@ -494,7 +495,7 @@ const Builder = () => {
                 page={activePage}
                 sections={sections}
                 blocks={blocks}
-                settings={settings}
+                settings={resolvedSettings}
                 projectSlug={project?.slug}
               />
             )}
@@ -530,7 +531,7 @@ const Builder = () => {
                 pages={pages}
                 sections={sections}
                 blocks={blocks}
-                settings={settings}
+                settings={resolvedSettings}
                 navGroups={navGroups}
                 tabs={tabs}
               />

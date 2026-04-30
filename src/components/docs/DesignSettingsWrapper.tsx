@@ -25,15 +25,7 @@ const DesignSettingsWrapper = forwardRef<HTMLDivElement, DesignSettingsWrapperPr
   className = "",
   forceMode,
 }, ref) => {
-  const { theme } = usePlatformTheme();
-  const appearance = getAppearance(settings);
-  // Strict mode pins to the configured default; otherwise sync with platform.
-  const mode = forceMode
-    ?? (appearance.strict
-      ? (appearance.default === "system" ? theme : appearance.default)
-      : theme);
-
-  const resolved = useMemo(() => applyModeToSettings(settings, mode), [settings, mode]);
+  const { resolved, mode } = useResolvedDesignSettings(settings, forceMode);
   const cssVars = useMemo(() => designSettingsToCSSVars(resolved), [resolved]);
 
   const style: React.CSSProperties = {
@@ -68,5 +60,19 @@ const DesignSettingsWrapper = forwardRef<HTMLDivElement, DesignSettingsWrapperPr
 });
 
 DesignSettingsWrapper.displayName = "DesignSettingsWrapper";
+
+export function useResolvedDesignSettings(settings: DesignSettings, forceMode?: "light" | "dark") {
+  const { theme } = usePlatformTheme();
+  const appearance = getAppearance(settings);
+
+  const mode = forceMode
+    ?? (appearance.strict
+      ? (appearance.default === "system" ? theme : appearance.default)
+      : theme);
+
+  const resolved = useMemo(() => applyModeToSettings(settings, mode), [settings, mode]);
+
+  return { resolved, mode } as const;
+}
 
 export default DesignSettingsWrapper;
