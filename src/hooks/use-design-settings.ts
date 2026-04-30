@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import type { AppearanceSettings, MintlifyColors, PerModeColors } from "@/lib/theme/resolve-doc-theme";
+import { hslStringToHex, type AppearanceSettings, type MintlifyColors, type PerModeColors } from "@/lib/theme/resolve-doc-theme";
 
 export interface BlockStyleSettings {
   color: string;
@@ -270,11 +270,44 @@ export function useDesignSettings(projectId: string | undefined) {
 
       if (data?.settings) {
         const loaded = data.settings as any;
-        setSettings({
+        const merged: DesignSettings = {
           ...defaultDesignSettings,
           ...loaded,
           blockStyles: { ...emptyBlockStyles, ...(loaded.blockStyles || {}) },
-        });
+        };
+        // Legacy migration: if no per-mode overrides exist but the project
+        // has customised flat colours, classify them by the lightness of the
+        // background and seed the matching mode so existing customisations
+        // remain visible. The other mode falls back to defaults.
+        if (!loaded.colorsDark && !loaded.colorsLight && loaded.borderColor) {
+          const seed = {
+            background: hslStringToHex(loaded.backgroundColor),
+            foreground: hslStringToHex(loaded.foregroundColor),
+            primary: hslStringToHex(loaded.primaryColor),
+            primaryForeground: hslStringToHex(loaded.primaryForegroundColor),
+            muted: hslStringToHex(loaded.mutedColor),
+            mutedForeground: hslStringToHex(loaded.mutedForegroundColor),
+            accent: hslStringToHex(loaded.accentColor),
+            border: hslStringToHex(loaded.borderColor),
+            link: hslStringToHex(loaded.linkColor),
+            sectionLine: hslStringToHex(loaded.sectionLineColor),
+            codeBg: hslStringToHex(loaded.codeBlockBg),
+            noteBg: hslStringToHex(loaded.noteBg),
+            noteBorder: hslStringToHex(loaded.noteBorderColor),
+            sidebarBg: hslStringToHex(loaded.sidebarBg),
+            sidebarText: hslStringToHex(loaded.sidebarTextColor),
+            sidebarActive: hslStringToHex(loaded.sidebarActiveColor),
+            sidebarIndicator: hslStringToHex(loaded.sidebarIndicatorColor),
+            sidebarLabel: hslStringToHex(loaded.sidebarLabelColor),
+            sidebarSection: hslStringToHex(loaded.sidebarSectionColor),
+          };
+          // Lightness from "h s% l%"
+          const lightness = parseFloat((loaded.backgroundColor || "0 0% 100%").split(/\s+/)[2] || "100");
+          if (lightness >= 50) merged.colorsLight = seed;
+          else merged.colorsDark = seed;
+        }
+
+        setSettings(merged);
       } else {
         setSettings(defaultDesignSettings);
       }
