@@ -16,8 +16,8 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   SettingsSection, SliderField, ColorField, ToggleField,
   FontSelect, WeightSelect, ColorControls, LayoutControls,
-  TOCControls, SectionControls, BlockControls, fontOptions, codeFontOptions,
-  blockSections, type BlockKey,
+  TOCControls, SectionControls, BlockControls, AppearanceControls,
+  fontOptions, codeFontOptions, blockSections, type BlockKey,
 } from "@/components/builder/DesignControls";
 
 // ─── Interfaces ──────────────────────────────────────
