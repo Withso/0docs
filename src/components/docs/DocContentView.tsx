@@ -380,4 +380,21 @@ const DocContentView = ({
   );
 };
 
+/** Sun/moon toggle synced to the platform theme. */
+function ThemeToggleButton({ settings }: { settings: DesignSettings }) {
+  const { theme, toggle } = usePlatformTheme();
+  const Icon = theme === "dark" ? Sun : Moon;
+  return (
+    <button
+      onClick={toggle}
+      aria-label="Toggle theme"
+      title="Toggle theme"
+      className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors hover:bg-accent"
+      style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+    >
+      <Icon className="h-4 w-4" />
+    </button>
+  );
+}
+
 export default DocContentView;
