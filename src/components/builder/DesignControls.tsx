@@ -327,6 +327,52 @@ export function WeightSelect({ label, value, onChange }: { label: string; value:
 
 // ─── Grouped Controls ────────────────────────────────
 
+/** Mintlify-style appearance: brand colours + light/dark mode behaviour. */
+export function AppearanceControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
+  const colors = local.colors || {};
+  const updateColor = (k: "primary" | "light" | "dark", hex: string) => {
+    update("colors" as keyof DS, { ...colors, [k]: hex } as any);
+  };
+  const appearance = local.appearance || { default: "system", strict: false };
+  const updateAppearance = (patch: Partial<typeof appearance>) => {
+    update("appearance" as keyof DS, { ...appearance, ...patch } as any);
+  };
+  const bgColors = local.backgroundColors || {};
+  const updateBg = (mode: "light" | "dark", hex: string) => {
+    update("backgroundColors" as keyof DS, { ...bgColors, [mode]: hex } as any);
+  };
+
+  // Mintlify-style controls take HEX directly (not HSL strings).
+  const HexColorRow = ({ label, hex, onChange }: { label: string; hex: string; onChange: (h: string) => void }) => (
+    <ColorField
+      label={label}
+      value={hexToHsl(hex || "#000000")}
+      onChange={(hsl) => onChange(hslToHex(hsl))}
+    />
+  );
+
+  return (
+    <>
+      <HexColorRow label="Primary" hex={colors.primary || "#0a0a0a"} onChange={(h) => updateColor("primary", h)} />
+      <HexColorRow label="Light Accent" hex={colors.light || "#ffffff"} onChange={(h) => updateColor("light", h)} />
+      <HexColorRow label="Dark Accent" hex={colors.dark || "#0a0a0a"} onChange={(h) => updateColor("dark", h)} />
+      <HexColorRow label="BG (Light)" hex={bgColors.light || "#ffffff"} onChange={(h) => updateBg("light", h)} />
+      <HexColorRow label="BG (Dark)" hex={bgColors.dark || "#0d0d0d"} onChange={(h) => updateBg("dark", h)} />
+      <InlineSelect
+        label="Default Mode"
+        value={appearance.default}
+        onChange={(v) => updateAppearance({ default: v as any })}
+        options={[
+          { value: "system", label: "System" },
+          { value: "light", label: "Light" },
+          { value: "dark", label: "Dark" },
+        ]}
+      />
+      <ToggleField label="Strict (hide toggle)" checked={appearance.strict} onChange={(v) => updateAppearance({ strict: v })} />
+    </>
+  );
+}
+
 export function ColorControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
   const colors: { label: string; key: keyof DS }[] = [
     { label: "Background", key: "backgroundColor" },

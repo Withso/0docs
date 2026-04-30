@@ -16,8 +16,8 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   SettingsSection, SliderField, ColorField, ToggleField,
   FontSelect, WeightSelect, ColorControls, LayoutControls,
-  TOCControls, SectionControls, BlockControls, fontOptions, codeFontOptions,
-  blockSections, type BlockKey,
+  TOCControls, SectionControls, BlockControls, AppearanceControls,
+  fontOptions, codeFontOptions, blockSections, type BlockKey,
 } from "@/components/builder/DesignControls";
 
 // ─── Interfaces ──────────────────────────────────────
@@ -196,7 +196,8 @@ const DesignPanel = ({ projectId, projectName, settings, saving, saveSettings, r
                       <SliderField label="Line Height" value={local.lineHeight} onChange={(v) => update("lineHeight", v)} min={1.2} max={2.2} step={0.1} unit="" />
                     </SettingsSection>
 
-                    <SettingsSection title="Colors" icon={Palette}><ColorControls local={local} update={update} /></SettingsSection>
+                    <SettingsSection title="Appearance" icon={Palette} defaultOpen><AppearanceControls local={local} update={update} /></SettingsSection>
+                    <SettingsSection title="Advanced Colors" icon={Palette}><ColorControls local={local} update={update} /></SettingsSection>
                     <SettingsSection title="Layout" icon={Layout}><LayoutControls local={local} update={update} /></SettingsSection>
                     <SettingsSection title="On This Page" icon={TOCIcon}><TOCControls local={local} update={update} /></SettingsSection>
                     <SettingsSection title="Section" icon={SectionIcon}><SectionControls local={local} update={update} /></SettingsSection>

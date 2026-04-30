@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { AppearanceSettings, MintlifyColors, PerModeColors } from "@/lib/theme/resolve-doc-theme";
 
 export interface BlockStyleSettings {
   color: string;
@@ -130,6 +131,17 @@ export interface DesignSettings {
   sectionBorderColor: string;
   sectionBorderThickness: number;
 
+  // ─── Mintlify-style appearance model (optional, additive) ─────
+  /** Brand colours (hex). When set, drives per-mode emphasis. */
+  colors?: MintlifyColors;
+  /** Light/dark mode behaviour for published docs. */
+  appearance?: AppearanceSettings;
+  /** Per-mode background overrides (hex). */
+  backgroundColors?: { light?: string; dark?: string };
+  /** Power-user per-mode palette overrides (hex). */
+  colorsLight?: Partial<PerModeColors>;
+  colorsDark?: Partial<PerModeColors>;
+
   // Per-block overrides
   blockStyles: {
     heading: Partial<BlockStyleSettings>;
@@ -233,6 +245,10 @@ export const defaultDesignSettings: DesignSettings = {
   sectionBorderVisible: true,
   sectionBorderColor: "20 70% 55%",
   sectionBorderThickness: 1,
+
+  // Mintlify-style appearance defaults — backwards compatible additions
+  appearance: { default: "system", strict: false },
+  colors: { primary: "#0a0a0a", light: "#ffffff", dark: "#0a0a0a" },
 
   blockStyles: emptyBlockStyles,
 };

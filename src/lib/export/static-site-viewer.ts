@@ -73,6 +73,31 @@ export function generateViewerScript(): string {
     return h('svg', {className:'ml-icon',viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
       h('path', {d:'M15 3h6v6'}), h('path', {d:'M10 14 21 3'}), h('path', {d:'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'}));
   }
+  function SunIcon() {
+    return h('svg', {className:'sun',viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
+      h('circle', {cx:12,cy:12,r:4}),
+      h('path', {d:'M12 2v2'}), h('path', {d:'M12 20v2'}),
+      h('path', {d:'m4.93 4.93 1.41 1.41'}), h('path', {d:'m17.66 17.66 1.41 1.41'}),
+      h('path', {d:'M2 12h2'}), h('path', {d:'M20 12h2'}),
+      h('path', {d:'m6.34 17.66-1.41 1.41'}), h('path', {d:'m19.07 4.93-1.41 1.41'}));
+  }
+  function MoonIcon() {
+    return h('svg', {className:'moon',viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
+      h('path', {d:'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z'}));
+  }
+  function ThemeToggle() {
+    var s = useState(document.documentElement.getAttribute('data-theme') || 'dark');
+    var current = s[0], setCurrent = s[1];
+    function toggle() {
+      var next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('0docs_theme', next); } catch(e){}
+      setCurrent(next);
+    }
+    return h('button', {className:'theme-toggle', onClick:toggle, 'aria-label':'Toggle theme', title:'Toggle theme'},
+      h(SunIcon), h(MoonIcon));
+  }
+
 
   // ── Fuzzy search ──
   function fuzzyMatch(target, query) {
@@ -742,10 +767,12 @@ export function generateViewerScript(): string {
             h(MobileNav, {pages:pages,activePage:activePage,sections:sections,navGroups:navGroups,
               onSelectPage:handleSelectPage, onSearchOpen:function(){setSearchOpen(true)}, projectName:projectName}),
             h('span', {className:'project-name'}, projectName)),
-          h('button', {className:'search-btn', onClick:function(){setSearchOpen(true)}},
-            h(SearchIcon),
-            h('span', {className:'search-label'}, 'Search'),
-            h('kbd', null, '⌘K'))),
+          h('div', {style:{display:'flex',alignItems:'center',gap:'4px'}},
+            h('button', {className:'search-btn', onClick:function(){setSearchOpen(true)}},
+              h(SearchIcon),
+              h('span', {className:'search-label'}, 'Search'),
+              h('kbd', null, '\u2318K')),
+            (data.appearance && data.appearance.strict) ? null : h(ThemeToggle))),
         h(TopBarNav, {tabs:tabs, navGroups:navGroups, activeTabId:activeTabId,
           onSelectTab:setActiveTabId, pages:pages, onSelectPage:handleSelectPage})),
       // Body

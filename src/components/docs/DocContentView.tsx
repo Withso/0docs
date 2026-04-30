@@ -10,8 +10,10 @@ import SearchDialog from "./SearchDialog";
 import PageFeedback from "./PageFeedback";
 import VersionSelector from "./VersionSelector";
 import DocMobileNav from "./DocMobileNav";
-import { Search } from "lucide-react";
+import { Search, Sun, Moon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
+import { getAppearance } from "@/lib/theme/resolve-doc-theme";
 
 interface DocPage {
   id: string;
@@ -180,22 +182,25 @@ const DocContentView = ({
                 />
               )}
             </div>
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors hover:bg-accent"
-              style={{
-                borderColor: `hsl(${s.borderColor})`,
-                color: `hsl(${s.mutedForegroundColor})`,
-                fontSize: "13px",
-                fontFamily: `'${s.bodyFont}', sans-serif`,
-              }}
-            >
-              <Search className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Search</span>
-              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]" style={{ borderColor: `hsl(${s.borderColor})` }}>
-                ⌘K
-              </kbd>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors hover:bg-accent"
+                style={{
+                  borderColor: `hsl(${s.borderColor})`,
+                  color: `hsl(${s.mutedForegroundColor})`,
+                  fontSize: "13px",
+                  fontFamily: `'${s.bodyFont}', sans-serif`,
+                }}
+              >
+                <Search className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Search</span>
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]" style={{ borderColor: `hsl(${s.borderColor})` }}>
+                  ⌘K
+                </kbd>
+              </button>
+              {!getAppearance(s).strict && <ThemeToggleButton settings={s} />}
+            </div>
           </div>
           {/* Top-bar tabs + dropdown groups */}
           {(tabs.length > 0 || navGroups.some((g) => g.type === "dropdown")) && (
@@ -374,5 +379,22 @@ const DocContentView = ({
     </DesignSettingsWrapper>
   );
 };
+
+/** Sun/moon toggle synced to the platform theme. */
+function ThemeToggleButton({ settings }: { settings: DesignSettings }) {
+  const { theme, toggle } = usePlatformTheme();
+  const Icon = theme === "dark" ? Sun : Moon;
+  return (
+    <button
+      onClick={toggle}
+      aria-label="Toggle theme"
+      title="Toggle theme"
+      className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors hover:bg-accent"
+      style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+    >
+      <Icon className="h-4 w-4" />
+    </button>
+  );
+}
 
 export default DocContentView;

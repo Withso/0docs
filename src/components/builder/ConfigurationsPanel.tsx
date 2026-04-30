@@ -13,8 +13,8 @@ import {
 import {
   SettingsSection, SliderField, FontSelect, WeightSelect,
   ColorControls, LayoutControls, SidebarControls, TOCControls,
-  SectionControls, BlockControls, fontOptions, codeFontOptions,
-  blockSections,
+  SectionControls, BlockControls, AppearanceControls,
+  fontOptions, codeFontOptions, blockSections,
 } from "@/components/builder/DesignControls";
 
 type CategoryId =
@@ -138,9 +138,14 @@ const ConfigurationsPanel = ({ projectName, settings, saving, saveSettings, rese
             {active === "overview" && <OverviewView local={local} />}
 
             {active === "branding" && (
-              <SettingsSection title="Colors" icon={Palette} defaultOpen>
-                <ColorControls local={local} update={update} />
-              </SettingsSection>
+              <>
+                <SettingsSection title="Appearance" icon={Palette} defaultOpen>
+                  <AppearanceControls local={local} update={update} />
+                </SettingsSection>
+                <SettingsSection title="Advanced Colors" icon={Palette}>
+                  <ColorControls local={local} update={update} />
+                </SettingsSection>
+              </>
             )}
 
             {active === "typography" && (
