@@ -275,11 +275,12 @@ export function useDesignSettings(projectId: string | undefined) {
           ...loaded,
           blockStyles: { ...emptyBlockStyles, ...(loaded.blockStyles || {}) },
         };
-        // Legacy migration: if no per-mode dark overrides exist but the project
-        // has customised flat colours, seed colorsDark from them so existing
-        // customisations remain visible after the per-mode model takes over.
-        if (!loaded.colorsDark && loaded.borderColor) {
-          merged.colorsDark = {
+        // Legacy migration: if no per-mode overrides exist but the project
+        // has customised flat colours, classify them by the lightness of the
+        // background and seed the matching mode so existing customisations
+        // remain visible. The other mode falls back to defaults.
+        if (!loaded.colorsDark && !loaded.colorsLight && loaded.borderColor) {
+          const seed = {
             background: hslStringToHex(loaded.backgroundColor),
             foreground: hslStringToHex(loaded.foregroundColor),
             primary: hslStringToHex(loaded.primaryColor),
@@ -300,7 +301,12 @@ export function useDesignSettings(projectId: string | undefined) {
             sidebarLabel: hslStringToHex(loaded.sidebarLabelColor),
             sidebarSection: hslStringToHex(loaded.sidebarSectionColor),
           };
+          // Lightness from "h s% l%"
+          const lightness = parseFloat((loaded.backgroundColor || "0 0% 100%").split(/\s+/)[2] || "100");
+          if (lightness >= 50) merged.colorsLight = seed;
+          else merged.colorsDark = seed;
         }
+
         setSettings(merged);
       } else {
         setSettings(defaultDesignSettings);
