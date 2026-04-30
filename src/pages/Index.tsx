@@ -7,9 +7,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import DocContentView from "@/components/docs/DocContentView";
 import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
-import { LogIn, LayoutDashboard, Search } from "lucide-react";
+import { LogIn, LayoutDashboard, Search, Sun, Moon } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
 import DocMobileNavComponent from "@/components/docs/DocMobileNav";
+import { useResolvedDesignSettings } from "@/components/docs/DesignSettingsWrapper";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
+import { getAppearance } from "@/lib/theme/resolve-doc-theme";
 
 interface Page {
   id: string;
@@ -256,7 +259,13 @@ const Index = () => {
       : pages.filter((p) => p.version_id === activeVersion.id || !p.version_id);
 
   const { settings: liveSettings } = useDesignSettings(project?.id);
-  const settings = publishedDesign || liveSettings;
+  const rawSettings = publishedDesign || liveSettings;
+  // Resolve to the current platform theme so the homepage chrome (header,
+  // toggle, search button) recolours when the user toggles light/dark —
+  // keeps the entire homepage in sync with the doc preview below.
+  const { resolved: settings } = useResolvedDesignSettings(rawSettings);
+  const { theme: platformTheme, toggle: togglePlatformTheme } = usePlatformTheme();
+  const showThemeToggle = !getAppearance(rawSettings).strict;
 
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -346,21 +355,34 @@ const Index = () => {
             </button>
           </div>
 
-          {user ? (
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
-            >
-              <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate("/auth")}
-              className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
-            >
-              <LogIn className="h-3.5 w-3.5" /> Sign In
-            </button>
-          )}
+          <div className="flex items-center gap-1.5">
+            {showThemeToggle && (
+              <button
+                onClick={togglePlatformTheme}
+                aria-label="Toggle theme"
+                title={`Switch to ${platformTheme === "dark" ? "light" : "dark"} theme`}
+                className="h-8 w-8 rounded-lg inline-flex items-center justify-center transition-colors hover:bg-accent"
+                style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+              >
+                {platformTheme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+              </button>
+            )}
+            {user ? (
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/auth")}
+                className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
+              >
+                <LogIn className="h-3.5 w-3.5" /> Sign In
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
