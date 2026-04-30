@@ -270,11 +270,38 @@ export function useDesignSettings(projectId: string | undefined) {
 
       if (data?.settings) {
         const loaded = data.settings as any;
-        setSettings({
+        const merged: DesignSettings = {
           ...defaultDesignSettings,
           ...loaded,
           blockStyles: { ...emptyBlockStyles, ...(loaded.blockStyles || {}) },
-        });
+        };
+        // Legacy migration: if no per-mode dark overrides exist but the project
+        // has customised flat colours, seed colorsDark from them so existing
+        // customisations remain visible after the per-mode model takes over.
+        if (!loaded.colorsDark && loaded.borderColor) {
+          merged.colorsDark = {
+            background: hslStringToHex(loaded.backgroundColor),
+            foreground: hslStringToHex(loaded.foregroundColor),
+            primary: hslStringToHex(loaded.primaryColor),
+            primaryForeground: hslStringToHex(loaded.primaryForegroundColor),
+            muted: hslStringToHex(loaded.mutedColor),
+            mutedForeground: hslStringToHex(loaded.mutedForegroundColor),
+            accent: hslStringToHex(loaded.accentColor),
+            border: hslStringToHex(loaded.borderColor),
+            link: hslStringToHex(loaded.linkColor),
+            sectionLine: hslStringToHex(loaded.sectionLineColor),
+            codeBg: hslStringToHex(loaded.codeBlockBg),
+            noteBg: hslStringToHex(loaded.noteBg),
+            noteBorder: hslStringToHex(loaded.noteBorderColor),
+            sidebarBg: hslStringToHex(loaded.sidebarBg),
+            sidebarText: hslStringToHex(loaded.sidebarTextColor),
+            sidebarActive: hslStringToHex(loaded.sidebarActiveColor),
+            sidebarIndicator: hslStringToHex(loaded.sidebarIndicatorColor),
+            sidebarLabel: hslStringToHex(loaded.sidebarLabelColor),
+            sidebarSection: hslStringToHex(loaded.sidebarSectionColor),
+          };
+        }
+        setSettings(merged);
       } else {
         setSettings(defaultDesignSettings);
       }
