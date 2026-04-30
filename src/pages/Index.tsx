@@ -355,21 +355,34 @@ const Index = () => {
             </button>
           </div>
 
-          {user ? (
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
-            >
-              <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate("/auth")}
-              className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
-            >
-              <LogIn className="h-3.5 w-3.5" /> Sign In
-            </button>
-          )}
+          <div className="flex items-center gap-1.5">
+            {showThemeToggle && (
+              <button
+                onClick={togglePlatformTheme}
+                aria-label="Toggle theme"
+                title={`Switch to ${platformTheme === "dark" ? "light" : "dark"} theme`}
+                className="h-8 w-8 rounded-lg inline-flex items-center justify-center transition-colors hover:bg-accent"
+                style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+              >
+                {platformTheme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+              </button>
+            )}
+            {user ? (
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/auth")}
+                className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
+              >
+                <LogIn className="h-3.5 w-3.5" /> Sign In
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
