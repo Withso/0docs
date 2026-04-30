@@ -373,23 +373,61 @@ export function AppearanceControls({ local, update }: { local: DS; update: <K ex
   );
 }
 
+/**
+ * Per-mode color editor (Light + Dark side-by-side).
+ * Writes to `colorsLight` / `colorsDark` in DesignSettings; the resolver
+ * picks the right palette per active theme.
+ */
 export function ColorControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
-  const colors: { label: string; key: keyof DS }[] = [
-    { label: "Background", key: "backgroundColor" },
-    { label: "Text", key: "foregroundColor" },
-    { label: "Primary", key: "primaryColor" },
-    { label: "Primary Text", key: "primaryForegroundColor" },
-    { label: "Muted", key: "mutedColor" },
-    { label: "Muted Text", key: "mutedForegroundColor" },
-    { label: "Accent", key: "accentColor" },
-    { label: "Border", key: "borderColor" },
-    { label: "Links", key: "linkColor" },
-    { label: "Section Line", key: "sectionLineColor" },
-    { label: "Code Block BG", key: "codeBlockBg" },
-    { label: "Note BG", key: "noteBg" },
-    { label: "Note Border", key: "noteBorderColor" },
+  const fields: { label: string; key: keyof import("@/lib/theme/resolve-doc-theme").PerModeColors; lightDefault: string; darkDefault: string }[] = [
+    { label: "Background",      key: "background",        lightDefault: "#ffffff", darkDefault: "#0d0d0d" },
+    { label: "Text",            key: "foreground",        lightDefault: "#0a0a0a", darkDefault: "#f0f0f0" },
+    { label: "Primary",         key: "primary",           lightDefault: "#0a0a0a", darkDefault: "#ffffff" },
+    { label: "Primary Text",    key: "primaryForeground", lightDefault: "#ffffff", darkDefault: "#0d0d0d" },
+    { label: "Muted",           key: "muted",             lightDefault: "#f4f4f5", darkDefault: "#1e1e1e" },
+    { label: "Muted Text",      key: "mutedForeground",   lightDefault: "#71717a", darkDefault: "#707070" },
+    { label: "Accent",          key: "accent",            lightDefault: "#f4f4f5", darkDefault: "#1e1e1e" },
+    { label: "Border",          key: "border",            lightDefault: "#ececee", darkDefault: "#2a2a2a" },
+    { label: "Links",           key: "link",              lightDefault: "#3b82f6", darkDefault: "#a1a1aa" },
+    { label: "Section Line",    key: "sectionLine",       lightDefault: "#e4e4e7", darkDefault: "#303030" },
+    { label: "Code Block BG",   key: "codeBg",            lightDefault: "#f4f4f5", darkDefault: "#161616" },
+    { label: "Note BG",         key: "noteBg",            lightDefault: "#fafafa", darkDefault: "#161616" },
+    { label: "Note Border",     key: "noteBorder",        lightDefault: "#e4e4e7", darkDefault: "#2a2a2a" },
   ];
-  return <>{colors.map((c) => <ColorField key={c.key} label={c.label} value={local[c.key] as string} onChange={(v) => update(c.key, v as any)} />)}</>;
+
+  const colorsLight = (local.colorsLight || {}) as Record<string, string>;
+  const colorsDark = (local.colorsDark || {}) as Record<string, string>;
+
+  const setMode = (mode: "light" | "dark", key: string, hex: string) => {
+    const current = mode === "light" ? colorsLight : colorsDark;
+    const next = { ...current, [key]: hex };
+    update((mode === "light" ? "colorsLight" : "colorsDark") as keyof DS, next as any);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 px-1 pb-1">
+        <span className="text-[10px] font-medium uppercase tracking-wider flex-1" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>Token</span>
+        <span className="text-[10px] font-medium uppercase tracking-wider w-[88px] text-center" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>Light</span>
+        <span className="text-[10px] font-medium uppercase tracking-wider w-[88px] text-center" style={{ color: 'hsl(var(--foreground) / 0.4)' }}>Dark</span>
+      </div>
+      {fields.map((f) => {
+        const lightHex = colorsLight[f.key] || f.lightDefault;
+        const darkHex = colorsDark[f.key] || f.darkDefault;
+        return (
+          <div key={f.key} className="flex items-center gap-2">
+            <span className="text-[11px] flex-1 px-1" style={{ color: 'hsl(var(--foreground) / 0.7)' }}>{f.label}</span>
+            <div className="w-[88px]">
+              <ColorField label="" value={hexToHsl(lightHex)} onChange={(hsl) => setMode("light", f.key, hslToHex(hsl))} />
+            </div>
+            <div className="w-[88px]">
+              <ColorField label="" value={hexToHsl(darkHex)} onChange={(hsl) => setMode("dark", f.key, hslToHex(hsl))} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export function LayoutControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
