@@ -1,4 +1,4 @@
-# Self-hosting 0docs
+# Self-hosting 0docs-updated earlier
 
 0docs is a React/Vite app backed by a Postgres-compatible backend with auth, row-level security, and serverless functions.
 This phase makes the frontend container-ready and adds a runtime `config.json` so one image can be promoted across environments.
