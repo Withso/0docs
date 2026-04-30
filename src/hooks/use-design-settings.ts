@@ -131,6 +131,17 @@ export interface DesignSettings {
   sectionBorderColor: string;
   sectionBorderThickness: number;
 
+  // ─── Mintlify-style appearance model (optional, additive) ─────
+  /** Brand colours (hex). When set, drives per-mode emphasis. */
+  colors?: MintlifyColors;
+  /** Light/dark mode behaviour for published docs. */
+  appearance?: AppearanceSettings;
+  /** Per-mode background overrides (hex). */
+  backgroundColors?: { light?: string; dark?: string };
+  /** Power-user per-mode palette overrides (hex). */
+  colorsLight?: Partial<PerModeColors>;
+  colorsDark?: Partial<PerModeColors>;
+
   // Per-block overrides
   blockStyles: {
     heading: Partial<BlockStyleSettings>;
