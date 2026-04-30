@@ -211,33 +211,40 @@ export function applyModeToSettings(
   const hasAppearanceModel =
     !!ext.colors || !!ext.colorsLight || !!ext.colorsDark || !!ext.backgroundColors;
 
-  // Legacy projects: existing flat values are treated as DARK; for LIGHT,
-  // synthesise a Mintlify-default light palette so toggling never breaks.
+  // Legacy projects (no Mintlify-style appearance config): infer the
+  // project's "natural" mode from the saved background lightness. The natural
+  // mode keeps the user's existing colours (they're the source of truth);
+  // the opposite mode falls back to the Mintlify default palette so toggling
+  // never breaks the layout.
   if (!hasAppearanceModel) {
-    if (mode === "dark") return settings; // unchanged
-    const light = DEFAULT_LIGHT;
+    const lightness = parseFloat(
+      (settings.backgroundColor || "0 0% 100%").split(/\s+/)[2] || "100",
+    );
+    const naturalMode: DocMode = lightness >= 50 ? "light" : "dark";
+    if (mode === naturalMode) return settings;
+    const fallback = mode === "light" ? DEFAULT_LIGHT : DEFAULT_DARK;
     return {
       ...settings,
-      backgroundColor: hexToHslString(light.background),
-      foregroundColor: hexToHslString(light.foreground),
-      primaryColor: hexToHslString(light.primary),
-      primaryForegroundColor: hexToHslString(light.primaryForeground),
-      mutedColor: hexToHslString(light.muted),
-      mutedForegroundColor: hexToHslString(light.mutedForeground),
-      accentColor: hexToHslString(light.accent),
-      borderColor: hexToHslString(light.border),
-      linkColor: hexToHslString(light.link),
-      sectionLineColor: hexToHslString(light.sectionLine),
-      codeBlockBg: hexToHslString(light.codeBg),
-      noteBg: hexToHslString(light.noteBg),
-      noteBorderColor: hexToHslString(light.noteBorder),
-      sidebarBg: hexToHslString(light.sidebarBg),
-      sidebarTextColor: hexToHslString(light.sidebarText),
-      sidebarActiveColor: hexToHslString(light.sidebarActive),
-      sidebarIndicatorColor: hexToHslString(light.sidebarIndicator),
-      sidebarLabelColor: hexToHslString(light.sidebarLabel),
-      sidebarSectionColor: hexToHslString(light.sidebarSection),
-      sectionBorderColor: hexToHslString(light.sectionLine),
+      backgroundColor: hexToHslString(fallback.background),
+      foregroundColor: hexToHslString(fallback.foreground),
+      primaryColor: hexToHslString(fallback.primary),
+      primaryForegroundColor: hexToHslString(fallback.primaryForeground),
+      mutedColor: hexToHslString(fallback.muted),
+      mutedForegroundColor: hexToHslString(fallback.mutedForeground),
+      accentColor: hexToHslString(fallback.accent),
+      borderColor: hexToHslString(fallback.border),
+      linkColor: hexToHslString(fallback.link),
+      sectionLineColor: hexToHslString(fallback.sectionLine),
+      codeBlockBg: hexToHslString(fallback.codeBg),
+      noteBg: hexToHslString(fallback.noteBg),
+      noteBorderColor: hexToHslString(fallback.noteBorder),
+      sidebarBg: hexToHslString(fallback.sidebarBg),
+      sidebarTextColor: hexToHslString(fallback.sidebarText),
+      sidebarActiveColor: hexToHslString(fallback.sidebarActive),
+      sidebarIndicatorColor: hexToHslString(fallback.sidebarIndicator),
+      sidebarLabelColor: hexToHslString(fallback.sidebarLabel),
+      sidebarSectionColor: hexToHslString(fallback.sidebarSection),
+      sectionBorderColor: hexToHslString(fallback.sectionLine),
     };
   }
 
