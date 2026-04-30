@@ -2,10 +2,15 @@ import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { ExportPage, ExportSection, ExportBlock, ExportNavGroup, ExportTab } from "./types";
 import { generateCSS } from "./static-site-css";
 import { generateViewerScript } from "./static-site-viewer";
+import { applyModeToSettings, getAppearance } from "@/lib/theme/resolve-doc-theme";
+import { scopeCSS } from "./css-scope";
 
 /**
  * Generates a complete index.html that is a self-contained SPA.
  * React 18 is loaded from CDN — no build step required.
+ *
+ * Emits BOTH light and dark themed CSS so visitors get a sun/moon
+ * toggle (unless `appearance.strict` is set).
  */
 export function generateStaticHTML(
   projectName: string,
@@ -70,10 +75,19 @@ export function generateStaticHTML(
       order_index: t.order_index,
       metadata: t.metadata || {},
     })),
+    appearance: getAppearance(settings),
   });
 
-  const css = generateCSS(settings);
+  // Generate dual-mode CSS: dark is the default scope, light is scoped
+  // under html[data-theme="light"]. The pre-paint init script picks one
+  // before paint to avoid FOUC.
+  const darkSettings = applyModeToSettings(settings, "dark");
+  const lightSettings = applyModeToSettings(settings, "light");
+  const darkCSS = generateCSS(darkSettings);
+  const lightCSS = scopeCSS(generateCSS(lightSettings), 'html[data-theme="light"]');
+  const css = `${darkCSS}\n${lightCSS}\n${THEME_TOGGLE_CSS}`;
   const viewerScript = generateViewerScript();
+  const appearance = getAppearance(settings);
 
   // Get the first page slug for default route
   const sortedPages = [...pages].sort((a, b) => a.order_index - b.order_index);
@@ -83,6 +97,25 @@ export function generateStaticHTML(
   const defaultTitle = `${projectName} — Documentation`;
   const defaultDescription =
     sortedPages[0]?.meta_description || `Documentation for ${projectName}`;
+
+  // Pre-paint theme init: read stored preference, else appearance.default,
+  // else system preference. Strict mode pins to appearance.default.
+  const themeInit = `
+(function(){
+  try {
+    var KEY = '0docs_theme';
+    var def = ${JSON.stringify(appearance.default)};
+    var strict = ${JSON.stringify(appearance.strict)};
+    var stored = strict ? null : localStorage.getItem(KEY);
+    var pref = stored || def;
+    var resolved = pref === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+      : pref;
+    document.documentElement.setAttribute('data-theme', resolved);
+  } catch(e) {
+    document.documentElement.setAttribute('data-theme','dark');
+  }
+})();`.trim();
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -95,6 +128,7 @@ export function generateStaticHTML(
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="${googleFontsUrl}" rel="stylesheet" />
+  <script>${themeInit}</script>
   <style>${css}</style>
 </head>
 <body>
@@ -128,6 +162,23 @@ export function generateStaticHTML(
 </body>
 </html>`;
 }
+
+const THEME_TOGGLE_CSS = `
+/* Theme toggle button (sun/moon) */
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px;
+  color: inherit; opacity: 0.7;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+.theme-toggle:hover { opacity: 1; background-color: rgba(127,127,127,0.1); }
+.theme-toggle svg { width: 16px; height: 16px; }
+.theme-toggle .moon { display: none; }
+.theme-toggle .sun { display: block; }
+html[data-theme="light"] .theme-toggle .sun { display: none; }
+html[data-theme="light"] .theme-toggle .moon { display: block; }
+html, body { transition: background-color 200ms ease, color 200ms ease; }
+`;
 
 function escapeHtml(str: string): string {
   return str
