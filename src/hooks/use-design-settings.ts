@@ -246,6 +246,10 @@ export const defaultDesignSettings: DesignSettings = {
   sectionBorderColor: "20 70% 55%",
   sectionBorderThickness: 1,
 
+  // Mintlify-style appearance defaults — backwards compatible additions
+  appearance: { default: "system", strict: false },
+  colors: { primary: "#0a0a0a", light: "#ffffff", dark: "#0a0a0a" },
+
   blockStyles: emptyBlockStyles,
 };
 
