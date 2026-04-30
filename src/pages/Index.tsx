@@ -7,9 +7,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import DocContentView from "@/components/docs/DocContentView";
 import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
-import { LogIn, LayoutDashboard, Search } from "lucide-react";
+import { LogIn, LayoutDashboard, Search, Sun, Moon } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
 import DocMobileNavComponent from "@/components/docs/DocMobileNav";
+import { useResolvedDesignSettings } from "@/components/docs/DesignSettingsWrapper";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
+import { getAppearance } from "@/lib/theme/resolve-doc-theme";
 
 interface Page {
   id: string;
