@@ -443,7 +443,7 @@ const Builder = () => {
               <DesignPanel
                 projectId={projectId!}
                 projectName={project?.name || ""}
-                settings={settings}
+                settings={resolvedSettings}
                 saving={saving}
                 saveSettings={saveSettings}
                 resetSettings={resetSettings}
