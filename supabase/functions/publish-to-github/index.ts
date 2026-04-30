@@ -208,7 +208,7 @@ Deno.serve(async (req) => {
         : await ghFetch(`${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${base}`, githubToken);
 
       if (!baseRef) {
-        throw new Error(`Base branch \"${base}\" was not found.`);
+        throw new Error(`Base branch "${base}" was not found.`);
       }
 
       if (createBranch || targetBranch !== defaultBranch) {
@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
     }
 
     if (!targetRef) {
-      throw new Error(`Could not resolve target branch \"${targetBranch}\".`);
+      throw new Error(`Could not resolve target branch "${targetBranch}".`);
     }
 
     const treeEntries = [];
