@@ -14,6 +14,7 @@ import { Search, Sun, Moon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlatformTheme } from "@/hooks/use-platform-theme";
 import { getAppearance } from "@/lib/theme/resolve-doc-theme";
+import { useResolvedDesignSettings } from "./DesignSettingsWrapper";
 
 interface DocPage {
   id: string;
@@ -114,12 +115,13 @@ const DocContentView = ({
   activeTabId = null,
   onSelectTab,
 }: DocContentViewProps) => {
+  const { resolved: settings } = useResolvedDesignSettings(s);
   const [internalSearchOpen, setInternalSearchOpen] = useState(false);
   const searchOpen = externalSearchOpen !== undefined ? externalSearchOpen : internalSearchOpen;
   const setSearchOpen = onExternalSearchOpenChange || setInternalSearchOpen;
   const headerHeight = hideHeader ? 0 : 48;
   const sidebarTop = headerStickyTop + headerHeight;
-  const frameMaxWidth = s.contentMaxWidth + s.sidebarWidth + 200 + 48;
+  const frameMaxWidth = settings.contentMaxWidth + settings.sidebarWidth + 200 + 48;
 
   // Cmd+K handler
   useEffect(() => {
@@ -145,8 +147,8 @@ const DocContentView = ({
           className="border-b sticky z-40"
           style={{
             top: headerStickyTop,
-            backgroundColor: `hsl(${s.backgroundColor})`,
-            borderColor: `hsl(${s.borderColor})`,
+            backgroundColor: `hsl(${settings.backgroundColor})`,
+            borderColor: `hsl(${settings.borderColor})`,
           }}
         >
           <div
@@ -157,7 +159,7 @@ const DocContentView = ({
               {/* Mobile nav hamburger */}
               {showMobileNav && (
                 <DocMobileNav
-                  settings={s}
+                  settings={settings}
                   pages={pages}
                   activePage={activePage}
                   sections={allSections || sections}
@@ -169,7 +171,7 @@ const DocContentView = ({
               )}
               <span
                 className="font-semibold text-sm"
-                style={{ fontFamily: `'${s.bodyFont}', sans-serif` }}
+                style={{ fontFamily: `'${settings.bodyFont}', sans-serif` }}
               >
                 {projectName}
               </span>
@@ -178,7 +180,7 @@ const DocContentView = ({
                   versions={versions}
                   activeVersion={activeVersion}
                   onSelect={onSelectVersion}
-                  settings={s}
+                  settings={settings}
                 />
               )}
             </div>
@@ -187,19 +189,19 @@ const DocContentView = ({
                 onClick={() => setSearchOpen(true)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors hover:bg-accent"
                 style={{
-                  borderColor: `hsl(${s.borderColor})`,
-                  color: `hsl(${s.mutedForegroundColor})`,
+                  borderColor: `hsl(${settings.borderColor})`,
+                  color: `hsl(${settings.mutedForegroundColor})`,
                   fontSize: "13px",
-                  fontFamily: `'${s.bodyFont}', sans-serif`,
+                  fontFamily: `'${settings.bodyFont}', sans-serif`,
                 }}
               >
                 <Search className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Search</span>
-                <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]" style={{ borderColor: `hsl(${s.borderColor})` }}>
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]" style={{ borderColor: `hsl(${settings.borderColor})` }}>
                   ⌘K
                 </kbd>
               </button>
-              {!getAppearance(s).strict && <ThemeToggleButton settings={s} />}
+              {!getAppearance(settings).strict && <ThemeToggleButton settings={settings} />}
             </div>
           </div>
           {/* Top-bar tabs + dropdown groups */}
@@ -220,11 +222,11 @@ const DocContentView = ({
                     className="text-[12px] px-2.5 py-1 rounded-md transition-colors"
                     style={{
                       color: isActive
-                        ? `hsl(${s.sidebarActiveColor})`
-                        : `hsl(${s.mutedForegroundColor})`,
+                        ? `hsl(${settings.sidebarActiveColor})`
+                        : `hsl(${settings.mutedForegroundColor})`,
                       fontWeight: isActive ? 600 : 400,
-                      fontFamily: `'${s.bodyFont}', sans-serif`,
-                      backgroundColor: isActive ? `hsl(${s.borderColor} / 0.3)` : "transparent",
+                      fontFamily: `'${settings.bodyFont}', sans-serif`,
+                      backgroundColor: isActive ? `hsl(${settings.borderColor} / 0.3)` : "transparent",
                     }}
                   >
                     {tab.label}
@@ -238,8 +240,8 @@ const DocContentView = ({
                     key={g.id}
                     className="text-[12px] px-2.5 py-1 rounded-md transition-colors hover:bg-accent flex items-center gap-1"
                     style={{
-                      color: `hsl(${s.mutedForegroundColor})`,
-                      fontFamily: `'${s.bodyFont}', sans-serif`,
+                      color: `hsl(${settings.mutedForegroundColor})`,
+                      fontFamily: `'${settings.bodyFont}', sans-serif`,
                     }}
                     title={g.title.replace(/<[^>]*>/g, "")}
                   >
@@ -253,9 +255,9 @@ const DocContentView = ({
       )}
 
       <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-4 sm:px-6">
-        {s.sidebarStyle === "mintlify" ? (
+        {settings.sidebarStyle === "mintlify" ? (
           <DocSidebarNavMintlify
-            settings={s}
+            settings={settings}
             pages={pages}
             activePage={activePage}
             sections={sections}
@@ -267,7 +269,7 @@ const DocContentView = ({
           />
         ) : (
           <DocSidebarNav
-            settings={s}
+            settings={settings}
             pages={pages}
             activePage={activePage}
             sections={sections}
@@ -279,15 +281,15 @@ const DocContentView = ({
           />
         )}
 
-        <main className="flex-1 min-w-0 py-10 lg:pl-4" style={{ paddingRight: s.tocVisible ? undefined : undefined }}>
+        <main className="flex-1 min-w-0 py-10 lg:pl-4" style={{ paddingRight: settings.tocVisible ? undefined : undefined }}>
           {activePage ? (
-            <article style={{ maxWidth: `${s.contentMaxWidth}px` }}>
+            <article style={{ maxWidth: `${settings.contentMaxWidth}px` }}>
               <h1
                 style={{
-                  fontFamily: `'${s.headingFont}', sans-serif`,
-                  fontWeight: s.headingWeight,
-                  fontSize: `${s.pageTitleSize}px`,
-                  marginBottom: `${s.sectionSpacing * 0.6}px`,
+                  fontFamily: `'${settings.headingFont}', sans-serif`,
+                  fontWeight: settings.headingWeight,
+                  fontSize: `${settings.pageTitleSize}px`,
+                  marginBottom: `${settings.sectionSpacing * 0.6}px`,
                 }}
               >
                 <span dangerouslySetInnerHTML={{ __html: activePage.title }} />
@@ -302,23 +304,23 @@ const DocContentView = ({
                   <section
                     key={section.id}
                     id={`section-${section.id}`}
-                    style={{ marginBottom: `${s.sectionSpacing}px` }}
+                     style={{ marginBottom: `${settings.sectionSpacing}px` }}
                   >
                     <h2
                       className="flex items-center gap-3 mb-4"
                       style={{
-                        fontFamily: `'${s.headingFont}', sans-serif`,
-                        fontWeight: s.headingWeight,
-                        fontSize: `${s.headingFontSize}px`,
+                         fontFamily: `'${settings.headingFont}', sans-serif`,
+                         fontWeight: settings.headingWeight,
+                         fontSize: `${settings.headingFontSize}px`,
                       }}
                     >
                       <span dangerouslySetInnerHTML={{ __html: section.title }} />
-                      {s.sectionBorderVisible && (
+                       {settings.sectionBorderVisible && (
                         <span
                           className="flex-1"
                           style={{
-                            height: `${s.sectionBorderThickness}px`,
-                            backgroundColor: `hsl(${s.sectionBorderColor})`,
+                             height: `${settings.sectionBorderThickness}px`,
+                             backgroundColor: `hsl(${settings.sectionBorderColor})`,
                             opacity: 0.5,
                           }}
                         />
@@ -330,7 +332,7 @@ const DocContentView = ({
                         <DocBlockRenderer
                           key={block.id}
                           block={block}
-                          settings={s}
+                            settings={settings}
                           highlightType={highlightType}
                         />
                       ))}
@@ -340,27 +342,27 @@ const DocContentView = ({
               })}
 
               {sections.length === 0 && (
-                <p style={{ color: `hsl(${s.mutedForegroundColor})` }}>
+                 <p style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
                   This page has no content yet.
                 </p>
               )}
 
               {showFeedback && activePage?.id && (
-                <PageFeedback pageId={activePage.id} settings={s} />
+                 <PageFeedback pageId={activePage.id} settings={settings} />
               )}
             </article>
           ) : (
-            <p style={{ color: `hsl(${s.mutedForegroundColor})` }}>
+             <p style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
               No pages in this project yet.
             </p>
           )}
         </main>
 
-        {s.tocVisible && (
-          <div style={{ paddingLeft: `${s.tocGap}px` }}>
+         {settings.tocVisible && (
+           <div style={{ paddingLeft: `${settings.tocGap}px` }}>
             <TableOfContents
               sections={sections}
-              settings={s}
+               settings={settings}
               stickyTop={sidebarTop}
             />
           </div>
