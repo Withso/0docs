@@ -10,8 +10,10 @@ import SearchDialog from "./SearchDialog";
 import PageFeedback from "./PageFeedback";
 import VersionSelector from "./VersionSelector";
 import DocMobileNav from "./DocMobileNav";
-import { Search } from "lucide-react";
+import { Search, Sun, Moon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
+import { getAppearance } from "@/lib/theme/resolve-doc-theme";
 
 interface DocPage {
   id: string;
