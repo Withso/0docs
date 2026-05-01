@@ -40,6 +40,8 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
     [user],
   );
 
+  const hideTopHeader = ["editor", "code", "preview", "configurations", "publish"].includes(mode);
+
   return (
     <div className="min-h-screen bg-background flex">
       <aside className="w-[224px] shrink-0 bg-sidebar-background text-sidebar-foreground border-r border-sidebar-border flex flex-col">
