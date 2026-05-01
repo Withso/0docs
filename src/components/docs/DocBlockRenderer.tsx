@@ -1,5 +1,16 @@
 import { useState } from "react";
 import DOMPurify from "dompurify";
+import {
+  Info,
+  AlertTriangle,
+  Lightbulb,
+  CheckCircle2,
+  XCircle,
+  Copy,
+  Check,
+  ChevronDown,
+  ArrowRight,
+} from "lucide-react";
 import type { DesignSettings, BlockStyleSettings } from "@/hooks/use-design-settings";
 
 type BlockKey = keyof DesignSettings["blockStyles"];
@@ -18,181 +29,277 @@ interface Props {
   highlightType?: string | null;
 }
 
+/* ───────────────────────── Mintlify callout palette ─────────────────────────
+   Mintlify renders callouts as: tinted bg + same-hue stronger left/full border
+   + colored icon. Variants come from block.content.variant ("note" | "info" |
+   "tip" | "warning" | "check" | "danger") OR — for legacy — from block.type
+   "note" | "callout".
+*/
+type CalloutVariant = "note" | "info" | "tip" | "warning" | "check" | "danger";
+
+const CALLOUT_PALETTE: Record<
+  CalloutVariant,
+  { bg: string; border: string; icon: string; Icon: React.ComponentType<any> }
+> = {
+  note: {
+    bg: "214 100% 97%",
+    border: "214 95% 88%",
+    icon: "214 90% 50%",
+    Icon: Info,
+  },
+  info: {
+    bg: "0 0% 97%",
+    border: "0 0% 88%",
+    icon: "0 0% 35%",
+    Icon: Info,
+  },
+  tip: {
+    bg: "152 76% 96%",
+    border: "152 65% 82%",
+    icon: "152 70% 38%",
+    Icon: Lightbulb,
+  },
+  warning: {
+    bg: "45 100% 95%",
+    border: "38 95% 78%",
+    icon: "32 95% 44%",
+    Icon: AlertTriangle,
+  },
+  check: {
+    bg: "152 76% 96%",
+    border: "152 65% 82%",
+    icon: "152 70% 38%",
+    Icon: CheckCircle2,
+  },
+  danger: {
+    bg: "0 86% 97%",
+    border: "0 86% 88%",
+    icon: "0 80% 55%",
+    Icon: XCircle,
+  },
+};
+
+const Callout = ({
+  text,
+  variant,
+  settings: s,
+  bs,
+}: {
+  text: string;
+  variant: CalloutVariant;
+  settings: DesignSettings;
+  bs: Partial<BlockStyleSettings>;
+}) => {
+  const p = CALLOUT_PALETTE[variant];
+  const Icon = p.Icon;
+  const bgOverride = bs.backgroundColor;
+  const borderOverride = bs.borderColor;
+  const iconOverride = bs.color;
+  return (
+    <div
+      className="flex gap-3 my-4"
+      style={{
+        backgroundColor: `hsl(${bgOverride || p.bg})`,
+        border: `1px solid hsl(${borderOverride || p.border})`,
+        borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : "10px",
+        padding: bs.padding != null ? `${bs.padding}px` : "14px 16px",
+      }}
+    >
+      <Icon
+        className="shrink-0 mt-[3px]"
+        style={{
+          color: `hsl(${iconOverride || p.icon})`,
+          width: 16,
+          height: 16,
+        }}
+      />
+      <div
+        style={{
+          fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+          fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
+          fontWeight: bs.fontWeight as any,
+          color: `hsl(${s.foregroundColor})`,
+          lineHeight: s.lineHeight,
+          flex: 1,
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+};
+
 const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
   const { content, type } = block;
   const bs = s.blockStyles[type as BlockKey] || {};
   const isHighlighted = highlightType === type;
 
-  const getBlockStyle = (): React.CSSProperties => ({
-    color: bs.color ? `hsl(${bs.color})` : undefined,
-    fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : undefined,
-    fontSize: bs.fontSize ? `${bs.fontSize}px` : undefined,
-    fontWeight: (bs.fontWeight as any) || undefined,
-    backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
-    borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : undefined,
-    padding: bs.padding != null ? `${bs.padding}px` : undefined,
-    borderColor: bs.borderColor ? `hsl(${bs.borderColor})` : undefined,
-  });
-
   const highlightStyle: React.CSSProperties = isHighlighted
-    ? { outline: "2px solid hsl(214 100% 50%)", outlineOffset: "4px", borderRadius: "4px", transition: "outline 0.2s ease" }
+    ? { outline: "2px solid hsl(214 100% 50%)", outlineOffset: "4px", borderRadius: "8px", transition: "outline 0.2s ease" }
     : {};
 
   const wrapHighlight = (el: React.ReactNode) => (
-    <div style={highlightStyle} data-block-type={type}>{el}</div>
+    <div style={highlightStyle} data-block-type={type}>
+      {el}
+    </div>
   );
-
-  const codeBlockFontSize = bs.fontSize ?? (s.baseFontSize - 1);
-  const codeBlockFont = bs.fontFamily ? `'${bs.fontFamily}', monospace` : `'${s.codeFont}', monospace`;
 
   switch (type) {
     case "heading":
       return wrapHighlight(
-        <h3 style={{ fontFamily: `'${s.headingFont}', sans-serif`, fontWeight: s.headingWeight, fontSize: `${s.headingFontSize}px`, marginBottom: "12px", ...getBlockStyle() }}>
+        <h3
+          style={{
+            fontFamily: `'${s.headingFont}', sans-serif`,
+            fontWeight: s.headingWeight,
+            fontSize: `${s.headingFontSize}px`,
+            letterSpacing: "-0.01em",
+            marginTop: "1.5em",
+            marginBottom: "0.6em",
+            color: bs.color ? `hsl(${bs.color})` : `hsl(${s.foregroundColor})`,
+          }}
+        >
           {content.text}
-        </h3>
+        </h3>,
       );
 
     case "paragraph":
       return wrapHighlight(
-        <p style={{ marginBottom: `${s.paragraphSpacing}px`, fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize}px`, lineHeight: s.lineHeight, ...getBlockStyle() }}>
+        <p
+          style={{
+            marginBottom: `${s.paragraphSpacing}px`,
+            fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+            fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
+            fontWeight: bs.fontWeight as any,
+            lineHeight: s.lineHeight,
+            color: bs.color ? `hsl(${bs.color})` : `hsl(${s.foregroundColor})`,
+          }}
+        >
           {content.text}
-        </p>
+        </p>,
       );
 
-    case "code_block": {
-      const codeStyle = getBlockStyle();
-      return wrapHighlight(
-        <div style={{
-          backgroundColor: codeStyle.backgroundColor || `hsl(${s.codeBlockBg})`,
-          borderRadius: codeStyle.borderRadius || `${s.codeBlockBorderRadius}px`,
-          border: `1px solid ${codeStyle.borderColor ? `hsl(${bs.borderColor})` : `hsl(${s.borderColor})`}`,
-          padding: codeStyle.padding || "16px",
-          fontFamily: codeBlockFont, fontSize: `${codeBlockFontSize}px`,
-          color: codeStyle.color, fontWeight: codeStyle.fontWeight, marginBottom: "16px",
-        }}>
-          {content.language && (
-            <div style={{ color: `hsl(${s.mutedForegroundColor})`, fontSize: "12px", marginBottom: "8px" }}>{content.language}</div>
-          )}
-          <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: "inherit", fontFamily: "inherit", color: "inherit" }}>
-            <code style={{ fontSize: "inherit", fontFamily: "inherit", color: "inherit" }}>{content.code}</code>
-          </pre>
-        </div>
-      );
-    }
+    case "code_block":
+      return wrapHighlight(<CodeBlock content={content} settings={s} bs={bs} />);
 
     case "image": {
+      if (!content.url) return null;
       const imageWidth = content.width ? `${content.width}%` : "100%";
       const alignment = content.align || "left";
       const justifyMap: Record<string, string> = { left: "flex-start", center: "center", right: "flex-end" };
-      return content.url ? wrapHighlight(
-        <div style={{ marginBottom: "16px", display: "flex", justifyContent: justifyMap[alignment] || "flex-start" }}>
+      return wrapHighlight(
+        <div className="my-5 flex" style={{ justifyContent: justifyMap[alignment] || "flex-start" }}>
           <div style={{ width: imageWidth, maxWidth: "100%" }}>
-            <div className="overflow-hidden" style={{
-              borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : (s.imageRounded ? "8px" : "0"),
-              border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-              ...(bs.backgroundColor ? { backgroundColor: `hsl(${bs.backgroundColor})` } : {}),
-              ...(bs.padding != null ? { padding: `${bs.padding}px` } : {}),
-            }}>
-              <img src={content.url} alt={content.alt || ""} className="w-full h-auto" loading="lazy" />
+            <div
+              className="overflow-hidden"
+              style={{
+                borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : s.imageRounded ? "10px" : "0",
+                border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+                ...(bs.backgroundColor ? { backgroundColor: `hsl(${bs.backgroundColor})` } : {}),
+                ...(bs.padding != null ? { padding: `${bs.padding}px` } : {}),
+              }}
+            >
+              <img src={content.url} alt={content.alt || ""} className="w-full h-auto block" loading="lazy" />
             </div>
             {content.alt && (
-              <p style={{
-                color: bs.color ? `hsl(${bs.color})` : `hsl(${s.mutedForegroundColor})`,
-                fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-                fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
-                fontWeight: (bs.fontWeight as any) || undefined, marginTop: "4px", lineHeight: s.lineHeight,
-                textAlign: alignment as any,
-              }}>{content.alt}</p>
+              <p
+                style={{
+                  color: `hsl(${s.mutedForegroundColor})`,
+                  fontFamily: `'${s.bodyFont}', sans-serif`,
+                  fontSize: `${s.baseFontSize - 2}px`,
+                  marginTop: "8px",
+                  textAlign: alignment as any,
+                  lineHeight: s.lineHeight,
+                }}
+              >
+                {content.alt}
+              </p>
             )}
           </div>
-        </div>
-      ) : null;
+        </div>,
+      );
     }
 
     case "youtube":
-      return content.videoId ? wrapHighlight(
-        <div style={{
-          backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
-          border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-          borderRadius: `${bs.borderRadius ?? 8}px`, padding: bs.padding != null ? `${bs.padding}px` : undefined, marginBottom: "16px",
-        }}>
-          <div className="overflow-hidden aspect-video" style={{ borderRadius: `${bs.borderRadius ?? 8}px` }}>
-            <iframe src={`https://www.youtube.com/embed/${content.videoId}`} className="w-full h-full" allowFullScreen title={content.title || "Video"} />
-          </div>
-        </div>
-      ) : null;
+      return content.videoId
+        ? wrapHighlight(
+            <div className="my-5 overflow-hidden aspect-video" style={{ borderRadius: `${bs.borderRadius ?? 10}px`, border: `1px solid hsl(${bs.borderColor || s.borderColor})` }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${content.videoId}`}
+                className="w-full h-full"
+                allowFullScreen
+                title={content.title || "Video"}
+              />
+            </div>,
+          )
+        : null;
 
     case "video":
-      return content.url ? wrapHighlight(
-        <div style={{
-          backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
-          border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-          borderRadius: `${bs.borderRadius ?? 8}px`, padding: bs.padding != null ? `${bs.padding}px` : undefined, marginBottom: "16px",
-        }}>
-          <div className="overflow-hidden" style={{ borderRadius: `${bs.borderRadius ?? 8}px` }}>
-            <video
-              controls={content.showControls !== false}
-              loop={content.loop === true}
-              autoPlay={content.loop === true}
-              muted={content.loop === true}
-              className="w-full"
-              style={{ display: "block" }}
-            >
-              <source src={content.url} />
-            </video>
-          </div>
-        </div>
-      ) : null;
+      return content.url
+        ? wrapHighlight(
+            <div className="my-5 overflow-hidden" style={{ borderRadius: `${bs.borderRadius ?? 10}px`, border: `1px solid hsl(${bs.borderColor || s.borderColor})` }}>
+              <video
+                controls={content.showControls !== false}
+                loop={content.loop === true}
+                autoPlay={content.loop === true}
+                muted={content.loop === true}
+                className="w-full block"
+              >
+                <source src={content.url} />
+              </video>
+            </div>,
+          )
+        : null;
 
     case "ordered_list":
       return wrapHighlight(
-        <ol style={{
-          fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize}px`, lineHeight: s.lineHeight,
-          listStyleType: "decimal", paddingLeft: "24px", marginBottom: "16px", ...getBlockStyle(),
-        }}>
-          {(content.items || []).map((item: string, i: number) => <li key={i} style={{ marginBottom: "4px" }}>{item}</li>)}
-        </ol>
+        <ol
+          className="my-4"
+          style={{
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            fontSize: `${s.baseFontSize}px`,
+            lineHeight: s.lineHeight,
+            listStyleType: "decimal",
+            paddingLeft: "26px",
+            color: `hsl(${s.foregroundColor})`,
+          }}
+        >
+          {(content.items || []).map((item: string, i: number) => (
+            <li key={i} style={{ marginBottom: "6px", paddingLeft: "4px" }}>
+              {item}
+            </li>
+          ))}
+        </ol>,
       );
 
     case "unordered_list":
       return wrapHighlight(
-        <ul style={{
-          fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize}px`, lineHeight: s.lineHeight,
-          listStyleType: "disc", paddingLeft: "24px", marginBottom: "16px", ...getBlockStyle(),
-        }}>
-          {(content.items || []).map((item: string, i: number) => <li key={i} style={{ marginBottom: "4px" }}>{item}</li>)}
-        </ul>
+        <ul
+          className="my-4"
+          style={{
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            fontSize: `${s.baseFontSize}px`,
+            lineHeight: s.lineHeight,
+            listStyleType: "disc",
+            paddingLeft: "26px",
+            color: `hsl(${s.foregroundColor})`,
+          }}
+        >
+          {(content.items || []).map((item: string, i: number) => (
+            <li key={i} style={{ marginBottom: "6px", paddingLeft: "4px" }}>
+              {item}
+            </li>
+          ))}
+        </ul>,
       );
 
     case "note": {
-      const noteStyle = getBlockStyle();
-      return wrapHighlight(
-        <div style={{
-          backgroundColor: noteStyle.backgroundColor || `hsl(${s.noteBg})`,
-          borderLeft: `${s.noteBorderWidth}px solid ${noteStyle.borderColor ? `hsl(${bs.borderColor})` : `hsl(${s.noteBorderColor})`}`,
-          borderRadius: noteStyle.borderRadius || "0 8px 8px 0",
-          padding: noteStyle.padding || "12px 16px",
-          fontSize: noteStyle.fontSize || `${s.baseFontSize - 1}px`,
-          fontFamily: noteStyle.fontFamily || `'${s.bodyFont}', sans-serif`,
-          fontWeight: noteStyle.fontWeight, color: noteStyle.color, lineHeight: s.lineHeight, marginBottom: "16px",
-        }}>{content.text}</div>
-      );
+      const variant = (content.variant as CalloutVariant) || "note";
+      return wrapHighlight(<Callout text={content.text} variant={variant} settings={s} bs={bs} />);
     }
 
     case "callout": {
-      const calloutStyle = getBlockStyle();
-      return wrapHighlight(
-        <div style={{
-          backgroundColor: calloutStyle.backgroundColor || `hsl(${s.accentColor})`,
-          border: `1px solid ${calloutStyle.borderColor ? `hsl(${bs.borderColor})` : `hsl(${s.borderColor})`}`,
-          borderRadius: calloutStyle.borderRadius || "8px",
-          padding: calloutStyle.padding || "16px",
-          fontFamily: calloutStyle.fontFamily || `'${s.bodyFont}', sans-serif`,
-          fontSize: calloutStyle.fontSize || `${s.baseFontSize}px`,
-          fontWeight: calloutStyle.fontWeight, color: calloutStyle.color, lineHeight: s.lineHeight, marginBottom: "16px",
-        }}>{content.text}</div>
-      );
+      const variant = (content.variant as CalloutVariant) || "info";
+      return wrapHighlight(<Callout text={content.text} variant={variant} settings={s} bs={bs} />);
     }
 
     case "tabs":
@@ -212,35 +319,44 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
 
     case "divider":
       return wrapHighlight(
-        <hr style={{
-          border: "none",
-          borderTop: `${bs.thickness ?? 1}px ${bs.dividerStyle || "solid"} hsl(${bs.borderColor || s.borderColor})`,
-          margin: `${bs.spacing ?? 24}px 0`,
-        }} />
+        <hr
+          style={{
+            border: "none",
+            borderTop: `${bs.thickness ?? 1}px ${bs.dividerStyle || "solid"} hsl(${bs.borderColor || s.borderColor})`,
+            margin: `${bs.spacing ?? 32}px 0`,
+          }}
+        />,
       );
 
     case "quote":
       return wrapHighlight(
-        <blockquote style={{
-          borderLeft: `${bs.borderWidth ?? 3}px solid hsl(${bs.borderColor || s.primaryColor})`,
-          paddingLeft: "16px", margin: "0 0 16px 0",
-          fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-          fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
-          fontStyle: bs.italic !== false ? "italic" : "normal",
-          lineHeight: s.lineHeight,
-          color: bs.color ? `hsl(${bs.color})` : undefined,
-        }}>
-          <p>{content.text}</p>
+        <blockquote
+          className="my-5"
+          style={{
+            borderLeft: `2px solid hsl(${bs.borderColor || s.borderColor})`,
+            paddingLeft: "20px",
+            margin: "20px 0",
+            fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+            fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
+            fontStyle: bs.italic !== false ? "italic" : "normal",
+            lineHeight: s.lineHeight,
+            color: `hsl(${s.mutedForegroundColor})`,
+          }}
+        >
+          <p style={{ margin: 0 }}>{content.text}</p>
           {content.attribution && (
-            <footer style={{
-              fontSize: `${s.baseFontSize - 2}px`,
-              color: `hsl(${bs.attributionColor || s.mutedForegroundColor})`,
-              fontStyle: "normal", marginTop: "8px",
-            }}>
+            <footer
+              style={{
+                fontSize: `${s.baseFontSize - 2}px`,
+                color: `hsl(${s.mutedForegroundColor})`,
+                fontStyle: "normal",
+                marginTop: "8px",
+              }}
+            >
               — {content.attribution}
             </footer>
           )}
-        </blockquote>
+        </blockquote>,
       );
 
     case "api_endpoint":
@@ -252,16 +368,15 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
     case "inline_editor":
       return wrapHighlight(
         <div
-          className="inline-editor-content inline-editor-readonly"
+          className="inline-editor-content inline-editor-readonly my-3"
           style={{
             fontFamily: `'${s.bodyFont}', sans-serif`,
             fontSize: `${s.baseFontSize}px`,
             lineHeight: s.lineHeight,
-            marginBottom: "16px",
-            ...getBlockStyle(),
+            color: `hsl(${s.foregroundColor})`,
           }}
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.html || "") }}
-        />
+        />,
       );
 
     default:
@@ -269,210 +384,455 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
   }
 };
 
-// --- Sub-components ---
+/* ───────────────────────── Code Block (Mintlify) ─────────────────────────
+   - Title bar with filename (or language) on left, copy button on right
+   - Dark grey body (#0e0f12-ish in light, native code bg in dark)
+   - Rounded corners, subtle border
+*/
+const CodeBlock = ({
+  content,
+  settings: s,
+  bs,
+}: {
+  content: any;
+  settings: DesignSettings;
+  bs: Partial<BlockStyleSettings>;
+}) => {
+  const [copied, setCopied] = useState(false);
+  const filename = content.filename || content.title;
+  const language = content.language;
+  const hasHeader = !!(filename || language);
 
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content.code || "");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  };
+
+  const codeBg = bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${s.codeBlockBg})`;
+  const radius = bs.borderRadius != null ? `${bs.borderRadius}px` : `${s.codeBlockBorderRadius || 10}px`;
+
+  return (
+    <div
+      className="my-5 group"
+      style={{
+        borderRadius: radius,
+        border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+        overflow: "hidden",
+        backgroundColor: codeBg,
+      }}
+    >
+      {hasHeader && (
+        <div
+          className="flex items-center justify-between"
+          style={{
+            padding: "8px 14px",
+            borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+            backgroundColor: `hsl(${s.mutedColor})`,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: `'${s.codeFont}', monospace`,
+              fontSize: "12px",
+              color: `hsl(${s.mutedForegroundColor})`,
+            }}
+          >
+            {filename || language}
+          </span>
+          <button
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1.5 transition-colors"
+            style={{
+              fontSize: "11px",
+              color: `hsl(${s.mutedForegroundColor})`,
+              fontFamily: `'${s.bodyFont}', sans-serif`,
+            }}
+            aria-label="Copy code"
+          >
+            {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      )}
+      <div style={{ position: "relative" }}>
+        {!hasHeader && (
+          <button
+            onClick={handleCopy}
+            className="absolute top-2 right-2 inline-flex items-center justify-center w-7 h-7 rounded-md transition-opacity opacity-0 group-hover:opacity-100"
+            style={{
+              backgroundColor: `hsl(${s.mutedColor})`,
+              color: `hsl(${s.mutedForegroundColor})`,
+              border: `1px solid hsl(${s.borderColor})`,
+            }}
+            aria-label="Copy code"
+          >
+            {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+        )}
+        <pre
+          style={{
+            margin: 0,
+            padding: "16px 18px",
+            overflow: "auto",
+            fontFamily: bs.fontFamily ? `'${bs.fontFamily}', monospace` : `'${s.codeFont}', monospace`,
+            fontSize: `${bs.fontSize ?? s.baseFontSize - 2}px`,
+            lineHeight: 1.65,
+            color: bs.color ? `hsl(${bs.color})` : `hsl(${s.foregroundColor})`,
+          }}
+        >
+          <code style={{ fontFamily: "inherit", fontSize: "inherit", color: "inherit" }}>
+            {content.code}
+          </code>
+        </pre>
+      </div>
+    </div>
+  );
+};
+
+/* ───────────────────────── Tabs (Mintlify) ─────────────────────────
+   - No outer border. Underline-only indicator. Bottom rule under tab strip.
+   - Generous padding above content.
+*/
 const TabsBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
   const [active, setActive] = useState(0);
   const tabs = content.tabs || [];
-  const activeColor = bs.activeColor ? `hsl(${bs.activeColor})` : `hsl(${s.primaryColor})`;
+  const activeColor = bs.activeColor ? `hsl(${bs.activeColor})` : `hsl(${s.foregroundColor})`;
   const inactiveColor = bs.inactiveColor ? `hsl(${bs.inactiveColor})` : `hsl(${s.mutedForegroundColor})`;
-  const indicatorColor = bs.indicatorColor ? `hsl(${bs.indicatorColor})` : activeColor;
-  const tabPad = bs.tabPadding ?? 8;
+  const indicatorColor = bs.indicatorColor ? `hsl(${bs.indicatorColor})` : `hsl(${s.primaryColor})`;
 
   return (
-    <div style={{
-      marginBottom: "16px",
-      backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
-      borderRadius: `${bs.borderRadius ?? 0}px`,
-      padding: bs.padding != null ? `${bs.padding}px` : undefined,
-    }}>
-      <div className="flex" style={{ borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`, gap: "0" }}>
-        {tabs.map((tab: any, i: number) => (
-          <button key={i} onClick={() => setActive(i)} style={{
-            padding: `${tabPad}px 16px`,
-            fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
-            fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-            fontWeight: active === i ? 500 : 400,
-            color: active === i ? activeColor : inactiveColor,
-            borderBottom: active === i ? `2px solid ${indicatorColor}` : "2px solid transparent",
-            background: "none", cursor: "pointer", transition: "all 0.15s",
-          }}>{tab.label}</button>
-        ))}
+    <div className="my-5">
+      <div className="flex" style={{ borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`, gap: "20px" }}>
+        {tabs.map((tab: any, i: number) => {
+          const isActive = active === i;
+          return (
+            <button
+              key={i}
+              onClick={() => setActive(i)}
+              style={{
+                padding: "8px 0",
+                marginBottom: "-1px",
+                fontSize: `${bs.fontSize ?? s.baseFontSize - 1}px`,
+                fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+                fontWeight: isActive ? 500 : 400,
+                color: isActive ? activeColor : inactiveColor,
+                borderBottom: isActive ? `2px solid ${indicatorColor}` : "2px solid transparent",
+                background: "none",
+                cursor: "pointer",
+                transition: "color 0.15s",
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
-      <div style={{
-        padding: "12px 0",
-        fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-        fontSize: `${s.baseFontSize}px`,
-        lineHeight: s.lineHeight,
-        color: bs.color ? `hsl(${bs.color})` : undefined,
-      }}>
+      <div
+        style={{
+          padding: "20px 0 0 0",
+          fontFamily: `'${s.bodyFont}', sans-serif`,
+          fontSize: `${s.baseFontSize}px`,
+          lineHeight: s.lineHeight,
+          color: `hsl(${s.foregroundColor})`,
+        }}
+      >
         {tabs[active]?.content}
       </div>
     </div>
   );
 };
 
+/* ───────────────────────── Accordion (Mintlify) ─────────────────────────
+   - Single bordered box, chevron right that rotates, smooth open
+   - Multiple items stack inside same border, divided by 1px rule
+*/
 const AccordionBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const items = content.items || [];
-  const headerBg = bs.headerBgAccordion ? `hsl(${bs.headerBgAccordion})` : undefined;
-  const contentBg = bs.contentBg ? `hsl(${bs.contentBg})` : undefined;
-  const iconSz = bs.iconSize ?? 12;
 
   return (
-    <div style={{
-      marginBottom: "16px",
-      border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-      borderRadius: `${bs.borderRadius ?? 8}px`,
-      overflow: "hidden",
-      backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined,
-    }}>
-      {items.map((item: any, i: number) => (
-        <div key={i} style={{ borderBottom: i < items.length - 1 ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined }}>
-          <button onClick={() => setOpenIndex(openIndex === i ? null : i)} className="w-full text-left flex items-center justify-between" style={{
-            padding: `${bs.padding ?? 12}px 16px`,
-            fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-            fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
-            fontWeight: bs.fontWeight || 500,
-            color: bs.color ? `hsl(${bs.color})` : undefined,
-            background: headerBg || "none",
-            cursor: "pointer",
-          }}>
-            {item.title}
-            <span style={{ transform: openIndex === i ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", fontSize: `${iconSz}px` }}>▼</span>
-          </button>
-          {openIndex === i && (
-            <div style={{
-              padding: "0 16px 12px 16px",
-              fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-              fontSize: `${s.baseFontSize - 1}px`,
-              color: `hsl(${s.mutedForegroundColor})`, lineHeight: s.lineHeight,
-              backgroundColor: contentBg,
-            }}>{item.content}</div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const CardBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
-  const titleSize = bs.titleFontSize ?? s.baseFontSize;
-  const titleWt = bs.titleWeight || s.headingWeight;
-  const showShadow = bs.showShadow === true;
-
-  return (
-    <div style={{
-      border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-      borderRadius: `${bs.borderRadius ?? 8}px`,
-      padding: `${bs.padding ?? 20}px`,
-      backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${s.accentColor})`,
-      marginBottom: "16px",
-      boxShadow: showShadow ? '0 4px 16px -4px hsl(var(--foreground) / 0.1)' : undefined,
-    }}>
-      <h4 style={{
-        fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.headingFont}', sans-serif`,
-        fontWeight: titleWt,
-        fontSize: `${titleSize}px`, marginBottom: "6px",
-        color: bs.color ? `hsl(${bs.color})` : undefined,
-      }}>{content.title}</h4>
-      <p style={{
-        fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize - 1}px`,
-        color: `hsl(${s.mutedForegroundColor})`, lineHeight: s.lineHeight,
-      }}>{content.description}</p>
-      {content.link && (
-        <a href={content.link} target="_blank" rel="noopener noreferrer" style={{
-          color: `hsl(${s.linkColor})`, fontSize: `${s.baseFontSize - 1}px`, marginTop: "8px", display: "inline-block",
-        }}>Learn more →</a>
-      )}
-    </div>
-  );
-};
-
-const StepsBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
-  const circleSize = bs.circleSize ?? 28;
-  const circleBg = bs.circleBg || s.primaryColor;
-  const circleColor = bs.circleColor || s.primaryForegroundColor;
-  const connColor = bs.connectorColor || s.borderColor;
-  const connWidth = bs.connectorWidth ?? 2;
-
-  return (
-    <div style={{ marginBottom: "16px" }}>
-      {(content.items || []).map((step: any, i: number) => (
-        <div key={i} className="flex gap-4" style={{ marginBottom: "16px" }}>
-          <div className="flex flex-col items-center shrink-0">
-            <div style={{
-              width: `${circleSize}px`, height: `${circleSize}px`, borderRadius: "50%",
-              backgroundColor: `hsl(${circleBg})`, color: `hsl(${circleColor})`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: `${Math.max(circleSize * 0.45, 11)}px`, fontWeight: 600,
-              fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-            }}>{i + 1}</div>
-            {i < (content.items || []).length - 1 && (
-              <div style={{ width: `${connWidth}px`, flex: 1, marginTop: "4px", backgroundColor: `hsl(${connColor})` }} />
+    <div
+      className="my-5"
+      style={{
+        border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+        borderRadius: `${bs.borderRadius ?? 10}px`,
+        overflow: "hidden",
+        backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${s.backgroundColor})`,
+      }}
+    >
+      {items.map((item: any, i: number) => {
+        const open = openIndex === i;
+        return (
+          <div
+            key={i}
+            style={{
+              borderBottom: i < items.length - 1 ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
+            }}
+          >
+            <button
+              onClick={() => setOpenIndex(open ? null : i)}
+              className="w-full text-left flex items-center justify-between gap-3"
+              style={{
+                padding: `${bs.padding ?? 14}px 18px`,
+                fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+                fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
+                fontWeight: bs.fontWeight || 500,
+                color: `hsl(${s.foregroundColor})`,
+                background: "transparent",
+                cursor: "pointer",
+              }}
+            >
+              <span>{item.title}</span>
+              <ChevronDown
+                className="shrink-0 transition-transform"
+                style={{
+                  width: 16,
+                  height: 16,
+                  color: `hsl(${s.mutedForegroundColor})`,
+                  transform: open ? "rotate(180deg)" : "rotate(0deg)",
+                }}
+              />
+            </button>
+            {open && (
+              <div
+                style={{
+                  padding: "0 18px 16px 18px",
+                  fontFamily: `'${s.bodyFont}', sans-serif`,
+                  fontSize: `${s.baseFontSize}px`,
+                  color: `hsl(${s.mutedForegroundColor})`,
+                  lineHeight: s.lineHeight,
+                }}
+              >
+                {item.content}
+              </div>
             )}
           </div>
-          <div style={{ paddingBottom: "8px" }}>
-            <h4 style={{
-              fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.headingFont}', sans-serif`,
-              fontWeight: bs.fontWeight || s.headingWeight,
-              fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
-              color: bs.color ? `hsl(${bs.color})` : undefined, marginBottom: "4px",
-            }}>{step.title}</h4>
-            <p style={{
-              fontFamily: `'${s.bodyFont}', sans-serif`, fontSize: `${s.baseFontSize - 1}px`,
-              color: `hsl(${s.mutedForegroundColor})`, lineHeight: s.lineHeight,
-            }}>{step.description}</p>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
 
-const TableBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
-  const headerBg = bs.headerBg || s.accentColor;
-  const headerWeight = bs.headerFontWeight || "600";
-  const cellPad = bs.cellPadding ?? 10;
-  const showBorders = bs.showCellBorders !== false;
-  const striped = bs.stripedRows === true;
-  const stripedBg = bs.stripedRowBg || s.accentColor;
+/* ───────────────────────── Card (Mintlify) ─────────────────────────
+   - Bordered, soft shadow on hover, optional CTA arrow when linked
+   - Title bold, description muted
+*/
+const CardBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
+  const titleSize = bs.titleFontSize ?? s.baseFontSize;
+  const titleWt = bs.titleWeight || 600;
+  const isLink = !!content.link;
+
+  const inner = (
+    <>
+      <div className="flex items-center justify-between gap-3 mb-1">
+        <h4
+          style={{
+            fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.headingFont}', sans-serif`,
+            fontWeight: titleWt as any,
+            fontSize: `${titleSize}px`,
+            color: bs.color ? `hsl(${bs.color})` : `hsl(${s.foregroundColor})`,
+            margin: 0,
+          }}
+        >
+          {content.title}
+        </h4>
+        {isLink && (
+          <ArrowRight
+            className="shrink-0 transition-transform group-hover:translate-x-0.5"
+            style={{ width: 14, height: 14, color: `hsl(${s.mutedForegroundColor})` }}
+          />
+        )}
+      </div>
+      {content.description && (
+        <p
+          style={{
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            fontSize: `${s.baseFontSize - 1}px`,
+            color: `hsl(${s.mutedForegroundColor})`,
+            lineHeight: s.lineHeight,
+            margin: 0,
+          }}
+        >
+          {content.description}
+        </p>
+      )}
+    </>
+  );
+
+  const styles: React.CSSProperties = {
+    display: "block",
+    border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+    borderRadius: `${bs.borderRadius ?? 12}px`,
+    padding: `${bs.padding ?? 18}px`,
+    backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${s.backgroundColor})`,
+    transition: "border-color 0.15s, box-shadow 0.15s",
+    textDecoration: "none",
+    color: "inherit",
+  };
+
+  if (isLink) {
+    return (
+      <a
+        href={content.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block group my-4 hover:shadow-sm"
+        style={styles}
+        onMouseEnter={(e) => ((e.currentTarget.style.borderColor = `hsl(${s.primaryColor} / 0.4)`))}
+        onMouseLeave={(e) => ((e.currentTarget.style.borderColor = `hsl(${bs.borderColor || s.borderColor})`))}
+      >
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <div className="my-4 group" style={styles}>
+      {inner}
+    </div>
+  );
+};
+
+/* ───────────────────────── Steps (Mintlify) ─────────────────────────
+   - Numbered circle on left, title + body on right
+   - Vertical guide line drops from circle through to next step
+*/
+const StepsBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
+  const items = content.items || [];
+  const circleSize = bs.circleSize ?? 26;
+  const circleBg = bs.circleBg || s.mutedColor;
+  const circleColor = bs.circleColor || s.foregroundColor;
+  const connColor = bs.connectorColor || s.borderColor;
 
   return (
-    <div style={{
-      border: showBorders ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
-      borderRadius: `${bs.borderRadius ?? 8}px`, overflow: "hidden", marginBottom: "16px",
-    }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <div className="my-6">
+      {items.map((step: any, i: number) => {
+        const isLast = i === items.length - 1;
+        return (
+          <div key={i} className="flex gap-4 relative" style={{ paddingBottom: isLast ? 0 : "24px" }}>
+            <div className="shrink-0 relative" style={{ width: circleSize }}>
+              <div
+                style={{
+                  width: circleSize,
+                  height: circleSize,
+                  borderRadius: "50%",
+                  backgroundColor: `hsl(${circleBg})`,
+                  color: `hsl(${circleColor})`,
+                  border: `1px solid hsl(${s.borderColor})`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  fontFamily: `'${s.bodyFont}', sans-serif`,
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                {i + 1}
+              </div>
+              {!isLast && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    top: circleSize,
+                    bottom: -24,
+                    width: 1,
+                    transform: "translateX(-50%)",
+                    backgroundColor: `hsl(${connColor})`,
+                  }}
+                />
+              )}
+            </div>
+            <div className="flex-1 min-w-0" style={{ paddingTop: "2px" }}>
+              <h4
+                style={{
+                  fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+                  fontWeight: bs.fontWeight || 600,
+                  fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
+                  color: `hsl(${s.foregroundColor})`,
+                  margin: 0,
+                  marginBottom: step.description ? "8px" : 0,
+                  lineHeight: 1.4,
+                }}
+              >
+                {step.title}
+              </h4>
+              {step.description && (
+                <p
+                  style={{
+                    fontFamily: `'${s.bodyFont}', sans-serif`,
+                    fontSize: `${s.baseFontSize}px`,
+                    color: `hsl(${s.mutedForegroundColor})`,
+                    lineHeight: s.lineHeight,
+                    margin: 0,
+                  }}
+                >
+                  {step.description}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/* ───────────────────────── Table (Mintlify) ─────────────────────────
+   - Borderless cells, header has bottom rule + slightly muted text
+   - Subtle row hover, no inner verticals
+*/
+const TableBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
+  const cellPad = bs.cellPadding ?? 12;
+  const striped = bs.stripedRows === true;
+  const stripedBg = bs.stripedRowBg || s.mutedColor;
+
+  return (
+    <div className="my-5 overflow-x-auto">
+      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: `'${s.bodyFont}', sans-serif` }}>
         <thead>
-          <tr style={{ backgroundColor: `hsl(${headerBg})` }}>
+          <tr>
             {(content.headers || []).map((h: string, i: number) => (
-              <th key={i} style={{
-                padding: `${cellPad}px ${cellPad + 4}px`, textAlign: "left",
-                fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-                fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
-                fontWeight: headerWeight,
-                borderBottom: showBorders ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
-                borderRight: showBorders && i < (content.headers || []).length - 1 ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
-                color: bs.color ? `hsl(${bs.color})` : undefined,
-              }}>{h}</th>
+              <th
+                key={i}
+                style={{
+                  padding: `${cellPad}px ${cellPad + 2}px`,
+                  textAlign: "left",
+                  fontSize: `${bs.fontSize ?? s.baseFontSize - 1}px`,
+                  fontWeight: 600,
+                  color: `hsl(${s.foregroundColor})`,
+                  borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+                }}
+              >
+                {h}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {(content.rows || []).map((row: string[], ri: number) => (
-            <tr key={ri} style={{
-              backgroundColor: striped && ri % 2 === 1 ? `hsl(${stripedBg})` : undefined,
-            }}>
+            <tr
+              key={ri}
+              style={{
+                backgroundColor: striped && ri % 2 === 1 ? `hsl(${stripedBg})` : undefined,
+              }}
+            >
               {row.map((cell: string, ci: number) => (
-                <td key={ci} style={{
-                  padding: `${cellPad}px ${cellPad + 4}px`,
-                  fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-                  fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
-                  borderBottom: showBorders && ri < (content.rows || []).length - 1 ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
-                  borderRight: showBorders && ci < row.length - 1 ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
-                  lineHeight: s.lineHeight,
-                }}>{cell}</td>
+                <td
+                  key={ci}
+                  style={{
+                    padding: `${cellPad}px ${cellPad + 2}px`,
+                    fontSize: `${bs.fontSize ?? s.baseFontSize - 1}px`,
+                    color: `hsl(${s.mutedForegroundColor})`,
+                    borderBottom: ri < (content.rows || []).length - 1 ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
+                    lineHeight: s.lineHeight,
+                  }}
+                >
+                  {cell}
+                </td>
               ))}
             </tr>
           ))}
@@ -482,101 +842,192 @@ const TableBlock = ({ content, settings: s, bs }: { content: any; settings: Desi
   );
 };
 
+/* ───────────────────────── API Endpoint ───────────────────────── */
 const ApiEndpointBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
   const methodColors: Record<string, string> = {
-    GET: "142 76% 36%", POST: "214 100% 50%", PUT: "38 92% 50%", DELETE: "0 84% 60%", PATCH: "270 60% 55%",
+    GET: "152 70% 38%",
+    POST: "214 90% 50%",
+    PUT: "32 95% 44%",
+    DELETE: "0 80% 55%",
+    PATCH: "270 60% 55%",
   };
   const methodColor = methodColors[content.method?.toUpperCase()] || s.primaryColor;
-  const headerBg = bs.headerBgColor || s.accentColor;
-  const responseBg = bs.responseBg || s.codeBlockBg;
-  const badgeRadius = bs.methodBadgeRadius ?? 4;
-  const paramSize = bs.paramFontSize ?? 13;
+  const badgeRadius = bs.methodBadgeRadius ?? 6;
 
   return (
-    <div style={{
-      border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-      borderRadius: `${bs.borderRadius ?? 8}px`, overflow: "hidden", marginBottom: "16px",
-    }}>
-      <div className="flex items-center gap-3" style={{
-        padding: `${bs.padding ?? 12}px 16px`,
-        backgroundColor: `hsl(${headerBg})`,
-        borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-      }}>
-        <span style={{
-          backgroundColor: `hsl(${methodColor})`, color: "#fff",
-          padding: "2px 8px", borderRadius: `${badgeRadius}px`, fontSize: "12px", fontWeight: 700,
-          fontFamily: `'${s.codeFont}', monospace`,
-        }}>{content.method?.toUpperCase() || "GET"}</span>
-        <code style={{
-          fontFamily: `'${s.codeFont}', monospace`, fontSize: `${bs.fontSize ?? (s.baseFontSize - 1)}px`,
-          color: bs.color ? `hsl(${bs.color})` : undefined,
-        }}>{content.path}</code>
+    <div
+      className="my-5"
+      style={{
+        border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+        borderRadius: `${bs.borderRadius ?? 10}px`,
+        overflow: "hidden",
+        backgroundColor: `hsl(${s.backgroundColor})`,
+      }}
+    >
+      <div
+        className="flex items-center gap-3"
+        style={{
+          padding: "12px 16px",
+          backgroundColor: `hsl(${s.mutedColor})`,
+          borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+        }}
+      >
+        <span
+          style={{
+            backgroundColor: `hsl(${methodColor})`,
+            color: "#fff",
+            padding: "3px 9px",
+            borderRadius: `${badgeRadius}px`,
+            fontSize: "11px",
+            fontWeight: 700,
+            letterSpacing: "0.02em",
+            fontFamily: `'${s.codeFont}', monospace`,
+          }}
+        >
+          {content.method?.toUpperCase() || "GET"}
+        </span>
+        <code
+          style={{
+            fontFamily: `'${s.codeFont}', monospace`,
+            fontSize: `${bs.fontSize ?? s.baseFontSize - 1}px`,
+            color: `hsl(${s.foregroundColor})`,
+          }}
+        >
+          {content.path}
+        </code>
       </div>
       {content.description && (
-        <div style={{
-          padding: "12px 16px",
-          fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-          fontSize: `${s.baseFontSize - 1}px`,
-          color: `hsl(${s.mutedForegroundColor})`, lineHeight: s.lineHeight,
-        }}>{content.description}</div>
+        <div
+          style={{
+            padding: "14px 16px",
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            fontSize: `${s.baseFontSize - 1}px`,
+            color: `hsl(${s.mutedForegroundColor})`,
+            lineHeight: s.lineHeight,
+          }}
+        >
+          {content.description}
+        </div>
       )}
       {content.parameters && content.parameters.length > 0 && (
-        <div style={{ padding: "0 16px 12px 16px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "6px", color: `hsl(${s.mutedForegroundColor})` }}>Parameters</div>
+        <div style={{ padding: "0 16px 14px 16px" }}>
+          <div style={{ fontSize: "11px", fontWeight: 600, marginBottom: "8px", color: `hsl(${s.mutedForegroundColor})`, letterSpacing: "0.04em", textTransform: "uppercase" }}>Parameters</div>
           {content.parameters.map((p: any, i: number) => (
-            <div key={i} className="flex gap-2 items-baseline" style={{ marginBottom: "4px" }}>
-              <code style={{ fontFamily: `'${s.codeFont}', monospace`, fontSize: `${paramSize}px` }}>{p.name}</code>
-              <span style={{ fontSize: `${paramSize - 1}px`, color: `hsl(${s.mutedForegroundColor})` }}>{p.type}{p.required ? " · required" : ""}</span>
+            <div key={i} className="flex gap-2 items-baseline" style={{ marginBottom: "6px" }}>
+              <code style={{ fontFamily: `'${s.codeFont}', monospace`, fontSize: "13px", color: `hsl(${s.foregroundColor})` }}>{p.name}</code>
+              <span style={{ fontSize: "12px", color: `hsl(${s.mutedForegroundColor})` }}>
+                {p.type}
+                {p.required ? " · required" : ""}
+              </span>
             </div>
           ))}
         </div>
       )}
       {content.response && (
-        <div style={{
-          padding: "12px 16px", borderTop: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-          backgroundColor: `hsl(${responseBg})`,
-          fontFamily: `'${s.codeFont}', monospace`, fontSize: `${s.baseFontSize - 2}px`,
-          whiteSpace: "pre-wrap",
-        }}>{content.response}</div>
+        <div
+          style={{
+            padding: "14px 16px",
+            borderTop: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+            backgroundColor: `hsl(${s.codeBlockBg})`,
+            fontFamily: `'${s.codeFont}', monospace`,
+            fontSize: `${s.baseFontSize - 2}px`,
+            whiteSpace: "pre-wrap",
+            color: `hsl(${s.foregroundColor})`,
+            lineHeight: 1.6,
+          }}
+        >
+          {content.response}
+        </div>
       )}
     </div>
   );
 };
 
+/* ───────────────────────── Code Tabs ───────────────────────── */
 const CodeTabsBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
   const [active, setActive] = useState(0);
+  const [copied, setCopied] = useState(false);
   const tabs = content.tabs || [];
   const codeFont = bs.fontFamily ? `'${bs.fontFamily}', monospace` : `'${s.codeFont}', monospace`;
-  const codeFontSize = bs.fontSize ?? (s.baseFontSize - 1);
-  const tabBarBg = bs.tabBarBg || s.accentColor;
-  const activeTabCol = bs.activeTabColor || s.primaryColor;
+  const codeFontSize = bs.fontSize ?? s.baseFontSize - 2;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(tabs[active]?.code || "");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  };
 
   return (
-    <div style={{
-      border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-      borderRadius: `${bs.borderRadius ?? s.codeBlockBorderRadius}px`,
-      overflow: "hidden", marginBottom: "16px",
-    }}>
-      <div className="flex" style={{ backgroundColor: `hsl(${tabBarBg})`, borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})` }}>
-        {tabs.map((tab: any, i: number) => (
-          <button key={i} onClick={() => setActive(i)} style={{
-            padding: "8px 14px", fontSize: "12px", fontFamily: codeFont,
-            fontWeight: active === i ? 600 : 400,
-            color: active === i ? `hsl(${activeTabCol})` : `hsl(${s.mutedForegroundColor})`,
-            borderBottom: active === i ? `2px solid hsl(${activeTabCol})` : "2px solid transparent",
-            background: "none", cursor: "pointer", transition: "all 0.15s",
-          }}>{tab.label}</button>
-        ))}
-      </div>
-      <div style={{
+    <div
+      className="my-5"
+      style={{
+        border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+        borderRadius: `${bs.borderRadius ?? (s.codeBlockBorderRadius || 10)}px`,
+        overflow: "hidden",
         backgroundColor: `hsl(${bs.backgroundColor || s.codeBlockBg})`,
-        padding: `${bs.padding ?? 16}px`, fontFamily: codeFont, fontSize: `${codeFontSize}px`,
-        color: bs.color ? `hsl(${bs.color})` : undefined,
-      }}>
-        <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: "inherit", fontFamily: "inherit", color: "inherit" }}>
-          <code style={{ fontSize: "inherit", fontFamily: "inherit", color: "inherit" }}>{tabs[active]?.code}</code>
-        </pre>
+      }}
+    >
+      <div
+        className="flex items-center justify-between"
+        style={{
+          backgroundColor: `hsl(${s.mutedColor})`,
+          borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+          paddingRight: "10px",
+        }}
+      >
+        <div className="flex">
+          {tabs.map((tab: any, i: number) => {
+            const isActive = active === i;
+            return (
+              <button
+                key={i}
+                onClick={() => setActive(i)}
+                style={{
+                  padding: "8px 14px",
+                  fontSize: "12px",
+                  fontFamily: codeFont,
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? `hsl(${s.foregroundColor})` : `hsl(${s.mutedForegroundColor})`,
+                  borderBottom: isActive ? `2px solid hsl(${s.primaryColor})` : "2px solid transparent",
+                  marginBottom: "-1px",
+                  background: "none",
+                  cursor: "pointer",
+                  transition: "color 0.15s",
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={handleCopy}
+          className="inline-flex items-center justify-center"
+          style={{
+            color: `hsl(${s.mutedForegroundColor})`,
+          }}
+          aria-label="Copy code"
+        >
+          {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+        </button>
       </div>
+      <pre
+        style={{
+          margin: 0,
+          padding: "16px 18px",
+          overflow: "auto",
+          fontFamily: codeFont,
+          fontSize: `${codeFontSize}px`,
+          lineHeight: 1.65,
+          color: bs.color ? `hsl(${bs.color})` : `hsl(${s.foregroundColor})`,
+        }}
+      >
+        <code style={{ fontFamily: "inherit", fontSize: "inherit", color: "inherit" }}>
+          {tabs[active]?.code}
+        </code>
+      </pre>
     </div>
   );
 };
