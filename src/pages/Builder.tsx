@@ -1,4 +1,4 @@
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBuilder } from "@/hooks/use-builder";
@@ -79,6 +79,14 @@ const Builder = () => {
   const [editorTab, setEditorTab] = useState<"navigation" | "files">("navigation");
   const [settingsTarget, setSettingsTarget] = useState<SettingsTarget | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [publishSnapshot, setPublishSnapshot] = useState<{ allSections: Section[]; allBlocks: Block[] }>({
+    allSections: [],
+    allBlocks: [],
+  });
+
+  useEffect(() => {
+    setMode(getInitialMode());
+  }, [location.pathname]);
 
   // Global ⌘K / Ctrl+K to open search
   useEffect(() => {
@@ -168,6 +176,7 @@ const Builder = () => {
     const computePublishPreview = async () => {
       const { allSections, allBlocks } = await getCompleteSnapshot();
       if (cancelled) return;
+      setPublishSnapshot({ allSections, allBlocks });
       setPublishPreview(
         previewChanges(pages, allSections, allBlocks, settings, navGroups),
       );
@@ -178,7 +187,7 @@ const Builder = () => {
     return () => {
       cancelled = true;
     };
-  }, [pages, sections, blocks, settings, navGroups, previewChanges, getCompleteSnapshot]);
+  }, [pages, settings, navGroups, previewChanges, getCompleteSnapshot]);
 
   const handlePublish = useCallback(async (notes?: string) => {
     if (!projectId || !user?.id) return;
@@ -264,8 +273,7 @@ const Builder = () => {
   }
 
   if (!project) {
-    navigate("/dashboard");
-    return null;
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Header is scoped to the content area (Mintlify-style) and only shown for editor / code / preview modes.
@@ -516,8 +524,8 @@ const Builder = () => {
                 customDomain={project?.custom_domain}
                 project={project}
                 pages={pages}
-                sections={sections}
-                blocks={blocks}
+                sections={publishSnapshot.allSections}
+                blocks={publishSnapshot.allBlocks}
                 settings={resolvedSettings}
                 navGroups={navGroups}
                 tabs={tabs}
