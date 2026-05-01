@@ -85,8 +85,23 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
         {!hideTopHeader && (
           <header className="h-[48px] shrink-0 border-b border-border/40 bg-background/80 backdrop-blur-xl px-3 flex items-center justify-between">
             <div className="min-w-0">
-              <p className="text-[13px] font-medium text-foreground truncate">{project.name}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{project.slug}</p>
+              {mode === "settings" ? (() => {
+                const match = location.pathname.match(/\/settings\/([^/?#]+)/);
+                const section = match?.[1] || "general";
+                const label = section.replace(/-/g, " ");
+                return (
+                  <div className="flex items-center gap-1.5 text-[13px]">
+                    <span className="text-muted-foreground">Settings</span>
+                    <span className="text-muted-foreground/50">/</span>
+                    <span className="text-foreground font-medium capitalize">{label}</span>
+                  </div>
+                );
+              })() : (
+                <>
+                  <p className="text-[13px] font-medium text-foreground truncate">{project.name}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{project.slug}</p>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-1.5">
               <button
