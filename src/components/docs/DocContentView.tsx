@@ -264,10 +264,11 @@ const DocContentView = ({
             <article style={{ maxWidth: `${settings.contentMaxWidth}px` }}>
               {eyebrow && (
                 <div
-                  className="mb-3 text-[14px] font-medium"
+                  className="mb-2 text-[13px]"
                   style={{
                     color: `hsl(${settings.primaryColor})`,
                     fontFamily: `'${settings.bodyFont}', sans-serif`,
+                    fontWeight: 500,
                   }}
                 >
                   {eyebrow}
