@@ -288,9 +288,6 @@ const Builder = () => {
       onPublishClick={() => handleModeChange("publish")}
       hasUnpublishedChanges={hasUnpublishedChanges}
       onSearchClick={() => setSearchOpen(true)}
-      currentBranch={project?.github_branch || "main"}
-      hasGithub={!!project?.github_repo && !!project?.github_token_encrypted}
-      onBranchChange={() => refreshProject()}
     />
   ) : null;
 

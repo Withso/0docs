@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Upload, Eye, Code2, FileText, Search, SlidersHorizontal } from "lucide-react";
-import BranchSelector from "./BranchSelector";
 
 export type BuilderMode = "home" | "editor" | "preview" | "analytics" | "settings" | "publish" | "configurations" | "code";
 export type EditorTab = "navigation" | "files";
@@ -12,10 +11,6 @@ interface BuilderHeaderProps {
   onPublishClick?: () => void;
   hasUnpublishedChanges?: boolean;
   onSearchClick?: () => void;
-  // Branch selector
-  currentBranch?: string;
-  hasGithub?: boolean;
-  onBranchChange?: (branch: string) => void;
 }
 
 /** Icon-only Visual / Code toggle (Mintlify style). */
@@ -53,26 +48,22 @@ const ViewToggle = ({ value, onChange }: { value: BuilderMode; onChange: (v: Bui
 
 /**
  * Header scoped to the CONTENT AREA only (Mintlify parity).
- * Left:  Visual/Code icon toggle, Branch selector
+ * Left:  Visual/Code icon toggle, Configurations
  * Right: Search bar, Preview icon button, Publish button
  */
 const BuilderHeader = ({
-  projectId,
   mode,
   onModeChange,
   onPublishClick,
   hasUnpublishedChanges,
   onSearchClick,
-  currentBranch = "main",
-  hasGithub = false,
-  onBranchChange,
 }: BuilderHeaderProps) => {
   const isPreview = mode === "preview";
 
   return (
     <div className="sticky top-0 z-40 px-4 pt-3 pb-2 bg-background/80 backdrop-blur-xl border-b border-border/40">
       <div className="flex items-center justify-between gap-3">
-        {/* Left — view toggle + branch */}
+        {/* Left — view toggle + configurations */}
         <div className="flex items-center gap-2 min-w-0">
           <ViewToggle value={mode} onChange={onModeChange} />
           <button
@@ -83,14 +74,6 @@ const BuilderHeader = ({
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
           </button>
-          {onBranchChange && (
-            <BranchSelector
-              projectId={projectId}
-              currentBranch={currentBranch}
-              hasGithub={hasGithub}
-              onBranchChange={onBranchChange}
-            />
-          )}
         </div>
 
         {/* Right — search + preview + publish */}
@@ -105,7 +88,6 @@ const BuilderHeader = ({
               <kbd className="text-[10px] font-mono opacity-70">⌘K</kbd>
             </button>
           )}
-
 
           <button
             onClick={() => onModeChange(isPreview ? "editor" : "preview")}
