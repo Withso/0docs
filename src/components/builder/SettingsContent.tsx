@@ -14,12 +14,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Save, Trash2, GitBranch, Github, Loader2, CheckCircle2, XCircle, Eye, EyeOff,
-  Settings2, AlertTriangle, UserCircle, Sun, Moon, Inbox, Search, LogOut, User,
+  Settings2, AlertTriangle, UserCircle, Inbox, Search,
 } from "lucide-react";
-import { usePlatformTheme } from "@/hooks/use-platform-theme";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import ProfileMenu from "./ProfileMenu";
 
 interface SettingsContentProps {
   projectId: string;
