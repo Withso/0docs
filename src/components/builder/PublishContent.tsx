@@ -1,17 +1,14 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Upload, FileText, Palette, ChevronDown, ChevronRight,
   Plus, Minus, Pencil, Check, Clock, RotateCcw,
-  Loader2, Tag, Rocket, Github, GitBranch, ExternalLink,
+  Loader2, Tag, Rocket,
   Search, MousePointerClick, Code, Layout, MessageSquare,
   Smartphone, ThumbsUp, BookOpen, Table2, Zap, ListOrdered,
   Quote, Image, Video, Type, SeparatorHorizontal, CreditCard,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { exportProject } from "@/lib/doc-exporter";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { PublishedVersion, EditorChange, DesignChange } from "@/hooks/use-publish";
 
@@ -26,14 +23,9 @@ interface PublishContentProps {
   onRevert: (versionId: string) => void;
   projectSlug: string;
   customDomain?: string;
-  // GitHub publishing props
-  project?: any;
-  pages?: any[];
-  sections?: any[];
+  // Used to detect site features for the "Site Features" panel
   blocks?: any[];
   settings?: DesignSettings;
-  navGroups?: any[];
-  tabs?: any[];
 }
 
 const changeIcon = (type: string) => {
@@ -46,21 +38,16 @@ const PublishContent = ({
   editorChanges, designChanges, nextVersion,
   isFirstPublish, publishing, onPublish, versions, onRevert,
   projectSlug, customDomain,
-  project, pages = [], sections = [], blocks = [], settings, navGroups = [], tabs = [],
+  blocks = [], settings,
 }: PublishContentProps) => {
   const [notes, setNotes] = useState("");
   const [editorOpen, setEditorOpen] = useState(true);
   const [designOpen, setDesignOpen] = useState(true);
   const [featuresOpen, setFeaturesOpen] = useState(false);
   const [expandedVersion, setExpandedVersion] = useState<string | null>(null);
-  const [pushingToGithub, setPushingToGithub] = useState(false);
-  const [commitMessage, setCommitMessage] = useState("");
-  const [targetBranch, setTargetBranch] = useState(project?.github_branch || "main");
-  const [lastCommit, setLastCommit] = useState<{ sha: string; url: string } | null>(null);
 
   const hasChanges = editorChanges.length > 0 || designChanges.length > 0;
   const totalChanges = editorChanges.length + designChanges.length;
-  const githubConfigured = project?.github_repo && project?.github_token_encrypted;
 
   // Auto-detect site features from blocks and settings
   const siteFeatures = useMemo(() => {
