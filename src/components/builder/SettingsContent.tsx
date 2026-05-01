@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import ProfileSettingsContent from "./ProfileSettingsContent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ interface SettingsContentProps {
   onSaved?: () => void;
 }
 
-type SectionId = "general" | "github" | "danger" | "profile";
+type SectionId = "general" | "github" | "profile" | "delete-account";
 
 const NAV_GROUPS: { label: string; items: { id: SectionId; label: string; icon: any }[] }[] = [
   {
@@ -30,13 +31,13 @@ const NAV_GROUPS: { label: string; items: { id: SectionId; label: string; icon: 
     items: [
       { id: "general", label: "General", icon: Settings2 },
       { id: "github", label: "GitHub", icon: Github },
-      { id: "danger", label: "Danger Zone", icon: AlertTriangle },
     ],
   },
   {
     label: "Account",
     items: [
       { id: "profile", label: "My Profile", icon: UserCircle },
+      { id: "delete-account", label: "Delete Account", icon: AlertTriangle },
     ],
   },
 ];
@@ -44,13 +45,17 @@ const NAV_GROUPS: { label: string; items: { id: SectionId; label: string; icon: 
 const SECTION_TITLES: Record<SectionId, { title: string; subtitle: string }> = {
   general: { title: "General", subtitle: "Basic information about your project" },
   github: { title: "GitHub Integration", subtitle: "Connect a repository to publish documentation" },
-  danger: { title: "Danger Zone", subtitle: "Irreversible and destructive actions" },
   profile: { title: "My Profile", subtitle: "Manage your personal account and preferences" },
+  "delete-account": { title: "Delete Account", subtitle: "Permanently delete your organization and account" },
 };
+
+const VALID_SECTIONS: SectionId[] = ["general", "github", "profile", "delete-account"];
 
 const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  const params = useParams<{ section?: string }>();
 
   const [name, setName] = useState(project?.name || "");
   const [description, setDescription] = useState(project?.description || "");
@@ -73,22 +78,20 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
     }
   }, [project]);
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab");
-  const sectionParam = searchParams.get("section") as SectionId | null;
-  const activeSection: SectionId =
-    sectionParam && ["general", "github", "danger", "profile"].includes(sectionParam)
-      ? sectionParam
-      : tabParam === "profile"
-      ? "profile"
-      : "general";
+  const activeSection: SectionId = (VALID_SECTIONS.includes(params.section as SectionId)
+    ? (params.section as SectionId)
+    : "general");
 
   const setActiveSection = (id: SectionId) => {
-    const next = new URLSearchParams(searchParams);
-    next.set("section", id);
-    next.delete("tab");
-    setSearchParams(next, { replace: true });
+    navigate(`/builder/${projectId}/settings/${id}`, { replace: true });
   };
+
+  // Redirect bare /settings to /settings/general
+  useEffect(() => {
+    if (!params.section) {
+      navigate(`/builder/${projectId}/settings/general`, { replace: true });
+    }
+  }, [params.section, projectId, navigate]);
 
   const handleSave = async () => {
     if (!projectId || !name.trim()) return;
@@ -140,13 +143,29 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
     setTestingConnection(false);
   };
 
-  const handleDelete = async () => {
+  const handleDeleteProject = async () => {
     if (!projectId) return;
     const { error } = await supabase.from("projects").delete().eq("id", projectId);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else {
       toast({ title: "Project deleted" });
       navigate("/dashboard");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    try {
+      // Delete all projects owned by user (cascades to their data)
+      const { error: projErr } = await supabase.from("projects").delete().eq("user_id", user.id);
+      if (projErr) throw projErr;
+      // Delete profile
+      await supabase.from("profiles").delete().eq("id", user.id);
+      toast({ title: "Account data deleted", description: "Signing you out..." });
+      await signOut();
+      navigate("/");
+    } catch (e: any) {
+      toast({ title: "Error deleting account", description: e.message, variant: "destructive" });
     }
   };
 
@@ -170,13 +189,18 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
               <div className="space-y-0.5">
                 {group.items.map(({ id, label, icon: Icon }) => {
                   const isActive = activeSection === id;
+                  const isDanger = id === "delete-account";
                   return (
                     <button
                       key={id}
                       onClick={() => setActiveSection(id)}
                       className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[13px] transition-colors ${
                         isActive
-                          ? "bg-accent text-foreground font-medium"
+                          ? isDanger
+                            ? "bg-destructive/10 text-destructive font-medium"
+                            : "bg-accent text-foreground font-medium"
+                          : isDanger
+                          ? "text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
                           : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                       }`}
                     >
@@ -198,7 +222,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
           <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground mb-2">
             <span>Settings</span>
             <span className="opacity-40">/</span>
-            <span className="text-foreground">{meta.title}</span>
+            <span className="text-foreground">{activeSection}</span>
           </div>
 
           <div className="mb-8 pb-6 border-b border-border/40">
@@ -225,6 +249,37 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
                   <Save className="h-3.5 w-3.5 mr-1.5" />
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>
+              </div>
+
+              {/* Delete Project (moved here) */}
+              <div className="pt-8 mt-4 border-t border-border/40">
+                <div className="rounded-xl p-6 border border-destructive/30 bg-destructive/5">
+                  <h3 className="font-semibold text-destructive text-[15px] mb-1">Delete Project</h3>
+                  <p className="text-[13px] text-muted-foreground mb-5">
+                    Permanently delete this project and all its pages, sections, blocks, and feedback. This action cannot be undone.
+                  </p>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm" className="h-9 rounded-lg">
+                        <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete Project
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete "{project?.name}"?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete all pages, sections, blocks, and feedback. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteProject} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Delete Project
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </div>
           )}
@@ -301,37 +356,40 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
             </div>
           )}
 
-          {activeSection === "danger" && (
+          {activeSection === "profile" && <ProfileSettingsContent />}
+
+          {activeSection === "delete-account" && (
             <div className="rounded-xl p-6 border border-destructive/30 bg-destructive/5">
-              <h3 className="font-semibold text-destructive text-[15px] mb-1">Delete Project</h3>
+              <h3 className="font-semibold text-destructive text-[15px] mb-1">Delete Account</h3>
               <p className="text-[13px] text-muted-foreground mb-5">
-                Permanently delete this project and all its pages, sections, blocks, and feedback. This action cannot be undone.
+                Permanently delete your organization including <strong>all projects</strong>, pages,
+                sections, blocks, and personal data. You will be signed out immediately.
+                This action cannot be undone.
               </p>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm" className="h-9 rounded-lg">
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete Project
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete My Account
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete "{project?.name}"?</AlertDialogTitle>
+                    <AlertDialogTitle>Delete your account?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete all pages, sections, blocks, and feedback. This action cannot be undone.
+                      This will permanently delete every project you own and all associated data.
+                      You will be signed out. This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Delete Project
+                    <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete Account
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
             </div>
           )}
-
-          {activeSection === "profile" && <ProfileSettingsContent />}
         </div>
       </main>
     </div>
