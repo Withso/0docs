@@ -330,7 +330,7 @@ const ProjectSettingsBody = ({
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </main>
+    </>
   );
 };
 
