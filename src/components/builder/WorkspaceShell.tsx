@@ -25,8 +25,7 @@ interface WorkspaceShellProps {
 const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, children }: WorkspaceShellProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signOut } = useAuth();
-  const { theme, toggle } = usePlatformTheme();
+  const { user } = useAuth();
   const [projects, setProjects] = useState<WorkspaceProject[]>([]);
 
   useEffect(() => {
@@ -35,11 +34,6 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
       .then(setProjects)
       .catch(() => setProjects([]));
   }, [user?.id]);
-
-  const userInitial = useMemo(
-    () => user?.user_metadata?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U",
-    [user],
-  );
 
   const hideTopHeader = ["editor", "code", "preview", "configurations", "publish", "settings"].includes(mode);
 
