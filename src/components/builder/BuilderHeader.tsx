@@ -19,9 +19,8 @@ const PlatformThemeToggle = () => {
   );
 };
 
-export type BuilderMode = "home" | "editor" | "design" | "preview" | "analytics" | "settings" | "publish" | "configurations" | "code";
+export type BuilderMode = "home" | "editor" | "preview" | "analytics" | "settings" | "publish" | "configurations" | "code";
 export type EditorTab = "navigation" | "files";
-export type DesignSubMode = "live" | "examples";
 
 interface BuilderHeaderProps {
   projectId: string;
