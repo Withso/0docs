@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Check, ChevronsUpDown, FileText, Home, Inbox, LogOut, Moon, Plus, Search, Sun, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { listWorkspaceProjects, type WorkspaceProject } from "@/app/api/projects";
