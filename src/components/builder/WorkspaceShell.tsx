@@ -1,11 +1,11 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Check, ChevronsUpDown, FileText, Home, Inbox, LogOut, Moon, Plus, Search, Sun, User } from "lucide-react";
+import { Check, ChevronsUpDown, FileText, Home, Inbox, Plus, Search } from "lucide-react";
+import ProfileMenu from "./ProfileMenu";
 import { useAuth } from "@/contexts/AuthContext";
 import { listWorkspaceProjects, type WorkspaceProject } from "@/app/api/projects";
 import type { BuilderMode } from "./BuilderHeader";
 import ProjectRail from "./ProjectRail";
-import { usePlatformTheme } from "@/hooks/use-platform-theme";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,8 +25,7 @@ interface WorkspaceShellProps {
 const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, children }: WorkspaceShellProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signOut } = useAuth();
-  const { theme, toggle } = usePlatformTheme();
+  const { user } = useAuth();
   const [projects, setProjects] = useState<WorkspaceProject[]>([]);
 
   useEffect(() => {
@@ -35,11 +34,6 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
       .then(setProjects)
       .catch(() => setProjects([]));
   }, [user?.id]);
-
-  const userInitial = useMemo(
-    () => user?.user_metadata?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U",
-    [user],
-  );
 
   const hideTopHeader = ["editor", "code", "preview", "configurations", "publish", "settings"].includes(mode);
 
@@ -104,33 +98,13 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
               )}
             </div>
             <div className="flex items-center gap-1.5">
-              <button
-                className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-                aria-label="Toggle theme"
-                onClick={toggle}
-              >
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
               <button className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors" title="Inbox" aria-label="Inbox">
                 <Inbox className="h-4 w-4" />
               </button>
               <button className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors" title="Search" aria-label="Search">
                 <Search className="h-4 w-4" />
               </button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="h-8 w-8 platform-avatar text-[11px]" title="Profile" aria-label="Profile">{userInitial}</button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onClick={() => navigate(`/builder/${project.id}/settings/profile`)}>
-                    <User className="h-4 w-4 mr-2" /> Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={signOut} className="text-destructive">
-                    <LogOut className="h-4 w-4 mr-2" /> Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <ProfileMenu projectId={project.id} />
             </div>
           </header>
         )}

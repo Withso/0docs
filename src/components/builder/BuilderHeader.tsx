@@ -1,23 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Upload, Eye, Code2, FileText, Search, SlidersHorizontal, Sun, Moon } from "lucide-react";
+import { Upload, Eye, Code2, FileText, Search, SlidersHorizontal } from "lucide-react";
 import BranchSelector from "./BranchSelector";
-import { usePlatformTheme } from "@/hooks/use-platform-theme";
-
-/** Sun/moon platform theme toggle (also drives the doc preview via DesignSettingsWrapper). */
-const PlatformThemeToggle = () => {
-  const { theme, toggle } = usePlatformTheme();
-  const Icon = theme === "dark" ? Sun : Moon;
-  return (
-    <button
-      onClick={toggle}
-      title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-      aria-label="Toggle theme"
-      className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted/60 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-    >
-      <Icon className="h-3.5 w-3.5" />
-    </button>
-  );
-};
 
 export type BuilderMode = "home" | "editor" | "preview" | "analytics" | "settings" | "publish" | "configurations" | "code";
 export type EditorTab = "navigation" | "files";
@@ -123,7 +106,6 @@ const BuilderHeader = ({
             </button>
           )}
 
-          <PlatformThemeToggle />
 
           <button
             onClick={() => onModeChange(isPreview ? "editor" : "preview")}
