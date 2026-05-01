@@ -59,14 +59,6 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
                 }
               />
               <Route
-                path="/builder/:projectId/design"
-                element={
-                  <ProtectedRoute>
-                    <Builder />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/builder/:projectId/settings"
                 element={
                   <ProtectedRoute>
