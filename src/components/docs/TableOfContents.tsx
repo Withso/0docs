@@ -95,7 +95,7 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
 
   return (
     <aside
-      className="shrink-0 sticky hidden xl:block py-8 pl-6"
+      className="shrink-0 sticky hidden xl:block py-12"
       style={{
         width: "200px",
         top: `${stickyTop}px`,
@@ -103,12 +103,23 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
       }}
     >
       <div
-        className="text-[10px] font-semibold uppercase tracking-widest mb-3"
-        style={{ color: `hsl(${s.mutedForegroundColor})` }}
+        className="flex items-center gap-2 mb-3 text-[13px] font-medium"
+        style={{
+          color: `hsl(${s.foregroundColor})`,
+          fontFamily: `'${s.bodyFont}', sans-serif`,
+        }}
       >
-        On this page
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6" />
+          <line x1="8" y1="12" x2="21" y2="12" />
+          <line x1="8" y1="18" x2="21" y2="18" />
+          <circle cx="4" cy="6" r="1" fill="currentColor" />
+          <circle cx="4" cy="12" r="1" fill="currentColor" />
+          <circle cx="4" cy="18" r="1" fill="currentColor" />
+        </svg>
+        <span>On this page</span>
       </div>
-      <nav className="flex flex-col gap-1 border-l" style={{ borderColor: `hsl(${s.borderColor} / 0.4)` }}>
+      <nav className="flex flex-col">
         {sections.map((section) => {
           const isActive = activeId === section.id;
           return (
@@ -123,23 +134,25 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
                   window.scrollTo({ top, behavior: "smooth" });
                 }
               }}
-              className="block py-[3px] pl-3 transition-colors relative"
+              className="flex items-center gap-2 py-1.5 transition-colors"
               style={{
                 color: isActive
-                  ? `hsl(${s.sidebarActiveColor})`
+                  ? `hsl(${s.primaryColor})`
                   : `hsl(${s.mutedForegroundColor})`,
-                fontSize: "12px",
+                fontSize: "13px",
                 fontWeight: isActive ? 500 : 400,
                 fontFamily: `'${s.bodyFont}', sans-serif`,
               }}
             >
-              {isActive && (
-                <span
-                  className="absolute left-[-1px] top-[5px] bottom-[5px] w-[2px] rounded-full"
-                  style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
-                />
-              )}
-              <span dangerouslySetInnerHTML={{ __html: section.title }} />
+              <span
+                className="inline-block w-1 h-1 rounded-full shrink-0"
+                style={{
+                  backgroundColor: isActive
+                    ? `hsl(${s.primaryColor})`
+                    : "transparent",
+                }}
+              />
+              <span className="truncate" dangerouslySetInnerHTML={{ __html: section.title }} />
             </a>
           );
         })}
