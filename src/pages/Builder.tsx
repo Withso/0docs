@@ -519,13 +519,8 @@ const Builder = () => {
                 }}
                 projectSlug={project?.slug || ""}
                 customDomain={project?.custom_domain}
-                project={project}
-                pages={pages}
-                sections={publishSnapshot.allSections}
                 blocks={publishSnapshot.allBlocks}
                 settings={resolvedSettings}
-                navGroups={navGroups}
-                tabs={tabs}
               />
             )}
           </div>
