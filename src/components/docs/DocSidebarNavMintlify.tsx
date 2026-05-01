@@ -1,7 +1,32 @@
 import { useState, useEffect, useRef, type ReactNode, useMemo } from "react";
 import { Folder, FolderOpen, FileText, ExternalLink } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
-import type { SidebarPageBase, SidebarSection, SidebarNavGroup } from "./DocSidebarNav";
+
+export interface SidebarPageBase {
+  id: string;
+  title: string;
+  nav_title?: string | null;
+  nav_group_id?: string | null;
+  order_index: number;
+  metadata?: Record<string, any>;
+}
+
+export interface SidebarSection {
+  id: string;
+  page_id: string;
+  title: string;
+  nav_title?: string | null;
+  order_index: number;
+}
+
+export interface SidebarNavGroup {
+  id: string;
+  title: string;
+  type?: string;
+  tab_id?: string | null;
+  order_index: number;
+  metadata?: Record<string, any>;
+}
 
 interface MintlifyProps<TPage extends SidebarPageBase = SidebarPageBase> {
   settings: DesignSettings;

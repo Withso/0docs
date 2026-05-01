@@ -3,7 +3,6 @@ import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { DocVersion } from "@/hooks/use-versions";
 import DesignSettingsWrapper from "./DesignSettingsWrapper";
 import DocBlockRenderer from "./DocBlockRenderer";
-import DocSidebarNav from "./DocSidebarNav";
 import DocSidebarNavMintlify from "./DocSidebarNavMintlify";
 import TableOfContents from "./TableOfContents";
 import SearchDialog from "./SearchDialog";
@@ -255,31 +254,17 @@ const DocContentView = ({
       )}
 
       <div style={{ maxWidth: `${frameMaxWidth}px` }} className="mx-auto flex px-4 sm:px-6">
-        {settings.sidebarStyle === "mintlify" ? (
-          <DocSidebarNavMintlify
-            settings={settings}
-            pages={pages}
-            activePage={activePage}
-            sections={sections}
-            onSelectPage={onSelectPage}
-            stickyTop={sidebarTop}
-            navGroups={navGroups}
-            hideHeaderLabel={hideHeaderLabel}
-            activeTabId={activeTabId}
-          />
-        ) : (
-          <DocSidebarNav
-            settings={settings}
-            pages={pages}
-            activePage={activePage}
-            sections={sections}
-            onSelectPage={onSelectPage}
-            stickyTop={sidebarTop}
-            navGroups={navGroups}
-            hideHeaderLabel={hideHeaderLabel}
-            activeTabId={activeTabId}
-          />
-        )}
+        <DocSidebarNavMintlify
+          settings={settings}
+          pages={pages}
+          activePage={activePage}
+          sections={sections}
+          onSelectPage={onSelectPage}
+          stickyTop={sidebarTop}
+          navGroups={navGroups}
+          hideHeaderLabel={hideHeaderLabel}
+          activeTabId={activeTabId}
+        />
 
         <main className="flex-1 min-w-0 py-10 lg:pl-4" style={{ paddingRight: settings.tocVisible ? undefined : undefined }}>
           {activePage ? (

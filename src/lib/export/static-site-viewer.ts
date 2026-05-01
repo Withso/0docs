@@ -296,58 +296,7 @@ export function generateViewerScript(): string {
       c.response ? h('div', {className:'api-response'}, c.response) : null);
   }
 
-  // ── Sidebar (Classic) ──
-  function Sidebar(props) {
-    var pages = props.pages, activePage = props.activePage, sections = props.sections;
-    var navGroups = props.navGroups, onSelectPage = props.onSelectPage;
-    var activeSectionId = props.activeSectionId;
-    var activeTabId = props.activeTabId;
-
-    var sortedPages = pages.slice()
-      .filter(function(p){return !(p.metadata && p.metadata.hidden)})
-      .sort(function(a,b){return a.order_index-b.order_index});
-    var sortedGroups = navGroups.slice()
-      .filter(function(g){return g.type !== 'dropdown'})
-      .filter(function(g){return !(g.metadata && g.metadata.hidden)})
-      .filter(function(g){return activeTabId == null || !g.tab_id || g.tab_id === activeTabId})
-      .sort(function(a,b){return a.order_index-b.order_index});
-    var ungrouped = sortedPages.filter(function(p){return !p.nav_group_id});
-
-    function renderPage(page) {
-      var isActive = activePage && activePage.id === page.id;
-      var pageSections = isActive ? sections.filter(function(s){return s.page_id===page.id}) : [];
-      var ext = page.metadata && (page.metadata.externalUrl || page.metadata.external_url);
-      if (ext) {
-        return h('a', {key:page.id, href:ext, target:'_blank', rel:'noopener noreferrer', className:'page-link'},
-          h('span', {dangerouslySetInnerHTML:{__html:page.nav_title||page.title}}));
-      }
-      return h('div', {key:page.id},
-        h('button', {className:'page-link'+(isActive?' active':''), onClick:function(){onSelectPage(page);window.scrollTo({top:0,behavior:'smooth'})}},
-          h('span', {dangerouslySetInnerHTML:{__html:page.nav_title||page.title}})),
-        isActive && pageSections.length > 0 ? h('nav', {className:'section-nav'},
-          pageSections.map(function(sec) {
-            var isSA = activeSectionId === sec.id;
-            return h('button', {key:sec.id, className:'section-link'+(isSA?' active':''), onClick:function(){
-              var el = document.getElementById('section-'+sec.id);
-              if(el){var top=el.getBoundingClientRect().top+window.scrollY-72;window.scrollTo({top:top,behavior:'smooth'})}
-            }}, h('span', {dangerouslySetInnerHTML:{__html:sec.nav_title||sec.title}}));
-          })) : null);
-    }
-
-    return h('aside', {className:'sidebar'},
-      h('div', {className:'sidebar-label'}, 'Pages'),
-      h('nav', null,
-        ungrouped.map(renderPage),
-        sortedGroups.map(function(group) {
-          var isText = group.type === 'text';
-          var gPages = sortedPages.filter(function(p){return p.nav_group_id===group.id});
-          if (isText) return h('div', {key:group.id, className:'nav-group-text'}, h('span', {dangerouslySetInnerHTML:{__html:group.title}}));
-          if (gPages.length === 0) return null;
-          return h('div', {key:group.id},
-            h('div', {className:'nav-group-label'}, h('span', {dangerouslySetInnerHTML:{__html:group.title}})),
-            h('div', {style:{display:'flex',flexDirection:'column',gap:'2px'}}, gPages.map(renderPage)));
-        })));
-  }
+  // (Classic Sidebar removed — Mintlify sidebar is the only style.)
 
   // ── Sidebar (Mintlify variant) ──
   function MintlifySidebar(props) {
@@ -777,7 +726,7 @@ export function generateViewerScript(): string {
           onSelectTab:setActiveTabId, pages:pages, onSelectPage:handleSelectPage})),
       // Body
       h('div', {className:'site-body'},
-        h(((data.settings && data.settings.sidebarStyle === 'mintlify') ? MintlifySidebar : Sidebar), {pages:pages,activePage:activePage,sections:pageSections,navGroups:navGroups,
+        h(MintlifySidebar, {pages:pages,activePage:activePage,sections:pageSections,navGroups:navGroups,
           onSelectPage:handleSelectPage, activeSectionId:activeSectionId, activeTabId:activeTabId}),
         h('main', {className:'main-content'},
           activePage
