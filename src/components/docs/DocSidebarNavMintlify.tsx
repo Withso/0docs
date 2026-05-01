@@ -311,25 +311,22 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
           const open = isGroupOpen(group);
 
           return (
-            <div key={group.id} className="mt-5">
+            <div key={group.id} className="mt-7">
               <button
                 onClick={() => toggleGroup(group)}
-                className="w-full flex items-center justify-between gap-2 px-3 mb-1 text-left"
+                className="w-full flex items-center justify-between gap-2 pl-4 pr-3 mb-2 text-left select-none"
                 style={{
                   fontSize: `${s.sidebarLabelFontSize || 12}px`,
                   color: `hsl(${s.sidebarLabelColor || s.foregroundColor})`,
                   fontFamily: `'${s.bodyFont}', sans-serif`,
                   fontWeight: 600,
+                  letterSpacing: "0.01em",
                 }}
               >
                 <span className="truncate flex items-center gap-1.5">
                   <span dangerouslySetInnerHTML={{ __html: group.title }} />
                   {renderTag(tag)}
                 </span>
-                <ChevronRight
-                  className="h-3 w-3 shrink-0 opacity-50 transition-transform"
-                  style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)" }}
-                />
               </button>
               {open && (
                 <div
