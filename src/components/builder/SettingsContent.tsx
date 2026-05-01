@@ -175,11 +175,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
     <div className="flex-1 flex min-h-0 animate-fade-in">
       {/* Sidebar nav (Mintlify-style) */}
       <aside className="w-[240px] shrink-0 border-r border-border/40 bg-muted/20 px-3 py-6 overflow-y-auto">
-        <div className="px-2 mb-4">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            Settings
-          </h2>
-        </div>
+
         <nav className="space-y-5">
           {NAV_GROUPS.map((group) => (
             <div key={group.label}>
@@ -218,13 +214,6 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
       {/* Main content */}
       <main className="flex-1 min-w-0 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-8 py-10">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground mb-2">
-            <span>Settings</span>
-            <span className="opacity-40">/</span>
-            <span className="text-foreground">{activeSection}</span>
-          </div>
-
           <div className="mb-8 pb-6 border-b border-border/40">
             <h1 className="text-[22px] font-semibold text-foreground tracking-tight">{meta.title}</h1>
             <p className="text-[13px] text-muted-foreground mt-1">{meta.subtitle}</p>
