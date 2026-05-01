@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Check, ChevronsUpDown, FileText, Home, Inbox, Plus, Search } from "lucide-react";
 import ProfileMenu from "./ProfileMenu";
@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { listWorkspaceProjects, type WorkspaceProject } from "@/app/api/projects";
 import type { BuilderMode } from "./BuilderHeader";
 import ProjectRail from "./ProjectRail";
-import { usePlatformTheme } from "@/hooks/use-platform-theme";
 import {
   DropdownMenu,
   DropdownMenuContent,
