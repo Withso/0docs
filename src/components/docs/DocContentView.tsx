@@ -245,7 +245,7 @@ const DocContentView = ({
 
       <div
         style={{ maxWidth: `${frameMaxWidth}px` }}
-        className="mx-auto flex px-6 lg:px-8 gap-8"
+        className="mx-auto flex px-6 lg:px-8 gap-12 xl:gap-16"
       >
         <DocSidebarNavMintlify
           settings={settings}
@@ -264,10 +264,11 @@ const DocContentView = ({
             <article style={{ maxWidth: `${settings.contentMaxWidth}px` }}>
               {eyebrow && (
                 <div
-                  className="mb-3 text-[14px] font-medium"
+                  className="mb-2 text-[13px]"
                   style={{
                     color: `hsl(${settings.primaryColor})`,
                     fontFamily: `'${settings.bodyFont}', sans-serif`,
+                    fontWeight: 500,
                   }}
                 >
                   {eyebrow}
@@ -299,7 +300,7 @@ const DocContentView = ({
                     style={{ marginBottom: `${settings.sectionSpacing}px` }}
                   >
                     <h2
-                      className="flex items-center gap-3 mb-5"
+                      className="mb-5"
                       style={{
                         fontFamily: `'${settings.headingFont}', sans-serif`,
                         fontWeight: settings.headingWeight,
@@ -309,16 +310,6 @@ const DocContentView = ({
                       }}
                     >
                       <span dangerouslySetInnerHTML={{ __html: section.title }} />
-                      {settings.sectionBorderVisible && (
-                        <span
-                          className="flex-1"
-                          style={{
-                            height: `${settings.sectionBorderThickness}px`,
-                            backgroundColor: `hsl(${settings.sectionBorderColor})`,
-                            opacity: 0.5,
-                          }}
-                        />
-                      )}
                     </h2>
 
                     <div>
