@@ -7,10 +7,10 @@ import { BrowserRouter, Navigate, Routes, Route, useParams } from "react-router-
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import Builder from "./pages/Builder";
 
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Builder = lazy(() => import("./pages/Builder"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -35,7 +35,7 @@ const LegacyDesignRouteRedirect = () => {
 const App = forwardRef<HTMLDivElement>((_, ref) => (
   <div ref={ref} className="contents">
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
