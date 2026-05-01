@@ -9,7 +9,7 @@ import { useDebouncedCallback } from "@/hooks/use-debounce";
 import SectionEditor from "@/components/builder/SectionEditor";
 import DesignSettingsWrapper, { useResolvedDesignSettings } from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
-import DesignPanel from "@/components/builder/DesignPanel";
+
 import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SettingsContent from "@/components/builder/SettingsContent";
