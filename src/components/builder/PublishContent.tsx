@@ -158,109 +158,43 @@ const PublishContent = ({
               </div>
               <div>
                 <h1 className="text-[20px] font-semibold text-foreground tracking-tight">
-                  {isFirstPublish ? "Publish to GitHub" : "Publish Changes"}
+                  {isFirstPublish ? "Publish your docs" : "Publish Changes"}
                 </h1>
                 <div className="flex items-center gap-2.5 mt-1">
                   <Badge variant="secondary" className="rounded-lg px-2 py-0.5 text-[11px] font-mono font-semibold">
                     v{nextVersion}
                   </Badge>
-                  {githubConfigured && (
-                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Github className="h-3 w-3" />
-                      {project.github_repo}
-                    </span>
-                  )}
+                  <span className="text-[11px] text-muted-foreground">
+                    /{projectSlug}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
           <Button
-            onClick={githubConfigured ? handlePublishToGithub : () => onPublish(notes || undefined)}
-            disabled={pushingToGithub || publishing || (!hasChanges && !isFirstPublish && !githubConfigured)}
+            onClick={() => onPublish(notes || undefined)}
+            disabled={publishing || (!hasChanges && !isFirstPublish)}
             className="h-10 rounded-xl px-6 text-[13px] font-medium shrink-0"
           >
-            {pushingToGithub || publishing ? (
+            {publishing ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Publishing…
               </>
             ) : (
               <>
-                {githubConfigured ? <Github className="h-4 w-4 mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                <Upload className="h-4 w-4 mr-2" />
                 {isFirstPublish ? "Publish" : `Publish v${nextVersion}`}
               </>
             )}
           </Button>
         </div>
 
-        {/* Success banner */}
-        {lastCommit && (
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5 p-4 mb-6 flex items-center gap-3">
-            <Check className="h-5 w-5 text-emerald-600 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-medium text-foreground">Published successfully</p>
-              <p className="text-[11px] text-muted-foreground font-mono truncate">{lastCommit.sha.slice(0, 7)}</p>
-            </div>
-            <a
-              href={lastCommit.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[12px] text-primary hover:underline flex items-center gap-1 shrink-0"
-            >
-              View commit <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
-        )}
-
-        {/* GitHub not configured warning */}
-        {!githubConfigured && (
-          <div className="rounded-xl border border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5 p-4 mb-6">
-            <p className="text-[13px] font-medium text-foreground flex items-center gap-2">
-              <Github className="h-4 w-4" />
-              GitHub not configured
-            </p>
-            <p className="text-[12px] text-muted-foreground mt-1">
-              Go to <strong>Settings</strong> to connect a GitHub repository. Your documentation will be exported as MDX files and pushed as commits.
-            </p>
-          </div>
-        )}
-
         {/* Two-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* Changes — left/main */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Git controls */}
-            {githubConfigured && (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                    Branch
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <GitBranch className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <Input
-                      value={targetBranch}
-                      onChange={(e) => setTargetBranch(e.target.value)}
-                      className="h-9 rounded-lg font-mono text-[12px] flex-1"
-                      placeholder="main"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                    Commit Message
-                  </label>
-                  <textarea
-                    value={commitMessage}
-                    onChange={(e) => setCommitMessage(e.target.value)}
-                    placeholder={getDefaultCommitMessage()}
-                    rows={2}
-                    className="w-full rounded-xl border bg-background px-4 py-3 text-[12px] font-mono resize-none outline-none focus:ring-2 focus:ring-ring/20 transition-shadow"
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Site Features */}
             <div className="rounded-xl border overflow-hidden">
