@@ -75,6 +75,7 @@ const Builder = () => {
   };
 
   const [mode, setMode] = useState<BuilderMode>(getInitialMode);
+  const [previewReloadKey, setPreviewReloadKey] = useState(0);
   
   const [editorTab, setEditorTab] = useState<"navigation" | "files">("navigation");
   const [settingsTarget, setSettingsTarget] = useState<SettingsTarget | null>(null);
