@@ -1,5 +1,5 @@
 /**
- * Shared design controls used across DesignPanel (live mode) and DesignExamplesView (examples mode).
+ * Shared design controls used in the Configurations panel.
  * This is the single source of truth for all design setting UI controls.
  */
 import { useState, useEffect } from "react";
