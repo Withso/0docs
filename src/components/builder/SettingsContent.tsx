@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import ProfileSettingsContent from "./ProfileSettingsContent";
+import { Briefcase, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,13 +111,90 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
     }
   };
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get("tab") === "profile" ? "profile" : "project") as "project" | "profile";
+  const setActiveTab = (tab: "project" | "profile") => {
+    const next = new URLSearchParams(searchParams);
+    if (tab === "profile") next.set("tab", "profile");
+    else next.delete("tab");
+    setSearchParams(next, { replace: true });
+  };
+
   return (
     <main className="max-w-3xl mx-auto px-6 py-10 animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Project Settings</h1>
-        <p className="text-[14px] text-muted-foreground mt-1.5">Manage your documentation project</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Workspace Settings</h1>
+        <p className="text-[14px] text-muted-foreground mt-1.5">Manage your project and account</p>
       </div>
 
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-6 border-b border-border/40">
+        {([
+          { id: "project" as const, label: "Project", icon: Briefcase },
+          { id: "profile" as const, label: "Profile", icon: UserCircle },
+        ]).map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setActiveTab(id)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === id
+                ? "text-foreground border-foreground"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" /> {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "profile" ? (
+        <ProfileSettingsContent />
+      ) : (
+        <ProjectSettingsBody
+          name={name} setName={setName}
+          description={description} setDescription={setDescription}
+          githubRepo={githubRepo} setGithubRepo={setGithubRepo}
+          githubBranch={githubBranch} setGithubBranch={setGithubBranch}
+          githubToken={githubToken} setGithubToken={setGithubToken}
+          showToken={showToken} setShowToken={setShowToken}
+          connectionStatus={connectionStatus} setConnectionStatus={setConnectionStatus}
+          testingConnection={testingConnection}
+          handleTestConnection={handleTestConnection}
+          handleSave={handleSave}
+          handleDelete={handleDelete}
+          saving={saving}
+          project={project}
+        />
+      )}
+    </main>
+  );
+};
+
+interface ProjectBodyProps {
+  name: string; setName: (v: string) => void;
+  description: string; setDescription: (v: string) => void;
+  githubRepo: string; setGithubRepo: (v: string) => void;
+  githubBranch: string; setGithubBranch: (v: string) => void;
+  githubToken: string; setGithubToken: (v: string) => void;
+  showToken: boolean; setShowToken: (v: boolean) => void;
+  connectionStatus: "idle" | "success" | "error"; setConnectionStatus: (v: "idle" | "success" | "error") => void;
+  testingConnection: boolean;
+  handleTestConnection: () => void;
+  handleSave: () => void;
+  handleDelete: () => void;
+  saving: boolean;
+  project: any;
+}
+
+const ProjectSettingsBody = ({
+  name, setName, description, setDescription,
+  githubRepo, setGithubRepo, githubBranch, setGithubBranch,
+  githubToken, setGithubToken, showToken, setShowToken,
+  connectionStatus, setConnectionStatus, testingConnection,
+  handleTestConnection, handleSave, handleDelete, saving, project,
+}: ProjectBodyProps) => {
+  return (
+    <>
       {/* General settings */}
       <div className="platform-card mb-6 p-6">
         <h3 className="font-semibold text-foreground text-[15px] mb-5">General</h3>
@@ -251,7 +330,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </main>
+    </>
   );
 };
 

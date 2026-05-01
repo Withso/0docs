@@ -107,7 +107,7 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
                   <button className="h-8 w-8 platform-avatar text-[11px]" title="Profile" aria-label="Profile">{userInitial}</button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
+                  <DropdownMenuItem onClick={() => navigate(`/builder/${project.id}/settings?tab=profile`)}>
                     <User className="h-4 w-4 mr-2" /> Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={signOut} className="text-destructive">
