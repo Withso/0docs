@@ -106,7 +106,6 @@ const BuilderHeader = ({
             </button>
           )}
 
-          <PlatformThemeToggle />
 
           <button
             onClick={() => onModeChange(isPreview ? "editor" : "preview")}
