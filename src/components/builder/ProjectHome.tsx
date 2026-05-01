@@ -16,7 +16,7 @@ interface ProjectHomeProps {
 const features = [
   { label: "Editor", description: "Write pages, sections, and blocks", icon: FileText, mode: "editor" as BuilderMode },
   { label: "Navigation", description: "Groups, dropdowns, versions, languages", icon: Layers3, mode: "editor" as BuilderMode },
-  { label: "Design", description: "Typography, sidebar, spacing, theme", icon: Palette, mode: "design" as BuilderMode },
+  
   { label: "Configurations", description: "OpenAPI, files, and project config", icon: Settings, mode: "configurations" as BuilderMode },
   { label: "Code", description: "Inspect MDX-style page output", icon: Code2, mode: "code" as BuilderMode },
   { label: "Analytics", description: "Views, feedback, and engagement", icon: BarChart3, mode: "analytics" as BuilderMode },
