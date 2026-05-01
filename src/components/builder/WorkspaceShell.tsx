@@ -24,6 +24,7 @@ interface WorkspaceShellProps {
 
 const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, children }: WorkspaceShellProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signOut } = useAuth();
   const { theme, toggle } = usePlatformTheme();
   const [projects, setProjects] = useState<WorkspaceProject[]>([]);
