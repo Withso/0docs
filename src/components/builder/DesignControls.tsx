@@ -14,12 +14,14 @@ import { cn } from "@/lib/utils";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
 
 // ─── Helpers ─────────────────────────────────────────
-export function hslToHex(hsl: string): string {
+export function hslToHex(hsl: string | null | undefined): string {
+  if (typeof hsl !== "string" || hsl.trim().length === 0) return "#000000";
   const parts = hsl.trim().split(/\s+/);
   if (parts.length < 3) return "#000000";
   const h = parseFloat(parts[0]);
   const s = parseFloat(parts[1]) / 100;
   const l = parseFloat(parts[2]) / 100;
+  if ([h, s, l].some((value) => Number.isNaN(value))) return "#000000";
   const a = s * Math.min(l, 1 - l);
   const f = (n: number) => {
     const k = (n + h / 30) % 12;
@@ -29,10 +31,16 @@ export function hslToHex(hsl: string): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-export function hexToHsl(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
+export function hexToHsl(hex: string | null | undefined): string {
+  if (typeof hex !== "string") return "0 0% 0%";
+  const raw = hex.trim().replace(/^#/, "");
+  const normalized = /^[0-9a-fA-F]{3}$/.test(raw)
+    ? raw.split("").map((char) => char + char).join("")
+    : raw;
+  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return "0 0% 0%";
+  const r = parseInt(normalized.slice(0, 2), 16) / 255;
+  const g = parseInt(normalized.slice(2, 4), 16) / 255;
+  const b = parseInt(normalized.slice(4, 6), 16) / 255;
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   const l = (max + min) / 2;

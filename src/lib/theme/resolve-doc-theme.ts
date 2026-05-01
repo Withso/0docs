@@ -101,8 +101,26 @@ export const DEFAULT_DARK: PerModeColors = {
 
 /* ─── Hex ↔ HSL helpers (HSL in our settings is "h s% l%") ────────── */
 
-export function hexToHslString(hex: string): string {
-  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex.trim());
+function isFilledString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function normalizeHex(value: unknown): string | null {
+  if (!isFilledString(value)) return null;
+  const hex = value.trim().replace(/^#/, "");
+  if (/^[a-f\d]{3}$/i.test(hex)) {
+    return `#${hex.split("").map((char) => char + char).join("")}`;
+  }
+  if (/^[a-f\d]{6}$/i.test(hex)) {
+    return `#${hex}`;
+  }
+  return null;
+}
+
+export function hexToHslString(hex: string | null | undefined): string {
+  const normalized = normalizeHex(hex);
+  if (!normalized) return "0 0% 0%";
+  const m = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(normalized);
   if (!m) return "0 0% 0%";
   const r = parseInt(m[1], 16) / 255;
   const g = parseInt(m[2], 16) / 255;
@@ -123,12 +141,14 @@ export function hexToHslString(hex: string): string {
   return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
-export function hslStringToHex(hsl: string): string {
+export function hslStringToHex(hsl: string | null | undefined): string {
+  if (!isFilledString(hsl)) return "#000000";
   const parts = hsl.trim().split(/\s+/);
   if (parts.length < 3) return "#000000";
   const h = parseFloat(parts[0]);
   const s = parseFloat(parts[1]) / 100;
   const l = parseFloat(parts[2]) / 100;
+  if ([h, s, l].some((value) => Number.isNaN(value))) return "#000000";
   const a = s * Math.min(l, 1 - l);
   const f = (n: number) => {
     const k = (n + h / 30) % 12;
