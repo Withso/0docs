@@ -385,9 +385,55 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
               </AlertDialog>
             </div>
           )}
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
+  );
+};
+
+// Header rendered ONLY in the main content column (right of the settings sidebar).
+// Mirrors the workspace top header but scoped here so the settings sidebar reaches full height.
+const SettingsTopHeader = ({ activeSection }: { activeSection: SectionId }) => {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { theme, toggle } = usePlatformTheme();
+  const initial = user?.user_metadata?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U";
+  const label = activeSection.replace(/-/g, " ");
+  return (
+    <header className="h-[48px] shrink-0 border-b border-border/40 bg-background/80 backdrop-blur-xl px-3 flex items-center justify-between">
+      <div className="flex items-center gap-1.5 text-[13px] min-w-0">
+        <span className="text-muted-foreground">Settings</span>
+        <span className="text-muted-foreground/50">/</span>
+        <span className="text-foreground font-medium capitalize truncate">{label}</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <button
+          className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+          title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+          aria-label="Toggle theme"
+          onClick={toggle}
+        >
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+        <button className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors" title="Inbox" aria-label="Inbox">
+          <Inbox className="h-4 w-4" />
+        </button>
+        <button className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors" title="Search" aria-label="Search">
+          <Search className="h-4 w-4" />
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="h-8 w-8 platform-avatar text-[11px]" title="Profile" aria-label="Profile">{initial}</button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem onClick={signOut} className="text-destructive">
+              <LogOut className="h-4 w-4 mr-2" /> Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
   );
 };
 
