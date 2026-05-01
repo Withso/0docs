@@ -9,7 +9,7 @@ import { useDebouncedCallback } from "@/hooks/use-debounce";
 import SectionEditor from "@/components/builder/SectionEditor";
 import DesignSettingsWrapper, { useResolvedDesignSettings } from "@/components/docs/DesignSettingsWrapper";
 import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
-import DesignPanel from "@/components/builder/DesignPanel";
+
 import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SettingsContent from "@/components/builder/SettingsContent";
@@ -32,7 +32,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Page, Section, Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { ParsedOpenAPI } from "@/lib/openapi-parser";
-import type { BuilderMode, DesignSubMode } from "@/components/builder/BuilderHeader";
+import type { BuilderMode } from "@/components/builder/BuilderHeader";
 import {
   DndContext,
   closestCenter,
@@ -65,7 +65,7 @@ const Builder = () => {
   const getInitialMode = (): BuilderMode => {
     if (location.pathname.endsWith("/settings")) return "settings";
     if (location.pathname.endsWith("/editor")) return "editor";
-    if (location.pathname.endsWith("/design")) return "design";
+    
     if (location.pathname.endsWith("/configurations")) return "configurations";
     if (location.pathname.endsWith("/publish")) return "publish";
     if (location.pathname.endsWith("/analytics")) return "analytics";
@@ -75,7 +75,7 @@ const Builder = () => {
   };
 
   const [mode, setMode] = useState<BuilderMode>(getInitialMode);
-  const [designSubMode, setDesignSubMode] = useState<DesignSubMode>("live");
+  
   const [editorTab, setEditorTab] = useState<"navigation" | "files">("navigation");
   const [settingsTarget, setSettingsTarget] = useState<SettingsTarget | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -100,7 +100,7 @@ const Builder = () => {
     if (newMode === "home") navigate(base, { replace: true });
     else if (newMode === "settings") navigate(`${base}/settings`, { replace: true });
     else if (newMode === "editor") navigate(`${base}/editor`, { replace: true });
-    else if (newMode === "design") navigate(`${base}/design`, { replace: true });
+    
     else if (newMode === "configurations") navigate(`${base}/configurations`, { replace: true });
     else if (newMode === "publish") navigate(`${base}/publish`, { replace: true });
     else if (newMode === "analytics") navigate(`${base}/analytics`, { replace: true });
@@ -438,19 +438,6 @@ const Builder = () => {
               </DesignSettingsWrapper>
             )}
 
-            {/* Mode: Design */}
-            {mode === "design" && (
-              <DesignPanel
-                projectId={projectId!}
-                projectName={project?.name || ""}
-                settings={resolvedSettings}
-                saving={saving}
-                saveSettings={saveSettings}
-                resetSettings={resetSettings}
-                designSubMode={designSubMode}
-                onDesignSubModeChange={setDesignSubMode}
-              />
-            )}
 
             {/* Mode: Preview */}
             {mode === "preview" && (
