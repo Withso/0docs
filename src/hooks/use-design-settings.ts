@@ -259,62 +259,69 @@ export function useDesignSettings(projectId: string | undefined) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!projectId) return;
+    if (!projectId) {
+      setLoading(false);
+      return;
+    }
 
     const load = async () => {
-      const { data } = await supabase
-        .from("project_design_settings")
-        .select("*")
-        .eq("project_id", projectId)
-        .maybeSingle();
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("project_design_settings")
+          .select("*")
+          .eq("project_id", projectId)
+          .maybeSingle();
 
-      if (data?.settings) {
-        const loaded = data.settings as any;
-        const merged: DesignSettings = {
-          ...defaultDesignSettings,
-          ...loaded,
-          blockStyles: { ...emptyBlockStyles, ...(loaded.blockStyles || {}) },
-        };
-        // Legacy migration: if no per-mode overrides exist but the project
-        // has customised flat colours, classify them by the lightness of the
-        // background and seed the matching mode so existing customisations
-        // remain visible. The other mode falls back to defaults.
-        if (!loaded.colorsDark && !loaded.colorsLight && loaded.borderColor) {
-          const pickHsl = (value: unknown, fallback: string) =>
-            typeof value === "string" && value.trim().length > 0 ? value : fallback;
+        if (error) throw error;
 
-          const seed = {
-            background: hslStringToHex(pickHsl(loaded.backgroundColor, merged.backgroundColor)),
-            foreground: hslStringToHex(pickHsl(loaded.foregroundColor, merged.foregroundColor)),
-            primary: hslStringToHex(pickHsl(loaded.primaryColor, merged.primaryColor)),
-            primaryForeground: hslStringToHex(pickHsl(loaded.primaryForegroundColor, merged.primaryForegroundColor)),
-            muted: hslStringToHex(pickHsl(loaded.mutedColor, merged.mutedColor)),
-            mutedForeground: hslStringToHex(pickHsl(loaded.mutedForegroundColor, merged.mutedForegroundColor)),
-            accent: hslStringToHex(pickHsl(loaded.accentColor, merged.accentColor)),
-            border: hslStringToHex(pickHsl(loaded.borderColor, merged.borderColor)),
-            link: hslStringToHex(pickHsl(loaded.linkColor, merged.linkColor)),
-            sectionLine: hslStringToHex(pickHsl(loaded.sectionLineColor, merged.sectionLineColor)),
-            codeBg: hslStringToHex(pickHsl(loaded.codeBlockBg, merged.codeBlockBg)),
-            noteBg: hslStringToHex(pickHsl(loaded.noteBg, merged.noteBg)),
-            noteBorder: hslStringToHex(pickHsl(loaded.noteBorderColor, merged.noteBorderColor)),
-            sidebarBg: hslStringToHex(pickHsl(loaded.sidebarBg, merged.sidebarBg)),
-            sidebarText: hslStringToHex(pickHsl(loaded.sidebarTextColor, merged.sidebarTextColor)),
-            sidebarActive: hslStringToHex(pickHsl(loaded.sidebarActiveColor, merged.sidebarActiveColor)),
-            sidebarIndicator: hslStringToHex(pickHsl(loaded.sidebarIndicatorColor, merged.sidebarIndicatorColor)),
-            sidebarLabel: hslStringToHex(pickHsl(loaded.sidebarLabelColor, merged.sidebarLabelColor)),
-            sidebarSection: hslStringToHex(pickHsl(loaded.sidebarSectionColor, merged.sidebarSectionColor)),
+        if (data?.settings) {
+          const loaded = data.settings as any;
+          const merged: DesignSettings = {
+            ...defaultDesignSettings,
+            ...loaded,
+            blockStyles: { ...emptyBlockStyles, ...(loaded.blockStyles || {}) },
           };
-          // Lightness from "h s% l%"
-          const lightness = parseFloat((loaded.backgroundColor || "0 0% 100%").split(/\s+/)[2] || "100");
-          if (lightness >= 50) merged.colorsLight = seed;
-          else merged.colorsDark = seed;
-        }
+          if (!loaded.colorsDark && !loaded.colorsLight && loaded.borderColor) {
+            const pickHsl = (value: unknown, fallback: string) =>
+              typeof value === "string" && value.trim().length > 0 ? value : fallback;
 
-        setSettings(merged);
-      } else {
+            const seed = {
+              background: hslStringToHex(pickHsl(loaded.backgroundColor, merged.backgroundColor)),
+              foreground: hslStringToHex(pickHsl(loaded.foregroundColor, merged.foregroundColor)),
+              primary: hslStringToHex(pickHsl(loaded.primaryColor, merged.primaryColor)),
+              primaryForeground: hslStringToHex(pickHsl(loaded.primaryForegroundColor, merged.primaryForegroundColor)),
+              muted: hslStringToHex(pickHsl(loaded.mutedColor, merged.mutedColor)),
+              mutedForeground: hslStringToHex(pickHsl(loaded.mutedForegroundColor, merged.mutedForegroundColor)),
+              accent: hslStringToHex(pickHsl(loaded.accentColor, merged.accentColor)),
+              border: hslStringToHex(pickHsl(loaded.borderColor, merged.borderColor)),
+              link: hslStringToHex(pickHsl(loaded.linkColor, merged.linkColor)),
+              sectionLine: hslStringToHex(pickHsl(loaded.sectionLineColor, merged.sectionLineColor)),
+              codeBg: hslStringToHex(pickHsl(loaded.codeBlockBg, merged.codeBlockBg)),
+              noteBg: hslStringToHex(pickHsl(loaded.noteBg, merged.noteBg)),
+              noteBorder: hslStringToHex(pickHsl(loaded.noteBorderColor, merged.noteBorderColor)),
+              sidebarBg: hslStringToHex(pickHsl(loaded.sidebarBg, merged.sidebarBg)),
+              sidebarText: hslStringToHex(pickHsl(loaded.sidebarTextColor, merged.sidebarTextColor)),
+              sidebarActive: hslStringToHex(pickHsl(loaded.sidebarActiveColor, merged.sidebarActiveColor)),
+              sidebarIndicator: hslStringToHex(pickHsl(loaded.sidebarIndicatorColor, merged.sidebarIndicatorColor)),
+              sidebarLabel: hslStringToHex(pickHsl(loaded.sidebarLabelColor, merged.sidebarLabelColor)),
+              sidebarSection: hslStringToHex(pickHsl(loaded.sidebarSectionColor, merged.sidebarSectionColor)),
+            };
+            const lightness = parseFloat((loaded.backgroundColor || "0 0% 100%").split(/\s+/)[2] || "100");
+            if (lightness >= 50) merged.colorsLight = seed;
+            else merged.colorsDark = seed;
+          }
+
+          setSettings(merged);
+        } else {
+          setSettings(defaultDesignSettings);
+        }
+      } catch (error) {
+        console.error("Failed to load design settings", error);
         setSettings(defaultDesignSettings);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     load();
