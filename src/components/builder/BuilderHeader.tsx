@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Upload, Eye, Code2, FileText, Search, SlidersHorizontal } from "lucide-react";
+import { Upload, Eye, Play, Code2, FileText, Search, SlidersHorizontal } from "lucide-react";
 
 export type BuilderMode = "home" | "editor" | "preview" | "analytics" | "settings" | "publish" | "configurations" | "code";
 export type EditorTab = "navigation" | "files";
@@ -99,7 +99,7 @@ const BuilderHeader = ({
                 : "bg-muted/60 border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
-            <Eye className="h-3.5 w-3.5" />
+            <Play className="h-3.5 w-3.5 fill-current" />
           </button>
 
           {onPublishClick && (
