@@ -964,7 +964,7 @@ const CodeTabsBlock = ({ content, settings: s, bs }: { content: any; settings: D
       className="my-5"
       style={{
         border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
-        borderRadius: `${bs.borderRadius ?? s.codeBlockBorderRadius || 10}px`,
+        borderRadius: `${bs.borderRadius ?? (s.codeBlockBorderRadius || 10)}px`,
         overflow: "hidden",
         backgroundColor: `hsl(${bs.backgroundColor || s.codeBlockBg})`,
       }}
