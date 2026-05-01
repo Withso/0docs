@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode, useMemo } from "react";
-import { ChevronRight, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
 export interface SidebarPageBase {
