@@ -39,7 +39,7 @@ type CalloutVariant = "note" | "info" | "tip" | "warning" | "check" | "danger";
 
 const CALLOUT_PALETTE: Record<
   CalloutVariant,
-  { bg: string; border: string; icon: string; Icon: React.ComponentType<{ className?: string }> }
+  { bg: string; border: string; icon: string; Icon: React.ComponentType<any> }
 > = {
   note: {
     bg: "214 100% 97%",
