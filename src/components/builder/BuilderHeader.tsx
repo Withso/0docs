@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Upload, Eye, Code2, FileText, Search, Palette, SlidersHorizontal, Sun, Moon } from "lucide-react";
+import { Upload, Eye, Code2, FileText, Search, SlidersHorizontal, Sun, Moon } from "lucide-react";
 import BranchSelector from "./BranchSelector";
 import { usePlatformTheme } from "@/hooks/use-platform-theme";
 
