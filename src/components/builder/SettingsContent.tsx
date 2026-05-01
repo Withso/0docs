@@ -13,7 +13,7 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Save, Trash2, GitBranch, Github, Loader2, CheckCircle2, XCircle, Eye, EyeOff,
+  Save, Trash2,
   Settings2, AlertTriangle, UserCircle, Inbox, Search,
 } from "lucide-react";
 import ProfileMenu from "./ProfileMenu";
@@ -24,14 +24,13 @@ interface SettingsContentProps {
   onSaved?: () => void;
 }
 
-type SectionId = "general" | "github" | "profile" | "delete-account";
+type SectionId = "general" | "profile" | "delete-account";
 
 const NAV_GROUPS: { label: string; items: { id: SectionId; label: string; icon: any }[] }[] = [
   {
     label: "Project Settings",
     items: [
       { id: "general", label: "General", icon: Settings2 },
-      { id: "github", label: "GitHub", icon: Github },
     ],
   },
   {
@@ -45,12 +44,11 @@ const NAV_GROUPS: { label: string; items: { id: SectionId; label: string; icon: 
 
 const SECTION_TITLES: Record<SectionId, { title: string; subtitle: string }> = {
   general: { title: "General", subtitle: "Basic information about your project" },
-  github: { title: "GitHub Integration", subtitle: "Connect a repository to publish documentation" },
   profile: { title: "My Profile", subtitle: "Manage your personal account and preferences" },
   "delete-account": { title: "Delete Account", subtitle: "Permanently delete your organization and account" },
 };
 
-const VALID_SECTIONS: SectionId[] = ["general", "github", "profile", "delete-account"];
+const VALID_SECTIONS: SectionId[] = ["general", "profile", "delete-account"];
 
 const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) => {
   const navigate = useNavigate();
@@ -62,20 +60,10 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
   const [description, setDescription] = useState(project?.description || "");
   const [saving, setSaving] = useState(false);
 
-  const [githubRepo, setGithubRepo] = useState(project?.github_repo || "");
-  const [githubBranch, setGithubBranch] = useState(project?.github_branch || "main");
-  const [githubToken, setGithubToken] = useState(project?.github_token_encrypted || "");
-  const [showToken, setShowToken] = useState(false);
-  const [testingConnection, setTestingConnection] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle");
-
   useEffect(() => {
     if (project) {
       setName(project.name);
       setDescription(project.description || "");
-      setGithubRepo(project.github_repo || "");
-      setGithubBranch(project.github_branch || "main");
-      setGithubToken(project.github_token_encrypted || "");
     }
   }, [project]);
 
@@ -87,9 +75,9 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
     navigate(`/builder/${projectId}/settings/${id}`, { replace: true });
   };
 
-  // Redirect bare /settings to /settings/general
+  // Redirect bare /settings to /settings/general, and legacy /settings/github too.
   useEffect(() => {
-    if (!params.section) {
+    if (!params.section || params.section === "github") {
       navigate(`/builder/${projectId}/settings/general`, { replace: true });
     }
   }, [params.section, projectId, navigate]);
@@ -102,9 +90,6 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
       .update({
         name: name.trim(),
         description,
-        github_repo: githubRepo.trim() || null,
-        github_branch: githubBranch.trim() || "main",
-        github_token_encrypted: githubToken.trim() || null,
         updated_at: new Date().toISOString(),
       } as any)
       .eq("id", projectId);
@@ -114,34 +99,6 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
       onSaved?.();
     }
     setSaving(false);
-  };
-
-  const handleTestConnection = async () => {
-    if (!githubRepo || !githubToken) {
-      toast({ title: "Missing fields", description: "Enter repo and token first.", variant: "destructive" });
-      return;
-    }
-    setTestingConnection(true);
-    setConnectionStatus("idle");
-    try {
-      const [owner, repo] = githubRepo.split("/");
-      if (!owner || !repo) throw new Error("Invalid format");
-      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-        headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github+json" },
-      });
-      if (res.ok) {
-        setConnectionStatus("success");
-        toast({ title: "Connection successful", description: `Connected to ${githubRepo}` });
-      } else {
-        setConnectionStatus("error");
-        const body = await res.json();
-        toast({ title: "Connection failed", description: body.message || `HTTP ${res.status}`, variant: "destructive" });
-      }
-    } catch (e: any) {
-      setConnectionStatus("error");
-      toast({ title: "Connection failed", description: e.message, variant: "destructive" });
-    }
-    setTestingConnection(false);
   };
 
   const handleDeleteProject = async () => {
@@ -157,10 +114,8 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
   const handleDeleteAccount = async () => {
     if (!user) return;
     try {
-      // Delete all projects owned by user (cascades to their data)
       const { error: projErr } = await supabase.from("projects").delete().eq("user_id", user.id);
       if (projErr) throw projErr;
-      // Delete profile
       await supabase.from("profiles").delete().eq("id", user.id);
       toast({ title: "Account data deleted", description: "Signing you out..." });
       await signOut();
@@ -243,7 +198,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
                 </Button>
               </div>
 
-              {/* Delete Project (moved here) */}
+              {/* Delete Project */}
               <div className="pt-8 mt-4 border-t border-border/40">
                 <div className="rounded-xl p-6 border border-destructive/30 bg-destructive/5">
                   <h3 className="font-semibold text-destructive text-[15px] mb-1">Delete Project</h3>
@@ -272,78 +227,6 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
                     </AlertDialogContent>
                   </AlertDialog>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {activeSection === "github" && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 text-[12px] text-muted-foreground">
-                {connectionStatus === "success" ? (
-                  <><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Connected to {githubRepo}</>
-                ) : connectionStatus === "error" ? (
-                  <><XCircle className="h-3.5 w-3.5 text-destructive" /> Connection failed</>
-                ) : (
-                  <><Github className="h-3.5 w-3.5" /> Push your docs as MDX commits to a GitHub repo.</>
-                )}
-              </div>
-
-              <Field label="Repository" hint={<>Format: <code className="px-1 py-0.5 bg-muted rounded text-[10px]">owner/repository</code></>}>
-                <Input
-                  value={githubRepo}
-                  onChange={(e) => { setGithubRepo(e.target.value); setConnectionStatus("idle"); }}
-                  placeholder="owner/repo-name"
-                  className="h-10 font-mono text-[13px] rounded-lg"
-                />
-              </Field>
-
-              <Field label={<span className="flex items-center gap-1.5"><GitBranch className="h-3.5 w-3.5" /> Default Branch</span>}>
-                <Input
-                  value={githubBranch}
-                  onChange={(e) => setGithubBranch(e.target.value)}
-                  placeholder="main"
-                  className="h-10 font-mono text-[13px] rounded-lg"
-                />
-              </Field>
-
-              <Field
-                label="Personal Access Token"
-                hint={<>Needs <code className="px-1 py-0.5 bg-muted rounded text-[10px]">repo</code> scope. Create one at{" "}
-                  <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GitHub Settings → Tokens</a>
-                </>}
-              >
-                <div className="relative">
-                  <Input
-                    value={githubToken}
-                    onChange={(e) => { setGithubToken(e.target.value); setConnectionStatus("idle"); }}
-                    type={showToken ? "text" : "password"}
-                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                    className="h-10 font-mono text-[13px] rounded-lg pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowToken(!showToken)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </Field>
-
-              <div className="flex items-center justify-between pt-2">
-                <Button
-                  variant="outline" size="sm"
-                  onClick={handleTestConnection}
-                  disabled={testingConnection || !githubRepo || !githubToken}
-                  className="h-9 rounded-lg"
-                >
-                  {testingConnection ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Github className="h-3.5 w-3.5 mr-1.5" />}
-                  Test Connection
-                </Button>
-                <Button size="sm" onClick={handleSave} disabled={saving || !name.trim()} className="h-9 rounded-lg">
-                  <Save className="h-3.5 w-3.5 mr-1.5" />
-                  {saving ? "Saving..." : "Save Changes"}
-                </Button>
               </div>
             </div>
           )}
@@ -390,7 +273,6 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
 };
 
 // Header rendered ONLY in the main content column (right of the settings sidebar).
-// Mirrors the workspace top header but scoped here so the settings sidebar reaches full height.
 const SettingsTopHeader = ({ activeSection, projectId }: { activeSection: SectionId; projectId?: string }) => {
   const label = activeSection.replace(/-/g, " ");
   return (

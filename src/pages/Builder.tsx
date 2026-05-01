@@ -288,9 +288,6 @@ const Builder = () => {
       onPublishClick={() => handleModeChange("publish")}
       hasUnpublishedChanges={hasUnpublishedChanges}
       onSearchClick={() => setSearchOpen(true)}
-      currentBranch={project?.github_branch || "main"}
-      hasGithub={!!project?.github_repo && !!project?.github_token_encrypted}
-      onBranchChange={() => refreshProject()}
     />
   ) : null;
 
@@ -522,13 +519,8 @@ const Builder = () => {
                 }}
                 projectSlug={project?.slug || ""}
                 customDomain={project?.custom_domain}
-                project={project}
-                pages={pages}
-                sections={publishSnapshot.allSections}
                 blocks={publishSnapshot.allBlocks}
                 settings={resolvedSettings}
-                navGroups={navGroups}
-                tabs={tabs}
               />
             )}
           </div>
