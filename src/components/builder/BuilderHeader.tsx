@@ -93,14 +93,6 @@ const BuilderHeader = ({
         <div className="flex items-center gap-2 min-w-0">
           <ViewToggle value={mode} onChange={onModeChange} />
           <button
-            onClick={() => onModeChange("design")}
-            title="Design"
-            aria-label="Design"
-            className="h-8 w-8 rounded-lg flex items-center justify-center border border-border/40 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <Palette className="h-3.5 w-3.5" />
-          </button>
-          <button
             onClick={() => onModeChange("configurations")}
             title="Configurations"
             aria-label="Configurations"
