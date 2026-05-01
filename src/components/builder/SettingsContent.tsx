@@ -214,7 +214,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
 
       {/* Main column with its own header */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <SettingsTopHeader activeSection={activeSection} />
+        <SettingsTopHeader activeSection={activeSection} projectId={projectId} />
         <main className="flex-1 min-w-0 overflow-y-auto">
           <div className="max-w-2xl mx-auto px-8 py-10">
           <div className="mb-8 pb-6 border-b border-border/40">
