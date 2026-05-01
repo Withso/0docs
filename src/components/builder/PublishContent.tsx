@@ -334,20 +334,18 @@ const PublishContent = ({
                   )}
 
                   {/* Notes */}
-                  {!githubConfigured && (
-                    <div>
-                      <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                        Release Notes
-                      </label>
-                      <textarea
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="What changed in this version…"
-                        rows={3}
-                        className="w-full rounded-xl border bg-background px-4 py-3 text-[12px] resize-none outline-none focus:ring-2 focus:ring-ring/20 transition-shadow"
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                      Release Notes
+                    </label>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="What changed in this version…"
+                      rows={3}
+                      className="w-full rounded-xl border bg-background px-4 py-3 text-[12px] resize-none outline-none focus:ring-2 focus:ring-ring/20 transition-shadow"
+                    />
+                  </div>
                 </div>
               )}
             </div>
