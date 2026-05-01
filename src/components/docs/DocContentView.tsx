@@ -245,7 +245,7 @@ const DocContentView = ({
 
       <div
         style={{ maxWidth: `${frameMaxWidth}px` }}
-        className="mx-auto flex px-6 lg:px-8 gap-8"
+        className="mx-auto flex px-6 lg:px-8 gap-12 xl:gap-16"
       >
         <DocSidebarNavMintlify
           settings={settings}
