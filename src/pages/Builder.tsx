@@ -276,8 +276,8 @@ const Builder = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Header is scoped to the content area (Mintlify-style) and only shown for editor / code / preview modes.
-  const showContentHeader = mode === "editor" || mode === "code" || mode === "preview";
+  // Header is scoped to the content area (Mintlify-style). Hidden in editor mode per user request.
+  const showContentHeader = mode === "code" || mode === "preview";
   const hasUnpublishedChanges = publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish;
 
   const contentHeader = showContentHeader ? (
