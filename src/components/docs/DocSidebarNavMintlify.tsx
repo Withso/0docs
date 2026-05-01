@@ -271,11 +271,12 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
     >
       {!hideHeaderLabel && (
         <div
-          className="font-semibold mb-2 px-3 flex items-center justify-between"
+          className="font-semibold mb-2 pl-4 pr-3 flex items-center justify-between"
           style={{
             color: `hsl(${s.sidebarLabelColor || s.foregroundColor})`,
             fontSize: `${s.sidebarLabelFontSize || 12}px`,
             fontFamily: `'${s.bodyFont}', sans-serif`,
+            letterSpacing: "0.01em",
           }}
         >
           <span>Documentation</span>
