@@ -187,65 +187,72 @@ const emptyBlockStyles: DesignSettings["blockStyles"] = {
   inline_editor: {},
 };
 
+/**
+ * MINTLIFY "MINT" THEME — Default for all new docs.
+ * Sage green primary on pure white. Inter typography. Hairline borders.
+ * Mirrors https://www.mintlify.com/docs visual baseline.
+ */
 export const defaultDesignSettings: DesignSettings = {
   headingFont: "Inter",
   bodyFont: "Inter",
   codeFont: "JetBrains Mono",
-  baseFontSize: 15,
-  headingFontSize: 18,
-  lineHeight: 1.7,
+  baseFontSize: 16,
+  headingFontSize: 24,
+  lineHeight: 1.65,
 
-  backgroundColor: "0 0% 100%",
-  foregroundColor: "0 0% 13%",
-  primaryColor: "0 0% 13%",
+  // Light-mode palette (mirrored to colorsLight below for theme toggle)
+  backgroundColor: "0 0% 100%",         // #ffffff
+  foregroundColor: "0 0% 4%",           // #0a0a0a
+  primaryColor: "152 78% 40%",          // #15B36E mint
   primaryForegroundColor: "0 0% 100%",
-  mutedColor: "0 0% 96%",
-  mutedForegroundColor: "0 0% 45%",
-  accentColor: "0 0% 96%",
-  borderColor: "0 0% 90%",
-  linkColor: "214 100% 50%",
-  sectionLineColor: "20 70% 55%",
-  codeBlockBg: "0 0% 97%",
-  noteBg: "40 60% 97%",
-  noteBorderColor: "40 60% 85%",
+  mutedColor: "240 5% 96%",             // #f4f4f5
+  mutedForegroundColor: "240 4% 46%",   // #71717a
+  accentColor: "240 5% 96%",
+  borderColor: "240 6% 93%",            // #ececee hairline
+  linkColor: "152 78% 40%",             // mint links
+  sectionLineColor: "240 6% 90%",
+  codeBlockBg: "240 5% 96%",
+  noteBg: "152 60% 97%",
+  noteBorderColor: "152 50% 88%",
 
-  contentMaxWidth: 680,
-  sidebarWidth: 240,
-  sectionSpacing: 40,
-  pageTitleSize: 24,
+  contentMaxWidth: 720,
+  sidebarWidth: 280,
+  sectionSpacing: 48,
+  pageTitleSize: 36,
 
   headingWeight: "600",
-  paragraphSpacing: 16,
-  codeBlockBorderRadius: 8,
-  noteBorderWidth: 3,
+  paragraphSpacing: 18,
+  codeBlockBorderRadius: 10,
+  noteBorderWidth: 0,
   imageRounded: true,
 
-  
   sidebarBg: "0 0% 100%",
-  sidebarTextColor: "0 0% 45%",
-  sidebarActiveColor: "0 0% 13%",
+  sidebarTextColor: "240 4% 46%",       // #71717a
+  sidebarActiveColor: "152 78% 40%",    // mint for active page
   sidebarFontSize: 14,
-  sidebarPageGap: 2,
-  sidebarIndicatorColor: "0 0% 13%",
+  sidebarPageGap: 1,
+  sidebarIndicatorColor: "152 78% 40%", // mint indicator bar
   sidebarShowSectionTracker: true,
   sidebarShowPageArrows: false,
   sidebarActivePageBg: false,
 
-  sidebarLabelFontSize: 10,
-  sidebarLabelColor: "0 0% 45%",
+  sidebarLabelFontSize: 12,
+  sidebarLabelColor: "0 0% 4%",         // black, semibold group heading
   sidebarSectionFontSize: 13,
-  sidebarSectionColor: "0 0% 45%",
+  sidebarSectionColor: "240 4% 46%",
 
   tocVisible: true,
-  tocGap: 24,
+  tocGap: 32,
 
-  sectionBorderVisible: true,
-  sectionBorderColor: "20 70% 55%",
+  // Mintlify never shows a section divider line by default
+  sectionBorderVisible: false,
+  sectionBorderColor: "240 6% 90%",
   sectionBorderThickness: 1,
 
-  // Mintlify-style appearance defaults — backwards compatible additions
+  // Mintlify appearance: defaults to system, supports light + dark
   appearance: { default: "system", strict: false },
-  colors: { primary: "#0a0a0a", light: "#ffffff", dark: "#0a0a0a" },
+  colors: { primary: "#15B36E", light: "#4ADE80", dark: "#15B36E" },
+  backgroundColors: { light: "#ffffff", dark: "#0a0a0a" },
 
   blockStyles: emptyBlockStyles,
 };
