@@ -277,7 +277,7 @@ const Builder = () => {
   }
 
   // Header is scoped to the content area (Mintlify-style) and only shown for editor / code / preview modes.
-  const showContentHeader = mode === "editor" || mode === "code" || mode === "preview";
+  const showContentHeader = mode === "editor" || mode === "code";
   const hasUnpublishedChanges = publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish;
 
   const contentHeader = showContentHeader ? (
