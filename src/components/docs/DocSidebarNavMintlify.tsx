@@ -172,6 +172,8 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
       fontFamily: `'${s.bodyFont}', sans-serif`,
     };
 
+    const rowClasses = "flex-1 flex items-center gap-2 truncate h-8 pl-4 pr-3 rounded-md transition-colors w-full text-left relative";
+
     const button = renderPageActions ? (
       renderPageActions(page, isActive)
     ) : externalUrl ? (
@@ -179,7 +181,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
         href={externalUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-1 flex items-center gap-2 truncate py-[6px] pl-3 pr-2 rounded-md transition-colors hover:text-foreground"
+        className={rowClasses}
         style={baseStyle}
       >
         <span className="truncate" dangerouslySetInnerHTML={{ __html: page.nav_title || page.title }} />
@@ -192,12 +194,12 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
           onSelectPage(page);
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
-        className="flex-1 flex items-center gap-2 truncate py-[6px] pl-3 pr-2 rounded-md transition-colors w-full text-left relative"
+        className={rowClasses}
         style={baseStyle}
       >
         {isActive && (
           <span
-            className="absolute left-0 top-[8px] bottom-[8px] w-[2px] rounded-full"
+            className="absolute left-0 top-1 bottom-1 w-[2px] rounded-full"
             style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
           />
         )}
@@ -212,11 +214,9 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
 
         {isActive && pageSections.length > 0 && (
           <nav
-            className="ml-3 mt-px mb-1"
+            className="ml-4 mt-1 mb-2 flex flex-col"
             style={{
               borderLeft: `1px solid hsl(${s.borderColor})`,
-              display: "flex",
-              flexDirection: "column",
             }}
           >
             {pageSections.map((section) => {
@@ -233,7 +233,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
                       window.scrollTo({ top, behavior: "smooth" });
                     }
                   }}
-                  className="block py-[4px] pl-4 transition-colors relative"
+                  className="flex items-center h-7 pl-5 transition-colors relative"
                   style={{
                     color: isSA
                       ? `hsl(${s.sidebarActiveColor})`
@@ -245,11 +245,11 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
                 >
                   {isSA && (
                     <span
-                      className="absolute left-[-1px] top-[7px] bottom-[7px] w-[2px] rounded-full"
+                      className="absolute left-[-1px] top-1 bottom-1 w-[2px] rounded-full"
                       style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
                     />
                   )}
-                  <span dangerouslySetInnerHTML={{ __html: section.nav_title || section.title }} />
+                  <span className="truncate" dangerouslySetInnerHTML={{ __html: section.nav_title || section.title }} />
                 </a>
               );
             })}
