@@ -175,11 +175,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
     <div className="flex-1 flex min-h-0 animate-fade-in">
       {/* Sidebar nav (Mintlify-style) */}
       <aside className="w-[240px] shrink-0 border-r border-border/40 bg-muted/20 px-3 py-6 overflow-y-auto">
-        <div className="px-2 mb-4">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            Settings
-          </h2>
-        </div>
+
         <nav className="space-y-5">
           {NAV_GROUPS.map((group) => (
             <div key={group.label}>
