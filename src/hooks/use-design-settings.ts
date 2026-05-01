@@ -102,9 +102,6 @@ export interface DesignSettings {
   noteBorderWidth: number;
   imageRounded: boolean;
 
-  // Sidebar style variant: 'classic' (default) or 'mintlify'
-  sidebarStyle: "classic" | "mintlify";
-
   // Sidebar
   sidebarBg: string;
   sidebarTextColor: string;
