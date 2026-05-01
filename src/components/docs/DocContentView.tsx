@@ -300,7 +300,7 @@ const DocContentView = ({
                     style={{ marginBottom: `${settings.sectionSpacing}px` }}
                   >
                     <h2
-                      className="flex items-center gap-3 mb-5"
+                      className="mb-5"
                       style={{
                         fontFamily: `'${settings.headingFont}', sans-serif`,
                         fontWeight: settings.headingWeight,
@@ -310,16 +310,6 @@ const DocContentView = ({
                       }}
                     >
                       <span dangerouslySetInnerHTML={{ __html: section.title }} />
-                      {settings.sectionBorderVisible && (
-                        <span
-                          className="flex-1"
-                          style={{
-                            height: `${settings.sectionBorderThickness}px`,
-                            backgroundColor: `hsl(${settings.sectionBorderColor})`,
-                            opacity: 0.5,
-                          }}
-                        />
-                      )}
                     </h2>
 
                     <div>
