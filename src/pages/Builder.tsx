@@ -26,7 +26,7 @@ import SettingsSidePanel, { type SettingsTarget } from "@/components/builder/Set
 import CodeView from "@/components/builder/CodeView";
 import SearchDialog from "@/components/docs/SearchDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, FileJson, GripVertical, SlidersHorizontal } from "lucide-react";
+import { Plus, FileText, FileJson, GripVertical, SlidersHorizontal, RotateCw, X } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Page, Section, Block } from "@/hooks/use-builder";
@@ -75,6 +75,7 @@ const Builder = () => {
   };
 
   const [mode, setMode] = useState<BuilderMode>(getInitialMode);
+  const [previewReloadKey, setPreviewReloadKey] = useState(0);
   
   const [editorTab, setEditorTab] = useState<"navigation" | "files">("navigation");
   const [settingsTarget, setSettingsTarget] = useState<SettingsTarget | null>(null);
@@ -277,7 +278,7 @@ const Builder = () => {
   }
 
   // Header is scoped to the content area (Mintlify-style) and only shown for editor / code / preview modes.
-  const showContentHeader = mode === "editor" || mode === "code" || mode === "preview";
+  const showContentHeader = mode === "editor" || mode === "code";
   const hasUnpublishedChanges = publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish;
 
   const contentHeader = showContentHeader ? (
@@ -446,26 +447,53 @@ const Builder = () => {
 
             {/* Mode: Preview */}
             {mode === "preview" && (
-              <div className="flex-1 relative">
-                <DocContentView
-                  settings={resolvedSettings}
-                  projectName={project?.name || ""}
-                  pages={pages}
-                  activePage={activePage}
-                  sections={sections}
-                  blocks={blocks}
-                  onSelectPage={(p) => {
-                    const full = pages.find((pg) => pg.id === p.id);
-                    if (full) setActivePage(full);
-                  }}
-                  headerStickyTop={0}
-                  navGroups={navGroups}
-                  hideHeaderLabel
-                  tabs={tabs}
-                  activeTabId={activeTabId}
-                  onSelectTab={setActiveTabId}
-                />
-                <MadeWithBanner />
+              <div className="flex-1 relative flex flex-col min-h-0">
+                {/* Live preview top bar */}
+                <div className="h-9 shrink-0 flex items-center justify-between px-3 bg-background border-b border-border/40">
+                  <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+                    <span className="h-2 w-2 rounded-sm border border-muted-foreground/60" />
+                    <span>Live preview</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setPreviewReloadKey((k) => k + 1)}
+                      title="Reload"
+                      aria-label="Reload"
+                      className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      <RotateCw className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleModeChange("editor")}
+                      title="Close preview"
+                      aria-label="Close preview"
+                      className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <div key={previewReloadKey} className="flex-1 relative min-h-0 overflow-auto">
+                  <DocContentView
+                    settings={resolvedSettings}
+                    projectName={project?.name || ""}
+                    pages={pages}
+                    activePage={activePage}
+                    sections={sections}
+                    blocks={blocks}
+                    onSelectPage={(p) => {
+                      const full = pages.find((pg) => pg.id === p.id);
+                      if (full) setActivePage(full);
+                    }}
+                    headerStickyTop={0}
+                    navGroups={navGroups}
+                    hideHeaderLabel
+                    tabs={tabs}
+                    activeTabId={activeTabId}
+                    onSelectTab={setActiveTabId}
+                  />
+                  <MadeWithBanner />
+                </div>
               </div>
             )}
 
