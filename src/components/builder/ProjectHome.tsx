@@ -81,15 +81,44 @@ const ProjectHome = forwardRef<HTMLElement, ProjectHomeProps>(({ project, pages,
 
         {/* Project hero card */}
         <section className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-10 mb-14">
-          {/* Preview thumbnail */}
-          <button
-            onClick={() => onModeChange("preview")}
-            className="group relative rounded-xl overflow-hidden border border-border/60 bg-card aspect-[16/10] text-left hover:border-border transition-colors"
-            aria-label="Open preview"
+          {/* Live preview thumbnail */}
+          <a
+            href={isLive ? liveUrl : undefined}
+            target={isLive ? "_blank" : undefined}
+            rel="noreferrer"
+            onClick={(e) => {
+              if (!isLive) {
+                e.preventDefault();
+                onModeChange("preview");
+              }
+            }}
+            className="group relative block rounded-xl overflow-hidden border border-border/60 bg-card aspect-[16/10] hover:border-border transition-colors"
+            aria-label={isLive ? "Open live site in new tab" : "Open preview"}
           >
-            <DocsPreviewThumbnail pages={pages} projectName={project?.name || ""} />
+            {isLive ? (
+              <>
+                {/* Faux browser chrome */}
+                <div className="absolute inset-x-0 top-0 h-7 z-10 border-b border-border/60 bg-card flex items-center gap-1.5 px-3">
+                  <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />
+                  <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />
+                  <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />
+                  <span className="ml-3 text-[10px] text-muted-foreground truncate">{domainLabel}</span>
+                </div>
+                <iframe
+                  src={liveUrl}
+                  title={`${project?.name} live preview`}
+                  loading="lazy"
+                  sandbox="allow-same-origin allow-scripts"
+                  className="absolute inset-0 w-[200%] h-[200%] origin-top-left scale-50 pt-7 pointer-events-none border-0"
+                />
+                {/* Click overlay (iframe is pointer-events-none, but ensure full click capture) */}
+                <div className="absolute inset-0" />
+              </>
+            ) : (
+              <DocsPreviewThumbnail pages={pages} projectName={project?.name || ""} />
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          </button>
+          </a>
 
           {/* Project meta */}
           <div className="flex flex-col">
