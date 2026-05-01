@@ -230,7 +230,7 @@ export const defaultDesignSettings: DesignSettings = {
   sidebarTextColor: "240 4% 46%",       // #71717a
   sidebarActiveColor: "152 78% 40%",    // mint for active page
   sidebarFontSize: 14,
-  sidebarPageGap: 1,
+  sidebarPageGap: 2,
   sidebarIndicatorColor: "152 78% 40%", // mint indicator bar
   sidebarShowSectionTracker: true,
   sidebarShowPageArrows: false,
