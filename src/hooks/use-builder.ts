@@ -75,51 +75,83 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
 
   // Load project and pages
   useEffect(() => {
-    if (!projectId || !userId) return;
+    if (!projectId || !userId) {
+      setLoading(false);
+      return;
+    }
 
     const load = async () => {
-      const { data: proj } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("id", projectId)
-        .eq("user_id", userId)
-        .single();
+      setLoading(true);
+      try {
+        const { data: proj, error: projectError } = await supabase
+          .from("projects")
+          .select("*")
+          .eq("id", projectId)
+          .eq("user_id", userId)
+          .maybeSingle();
 
-      if (!proj) {
+        if (projectError) throw projectError;
+
+        if (!proj) {
+          setProject(null);
+          setPages([]);
+          setActivePage(null);
+          setNavGroups([]);
+          setTabs([]);
+          setSections([]);
+          setBlocks([]);
+          setLoading(false);
+          return;
+        }
+        setProject(proj);
+
+        const [{ data: pagesData, error: pagesError }, { data: groupsData, error: groupsError }, { data: tabsData, error: tabsError }] = await Promise.all([
+          supabase
+            .from("pages")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("order_index"),
+          supabase
+            .from("nav_groups")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("order_index"),
+          (supabase as any)
+            .from("tabs")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("order_index"),
+        ]);
+
+        if (pagesError) throw pagesError;
+        if (groupsError) throw groupsError;
+        if (tabsError) throw tabsError;
+
+        const nextPages = (pagesData || []) as Page[];
+        setPages(nextPages);
+        setActivePage((prev) => {
+          if (!nextPages.length) return null;
+          if (prev) {
+            const matchingPage = nextPages.find((page) => page.id === prev.id);
+            if (matchingPage) return matchingPage;
+          }
+          return nextPages[0];
+        });
+
+        setNavGroups((groupsData || []) as unknown as NavGroup[]);
+        setTabs((tabsData || []) as unknown as Tab[]);
+      } catch (error) {
+        console.error("Failed to load builder project", error);
         setProject(null);
+        setPages([]);
+        setActivePage(null);
+        setNavGroups([]);
+        setTabs([]);
+        setSections([]);
+        setBlocks([]);
+      } finally {
         setLoading(false);
-        return;
       }
-      setProject(proj);
-
-      const { data: pagesData } = await supabase
-        .from("pages")
-        .select("*")
-        .eq("project_id", projectId)
-        .order("order_index");
-
-      if (pagesData) {
-        setPages(pagesData);
-        if (pagesData.length > 0) setActivePage(pagesData[0]);
-      }
-
-      const [{ data: groupsData }, { data: tabsData }] = await Promise.all([
-        supabase
-          .from("nav_groups")
-          .select("*")
-          .eq("project_id", projectId)
-          .order("order_index"),
-        (supabase as any)
-          .from("tabs")
-          .select("*")
-          .eq("project_id", projectId)
-          .order("order_index"),
-      ]);
-
-      if (groupsData) setNavGroups(groupsData as unknown as NavGroup[]);
-      if (tabsData) setTabs(tabsData as unknown as Tab[]);
-
-      setLoading(false);
     };
 
     load();
@@ -133,28 +165,40 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
       return;
     }
 
-    const { data: sectionsData } = await supabase
-      .from("sections")
-      .select("*")
-      .eq("page_id", activePage.id)
-      .order("order_index");
+    try {
+      const { data: sectionsData, error: sectionsError } = await supabase
+        .from("sections")
+        .select("*")
+        .eq("page_id", activePage.id)
+        .order("order_index");
 
-    if (sectionsData) {
-      setSections(sectionsData);
+      if (sectionsError) throw sectionsError;
 
-      if (sectionsData.length > 0) {
-        const sectionIds = sectionsData.map((s) => s.id);
-        const { data: blocksData } = await supabase
-          .from("blocks")
-          .select("*")
-          .in("section_id", sectionIds)
-          .order("order_index");
+      if (sectionsData) {
+        setSections(sectionsData);
 
-        if (blocksData) setBlocks(blocksData);
-        else setBlocks([]);
+        if (sectionsData.length > 0) {
+          const sectionIds = sectionsData.map((s) => s.id);
+          const { data: blocksData, error: blocksError } = await supabase
+            .from("blocks")
+            .select("*")
+            .in("section_id", sectionIds)
+            .order("order_index");
+
+          if (blocksError) throw blocksError;
+
+          if (blocksData) setBlocks(blocksData);
+          else setBlocks([]);
+        } else {
+          setBlocks([]);
+        }
       } else {
         setBlocks([]);
       }
+    } catch (error) {
+      console.error("Failed to load page content", error);
+      setSections([]);
+      setBlocks([]);
     }
   }, [activePage]);
 
