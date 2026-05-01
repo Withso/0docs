@@ -91,12 +91,12 @@ export const DEFAULT_DARK: PerModeColors = {
   codeBg: "#161616",
   noteBg: "#161616",
   noteBorder: "#2a2a2a",
-  sidebarBg: "#0a0a0a",
-  sidebarText: "#707070",
-  sidebarActive: "#f0f0f0",
-  sidebarIndicator: "#f0f0f0",
-  sidebarLabel: "#707070",
-  sidebarSection: "#707070",
+  sidebarBg: "#0d0d0d",
+  sidebarText: "#8a8a8a",
+  sidebarActive: "#f5f5f5",
+  sidebarIndicator: "#f5f5f5",
+  sidebarLabel: "#e5e5e5",
+  sidebarSection: "#8a8a8a",
 };
 
 /* ─── Hex ↔ HSL helpers (HSL in our settings is "h s% l%") ────────── */
