@@ -144,72 +144,7 @@ const PublishContent = ({
     return { active: activeFeatures, available: availableFeatures, total: features.length };
   }, [blocks, settings]);
 
-  const getDefaultCommitMessage = useCallback(() => {
-    if (isFirstPublish) return `docs: initial publish v${nextVersion}`;
-    const summary = editorChanges.slice(0, 3).map(c => c.label).join(", ");
-    return `docs: publish v${nextVersion}${summary ? ` — ${summary}` : ""}`;
-  }, [isFirstPublish, nextVersion, editorChanges]);
-
-  const handlePublishToGithub = async () => {
-    if (!settings || !project) return;
-    setPushingToGithub(true);
-    setLastCommit(null);
-
-    try {
-      // Fetch ALL sections and blocks for ALL pages (not just the active page)
-      const allPageIds = pages.map((p: any) => p.id);
-      let allSections = sections;
-      let allBlocks = blocks;
-
-      if (allPageIds.length > 0) {
-        const { data: sectionsData } = await supabase
-          .from("sections")
-          .select("*")
-          .in("page_id", allPageIds)
-          .order("order_index");
-
-        if (sectionsData && sectionsData.length > 0) {
-          allSections = sectionsData;
-          const sectionIds = sectionsData.map((s: any) => s.id);
-          const { data: blocksData } = await supabase
-            .from("blocks")
-            .select("*")
-            .in("section_id", sectionIds)
-            .order("order_index");
-
-          if (blocksData) allBlocks = blocksData;
-        }
-      }
-
-      // Export the documentation
-      const exported = exportProject(pages, allSections, allBlocks, settings, navGroups, project?.name || "Documentation", tabs);
-      const message = commitMessage.trim() || getDefaultCommitMessage();
-
-      // Call edge function
-      const { data, error } = await supabase.functions.invoke("publish-to-github", {
-        body: {
-          projectId: project.id,
-          files: exported.files,
-          commitMessage: message,
-          branch: targetBranch,
-        },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      setLastCommit({ sha: data.commitSha, url: data.commitUrl });
-      setCommitMessage("");
-
-      // Also save internal version
-      onPublish(notes || message);
-    } catch (e: any) {
-      const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
-      toast({ title: "Publish failed", description: e.message, variant: "destructive" });
-    }
-
-    setPushingToGithub(false);
-  };
+  // (GitHub publishing removed — internal versioning only for now.)
 
   return (
     <div className="flex-1 overflow-y-auto">
