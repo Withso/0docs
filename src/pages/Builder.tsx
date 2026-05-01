@@ -84,6 +84,10 @@ const Builder = () => {
     allBlocks: [],
   });
 
+  useEffect(() => {
+    setMode(getInitialMode());
+  }, [location.pathname]);
+
   // Global ⌘K / Ctrl+K to open search
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -451,8 +455,8 @@ const Builder = () => {
                   projectName={project?.name || ""}
                   pages={pages}
                   activePage={activePage}
-                  sections={publishSnapshot.allSections}
-                  blocks={publishSnapshot.allBlocks}
+                  sections={sections}
+                  blocks={blocks}
                   onSelectPage={(p) => {
                     const full = pages.find((pg) => pg.id === p.id);
                     if (full) setActivePage(full);
@@ -484,8 +488,8 @@ const Builder = () => {
             {mode === "code" && (
               <CodeView
                 page={activePage}
-                  sections={publishSnapshot.allSections}
-                  blocks={publishSnapshot.allBlocks}
+                sections={sections}
+                blocks={blocks}
                 settings={resolvedSettings}
                 projectSlug={project?.slug}
               />
@@ -520,8 +524,8 @@ const Builder = () => {
                 customDomain={project?.custom_domain}
                 project={project}
                 pages={pages}
-                sections={sections}
-                blocks={blocks}
+                sections={publishSnapshot.allSections}
+                blocks={publishSnapshot.allBlocks}
                 settings={resolvedSettings}
                 navGroups={navGroups}
                 tabs={tabs}
