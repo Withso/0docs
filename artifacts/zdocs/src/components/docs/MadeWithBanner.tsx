@@ -1,10 +1,10 @@
+import { Link } from "react-router-dom";
+
 const MadeWithBanner = () => {
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
-      <a
-        href="https://docs0.lovable.app"
-        target="_blank"
-        rel="noopener noreferrer"
+      <Link
+        to="/"
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all hover:scale-105"
         style={{
           backgroundColor: "hsl(var(--foreground) / 0.85)",
@@ -14,7 +14,7 @@ const MadeWithBanner = () => {
         }}
       >
         Made with <span className="font-semibold">0docs</span>
-      </a>
+      </Link>
     </div>
   );
 };

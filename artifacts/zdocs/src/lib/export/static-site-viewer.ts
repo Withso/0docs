@@ -753,7 +753,7 @@ export function generateViewerScript(): string {
         sections:sections,blocks:blocks,onSelectPage:handleSelectPage}),
       // Made with banner
       h('div', {className:'made-with'},
-        h('a', {href:'https://docs0.lovable.app',target:'_blank',rel:'noopener noreferrer'},
+        h('a', {href:'/',target:'_blank',rel:'noopener noreferrer'},
           'Made with ', h('span', {style:{fontWeight:600}}, '0docs'))));
   }
 

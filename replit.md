@@ -52,13 +52,23 @@ Phases 2 (TokenColorField + Visual Branding redesign + split-pane layout)
 and 3 (Header/Footer build-out, Typography preview, code_tabs pre-color
 control) are deferred follow-ups.
 
+## Routing (zdocs)
+
+- `/` → `pages/Landing.tsx` — marketing landing (hero, feature trio, footer).
+  "Documentation" / "Learn more" buttons → `/docs`. "Sign In" / "Get started"
+  → `/auth`.
+- `/docs` → `pages/Index.tsx` — public docs viewer for the homepage project.
+- `/auth`, `/dashboard`, `/profile`, `/builder/:id` — Clerk-gated app routes.
+
 ## Public docs viewer (zdocs Index.tsx)
 
-The public viewer at `/` reads:
+The public viewer at `/docs` reads:
 - `GET /api/projects?homepage=true` for the project marked `is_homepage`
 - `GET /api/tabs?projectId=…` (public when project is published; same gating
   pattern as `/api/pages` and `/api/navgroups`)
 - `GET /api/projects/:id/published-versions` then the snapshot endpoint
+When no homepage project exists, Index renders a small "No docs published
+yet" placeholder (the marketing fallback was extracted to `Landing.tsx`).
 
 Tabs render as Mintlify-style pills in the header. Default selection is the
 first **visible** tab. The sidebar (`DocSidebarNavMintlify`) filters nav

@@ -7,6 +7,7 @@ import { BrowserRouter, Navigate, Routes, Route, useParams } from "react-router-
 import { ClerkProvider } from "@clerk/react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Builder from "./pages/Builder";
 
@@ -42,7 +43,8 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
               <Sonner />
               <Suspense fallback={<LazyFallback />}>
                 <Routes>
-                  <Route path="/" element={<Index />} />
+                  <Route path="/" element={<Landing />} />
+                  <Route path="/docs" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route
                     path="/dashboard"
