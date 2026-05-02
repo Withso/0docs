@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Star, Trash2, Tag } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Plus, Star, Trash2, Tag, GitBranch, Check } from "lucide-react";
 import { useVersions } from "@/hooks/use-versions";
+import { useToast } from "@/hooks/use-toast";
 
 interface VersionManagerProps {
   projectId: string;
@@ -11,66 +19,179 @@ interface VersionManagerProps {
 
 const VersionManager = ({ projectId }: VersionManagerProps) => {
   const { versions, addVersion, setDefault, deleteVersion } = useVersions(projectId);
+  const { toast } = useToast();
   const [newLabel, setNewLabel] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const errorMessage = (e: unknown): string =>
+    e instanceof Error && e.message ? e.message : "Something went wrong. Please try again.";
 
   const handleAdd = async () => {
-    if (!newLabel.trim()) return;
-    await addVersion(newLabel.trim());
-    setNewLabel("");
-    setDialogOpen(false);
+    const label = newLabel.trim();
+    if (!label || adding) return;
+    setAdding(true);
+    try {
+      await addVersion(label);
+      setNewLabel("");
+    } catch (e) {
+      toast({ title: "Could not add version", description: errorMessage(e), variant: "destructive" });
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleSetDefault = async (id: string) => {
+    if (busyId) return;
+    setBusyId(id);
+    try {
+      await setDefault(id);
+    } catch (e) {
+      toast({ title: "Could not set default", description: errorMessage(e), variant: "destructive" });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (busyId) return;
+    setBusyId(id);
+    try {
+      await deleteVersion(id);
+    } catch (e) {
+      toast({ title: "Could not delete version", description: errorMessage(e), variant: "destructive" });
+    } finally {
+      setBusyId(null);
+    }
   };
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 text-xs">
-          <Tag className="h-3.5 w-3.5 mr-1.5" /> Versions
+        <Button variant="outline" size="sm" className="h-8 text-xs rounded-lg gap-1.5">
+          <GitBranch className="h-3.5 w-3.5" /> Versions
+          {versions.length > 0 && (
+            <span className="ml-1 inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-muted text-[10px] font-mono text-muted-foreground">
+              {versions.length}
+            </span>
+          )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Documentation Versions</DialogTitle>
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
+        <DialogHeader className="px-5 pt-5 pb-3 border-b">
+          <DialogTitle className="flex items-center gap-2 text-[15px]">
+            <GitBranch className="h-4 w-4 text-primary" />
+            Documentation Versions
+          </DialogTitle>
+          <DialogDescription className="text-[12px]">
+            Branch your docs into named versions like <span className="font-mono text-foreground">v2.0</span>,{" "}
+            <span className="font-mono text-foreground">latest</span>, or <span className="font-mono text-foreground">beta</span>. Readers will see a switcher in the published site.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2 mt-2">
-          {versions.length === 0 && (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No versions yet. Create your first version to enable version switching in public docs.
-            </p>
-          )}
-          {versions.map((v) => (
-            <div key={v.id} className="flex items-center justify-between py-2 px-3 rounded-lg border bg-card">
-              <div className="flex items-center gap-2">
-                <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-sm font-medium">{v.version_label}</span>
-                {v.is_default && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Default</span>
-                )}
+
+        {/* Versions list */}
+        <div className="px-5 py-4 max-h-[320px] overflow-y-auto">
+          {versions.length === 0 ? (
+            <div className="rounded-xl border border-dashed py-8 flex flex-col items-center justify-center text-center">
+              <div className="h-9 w-9 rounded-full bg-muted/60 flex items-center justify-center mb-2">
+                <Tag className="h-4 w-4 text-muted-foreground" />
               </div>
-              <div className="flex items-center gap-1">
-                {!v.is_default && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDefault(v.id)} title="Set as default">
-                    <Star className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteVersion(v.id)}>
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              <p className="text-[12.5px] font-medium text-foreground">No versions yet</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 max-w-[280px]">
+                Create your first version below to enable version switching for your readers.
+              </p>
             </div>
-          ))}
+          ) : (
+            <div className="rounded-xl border overflow-hidden divide-y">
+              {versions.map((v) => (
+                <div
+                  key={v.id}
+                  className="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-background hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      className={`h-7 w-7 shrink-0 rounded-md flex items-center justify-center ${
+                        v.is_default ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      <Tag className="h-3.5 w-3.5" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[13px] font-medium text-foreground font-mono truncate">
+                          {v.version_label}
+                        </span>
+                        {v.is_default && (
+                          <span className="text-[9.5px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-md bg-primary/10 text-primary inline-flex items-center gap-0.5">
+                            <Check className="h-2.5 w-2.5" />
+                            Default
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {!v.is_default && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        onClick={() => { void handleSetDefault(v.id); }}
+                        disabled={busyId === v.id}
+                        title="Set as default"
+                        aria-label={`Set ${v.version_label} as default`}
+                      >
+                        <Star className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => { void handleDelete(v.id); }}
+                      disabled={busyId === v.id}
+                      title="Delete version"
+                      aria-label={`Delete ${v.version_label}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="flex gap-2 mt-3">
-          <Input
-            value={newLabel}
-            onChange={(e) => setNewLabel(e.target.value)}
-            placeholder="e.g. v2.0, latest, beta"
-            className="h-9 text-sm"
-            onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-          />
-          <Button size="sm" className="h-9" onClick={handleAdd} disabled={!newLabel.trim()}>
-            <Plus className="h-3.5 w-3.5 mr-1" /> Add
-          </Button>
+
+        {/* Add row */}
+        <div className="px-5 py-4 border-t bg-muted/20">
+          <label className="text-[10.5px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5 block">
+            New version label
+          </label>
+          <div className="flex gap-2">
+            <Input
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+              placeholder="e.g. v2.0, latest, beta"
+              className="h-9 text-[13px] font-mono rounded-lg"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAdd();
+              }}
+            />
+            <Button
+              size="sm"
+              className="h-9 rounded-lg"
+              onClick={handleAdd}
+              disabled={!newLabel.trim() || adding}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              {adding ? "Adding…" : "Add"}
+            </Button>
+          </div>
+          <p className="text-[10.5px] text-muted-foreground mt-2">
+            Tip: short, semantic labels work best — keep it under 20 characters.
+          </p>
         </div>
       </DialogContent>
     </Dialog>

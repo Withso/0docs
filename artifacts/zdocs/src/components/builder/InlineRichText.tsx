@@ -245,11 +245,11 @@ const InlineRichText = ({
       type="button"
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className="p-1 rounded transition-colors"
-      style={{
-        backgroundColor: active ? "rgba(255,255,255,0.15)" : "transparent",
-        color: active ? "#fff" : "rgba(255,255,255,0.8)",
-      }}
+      className={`p-1 rounded transition-colors ${
+        active
+          ? "bg-primary/20 text-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+      }`}
     >
       {children}
     </button>
@@ -290,13 +290,11 @@ const InlineRichText = ({
       {showToolbar && (
         <div
           ref={toolbarRef}
-          className="fixed z-[9999] flex items-center gap-0.5 px-1.5 py-1 rounded-lg shadow-xl animate-fade-in"
+          className="fixed z-[9999] flex items-center gap-0.5 px-1.5 py-1 rounded-lg shadow-xl animate-fade-in border bg-popover text-popover-foreground"
           style={{
             left: `${toolbarPos.x}px`,
             top: `${toolbarPos.y}px`,
             transform: "translate(-50%, -100%)",
-            backgroundColor: "#1a1a1a",
-            border: "1px solid #333",
           }}
           onMouseDown={(e) => e.preventDefault()}
         >
@@ -309,7 +307,7 @@ const InlineRichText = ({
           <ToolBtn onClick={() => execCommand("underline")} active={isActive("underline")}>
             <Underline size={13} />
           </ToolBtn>
-          <div className="w-px h-4 mx-0.5" style={{ backgroundColor: "#444" }} />
+          <div className="w-px h-4 mx-0.5 bg-border" />
           <ToolBtn onClick={handleLink}>
             <LinkIcon size={13} />
           </ToolBtn>
@@ -319,8 +317,8 @@ const InlineRichText = ({
 
           {showLinkInput && (
             <div
-              className="absolute left-0 top-full mt-1 flex items-center gap-1.5 px-2 py-1.5 rounded-lg shadow-xl"
-              style={{ backgroundColor: "#1a1a1a", border: "1px solid #333", minWidth: "260px" }}
+              className="absolute left-0 top-full mt-1 flex items-center gap-1.5 px-2 py-1.5 rounded-lg shadow-xl border bg-popover text-popover-foreground"
+              style={{ minWidth: "260px" }}
               onMouseDown={(e) => e.preventDefault()}
             >
               <input
@@ -335,20 +333,17 @@ const InlineRichText = ({
                   }
                 }}
                 placeholder="https://..."
-                className="flex-1 bg-transparent text-white text-xs outline-none px-1.5 py-1 rounded"
-                style={{ border: "1px solid #444" }}
+                className="flex-1 bg-transparent text-foreground text-xs outline-none px-1.5 py-1 rounded border border-border placeholder:text-muted-foreground/70 focus:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring/40"
               />
               <button
                 onClick={applyLink}
-                className="text-[11px] font-medium px-2 py-1 rounded"
-                style={{ backgroundColor: "#3b82f6", color: "#fff" }}
+                className="text-[11px] font-medium px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Add
               </button>
               <button
                 onClick={() => { setShowLinkInput(false); keepOpenRef.current = false; }}
-                className="p-0.5"
-                style={{ color: "rgba(255,255,255,0.5)" }}
+                className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X size={12} />
               </button>
@@ -357,18 +352,18 @@ const InlineRichText = ({
 
           {showColorPicker && (
             <div
-              className="absolute left-0 top-full mt-1 flex flex-wrap gap-1.5 p-2 rounded-lg shadow-xl"
-              style={{ backgroundColor: "#1a1a1a", border: "1px solid #333", width: "140px" }}
+              className="absolute left-0 top-full mt-1 flex flex-wrap gap-1.5 p-2 rounded-lg shadow-xl border bg-popover text-popover-foreground"
+              style={{ width: "140px" }}
               onMouseDown={(e) => e.preventDefault()}
             >
               {PRESET_COLORS.map((c) => (
                 <button
                   key={c}
                   onClick={() => applyColor(c)}
-                  className="w-5 h-5 rounded-full border transition-transform hover:scale-110"
+                  className="w-5 h-5 rounded-full border-border transition-transform hover:scale-110"
                   style={{
                     backgroundColor: `hsl(${c})`,
-                    borderColor: c === "0 0% 100%" ? "#555" : "transparent",
+                    border: c === "0 0% 100%" ? "1px solid hsl(var(--border))" : "1px solid transparent",
                   }}
                 />
               ))}

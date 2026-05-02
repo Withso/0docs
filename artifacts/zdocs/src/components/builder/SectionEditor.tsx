@@ -150,12 +150,18 @@ const SectionEditor = ({
       id={`section-${section.id}`}
       style={{
         marginBottom: `${settings.sectionSpacing}px`,
-        backgroundColor: isSectionFocused ? `hsl(${settings.primaryColor} / 0.02)` : "transparent",
+        // Subtle but actually visible focus tint that works in both themes
+        backgroundColor: isSectionFocused ? `hsl(${settings.primaryColor} / 0.06)` : "transparent",
         borderRadius: "16px",
-        padding: isSectionFocused ? "20px 24px 16px" : "20px 24px 16px",
+        padding: "20px 24px 16px",
         marginLeft: "-24px",
         marginRight: "-24px",
-        borderLeft: isSectionFocused ? `2px solid hsl(${settings.primaryColor} / 0.08)` : "2px solid transparent",
+        borderLeft: isSectionFocused
+          ? `2px solid hsl(${settings.primaryColor} / 0.6)`
+          : "2px solid transparent",
+        boxShadow: isSectionFocused
+          ? `inset 0 0 0 1px hsl(${settings.primaryColor} / 0.12)`
+          : undefined,
       }}
       onFocusCapture={() => setIsSectionFocused(true)}
       onBlurCapture={(e) => {
@@ -243,27 +249,49 @@ const SectionEditor = ({
                   <div
                     className="group/block relative flex transition-all duration-150"
                     style={{
-                      backgroundColor: focusedBlockId === block.id ? `hsl(${settings.primaryColor} / 0.03)` : "transparent",
+                      backgroundColor:
+                        focusedBlockId === block.id
+                          ? `hsl(${settings.primaryColor} / 0.07)`
+                          : "transparent",
                       borderRadius: "12px",
                       padding: "4px 8px",
                       marginLeft: "-8px",
                       marginRight: "-8px",
-                      outline: focusedBlockId === block.id ? `1px solid hsl(${settings.primaryColor} / 0.06)` : "1px solid transparent",
+                      outline:
+                        focusedBlockId === block.id
+                          ? `1px solid hsl(${settings.primaryColor} / 0.35)`
+                          : "1px solid transparent",
                     }}
                     onFocusCapture={() => setFocusedBlockId(block.id)}
                     onClickCapture={() => setFocusedBlockId(block.id)}
                   >
-                    {/* Block drag handle */}
+                    {/* Block drag handle: visible at 40% on hover, 80% when focused */}
                     <span
-                      className="shrink-0 cursor-grab active:cursor-grabbing opacity-0 group-hover/block:opacity-40 transition-opacity pt-1 pr-1"
+                      className={`shrink-0 cursor-grab active:cursor-grabbing transition-opacity pt-1 pr-1 ${
+                        focusedBlockId === block.id
+                          ? "opacity-80"
+                          : "opacity-0 group-hover/block:opacity-50"
+                      }`}
                       style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+                      title="Drag to reorder"
                       {...handleProps}
                     >
                       <GripVertical className="h-3.5 w-3.5" />
                     </span>
                     <div className="flex-1 min-w-0 relative">
-                      <div className="absolute right-0 top-1 opacity-0 group-hover/block:opacity-100 transition-opacity z-10">
-                        <button onClick={() => onDeleteBlock(block.id)} className="p-1 rounded-lg hover:bg-destructive/10 transition-colors" style={{ color: `hsl(${settings.mutedForegroundColor})` }}>
+                      <div
+                        className={`absolute right-0 top-1 transition-opacity z-10 ${
+                          focusedBlockId === block.id
+                            ? "opacity-100"
+                            : "opacity-0 group-hover/block:opacity-100"
+                        }`}
+                      >
+                        <button
+                          onClick={() => onDeleteBlock(block.id)}
+                          className="p-1 rounded-lg hover:bg-destructive/15 hover:text-destructive transition-colors"
+                          style={{ color: `hsl(${settings.mutedForegroundColor})` }}
+                          title="Delete block"
+                        >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -286,6 +314,20 @@ const SectionEditor = ({
         </DragOverlay>
       </DndContext>
 
+      {/* Empty state CTA when section has no blocks */}
+      {sortedBlocks.length === 0 && !showAddMenu && (
+        <button
+          onClick={() => setShowAddMenu(true)}
+          className="w-full rounded-xl border-2 border-dashed border-border/70 hover:border-primary/50 bg-muted/20 hover:bg-primary/[0.03] transition-all duration-150 py-8 flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <Plus className="h-4 w-4" />
+          </span>
+          <span className="text-[12.5px] font-medium">Add your first block</span>
+          <span className="text-[11px] text-muted-foreground/80">Heading, paragraph, code, image, and more</span>
+        </button>
+      )}
+
       {/* Add block */}
       <div className="relative mt-3">
         {showAddMenu ? (
@@ -302,12 +344,14 @@ const SectionEditor = ({
             onClose={() => setShowAddMenu(false)}
           />
         ) : (
-          <button
-            onClick={() => setShowAddMenu(true)}
-            className="w-full border border-dashed rounded-xl py-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all duration-150 flex items-center justify-center gap-1.5"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add Block
-          </button>
+          sortedBlocks.length > 0 && (
+            <button
+              onClick={() => setShowAddMenu(true)}
+              className="w-full border border-dashed border-border/70 rounded-xl py-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/[0.03] transition-all duration-150 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add Block
+            </button>
+          )
         )}
       </div>
     </section>

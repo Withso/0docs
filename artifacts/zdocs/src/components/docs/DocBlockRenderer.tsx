@@ -1122,7 +1122,7 @@ const ApiEndpointBlock = ({ content, settings: s, bs }: { content: any; settings
         <span
           style={{
             backgroundColor: `hsl(${methodColor})`,
-            color: "#fff",
+            color: "hsl(0 0% 100%)",
             padding: "3px 9px",
             borderRadius: `${badgeRadius}px`,
             fontSize: "11px",

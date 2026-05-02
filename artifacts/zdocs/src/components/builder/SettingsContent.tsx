@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useApi } from "@/lib/api-client";
@@ -15,6 +15,7 @@ import {
 import {
   Save, Trash2,
   Settings2, AlertTriangle, UserCircle, Inbox, Search,
+  Globe, Copy, ExternalLink, CheckCircle2, AlertCircle, Loader2,
 } from "lucide-react";
 import ProfileMenu from "./ProfileMenu";
 
@@ -24,13 +25,14 @@ interface SettingsContentProps {
   onSaved?: () => void;
 }
 
-type SectionId = "general" | "profile" | "delete-account";
+type SectionId = "general" | "domain" | "profile" | "delete-account";
 
 const NAV_GROUPS: { label: string; items: { id: SectionId; label: string; icon: any }[] }[] = [
   {
     label: "Project Settings",
     items: [
       { id: "general", label: "General", icon: Settings2 },
+      { id: "domain", label: "Domain", icon: Globe },
     ],
   },
   {
@@ -44,11 +46,15 @@ const NAV_GROUPS: { label: string; items: { id: SectionId; label: string; icon: 
 
 const SECTION_TITLES: Record<SectionId, { title: string; subtitle: string }> = {
   general: { title: "General", subtitle: "Basic information about your project" },
+  domain: { title: "Domain", subtitle: "Connect a custom domain to your published documentation" },
   profile: { title: "My Profile", subtitle: "Manage your personal account and preferences" },
   "delete-account": { title: "Delete Account", subtitle: "Permanently delete your organization and account" },
 };
 
-const VALID_SECTIONS: SectionId[] = ["general", "profile", "delete-account"];
+const VALID_SECTIONS: SectionId[] = ["general", "domain", "profile", "delete-account"];
+
+// Domain validation: simple, allows subdomains, disallows protocol/path
+const DOMAIN_RE = /^(?!-)(?:[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,}$/;
 
 const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) => {
   const navigate = useNavigate();
@@ -61,10 +67,16 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
   const [description, setDescription] = useState(project?.description || "");
   const [saving, setSaving] = useState(false);
 
+  // Custom domain state
+  const initialDomain = project?.customDomain || project?.custom_domain || "";
+  const [domain, setDomain] = useState<string>(initialDomain);
+  const [savingDomain, setSavingDomain] = useState(false);
+
   useEffect(() => {
     if (project) {
       setName(project.name);
       setDescription(project.description || "");
+      setDomain(project.customDomain || project.custom_domain || "");
     }
   }, [project]);
 
@@ -116,6 +128,60 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
       navigate("/");
     } catch (e: any) {
       toast({ title: "Error deleting account", description: e.message, variant: "destructive" });
+    }
+  };
+
+  // Domain validation + helpers
+  const trimmedDomain = domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const isValidDomain = !trimmedDomain || DOMAIN_RE.test(trimmedDomain);
+  const isApex = useMemo(() => {
+    if (!trimmedDomain) return false;
+    return trimmedDomain.split(".").length === 2;
+  }, [trimmedDomain]);
+  const domainChanged = trimmedDomain !== (initialDomain || "");
+
+  const handleSaveDomain = async () => {
+    if (!projectId) return;
+    if (trimmedDomain && !DOMAIN_RE.test(trimmedDomain)) {
+      toast({ title: "Invalid domain", description: "Enter a domain like docs.example.com (no protocol or path).", variant: "destructive" });
+      return;
+    }
+    setSavingDomain(true);
+    try {
+      await api.patch(`/projects/${projectId}`, { customDomain: trimmedDomain || null });
+      toast({
+        title: trimmedDomain ? "Domain saved" : "Domain removed",
+        description: trimmedDomain
+          ? "Update your DNS records to complete connection."
+          : "Your project will use the default 0docs subdomain.",
+      });
+      onSaved?.();
+    } catch (e: any) {
+      toast({ title: "Error saving domain", description: e.message, variant: "destructive" });
+    }
+    setSavingDomain(false);
+  };
+
+  const handleRemoveDomain = async () => {
+    if (!projectId) return;
+    setSavingDomain(true);
+    try {
+      await api.patch(`/projects/${projectId}`, { customDomain: null });
+      setDomain("");
+      toast({ title: "Custom domain removed" });
+      onSaved?.();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+    setSavingDomain(false);
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: `${label} copied to clipboard` });
+    } catch {
+      toast({ title: "Copy failed", variant: "destructive" });
     }
   };
 
@@ -225,6 +291,153 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
             </div>
           )}
 
+          {activeSection === "domain" && (
+            <div className="space-y-6">
+              {/* Status banner */}
+              <div className="rounded-xl border bg-muted/30 px-4 py-3.5 flex items-start gap-3">
+                <div className={`h-8 w-8 rounded-lg shrink-0 flex items-center justify-center ${
+                  initialDomain ? "bg-emerald-500/10 text-emerald-500" : "bg-muted text-muted-foreground"
+                }`}>
+                  {initialDomain ? <CheckCircle2 className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-medium text-foreground">
+                    {initialDomain ? "Custom domain connected" : "No custom domain"}
+                  </p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">
+                    {initialDomain ? (
+                      <>
+                        Your docs are configured for{" "}
+                        <span className="font-mono text-foreground">{initialDomain}</span>. DNS must point to our servers — see instructions below.
+                      </>
+                    ) : (
+                      <>
+                        Currently published at{" "}
+                        <span className="font-mono text-foreground">{project?.slug || "your-project"}.0docs.app</span>
+                      </>
+                    )}
+                  </p>
+                </div>
+                {initialDomain && (
+                  <a
+                    href={`https://${initialDomain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11.5px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1 shrink-0"
+                  >
+                    Visit <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+
+              {/* Domain input */}
+              <Field
+                label="Custom domain"
+                hint="Enter the full domain you want to use, like docs.example.com (no http:// or trailing slash)."
+              >
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      value={domain}
+                      onChange={(e) => setDomain(e.target.value)}
+                      placeholder="docs.yourcompany.com"
+                      className={`h-10 pl-9 rounded-lg font-mono text-[13px] ${
+                        !isValidDomain ? "border-destructive focus-visible:ring-destructive/40" : ""
+                      }`}
+                      spellCheck={false}
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveDomain}
+                    disabled={savingDomain || !isValidDomain || !domainChanged}
+                    className="h-10 rounded-lg shrink-0"
+                  >
+                    {savingDomain ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        Saving…
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-3.5 w-3.5 mr-1.5" />
+                        Save
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {!isValidDomain && (
+                  <p className="text-[11.5px] text-destructive mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> Use a format like <span className="font-mono">docs.example.com</span>
+                  </p>
+                )}
+              </Field>
+
+              {/* DNS instructions */}
+              {trimmedDomain && isValidDomain && (
+                <div className="rounded-xl border overflow-hidden">
+                  <div className="px-4 py-3 border-b bg-muted/30 flex items-center gap-2">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                      DNS Configuration
+                    </span>
+                    <span className="text-[10.5px] text-muted-foreground/70">
+                      Add the record below at your DNS provider
+                    </span>
+                  </div>
+                  <div className="divide-y">
+                    {isApex ? (
+                      <DnsRow
+                        type="A"
+                        name="@"
+                        value="76.76.21.21"
+                        onCopy={(v, l) => copyToClipboard(v, l)}
+                      />
+                    ) : (
+                      <DnsRow
+                        type="CNAME"
+                        name={trimmedDomain.split(".")[0]}
+                        value="cname.0docs.app"
+                        onCopy={(v, l) => copyToClipboard(v, l)}
+                      />
+                    )}
+                  </div>
+                  <div className="px-4 py-3 border-t bg-muted/20">
+                    <p className="text-[11.5px] text-muted-foreground leading-relaxed">
+                      DNS changes can take anywhere from a few minutes to 48 hours to propagate. Once your domain resolves, your docs will be reachable at{" "}
+                      <span className="font-mono text-foreground">https://{trimmedDomain}</span>. SSL is provisioned automatically.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Remove existing domain */}
+              {initialDomain && (
+                <div className="pt-4 mt-2 border-t border-border/40">
+                  <div className="flex items-center justify-between gap-4 py-1">
+                    <div>
+                      <p className="text-[13px] font-medium text-foreground">Disconnect domain</p>
+                      <p className="text-[11.5px] text-muted-foreground mt-0.5">
+                        Reverts to the default subdomain immediately. DNS records are not removed.
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRemoveDomain}
+                      disabled={savingDomain}
+                      className="h-9 rounded-lg shrink-0"
+                    >
+                      Disconnect
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeSection === "profile" && <ProfileSettingsContent />}
 
           {activeSection === "delete-account" && (
@@ -296,6 +509,33 @@ const Field = ({
     <Label className="text-[13px] font-medium text-foreground mb-1.5 block">{label}</Label>
     {children}
     {hint && <p className="text-[11px] text-muted-foreground mt-1.5">{hint}</p>}
+  </div>
+);
+
+const DnsRow = ({
+  type, name, value, onCopy,
+}: {
+  type: string; name: string; value: string;
+  onCopy: (text: string, label: string) => void;
+}) => (
+  <div className="grid grid-cols-[80px_1fr_1.4fr_auto] items-center gap-3 px-4 py-2.5 text-[12px] hover:bg-muted/20 transition-colors">
+    <span className="font-mono font-semibold text-primary uppercase text-[11px]">{type}</span>
+    <div className="min-w-0">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mb-0.5">Name</p>
+      <p className="font-mono text-foreground truncate">{name}</p>
+    </div>
+    <div className="min-w-0">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mb-0.5">Value</p>
+      <p className="font-mono text-foreground truncate">{value}</p>
+    </div>
+    <button
+      onClick={() => onCopy(value, "DNS value")}
+      className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      title="Copy value"
+      aria-label="Copy DNS value"
+    >
+      <Copy className="h-3.5 w-3.5" />
+    </button>
   </div>
 );
 

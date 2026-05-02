@@ -135,11 +135,13 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
                   <button
                     key={align}
                     onClick={() => updateContent({ align })}
-                    className={`h-7 w-7 rounded-md text-[10px] font-medium transition-colors ${
+                    className={`h-7 w-7 rounded-md text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       (localContent.align || "left") === align
-                        ? "bg-foreground text-background"
-                        : "bg-muted text-muted-foreground hover:text-foreground"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
+                    aria-pressed={(localContent.align || "left") === align}
+                    aria-label={`Align ${align}`}
                   >
                     {align === "left" ? "L" : align === "center" ? "C" : "R"}
                   </button>
