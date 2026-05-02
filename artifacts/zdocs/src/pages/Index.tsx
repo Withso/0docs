@@ -44,7 +44,8 @@ function normPage(r: any): Page {
     order_index: r.orderIndex ?? r.order_index ?? 0,
     meta_description: r.metaDescription ?? r.meta_description ?? null,
     version_id: r.versionId ?? r.version_id ?? null,
-  };
+    nav_group_id: r.navGroupId ?? r.nav_group_id ?? null,
+  } as Page;
 }
 function normSection(r: any): Section {
   return {
