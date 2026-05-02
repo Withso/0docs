@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuth } from "@clerk/express";
 import { db, tabsTable, navGroupsTable, projectsTable } from "@workspace/db";
+import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and } from "drizzle-orm";
 
 const router = Router();
@@ -8,15 +8,7 @@ const router = Router();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string) => UUID_RE.test(s);
 
-type AuthedReq = Request & { userId: string };
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const auth = getAuth(req);
-  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  (req as unknown as AuthedReq).userId = userId;
-  next();
-}
 
 async function isProjectPublished(projectId: string): Promise<boolean> {
   const [p] = await db
@@ -42,8 +34,7 @@ router.get("/tabs", async (req: Request, res: Response) => {
       res.json(tabs); return;
     }
 
-    const auth = getAuth(req);
-    const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+    const userId = req.user?.id;
     if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
     const [owned] = await db.select({ id: projectsTable.id }).from(projectsTable)
       .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
@@ -78,7 +69,7 @@ async function ownedProject(projectId: string, userId: string) {
 router.get("/projects/:projectId/tabs", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedReq).userId;
+      const userId = req.user!.id;
       const { projectId } = req.params;
       if (!(await ownedProject(projectId, userId))) { res.status(404).json({ error: "Not found" }); return; }
       const tabs = await db.select().from(tabsTable)
@@ -95,7 +86,7 @@ router.get("/projects/:projectId/tabs", requireAuth,
 router.post("/projects/:projectId/tabs", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedReq).userId;
+      const userId = req.user!.id;
       const { projectId } = req.params;
       if (!(await ownedProject(projectId, userId))) { res.status(404).json({ error: "Not found" }); return; }
       const { label, orderIndex, metadata } = req.body as {
@@ -115,7 +106,7 @@ router.post("/projects/:projectId/tabs", requireAuth,
 // Update tab
 router.patch("/tabs/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     if (!(await ownedTab(req.params.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const allowed = ["label", "icon", "orderIndex", "metadata"] as const;
     const updates: Record<string, unknown> & { updatedAt: Date } = { updatedAt: new Date() };
@@ -133,7 +124,7 @@ router.patch("/tabs/:id", requireAuth, async (req: Request<{ id: string }>, res:
 // Delete tab
 router.delete("/tabs/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     if (!(await ownedTab(req.params.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     await db.update(navGroupsTable).set({ tabId: null }).where(eq(navGroupsTable.tabId, req.params.id));
     await db.delete(tabsTable).where(eq(tabsTable.id, req.params.id));
@@ -147,7 +138,7 @@ router.delete("/tabs/:id", requireAuth, async (req: Request<{ id: string }>, res
 // Reorder tabs
 router.post("/tabs/reorder", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     const { tabs } = req.body as { tabs: Array<{ id: string; orderIndex: number }> };
     for (const t of tabs) {
       if (!(await ownedTab(t.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }

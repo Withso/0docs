@@ -9,3 +9,4 @@ export * from "./publishedVersions";
 export * from "./docVersions";
 export * from "./profiles";
 export * from "./pageFeedback";
+export * from "./auth";

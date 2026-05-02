@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuth } from "@clerk/express";
 import { db, navGroupsTable, pagesTable, projectsTable } from "@workspace/db";
+import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and } from "drizzle-orm";
 
 const router = Router();
@@ -8,15 +8,7 @@ const router = Router();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string) => UUID_RE.test(s);
 
-type AuthedReq = Request & { userId: string };
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const auth = getAuth(req);
-  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  (req as unknown as AuthedReq).userId = userId;
-  next();
-}
 
 async function ownedNavGroup(navGroupId: string, userId: string) {
   const rows = await db
@@ -57,8 +49,7 @@ router.get("/navgroups", async (req: Request, res: Response) => {
       res.json(groups); return;
     }
 
-    const auth = getAuth(req);
-    const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+    const userId = req.user?.id;
     if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
     if (!(await ownedProject(projectId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const groups = await db.select().from(navGroupsTable)
@@ -73,7 +64,7 @@ router.get("/navgroups", async (req: Request, res: Response) => {
 // PATCH /navgroups/:id (alias for /nav-groups/:id)
 router.patch("/navgroups/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     if (!(await ownedNavGroup(req.params.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const allowed = ["title", "type", "orderIndex", "tabId", "metadata"] as const;
     const updates: Record<string, unknown> & { updatedAt: Date } = { updatedAt: new Date() };
@@ -91,7 +82,7 @@ router.patch("/navgroups/:id", requireAuth, async (req: Request<{ id: string }>,
 router.get("/projects/:projectId/nav-groups", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedReq).userId;
+      const userId = req.user!.id;
       const { projectId } = req.params;
       if (!(await ownedProject(projectId, userId))) { res.status(404).json({ error: "Not found" }); return; }
       const groups = await db.select().from(navGroupsTable)
@@ -108,7 +99,7 @@ router.get("/projects/:projectId/nav-groups", requireAuth,
 router.post("/projects/:projectId/nav-groups", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedReq).userId;
+      const userId = req.user!.id;
       const { projectId } = req.params;
       if (!(await ownedProject(projectId, userId))) { res.status(404).json({ error: "Not found" }); return; }
       const { title, type, orderIndex, tabId } = req.body as {
@@ -128,7 +119,7 @@ router.post("/projects/:projectId/nav-groups", requireAuth,
 // Update nav group
 router.patch("/nav-groups/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     if (!(await ownedNavGroup(req.params.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const allowed = ["title", "type", "orderIndex", "tabId", "metadata"] as const;
     const updates: Record<string, unknown> & { updatedAt: Date } = { updatedAt: new Date() };
@@ -146,7 +137,7 @@ router.patch("/nav-groups/:id", requireAuth, async (req: Request<{ id: string }>
 // Delete nav group
 router.delete("/nav-groups/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     if (!(await ownedNavGroup(req.params.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     await db.update(pagesTable).set({ navGroupId: null }).where(eq(pagesTable.navGroupId, req.params.id));
     await db.delete(navGroupsTable).where(eq(navGroupsTable.id, req.params.id));
@@ -160,7 +151,7 @@ router.delete("/nav-groups/:id", requireAuth, async (req: Request<{ id: string }
 // Reorder nav groups
 router.post("/nav-groups/reorder", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     const { groups } = req.body as { groups: Array<{ id: string; orderIndex: number }> };
     for (const g of groups) {
       if (!(await ownedNavGroup(g.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }

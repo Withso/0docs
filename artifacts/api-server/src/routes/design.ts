@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuth } from "@clerk/express";
 import { db, projectDesignSettingsTable, projectsTable } from "@workspace/db";
+import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and } from "drizzle-orm";
 
 const router = Router();
@@ -8,15 +8,7 @@ const router = Router();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string) => UUID_RE.test(s);
 
-type AuthedReq = Request & { userId: string };
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const auth = getAuth(req);
-  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  (req as unknown as AuthedReq).userId = userId;
-  next();
-}
 
 // Get design settings — public for published projects, owner-only otherwise
 router.get("/projects/:projectId/design",
@@ -32,8 +24,7 @@ router.get("/projects/:projectId/design",
 
       const isPublished = project.publishedVersionId != null;
       if (!isPublished) {
-        const auth = getAuth(req);
-        const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+        const userId = req.user?.id;
         if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
         if (project.userId !== userId) { res.status(403).json({ error: "Forbidden" }); return; }
       }
@@ -51,7 +42,7 @@ router.get("/projects/:projectId/design",
 router.put("/projects/:projectId/design", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedReq).userId;
+      const userId = req.user!.id;
       const { projectId } = req.params;
       const [project] = await db.select().from(projectsTable)
         .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));

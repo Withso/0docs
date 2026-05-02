@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuth } from "@clerk/express";
 import { db, blocksTable, sectionsTable, pagesTable, projectsTable } from "@workspace/db";
+import { requireAuth } from "../middlewares/requireAuth";
 import { eq, inArray, and } from "drizzle-orm";
 
 const router = Router();
@@ -8,15 +8,7 @@ const router = Router();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string) => UUID_RE.test(s);
 
-type AuthedReq = Request & { userId: string };
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const auth = getAuth(req);
-  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  (req as unknown as AuthedReq).userId = userId;
-  next();
-}
 
 async function ownedBlock(blockId: string, userId: string) {
   const rows = await db
@@ -31,7 +23,7 @@ async function ownedBlock(blockId: string, userId: string) {
 }
 
 // Resolve section IDs, verifying their project is published or caller owns it
-async function resolvePublishedSectionIds(sectionIds: string[], auth: ReturnType<typeof getAuth>): Promise<string[] | null> {
+async function resolvePublishedSectionIds(sectionIds: string[], userId: string | undefined): Promise<string[] | null> {
   const validIds = sectionIds.filter(isUuid);
   if (validIds.length === 0) return [];
 
@@ -48,7 +40,6 @@ async function resolvePublishedSectionIds(sectionIds: string[], auth: ReturnType
     .where(inArray(pagesTable.id, pageIds));
 
   const projectIds = [...new Set(pages.map((p) => p.projectId))];
-  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
 
   for (const projectId of projectIds) {
     const [project] = await db
@@ -69,11 +60,10 @@ router.get("/blocks", async (req: Request, res: Response) => {
   try {
     const sectionId = req.query["sectionId"] as string | undefined;
     const sectionIds = req.query["sectionIds"] as string | undefined;
-    const auth = getAuth(req);
 
     if (sectionId) {
       if (!isUuid(sectionId)) { res.json([]); return; }
-      const allowed = await resolvePublishedSectionIds([sectionId], auth);
+      const allowed = await resolvePublishedSectionIds([sectionId], req.user?.id);
       if (allowed === null) { res.status(403).json({ error: "Forbidden" }); return; }
       if (allowed.length === 0) { res.json([]); return; }
       const blocks = await db.select().from(blocksTable)
@@ -84,7 +74,7 @@ router.get("/blocks", async (req: Request, res: Response) => {
     if (sectionIds) {
       const ids = sectionIds.split(",").filter(Boolean).filter(isUuid);
       if (ids.length === 0) { res.json([]); return; }
-      const allowed = await resolvePublishedSectionIds(ids, auth);
+      const allowed = await resolvePublishedSectionIds(ids, req.user?.id);
       if (allowed === null) { res.status(403).json({ error: "Forbidden" }); return; }
       if (allowed.length === 0) { res.json([]); return; }
       const blocks = await db.select().from(blocksTable)
@@ -101,7 +91,7 @@ router.get("/blocks", async (req: Request, res: Response) => {
 // Create block
 router.post("/blocks", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     const { sectionId, type, content, orderIndex } = req.body as {
       sectionId: string; type?: string; content?: object; orderIndex?: number;
     };
@@ -125,7 +115,7 @@ router.post("/blocks", requireAuth, async (req: Request, res: Response) => {
 // Update block
 router.patch("/blocks/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     if (!(await ownedBlock(req.params.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const { content, orderIndex, type, sectionId } = req.body as {
       content?: object; orderIndex?: number; type?: string; sectionId?: string;
@@ -157,7 +147,7 @@ router.patch("/blocks/:id", requireAuth, async (req: Request<{ id: string }>, re
 // Delete block
 router.delete("/blocks/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     if (!(await ownedBlock(req.params.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     await db.delete(blocksTable).where(eq(blocksTable.id, req.params.id));
     res.status(204).send();
@@ -181,7 +171,7 @@ async function ownedSection(sectionId: string, userId: string): Promise<boolean>
 // Reorder blocks
 router.post("/blocks/reorder", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     const { blocks } = req.body as { blocks: Array<{ id: string; orderIndex: number; sectionId: string }> };
     for (const b of blocks) {
       if (!(await ownedBlock(b.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }

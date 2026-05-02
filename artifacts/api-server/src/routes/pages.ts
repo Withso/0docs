@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuth } from "@clerk/express";
 import { db, pagesTable, projectsTable, sectionsTable, blocksTable } from "@workspace/db";
+import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and, inArray } from "drizzle-orm";
 
 const router = Router();
@@ -8,15 +8,7 @@ const router = Router();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string) => UUID_RE.test(s);
 
-type AuthedRequest = Request & { userId: string };
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const auth = getAuth(req);
-  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  (req as unknown as AuthedRequest).userId = userId;
-  next();
-}
 
 async function ownedProject(projectId: string, userId: string) {
   const [p] = await db.select({ id: projectsTable.id }).from(projectsTable)
@@ -49,8 +41,7 @@ router.get("/pages", async (req: Request, res: Response) => {
     }
 
     // Not published — require auth + ownership
-    const auth = getAuth(req);
-    const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+    const userId = req.user?.id;
     if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
     if (!(await ownedProject(projectId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const pages = await db.select().from(pagesTable)
@@ -66,7 +57,7 @@ router.get("/pages", async (req: Request, res: Response) => {
 router.patch("/pages/:id", requireAuth,
   async (req: Request<{ id: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { id } = req.params;
       const [page] = await db.select().from(pagesTable).where(eq(pagesTable.id, id));
       if (!page) { res.status(404).json({ error: "Not found" }); return; }
@@ -89,7 +80,7 @@ router.patch("/pages/:id", requireAuth,
 router.get("/projects/:projectId/pages", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { projectId } = req.params;
       if (!(await ownedProject(projectId, userId))) {
         res.status(404).json({ error: "Not found" }); return;
@@ -108,7 +99,7 @@ router.get("/projects/:projectId/pages", requireAuth,
 router.post("/projects/:projectId/pages", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { projectId } = req.params;
       if (!(await ownedProject(projectId, userId))) {
         res.status(404).json({ error: "Not found" }); return;
@@ -133,7 +124,7 @@ router.post("/projects/:projectId/pages", requireAuth,
 router.patch("/projects/:projectId/pages/:pageId", requireAuth,
   async (req: Request<{ projectId: string; pageId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { projectId, pageId } = req.params;
       if (!(await ownedProject(projectId, userId))) {
         res.status(404).json({ error: "Not found" }); return;
@@ -159,7 +150,7 @@ router.patch("/projects/:projectId/pages/:pageId", requireAuth,
 router.delete("/projects/:projectId/pages/:pageId", requireAuth,
   async (req: Request<{ projectId: string; pageId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { projectId, pageId } = req.params;
       if (!(await ownedProject(projectId, userId))) {
         res.status(404).json({ error: "Not found" }); return;
@@ -178,7 +169,7 @@ router.delete("/projects/:projectId/pages/:pageId", requireAuth,
 router.post("/projects/:projectId/pages/reorder", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { projectId } = req.params;
       if (!(await ownedProject(projectId, userId))) {
         res.status(404).json({ error: "Not found" }); return;
@@ -203,7 +194,7 @@ router.post("/projects/:projectId/pages/reorder", requireAuth,
 router.get("/projects/:projectId/pages/:pageId/content", requireAuth,
   async (req: Request<{ projectId: string; pageId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { projectId, pageId } = req.params;
       if (!(await ownedProject(projectId, userId))) {
         res.status(403).json({ error: "Forbidden" }); return;

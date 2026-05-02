@@ -12,8 +12,6 @@ export interface WorkspaceProject {
   publishedVersionId?: string | null;
 }
 
-export const listWorkspaceProjects = async (
-  getToken: () => Promise<string | null>,
-): Promise<WorkspaceProject[]> => {
-  return apiFetch<WorkspaceProject[]>("/projects", { method: "GET" }, getToken);
+export const listWorkspaceProjects = async (): Promise<WorkspaceProject[]> => {
+  return apiFetch<WorkspaceProject[]>("/projects", { method: "GET" });
 };

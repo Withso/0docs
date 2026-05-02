@@ -1,19 +1,11 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuth } from "@clerk/express";
 import { db, projectsTable, pagesTable, navGroupsTable, sectionsTable, blocksTable, projectDesignSettingsTable } from "@workspace/db";
+import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and, desc } from "drizzle-orm";
 
 const router = Router();
 
-type AuthedReq = Request & { userId: string };
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const auth = getAuth(req);
-  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  (req as unknown as AuthedReq).userId = userId;
-  next();
-}
 
 // List projects (authenticated) or homepage project (public)
 router.get("/projects", async (req: Request, res: Response) => {
@@ -25,8 +17,7 @@ router.get("/projects", async (req: Request, res: Response) => {
         .limit(1);
       res.json(projects); return;
     }
-    const auth = getAuth(req);
-    const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+    const userId = req.user?.id;
     if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
     const projects = await db.select().from(projectsTable)
       .where(eq(projectsTable.userId, userId))
@@ -41,7 +32,7 @@ router.get("/projects", async (req: Request, res: Response) => {
 // Get project by id
 router.get("/projects/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     const [project] = await db.select().from(projectsTable)
       .where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, userId)));
     if (!project) { res.status(404).json({ error: "Not found" }); return; }
@@ -55,7 +46,7 @@ router.get("/projects/:id", requireAuth, async (req: Request<{ id: string }>, re
 // Create project
 router.post("/projects", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     const { name, slug, description } = req.body as { name: string; slug: string; description?: string };
     const [project] = await db.insert(projectsTable)
       .values({ name, slug, description, userId })
@@ -73,7 +64,7 @@ router.post("/projects", requireAuth, async (req: Request, res: Response) => {
 // Update project
 router.patch("/projects/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     const [project] = await db.update(projectsTable)
       .set({ ...req.body, updatedAt: new Date() })
       .where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, userId)))
@@ -89,7 +80,7 @@ router.patch("/projects/:id", requireAuth, async (req: Request<{ id: string }>, 
 // Delete project
 router.delete("/projects/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     await db.delete(projectsTable)
       .where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, userId)));
     res.status(204).send();
@@ -102,7 +93,7 @@ router.delete("/projects/:id", requireAuth, async (req: Request<{ id: string }>,
 // Duplicate project
 router.post("/projects/:id/duplicate", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     const [src] = await db.select().from(projectsTable)
       .where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, userId)));
     if (!src) { res.status(404).json({ error: "Not found" }); return; }

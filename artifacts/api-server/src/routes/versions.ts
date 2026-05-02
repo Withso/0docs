@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuth } from "@clerk/express";
 import { db, publishedVersionsTable, docVersionsTable, projectsTable, profilesTable } from "@workspace/db";
+import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and, desc, inArray } from "drizzle-orm";
 
 const router = Router();
@@ -8,15 +8,7 @@ const router = Router();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string) => UUID_RE.test(s);
 
-type AuthedRequest = Request & { userId: string };
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const auth = getAuth(req);
-  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  (req as unknown as AuthedRequest).userId = userId;
-  next();
-}
 
 async function requireProjectOwnership(projectId: string, userId: string): Promise<boolean> {
   const rows = await db.select({ id: projectsTable.id }).from(projectsTable)
@@ -32,13 +24,26 @@ async function requireDocVersionOwnership(docVersionId: string, userId: string):
   return requireProjectOwnership(version.projectId, userId);
 }
 
-// GET /versions?projectId=...&limit=N (public — read-only activity data for viewer)
+// GET /versions?projectId=...&limit=N — public for published projects, owner-only otherwise
 router.get("/versions", async (req: Request, res: Response) => {
   try {
     const projectId = req.query["projectId"] as string | undefined;
     const limit = req.query["limit"] as string | undefined;
     if (!projectId) { res.status(400).json({ error: "projectId required" }); return; }
     if (!isUuid(projectId)) { res.json([]); return; }
+
+    const [project] = await db.select({
+      userId: projectsTable.userId,
+      publishedVersionId: projectsTable.publishedVersionId,
+    }).from(projectsTable).where(eq(projectsTable.id, projectId));
+    if (!project) { res.status(404).json({ error: "Not found" }); return; }
+    const isPublished = project.publishedVersionId != null;
+    if (!isPublished) {
+      const userId = req.user?.id;
+      if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+      if (project.userId !== userId) { res.status(403).json({ error: "Forbidden" }); return; }
+    }
+
     const limitN = Math.min(parseInt(limit || "10", 10), 100);
     const versions = await db.select().from(publishedVersionsTable)
       .where(eq(publishedVersionsTable.projectId, projectId))
@@ -79,13 +84,27 @@ router.get("/versions", async (req: Request, res: Response) => {
   }
 });
 
-// GET /versions/:id (public — used by Index.tsx for homepage)
+// GET /versions/:id — public for active version on published projects, owner-only otherwise
 router.get("/versions/:id", async (req: Request<{ id: string }>, res: Response) => {
   try {
     const id = req.params.id;
     if (!isUuid(id)) { res.status(404).json({ error: "Not found" }); return; }
     const [version] = await db.select().from(publishedVersionsTable).where(eq(publishedVersionsTable.id, id));
     if (!version) { res.status(404).json({ error: "Not found" }); return; }
+
+    const [project] = await db.select({
+      userId: projectsTable.userId,
+      publishedVersionId: projectsTable.publishedVersionId,
+    }).from(projectsTable).where(eq(projectsTable.id, version.projectId));
+    if (!project) { res.status(404).json({ error: "Not found" }); return; }
+
+    const isActivePublic = project.publishedVersionId === id && version.isActive;
+    if (!isActivePublic) {
+      const userId = req.user?.id;
+      if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+      if (project.userId !== userId) { res.status(403).json({ error: "Forbidden" }); return; }
+    }
+
     res.json(version);
   } catch (err: unknown) {
     res.status(500).json({ error: err instanceof Error ? err.message : "Server error" });
@@ -96,7 +115,7 @@ router.get("/versions/:id", async (req: Request<{ id: string }>, res: Response) 
 router.get("/projects/:projectId/published-versions", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { projectId } = req.params;
       if (!(await requireProjectOwnership(projectId, userId))) {
         res.status(403).json({ error: "Forbidden" }); return;
@@ -134,7 +153,7 @@ router.get("/projects/:projectId/published-versions", requireAuth,
 router.post("/projects/:projectId/published-versions", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { projectId } = req.params;
       const [project] = await db.select().from(projectsTable)
         .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
@@ -181,7 +200,7 @@ router.post("/projects/:projectId/published-versions", requireAuth,
 router.post("/projects/:projectId/published-versions/:versionId/revert", requireAuth,
   async (req: Request<{ projectId: string; versionId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { projectId, versionId } = req.params;
       if (!(await requireProjectOwnership(projectId, userId))) {
         res.status(403).json({ error: "Forbidden" }); return;
@@ -224,8 +243,7 @@ router.get("/projects/:projectId/doc-versions",
 
       const isPublished = project.publishedVersionId != null;
       if (!isPublished) {
-        const auth = getAuth(req);
-        const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+        const userId = req.user?.id;
         if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
         if (project.userId !== userId) { res.status(403).json({ error: "Forbidden" }); return; }
       }
@@ -244,7 +262,7 @@ router.get("/projects/:projectId/doc-versions",
 router.post("/projects/:projectId/doc-versions", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { projectId } = req.params;
       if (!(await requireProjectOwnership(projectId, userId))) {
         res.status(403).json({ error: "Forbidden" }); return;
@@ -264,7 +282,7 @@ router.post("/projects/:projectId/doc-versions", requireAuth,
 router.post("/doc-versions/:id/set-default", requireAuth,
   async (req: Request<{ id: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { id } = req.params;
       if (!(await requireDocVersionOwnership(id, userId))) {
         res.status(403).json({ error: "Forbidden" }); return;
@@ -285,7 +303,7 @@ router.post("/doc-versions/:id/set-default", requireAuth,
 router.delete("/doc-versions/:id", requireAuth,
   async (req: Request<{ id: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
+      const userId = req.user!.id;
       const { id } = req.params;
       if (!(await requireDocVersionOwnership(id, userId))) {
         res.status(403).json({ error: "Forbidden" }); return;

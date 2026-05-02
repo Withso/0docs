@@ -1,7 +1,6 @@
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, ChevronDown, CheckCircle2, XCircle, RefreshCw, ExternalLink, Globe2, FilePenLine, Plus, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAuth as useClerkAuth } from "@clerk/react";
 import { listProjectActivity, type ActivityEntry } from "@/app/api/activity";
 import type { BuilderMode } from "./BuilderHeader";
 import type { Page, NavGroup, Tab } from "@/hooks/use-builder";
@@ -40,7 +39,6 @@ const relativeTime = (iso: string) => {
 
 const ProjectHome = forwardRef<HTMLElement, ProjectHomeProps>(({ project, pages, onModeChange }, ref) => {
   const { user } = useAuth();
-  const { getToken } = useClerkAuth();
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
@@ -64,7 +62,7 @@ const ProjectHome = forwardRef<HTMLElement, ProjectHomeProps>(({ project, pages,
     if (!project?.id) return;
     let cancelled = false;
     setLoadingActivity(true);
-    listProjectActivity(project.id, getToken, 12)
+    listProjectActivity(project.id, 12)
       .then((rows) => { if (!cancelled) setActivity(rows); })
       .catch(() => { if (!cancelled) setActivity([]); })
       .finally(() => { if (!cancelled) setLoadingActivity(false); });

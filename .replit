@@ -22,7 +22,6 @@ timeoutMs = 20000
 [userenv]
 
 [userenv.shared]
-VITE_CLERK_PUBLISHABLE_KEY = "pk_test_cmVmaW5lZC1jYXRmaXNoLTc0LmNsZXJrLmFjY291bnRzLmRldiQ"
 
 [[ports]]
 localPort = 8080

@@ -15,12 +15,10 @@ export interface ActivityEntry {
 
 export const listProjectActivity = async (
   projectId: string,
-  getToken: () => Promise<string | null>,
   limit = 10,
 ): Promise<ActivityEntry[]> => {
   return apiFetch<ActivityEntry[]>(
     `/versions?projectId=${projectId}&limit=${limit}`,
     { method: "GET" },
-    getToken,
   );
 };

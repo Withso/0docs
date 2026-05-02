@@ -4,7 +4,6 @@ import { Check, ChevronsUpDown, FileText, Home, Inbox, Plus, Search } from "luci
 import ProfileMenu from "./ProfileMenu";
 import { useAuth } from "@/contexts/AuthContext";
 import { listWorkspaceProjects, type WorkspaceProject } from "@/app/api/projects";
-import { useAuth as useClerkAuth } from "@clerk/react";
 
 import type { BuilderMode } from "./BuilderHeader";
 import ProjectRail from "./ProjectRail";
@@ -28,12 +27,11 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { getToken } = useClerkAuth();
   const [projects, setProjects] = useState<WorkspaceProject[]>([]);
 
   useEffect(() => {
     if (!user?.id) return;
-    listWorkspaceProjects(getToken)
+    listWorkspaceProjects()
       .then(setProjects)
       .catch(() => setProjects([]));
   }, [user?.id]);

@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuth } from "@clerk/express";
 import { db, sectionsTable, pagesTable, projectsTable } from "@workspace/db";
+import { requireAuth } from "../middlewares/requireAuth";
 import { eq, inArray, and, isNotNull } from "drizzle-orm";
 
 const router = Router();
@@ -8,15 +8,7 @@ const router = Router();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string) => UUID_RE.test(s);
 
-type AuthedReq = Request & { userId: string };
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const auth = getAuth(req);
-  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  (req as unknown as AuthedReq).userId = userId;
-  next();
-}
 
 async function ownedSection(sectionId: string, userId: string) {
   const rows = await db
@@ -30,7 +22,7 @@ async function ownedSection(sectionId: string, userId: string) {
 }
 
 // Resolve the project ID for a set of page IDs, verifying the project is published or caller owns it
-async function resolvePublishedPageIds(pageIds: string[], auth: ReturnType<typeof getAuth>): Promise<string[] | null> {
+async function resolvePublishedPageIds(pageIds: string[], userId: string | undefined): Promise<string[] | null> {
   // Filter to valid UUIDs
   const validIds = pageIds.filter(isUuid);
   if (validIds.length === 0) return [];
@@ -45,7 +37,6 @@ async function resolvePublishedPageIds(pageIds: string[], auth: ReturnType<typeo
   const projectIds = [...new Set(pages.map((p) => p.projectId))];
 
   // For each project, check it's either published OR owned by the caller
-  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
   for (const projectId of projectIds) {
     const [project] = await db
       .select({ publishedVersionId: projectsTable.publishedVersionId, userId: projectsTable.userId })
@@ -65,11 +56,10 @@ router.get("/sections", async (req: Request, res: Response) => {
   try {
     const pageId = req.query["pageId"] as string | undefined;
     const pageIds = req.query["pageIds"] as string | undefined;
-    const auth = getAuth(req);
 
     if (pageId) {
       if (!isUuid(pageId)) { res.json([]); return; }
-      const allowed = await resolvePublishedPageIds([pageId], auth);
+      const allowed = await resolvePublishedPageIds([pageId], req.user?.id);
       if (allowed === null) { res.status(403).json({ error: "Forbidden" }); return; }
       if (allowed.length === 0) { res.json([]); return; }
       const sections = await db.select().from(sectionsTable)
@@ -80,7 +70,7 @@ router.get("/sections", async (req: Request, res: Response) => {
     if (pageIds) {
       const ids = pageIds.split(",").filter(Boolean).filter(isUuid);
       if (ids.length === 0) { res.json([]); return; }
-      const allowed = await resolvePublishedPageIds(ids, auth);
+      const allowed = await resolvePublishedPageIds(ids, req.user?.id);
       if (allowed === null) { res.status(403).json({ error: "Forbidden" }); return; }
       if (allowed.length === 0) { res.json([]); return; }
       const sections = await db.select().from(sectionsTable)
@@ -97,7 +87,7 @@ router.get("/sections", async (req: Request, res: Response) => {
 // Create section
 router.post("/sections", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     const { pageId, title, orderIndex } = req.body as { pageId: string; title?: string; orderIndex?: number };
     const [page] = await db.select().from(pagesTable).where(eq(pagesTable.id, pageId));
     if (!page) { res.status(404).json({ error: "Not found" }); return; }
@@ -117,7 +107,7 @@ router.post("/sections", requireAuth, async (req: Request, res: Response) => {
 // Update section
 router.patch("/sections/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     if (!(await ownedSection(req.params.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const allowed = ["title", "navTitle", "orderIndex"] as const;
     const updates: Record<string, unknown> & { updatedAt: Date } = { updatedAt: new Date() };
@@ -135,7 +125,7 @@ router.patch("/sections/:id", requireAuth, async (req: Request<{ id: string }>, 
 // Delete section
 router.delete("/sections/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     if (!(await ownedSection(req.params.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     await db.delete(sectionsTable).where(eq(sectionsTable.id, req.params.id));
     res.status(204).send();
@@ -148,7 +138,7 @@ router.delete("/sections/:id", requireAuth, async (req: Request<{ id: string }>,
 // Reorder sections
 router.post("/sections/reorder", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as unknown as AuthedReq).userId;
+    const userId = req.user!.id;
     const { sections } = req.body as { sections: Array<{ id: string; orderIndex: number }> };
     for (const s of sections) {
       if (!(await ownedSection(s.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }

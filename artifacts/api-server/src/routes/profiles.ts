@@ -1,24 +1,16 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuth } from "@clerk/express";
 import { db, profilesTable, projectsTable } from "@workspace/db";
+import { requireAuth } from "../middlewares/requireAuth";
 import { eq, inArray } from "drizzle-orm";
 
 const router = Router();
 
-type AuthedReq = Request & { userId: string };
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const auth = getAuth(req);
-  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  (req as AuthedReq).userId = userId;
-  next();
-}
 
 // Get profile
 router.get("/profiles/me", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as AuthedReq).userId;
+    const userId = req.user!.id;
     const [profile] = await db.select().from(profilesTable).where(eq(profilesTable.id, userId));
     res.json(profile || null);
   } catch (err) {
@@ -30,7 +22,7 @@ router.get("/profiles/me", requireAuth, async (req: Request, res: Response) => {
 // Patch profile
 router.patch("/profiles/me", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as AuthedReq).userId;
+    const userId = req.user!.id;
     const { displayName, bio, avatarUrl } = req.body as {
       displayName?: string; bio?: string; avatarUrl?: string;
     };
@@ -55,7 +47,7 @@ router.patch("/profiles/me", requireAuth, async (req: Request, res: Response) =>
 // Delete account (profile + all projects)
 router.delete("/profiles/me", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as AuthedReq).userId;
+    const userId = req.user!.id;
     await db.delete(projectsTable).where(eq(projectsTable.userId, userId));
     await db.delete(profilesTable).where(eq(profilesTable.id, userId));
     res.status(204).send();
@@ -68,7 +60,7 @@ router.delete("/profiles/me", requireAuth, async (req: Request, res: Response) =
 // Upsert profile
 router.put("/profiles/me", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as AuthedReq).userId;
+    const userId = req.user!.id;
     const { displayName, bio, avatarUrl } = req.body as {
       displayName?: string; bio?: string; avatarUrl?: string;
     };
