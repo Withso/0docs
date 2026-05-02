@@ -72,14 +72,27 @@ const BuilderHeader = ({
         {/* Right — search + preview + publish */}
         <div className="flex items-center gap-2">
           {onSearchClick && (
-            <button
-              onClick={onSearchClick}
-              className="hidden md:flex items-center gap-2 h-8 px-3 rounded-lg bg-muted/60 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-[12px] min-w-[180px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-            >
-              <Search className="h-3.5 w-3.5" />
-              <span className="flex-1 text-left">Search</span>
-              <kbd className="text-[10px] font-mono opacity-70">⌘K</kbd>
-            </button>
+            <>
+              {/* Wide search pill — only shown when there's room (≥ lg). */}
+              <button
+                onClick={onSearchClick}
+                aria-label="Search"
+                className="hidden lg:flex items-center gap-2 h-8 px-3 rounded-lg bg-muted/60 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-[12px] w-[200px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+              >
+                <Search className="h-3.5 w-3.5 shrink-0" />
+                <span className="flex-1 text-left">Search</span>
+                <kbd className="text-[10px] font-mono opacity-70">⌘K</kbd>
+              </button>
+              {/* Compact icon-only search — shown below lg so the header never overflows. */}
+              <button
+                onClick={onSearchClick}
+                aria-label="Search"
+                title="Search (⌘K)"
+                className="lg:hidden h-8 w-8 rounded-lg flex items-center justify-center bg-muted/60 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+              >
+                <Search className="h-3.5 w-3.5" />
+              </button>
+            </>
           )}
 
           <button

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import {
-  X, Trash2, Type, Image as ImageIcon, Pipette, EyeOff, Globe,
+  ArrowLeft, Trash2, Type, Image as ImageIcon, Pipette, EyeOff, Globe,
   FileText, Tag as TagIcon, Hash, Sparkles, Layers as LayersIcon,
   ChevronDown, GripVertical, Plus, Languages, Box, GitBranch,
 } from "lucide-react";
@@ -56,6 +56,24 @@ const headerLabelFor = (target: SettingsTarget) => {
   }
 };
 
+/** Returns the human-readable name of the target entity (page title,
+ *  group title, tab label, etc.) so the header can show
+ *  "← Quickstart" instead of the generic "Page settings". */
+const entityNameFor = (target: SettingsTarget): string => {
+  switch (target.kind) {
+    case "page":
+      return target.page.title || "Untitled page";
+    case "group":
+    case "dropdown":
+      return target.group.title || "Untitled group";
+    case "tab":
+    case "language":
+    case "product":
+    case "version":
+      return target.tab.label || "Untitled";
+  }
+};
+
 const SettingsSidePanel = ({
   target,
   onClose,
@@ -79,30 +97,36 @@ const SettingsSidePanel = ({
   };
 
   return (
-    /* Side panel fits the parent's height (workspace shell is h-screen).
-       Internal body scrolls; header stays pinned. */
+    /* Side panel fills the same column the navigation tree was in.
+       Header has a "Back to navigation" affordance so it's clear how to
+       return to the tree. Internal body scrolls; header stays pinned. */
     <aside
       className="shrink-0 border-r border-border/40 bg-background flex flex-col self-stretch min-h-0 animate-slide-in-right"
       style={{ width }}
     >
-      <div className="flex items-center justify-between px-3 h-10 border-b border-border/40 shrink-0">
-        <span className="text-[12.5px] font-medium text-foreground truncate">{headerLabelFor(target)}</span>
-        <div className="flex items-center gap-0.5">
-          <button
-            onClick={handleDelete}
-            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-muted/50 transition-colors"
-            title="Delete"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={onClose}
-            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-            title="Close"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
+      <div className="flex items-center justify-between gap-1 px-2 h-12 border-b border-border/40 shrink-0">
+        <button
+          onClick={onClose}
+          className="group flex items-center gap-2 h-9 px-2 -ml-1 rounded-md hover:bg-muted/60 transition-colors min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+          title="Back to navigation"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
+          <span className="flex flex-col items-start min-w-0 leading-tight">
+            <span className="text-[12.5px] font-medium text-foreground truncate max-w-full">
+              {entityNameFor(target)}
+            </span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground/80 truncate max-w-full">
+              {headerLabelFor(target)}
+            </span>
+          </span>
+        </button>
+        <button
+          onClick={handleDelete}
+          className="h-7 w-7 shrink-0 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+          title="Delete"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">

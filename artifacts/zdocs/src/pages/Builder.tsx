@@ -88,6 +88,15 @@ const Builder = () => {
     setMode(getInitialMode());
   }, [location.pathname]);
 
+  // Settings panel only makes sense in editor/code; clear it when the user
+  // navigates to settings/configurations/analytics/etc. so we don't open
+  // back into a stale page-settings on return.
+  useEffect(() => {
+    if (mode !== "editor" && mode !== "code" && settingsTarget) {
+      setSettingsTarget(null);
+    }
+  }, [mode, settingsTarget]);
+
   // Global ⌘K / Ctrl+K to open search
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -344,13 +353,16 @@ const Builder = () => {
   return (
     <WorkspaceShell project={project} mode={mode} onModeChange={handleModeChange} hasUnpublishedChanges={hasUnpublishedChanges}>
         <div className="flex-1 min-w-0 flex min-h-0">
-          {/* ─── Shared Navigation column (Mintlify-style) ───
-           * Visible in both Visual (editor) and Code modes so the user can
-           * switch the active page without leaving Code view.
+          {/* ─── Left tooling column (Mintlify-faithful) ───
+           * Hosts EITHER the navigation tree OR the page-settings panel.
+           * Settings REPLACES nav so the content area keeps its full width
+           * (preventing the cramped 4-pane squeeze). Clicking X / "Back"
+           * on settings restores the nav. Visible in both Visual (editor)
+           * and Code modes so the user can switch pages from Code view.
            */}
           {(mode === "editor" || mode === "code") && (
             <aside
-              className="shrink-0 border-r border-border/40 bg-background flex flex-col min-h-0"
+              className={`shrink-0 border-r border-border/40 bg-background flex-col min-h-0 ${settingsTarget ? "hidden" : "flex"}`}
               style={{ width: settings.sidebarWidth + 8 }}
             >
               <EditorTabs value={editorTab} onChange={setEditorTab} />
@@ -379,11 +391,9 @@ const Builder = () => {
                       else if ((t.kind === "group" || t.kind === "dropdown") && t.group) setSettingsTarget({ kind: t.kind, group: t.group });
                       else if (t.tab) setSettingsTarget({ kind: t.kind as any, tab: t.tab });
                     }}
-                    selectedSettingsId={
-                      settingsTarget?.kind === "page" ? (settingsTarget as any).page.id
-                      : settingsTarget?.kind === "group" || settingsTarget?.kind === "dropdown" ? (settingsTarget as any).group.id
-                      : settingsTarget ? (settingsTarget as any).tab?.id : null
-                    }
+                    /* Nav is only rendered when settingsTarget is null,
+                       so no row needs the "selected for settings" highlight here. */
+                    selectedSettingsId={null}
                   />
                 ) : (
                   <FilesPanel
@@ -408,6 +418,7 @@ const Builder = () => {
             <SettingsSidePanel
               target={settingsTarget}
               onClose={() => setSettingsTarget(null)}
+              width={Math.max(settings.sidebarWidth + 8, 320)}
               projectSlug={project?.slug}
               tabs={tabs}
               onPageUpdated={(id, updates) => updatePage(id, updates)}

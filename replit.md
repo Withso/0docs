@@ -72,9 +72,18 @@ Builder components:
   `disabled`) so they remain keyboard-focusable, and a shadcn `Tooltip`
   surfaces "Coming soon" to keyboard/screen-reader users.
 - `BuilderHeader.tsx` — content-scoped header. Left: Visual/Code icon
-  toggle. Right: search pill (⌘K), preview button, Publish (emerald). The
-  redundant Configurations gear was removed; Configurations now lives only
-  in the rail.
+  toggle. Right: search (wide pill at ≥lg, icon-only below lg so the
+  header never overflows on narrow viewports), preview button, Publish
+  (emerald). The redundant Configurations gear was removed; Configurations
+  now lives only in the rail.
+- **Settings-replaces-nav swap (Builder.tsx)** — Mintlify-faithful: when a
+  page/group/tab settings target is opened, `SettingsSidePanel` REPLACES
+  `NavigationTree` in the same left tooling column (rather than being a
+  sibling that squeezes the content area). The panel widens to
+  `max(sidebarWidth + 8, 320)` and its header uses a `← {label}` back
+  button (no separate X) — clicking returns to the nav tree. This
+  prevents the 4-pane squeeze where content collapsed to ~200px and
+  cards/video/header overflowed.
 - `CodeView.tsx` — Monaco uses custom `zdocs-dark`/`zdocs-light` themes
   registered via `beforeMount`, mirroring the warm bg + emerald accents.
   A `MutationObserver` on `[data-theme]` keeps the editor in sync with
