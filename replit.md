@@ -51,3 +51,31 @@ Key files:
 Phases 2 (TokenColorField + Visual Branding redesign + split-pane layout)
 and 3 (Header/Footer build-out, Typography preview, code_tabs pre-color
 control) are deferred follow-ups.
+
+## Public docs viewer (zdocs Index.tsx)
+
+The public viewer at `/` reads:
+- `GET /api/projects?homepage=true` for the project marked `is_homepage`
+- `GET /api/tabs?projectId=…` (public when project is published; same gating
+  pattern as `/api/pages` and `/api/navgroups`)
+- `GET /api/projects/:id/published-versions` then the snapshot endpoint
+
+Tabs render as Mintlify-style pills in the header. Default selection is the
+first **visible** tab. The sidebar (`DocSidebarNavMintlify`) filters nav
+groups by `activeTabId`; pages without a tab show only when no tab is
+active. Active page resets via a `filteredPageIdsKey` effect when membership
+changes.
+
+## Activity feed publisher names
+
+`/api/versions` and `/api/projects/:id/published-versions` batch-look up
+profile display names with `inArray(profilesTable.id, ids)` and append
+`{ publisherName, pagesCount, sectionsCount, blocksCount }` to each row.
+ProjectHome's activity feed renders these directly.
+
+## Atomic publish/revert
+
+`POST /api/projects/:id/published-versions` and the revert endpoint run
+inside `db.transaction(async (tx) => { … })`. Deactivate-old, insert-new,
+and update-project-pointer happen in one transaction so partial failures
+cannot leave the project pointing at a non-existent or inactive version.
