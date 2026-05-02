@@ -41,8 +41,11 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
   const hideTopHeader = ["editor", "code", "preview", "configurations", "publish", "settings"].includes(mode);
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <aside className="w-[224px] shrink-0 bg-sidebar-background text-sidebar-foreground border-r border-sidebar-border flex flex-col">
+    /* h-screen + overflow-hidden makes the workspace fit the viewport.
+       Only inner scroll containers (content column, side panel) scroll —
+       the rails stay pinned. */
+    <div className="h-screen bg-background flex overflow-hidden">
+      <aside className="w-[224px] shrink-0 bg-sidebar-background text-sidebar-foreground border-r border-sidebar-border flex flex-col min-h-0">
         <div className="h-[48px] px-2 flex items-center border-b border-sidebar-border/50">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -78,7 +81,7 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
         <ProjectRail mode={mode} onModeChange={onModeChange} hasUnpublishedChanges={hasUnpublishedChanges} />
       </aside>
 
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col">
         {!hideTopHeader && (
           <header className="h-[48px] shrink-0 border-b border-border/40 bg-background/80 backdrop-blur-xl px-3 flex items-center justify-between">
             <div className="min-w-0">
@@ -111,7 +114,7 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
             </div>
           </header>
         )}
-        <div className="flex-1 min-h-0 flex">{children}</div>
+        <div className="flex-1 min-h-0 min-w-0 flex">{children}</div>
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ const CodeView = ({ page, sections, blocks, projectSlug }: Props) => {
 
   if (!page) {
     return (
-      <div className="flex h-[calc(100vh-60px)] items-center justify-center text-muted-foreground text-[13px]">
+      <div className="flex flex-1 h-full min-h-0 items-center justify-center text-muted-foreground text-[13px]">
         No page selected.
       </div>
     );
@@ -31,7 +31,7 @@ const CodeView = ({ page, sections, blocks, projectSlug }: Props) => {
   const filePath = `${projectSlug || "docs"}/${page.slug || "untitled"}.mdx`;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-60px)]">
+    <div className="flex flex-col flex-1 h-full min-h-0 min-w-0">
       <div className="flex items-center justify-between px-4 h-9 border-b border-border/40 bg-muted/30">
         <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
           <FileCode2 className="h-3.5 w-3.5" />

@@ -79,8 +79,10 @@ const SettingsSidePanel = ({
   };
 
   return (
+    /* Side panel fits the parent's height (workspace shell is h-screen).
+       Internal body scrolls; header stays pinned. */
     <aside
-      className="shrink-0 border-r border-border/40 bg-background flex flex-col h-screen sticky top-0 animate-slide-in-right"
+      className="shrink-0 border-r border-border/40 bg-background flex flex-col self-stretch min-h-0 animate-slide-in-right"
       style={{ width }}
     >
       <div className="flex items-center justify-between px-3 h-10 border-b border-border/40 shrink-0">

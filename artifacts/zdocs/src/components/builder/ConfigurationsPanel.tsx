@@ -90,7 +90,7 @@ const ConfigurationsPanel = ({ projectName, settings, saving, saveSettings, rese
   };
 
   return (
-    <div className="flex h-[calc(100vh-60px)] min-h-0 bg-background">
+    <div className="flex flex-1 h-full min-h-0 min-w-0 bg-background">
       {/* Left: Category nav */}
       <aside className="w-[224px] shrink-0 border-r border-border/40 py-3 px-2 overflow-y-auto bg-muted/10">
         <div className="px-2 pb-3">

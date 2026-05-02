@@ -438,7 +438,7 @@ const Builder = () => {
             )}
             {contentHeader}
             {mode === "editor" && (
-              <DesignSettingsWrapper settings={settings} className="">
+              <DesignSettingsWrapper settings={settings} className="flex-1 min-h-0 overflow-y-auto">
                 <main className="mx-auto px-5 py-8" style={{ maxWidth: resolvedSettings.contentMaxWidth + 40 }}>
                   {activePage ? (
                     <article style={{ maxWidth: `${resolvedSettings.contentMaxWidth}px` }} className="animate-fade-in">
@@ -519,7 +519,9 @@ const Builder = () => {
 
             {/* Mode: Analytics */}
             {mode === "analytics" && (
-              <AnalyticsContent projectName={project?.name} projectSlug={project?.slug} />
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <AnalyticsContent projectName={project?.name} projectSlug={project?.slug} />
+              </div>
             )}
 
             {/* Mode: Settings */}
@@ -570,9 +572,23 @@ const Builder = () => {
           if (full) setActivePage(full);
           setTimeout(() => {
             const el = document.getElementById(`section-${sectionId}`);
-            if (el) {
-              const top = el.getBoundingClientRect().top + window.scrollY - 72;
-              window.scrollTo({ top, behavior: "smooth" });
+            if (!el) return;
+            // The editor scroll container is the DesignSettingsWrapper (overflow-y-auto),
+            // not window — walk up to find the nearest scrollable ancestor.
+            let scroller: HTMLElement | null = el.parentElement;
+            while (scroller && scroller !== document.body) {
+              const oy = getComputedStyle(scroller).overflowY;
+              if (oy === "auto" || oy === "scroll") break;
+              scroller = scroller.parentElement;
+            }
+            if (scroller && scroller !== document.body) {
+              const top = el.getBoundingClientRect().top
+                - scroller.getBoundingClientRect().top
+                + scroller.scrollTop
+                - 24;
+              scroller.scrollTo({ top, behavior: "smooth" });
+            } else {
+              el.scrollIntoView({ behavior: "smooth", block: "start" });
             }
           }, 200);
         }}

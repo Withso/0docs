@@ -23,7 +23,7 @@ const DashboardLayout = forwardRef<HTMLDivElement, DashboardLayoutProps>(({ chil
   const isProfileActive = location.pathname === "/settings/profile";
 
   return (
-    <div ref={ref} className="min-h-screen bg-background flex">
+    <div ref={ref} className="h-screen bg-background flex overflow-hidden">
       {/* Sidebar — borderless, uses background separation */}
       <div className="hidden md:flex shrink-0">
         <aside className="w-[var(--platform-sidebar-width)] bg-sidebar-background flex flex-col overflow-hidden border-r border-border/40">
@@ -80,7 +80,7 @@ const DashboardLayout = forwardRef<HTMLDivElement, DashboardLayoutProps>(({ chil
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Mobile header */}
         <header className="md:hidden h-[52px] border-b border-border/40 px-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
