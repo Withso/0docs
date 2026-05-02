@@ -210,15 +210,26 @@ router.post("/projects/:projectId/published-versions/:versionId/revert", require
     }
   });
 
-// GET /projects/:projectId/doc-versions (auth + ownership)
-router.get("/projects/:projectId/doc-versions", requireAuth,
+// GET /projects/:projectId/doc-versions — public for published projects, owner-only otherwise
+router.get("/projects/:projectId/doc-versions",
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
-      const userId = (req as unknown as AuthedRequest).userId;
       const { projectId } = req.params;
-      if (!(await requireProjectOwnership(projectId, userId))) {
-        res.status(403).json({ error: "Forbidden" }); return;
+      if (!isUuid(projectId)) { res.json([]); return; }
+      const [project] = await db.select({
+        userId: projectsTable.userId,
+        publishedVersionId: projectsTable.publishedVersionId,
+      }).from(projectsTable).where(eq(projectsTable.id, projectId));
+      if (!project) { res.status(404).json({ error: "Not found" }); return; }
+
+      const isPublished = project.publishedVersionId != null;
+      if (!isPublished) {
+        const auth = getAuth(req);
+        const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+        if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+        if (project.userId !== userId) { res.status(403).json({ error: "Forbidden" }); return; }
       }
+
       const versions = await db.select().from(docVersionsTable)
         .where(eq(docVersionsTable.projectId, projectId))
         .orderBy(desc(docVersionsTable.createdAt));
