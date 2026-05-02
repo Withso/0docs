@@ -1,0 +1,171 @@
+import { Router } from "express";
+import { getAuth } from "@clerk/express";
+import { db, projectsTable, pagesTable, navGroupsTable, sectionsTable, blocksTable, projectDesignSettingsTable } from "@workspace/db";
+import { eq, and, desc } from "drizzle-orm";
+
+const router = Router();
+
+const requireAuth = (req: any, res: any, next: any) => {
+  const auth = getAuth(req);
+  const userId = auth?.sessionClaims?.userId || auth?.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  req.userId = userId;
+  next();
+};
+
+// List projects (authenticated) or homepage project (public)
+router.get("/projects", async (req: any, res) => {
+  try {
+    const { homepage } = req.query as Record<string, string>;
+    if (homepage === "true") {
+      // Public: find the homepage project (no auth required)
+      const projects = await db
+        .select()
+        .from(projectsTable)
+        .where(eq(projectsTable.isHomepage, true))
+        .limit(1);
+      return res.json(projects);
+    }
+    // Authenticated listing
+    const auth = getAuth(req);
+    const userId = auth?.sessionClaims?.userId || auth?.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const projects = await db
+      .select()
+      .from(projectsTable)
+      .where(eq(projectsTable.userId, userId))
+      .orderBy(desc(projectsTable.updatedAt));
+    res.json(projects);
+  } catch (err) {
+    req.log.error({ err }, "Failed to list projects");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Get project by id
+router.get("/projects/:id", requireAuth, async (req: any, res) => {
+  try {
+    const [project] = await db
+      .select()
+      .from(projectsTable)
+      .where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, req.userId)));
+    if (!project) return res.status(404).json({ error: "Not found" });
+    res.json(project);
+  } catch (err) {
+    req.log.error({ err }, "Failed to get project");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Create project
+router.post("/projects", requireAuth, async (req: any, res) => {
+  try {
+    const { name, slug, description } = req.body;
+    const [project] = await db
+      .insert(projectsTable)
+      .values({ name, slug, description, userId: req.userId })
+      .returning();
+    // Create default page
+    await db.insert(pagesTable).values({
+      projectId: project.id,
+      title: "Introduction",
+      slug: "introduction",
+      orderIndex: 0,
+    });
+    res.status(201).json(project);
+  } catch (err) {
+    req.log.error({ err }, "Failed to create project");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Update project
+router.patch("/projects/:id", requireAuth, async (req: any, res) => {
+  try {
+    const [project] = await db
+      .update(projectsTable)
+      .set({ ...req.body, updatedAt: new Date() })
+      .where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, req.userId)))
+      .returning();
+    if (!project) return res.status(404).json({ error: "Not found" });
+    res.json(project);
+  } catch (err) {
+    req.log.error({ err }, "Failed to update project");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Delete project
+router.delete("/projects/:id", requireAuth, async (req: any, res) => {
+  try {
+    await db
+      .delete(projectsTable)
+      .where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, req.userId)));
+    res.status(204).send();
+  } catch (err) {
+    req.log.error({ err }, "Failed to delete project");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Duplicate project
+router.post("/projects/:id/duplicate", requireAuth, async (req: any, res) => {
+  try {
+    const [src] = await db.select().from(projectsTable).where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, req.userId)));
+    if (!src) return res.status(404).json({ error: "Not found" });
+
+    const newSlug = `${src.slug}-copy-${Date.now().toString(36)}`;
+    const [newProject] = await db.insert(projectsTable).values({
+      name: `${src.name} (Copy)`,
+      slug: newSlug,
+      description: src.description,
+      userId: req.userId,
+    }).returning();
+
+    // Copy nav groups
+    const srcGroups = await db.select().from(navGroupsTable).where(eq(navGroupsTable.projectId, src.id)).orderBy(navGroupsTable.orderIndex);
+    const groupIdMap = new Map<string, string>();
+    for (const g of srcGroups) {
+      const [newG] = await db.insert(navGroupsTable).values({
+        projectId: newProject.id, title: g.title, orderIndex: g.orderIndex, type: g.type,
+      }).returning();
+      groupIdMap.set(g.id, newG.id);
+    }
+
+    // Copy pages
+    const srcPages = await db.select().from(pagesTable).where(eq(pagesTable.projectId, src.id)).orderBy(pagesTable.orderIndex);
+    for (const page of srcPages) {
+      const newNavGroupId = page.navGroupId ? groupIdMap.get(page.navGroupId) || null : null;
+      const [newPage] = await db.insert(pagesTable).values({
+        projectId: newProject.id, title: page.title, slug: page.slug,
+        orderIndex: page.orderIndex, navGroupId: newNavGroupId,
+        navTitle: page.navTitle, metaDescription: page.metaDescription,
+      }).returning();
+      const srcSections = await db.select().from(sectionsTable).where(eq(sectionsTable.pageId, page.id)).orderBy(sectionsTable.orderIndex);
+      for (const sec of srcSections) {
+        const [newSec] = await db.insert(sectionsTable).values({
+          pageId: newPage.id, title: sec.title, orderIndex: sec.orderIndex, navTitle: sec.navTitle,
+        }).returning();
+        const srcBlocks = await db.select().from(blocksTable).where(eq(blocksTable.sectionId, sec.id)).orderBy(blocksTable.orderIndex);
+        for (const blk of srcBlocks) {
+          await db.insert(blocksTable).values({
+            sectionId: newSec.id, type: blk.type, content: blk.content, orderIndex: blk.orderIndex,
+          });
+        }
+      }
+    }
+
+    // Copy design settings
+    const [srcDesign] = await db.select().from(projectDesignSettingsTable).where(eq(projectDesignSettingsTable.projectId, src.id));
+    if (srcDesign) {
+      await db.insert(projectDesignSettingsTable).values({ projectId: newProject.id, settings: srcDesign.settings });
+    }
+
+    res.status(201).json(newProject);
+  } catch (err) {
+    req.log.error({ err }, "Failed to duplicate project");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+export default router;
