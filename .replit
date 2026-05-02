@@ -22,6 +22,7 @@ timeoutMs = 20000
 [userenv]
 
 [userenv.shared]
+SHARED_DATABASE_URL = "postgresql://postgres:password@helium/heliumdb?sslmode=disable"
 
 [[ports]]
 localPort = 8080
