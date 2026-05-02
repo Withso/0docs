@@ -25,3 +25,29 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+
+## zdocs Configurations design system
+
+Visual Branding is the intended single source of truth. Each per-block field
+in `blockStyles` is an *optional override*; when empty/falsy, the renderer
+falls back through:
+
+  block override → category default (e.g. `noteBg`, `codeBlockBg`) → branding token
+
+Every color control in `BlockControls` and `SidebarControls` shows whether
+the value is inherited or overridden, with a one-click reset to clear the
+override. Block accordions and the Sidebar accordion open with a live
+`BlockPreview` / `SidebarPreview` rendered by the real `DocBlockRenderer` so
+edits update the preview in real time.
+
+Key files:
+- `artifacts/zdocs/src/components/builder/preview/BlockPreview.tsx`
+- `artifacts/zdocs/src/components/builder/preview/SidebarPreview.tsx`
+- `artifacts/zdocs/src/components/builder/DesignControls.tsx` — `BlockControls`,
+  `SidebarControls`, `InheritableColorField`, `SectionDivider`
+- `artifacts/zdocs/src/styles/global-classes.css` — `.block-preview-content`
+  margin-trim rules
+
+Phases 2 (TokenColorField + Visual Branding redesign + split-pane layout)
+and 3 (Header/Footer build-out, Typography preview, code_tabs pre-color
+control) are deferred follow-ups.

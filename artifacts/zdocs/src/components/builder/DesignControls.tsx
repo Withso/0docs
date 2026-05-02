@@ -9,10 +9,12 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Type, AlignLeft, Code, ImageIcon, Film, Youtube, ListOrdered, List, StickyNote, AlertCircle, Layout as LayoutIcon, Columns, CreditCard, Footprints, Table2, Minus, Quote, Globe, CodeSquare, FileEdit } from "lucide-react";
+import { ChevronDown, Type, AlignLeft, Code, ImageIcon, Film, Youtube, ListOrdered, List, StickyNote, AlertCircle, Layout as LayoutIcon, Columns, CreditCard, Footprints, Table2, Minus, Quote, Globe, CodeSquare, FileEdit, RotateCcw, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
 import { THEME_PRESET_LIST, applyThemePreset, type ThemePresetId } from "@/lib/theme/theme-presets";
+import { BlockPreview } from "@/components/builder/preview/BlockPreview";
+import { SidebarPreview } from "@/components/builder/preview/SidebarPreview";
 
 // ─── Helpers ─────────────────────────────────────────
 export function hslToHex(hsl: string | null | undefined): string {
@@ -536,18 +538,92 @@ export function LayoutControls({ local, update }: { local: DS; update: <K extend
 export function SidebarControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
   return (
     <>
+      <SidebarPreview settings={local} />
+
+      <SectionDivider label="Colors" hint="These default to your Brand primary. Override per role below." />
       <ColorField label="Background" value={local.sidebarBg} onChange={(v) => update("sidebarBg", v)} />
       <ColorField label="Text Color" value={local.sidebarTextColor} onChange={(v) => update("sidebarTextColor", v)} />
       <ColorField label="Active Color" value={local.sidebarActiveColor} onChange={(v) => update("sidebarActiveColor", v)} />
       <ColorField label="Indicator Color" value={local.sidebarIndicatorColor} onChange={(v) => update("sidebarIndicatorColor", v)} />
+
+      <SectionDivider label="Layout" />
       <SliderField label="Font Size" value={local.sidebarFontSize} onChange={(v) => update("sidebarFontSize", v)} min={11} max={16} step={1} />
       <SliderField label="Page Gap" value={local.sidebarPageGap} onChange={(v) => update("sidebarPageGap", v)} min={0} max={12} step={1} />
       <ToggleField label="Section Scroll Tracker" checked={local.sidebarShowSectionTracker} onChange={(v) => update("sidebarShowSectionTracker", v)} />
+
+      <SectionDivider label="Group label" />
       <SliderField label="Label Font Size" value={local.sidebarLabelFontSize} onChange={(v) => update("sidebarLabelFontSize", v)} min={8} max={14} step={1} />
       <ColorField label="Label Color" value={local.sidebarLabelColor} onChange={(v) => update("sidebarLabelColor", v)} />
+
+      <SectionDivider label="Section heading" />
       <SliderField label="Section Font Size" value={local.sidebarSectionFontSize} onChange={(v) => update("sidebarSectionFontSize", v)} min={10} max={16} step={1} />
       <ColorField label="Section Color" value={local.sidebarSectionColor} onChange={(v) => update("sidebarSectionColor", v)} />
     </>
+  );
+}
+
+/** Visual divider for grouping fields inside a SettingsSection. */
+function SectionDivider({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <div className="pt-1.5 pb-0.5">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">{label}</span>
+        <div className="flex-1 h-px bg-border/60" />
+      </div>
+      {hint ? (
+        <p className="text-[10.5px] text-muted-foreground/70 mt-1 leading-snug">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+/** Color control with an explicit inheritance affordance — shows whether the
+ *  current value is inherited from the global token or a per-block override,
+ *  and provides a one-click reset to inherit. */
+function InheritableColorField({
+  label,
+  blockKey,
+  fieldKey,
+  override,
+  resolved,
+  fallbackLabel,
+  updateBlockStyle,
+}: {
+  label: string;
+  blockKey: BlockKey;
+  fieldKey: keyof BlockStyleSettings;
+  override: string | undefined;
+  resolved: string;
+  fallbackLabel: string;
+  updateBlockStyle: (b: BlockKey, k: keyof BlockStyleSettings, v: any) => void;
+}) {
+  const isOverridden = !!override && override.trim() !== "";
+  return (
+    <div className="space-y-1">
+      <ColorField
+        label={label}
+        value={resolved}
+        onChange={(v) => updateBlockStyle(blockKey, fieldKey, v)}
+      />
+      <div className="flex items-center justify-end gap-2 pr-1 -mt-0.5">
+        {isOverridden ? (
+          <button
+            type="button"
+            onClick={() => updateBlockStyle(blockKey, fieldKey, "")}
+            className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400 hover:text-foreground transition-colors"
+            title={`Reset to inherit ${fallbackLabel}`}
+          >
+            <RotateCcw className="h-2.5 w-2.5" />
+            <span>Custom · reset to {fallbackLabel}</span>
+          </button>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground/60">
+            <Link2 className="h-2.5 w-2.5" />
+            <span>Inherits {fallbackLabel}</span>
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -578,10 +654,23 @@ export function BlockControls({
 }) {
   const bs = local.blockStyles[blockKey];
 
-  // Common resolvers
+  // ─── Fallback resolvers (mirror DocBlockRenderer's inheritance chain) ───
+  const bgFallback =
+    blockKey === "code_block" ? local.codeBlockBg :
+    blockKey === "note"       ? local.noteBg :
+    blockKey === "callout"    ? local.accentColor :
+                                local.backgroundColor;
+  const bgFallbackLabel =
+    blockKey === "code_block" ? "Code BG" :
+    blockKey === "note"       ? "Note BG" :
+    blockKey === "callout"    ? "Accent" :
+                                "Background";
+  const borderFallback = blockKey === "note" ? local.noteBorderColor : local.borderColor;
+  const borderFallbackLabel = blockKey === "note" ? "Note Border" : "Border";
+
   const resolvedColor = bs.color || local.foregroundColor;
-  const resolvedBg = bs.backgroundColor || (blockKey === "code_block" ? local.codeBlockBg : blockKey === "note" ? local.noteBg : blockKey === "callout" ? local.accentColor : "0 0% 100%");
-  const resolvedBorder = bs.borderColor || (blockKey === "note" ? local.noteBorderColor : local.borderColor);
+  const resolvedBg = bs.backgroundColor || bgFallback;
+  const resolvedBorder = bs.borderColor || borderFallback;
   const resolvedFont = bs.fontFamily || (blockKey === "heading" ? local.headingFont : blockKey === "code_block" || blockKey === "code_tabs" ? local.codeFont : local.bodyFont);
   const resolvedSize = bs.fontSize || (blockKey === "heading" ? local.headingFontSize : local.baseFontSize);
   const resolvedWeight = bs.fontWeight || (blockKey === "heading" ? local.headingWeight : "400");
@@ -603,10 +692,45 @@ export function BlockControls({
 
   return (
     <>
-      {/* Common controls */}
-      {supportsText && <ColorField label="Text Color" value={resolvedColor} onChange={(v) => updateBlockStyle(blockKey, "color", v)} />}
-      {supportsBg && <ColorField label="Background" value={resolvedBg} onChange={(v) => updateBlockStyle(blockKey, "backgroundColor", v)} />}
-      {supportsBorder && <ColorField label="Border" value={resolvedBorder} onChange={(v) => updateBlockStyle(blockKey, "borderColor", v)} />}
+      {/* ─── Live preview ─── */}
+      <BlockPreview blockKey={blockKey} settings={local} />
+
+      {/* ─── Common style overrides ─── */}
+      <SectionDivider label="Style overrides" hint="Empty fields inherit from your Visual Branding tokens." />
+
+      {supportsText && (
+        <InheritableColorField
+          label="Text Color"
+          blockKey={blockKey}
+          fieldKey="color"
+          override={bs.color}
+          resolved={resolvedColor}
+          fallbackLabel="Foreground"
+          updateBlockStyle={updateBlockStyle}
+        />
+      )}
+      {supportsBg && (
+        <InheritableColorField
+          label="Background"
+          blockKey={blockKey}
+          fieldKey="backgroundColor"
+          override={bs.backgroundColor}
+          resolved={resolvedBg}
+          fallbackLabel={bgFallbackLabel}
+          updateBlockStyle={updateBlockStyle}
+        />
+      )}
+      {supportsBorder && (
+        <InheritableColorField
+          label="Border"
+          blockKey={blockKey}
+          fieldKey="borderColor"
+          override={bs.borderColor}
+          resolved={resolvedBorder}
+          fallbackLabel={borderFallbackLabel}
+          updateBlockStyle={updateBlockStyle}
+        />
+      )}
       {supportsText && <FontSelect label="Font" value={resolvedFont} onChange={(v) => updateBlockStyle(blockKey, "fontFamily", v)} options={["code_block", "code_tabs"].includes(blockKey) ? codeFontOptions : fontOptions} />}
       {supportsText && <SliderField label="Font Size" value={resolvedSize} onChange={(v) => updateBlockStyle(blockKey, "fontSize", v)} min={10} max={32} step={1} />}
       {supportsText && <WeightSelect label="Font Weight" value={resolvedWeight} onChange={(v) => updateBlockStyle(blockKey, "fontWeight", v)} />}
@@ -617,19 +741,23 @@ export function BlockControls({
 
       {blockKey === "table" && (
         <>
-          <ColorField label="Header Background" value={bs.headerBg || local.accentColor} onChange={(v) => updateBlockStyle(blockKey, "headerBg", v)} />
+          <SectionDivider label="Table specifics" />
+          <InheritableColorField label="Header Background" blockKey={blockKey} fieldKey="headerBg" override={bs.headerBg} resolved={bs.headerBg || local.accentColor} fallbackLabel="Accent" updateBlockStyle={updateBlockStyle} />
           <WeightSelect label="Header Weight" value={bs.headerFontWeight || "600"} onChange={(v) => updateBlockStyle(blockKey, "headerFontWeight", v)} />
           <SliderField label="Cell Padding" value={bs.cellPadding ?? 10} onChange={(v) => updateBlockStyle(blockKey, "cellPadding", v)} min={4} max={24} step={2} />
           <ToggleField label="Cell Borders" checked={bs.showCellBorders !== false} onChange={(v) => updateBlockStyle(blockKey, "showCellBorders", v)} />
           <ToggleField label="Striped Rows" checked={bs.stripedRows === true} onChange={(v) => updateBlockStyle(blockKey, "stripedRows", v)} />
-          {bs.stripedRows && <ColorField label="Stripe Color" value={bs.stripedRowBg || local.accentColor} onChange={(v) => updateBlockStyle(blockKey, "stripedRowBg", v)} />}
+          {bs.stripedRows && (
+            <InheritableColorField label="Stripe Color" blockKey={blockKey} fieldKey="stripedRowBg" override={bs.stripedRowBg} resolved={bs.stripedRowBg || local.mutedColor} fallbackLabel="Muted" updateBlockStyle={updateBlockStyle} />
+          )}
         </>
       )}
 
       {blockKey === "api_endpoint" && (
         <>
-          <ColorField label="Header BG" value={bs.headerBgColor || local.accentColor} onChange={(v) => updateBlockStyle(blockKey, "headerBgColor", v)} />
-          <ColorField label="Response BG" value={bs.responseBg || local.codeBlockBg} onChange={(v) => updateBlockStyle(blockKey, "responseBg", v)} />
+          <SectionDivider label="Endpoint specifics" />
+          <InheritableColorField label="Header BG" blockKey={blockKey} fieldKey="headerBgColor" override={bs.headerBgColor} resolved={bs.headerBgColor || local.accentColor} fallbackLabel="Accent" updateBlockStyle={updateBlockStyle} />
+          <InheritableColorField label="Response BG" blockKey={blockKey} fieldKey="responseBg" override={bs.responseBg} resolved={bs.responseBg || local.codeBlockBg} fallbackLabel="Code BG" updateBlockStyle={updateBlockStyle} />
           <SliderField label="Badge Radius" value={bs.methodBadgeRadius ?? 4} onChange={(v) => updateBlockStyle(blockKey, "methodBadgeRadius", v)} min={0} max={12} step={1} />
           <SliderField label="Param Font Size" value={bs.paramFontSize ?? 13} onChange={(v) => updateBlockStyle(blockKey, "paramFontSize", v)} min={10} max={16} step={1} />
         </>
@@ -637,25 +765,28 @@ export function BlockControls({
 
       {blockKey === "steps" && (
         <>
+          <SectionDivider label="Steps specifics" />
           <SliderField label="Circle Size" value={bs.circleSize ?? 28} onChange={(v) => updateBlockStyle(blockKey, "circleSize", v)} min={20} max={40} step={2} />
-          <ColorField label="Circle BG" value={bs.circleBg || local.primaryColor} onChange={(v) => updateBlockStyle(blockKey, "circleBg", v)} />
-          <ColorField label="Circle Text" value={bs.circleColor || local.primaryForegroundColor} onChange={(v) => updateBlockStyle(blockKey, "circleColor", v)} />
-          <ColorField label="Connector" value={bs.connectorColor || local.borderColor} onChange={(v) => updateBlockStyle(blockKey, "connectorColor", v)} />
+          <InheritableColorField label="Circle BG" blockKey={blockKey} fieldKey="circleBg" override={bs.circleBg} resolved={bs.circleBg || local.primaryColor} fallbackLabel="Primary" updateBlockStyle={updateBlockStyle} />
+          <InheritableColorField label="Circle Text" blockKey={blockKey} fieldKey="circleColor" override={bs.circleColor} resolved={bs.circleColor || local.primaryForegroundColor} fallbackLabel="Primary FG" updateBlockStyle={updateBlockStyle} />
+          <InheritableColorField label="Connector" blockKey={blockKey} fieldKey="connectorColor" override={bs.connectorColor} resolved={bs.connectorColor || local.borderColor} fallbackLabel="Border" updateBlockStyle={updateBlockStyle} />
           <SliderField label="Connector Width" value={bs.connectorWidth ?? 2} onChange={(v) => updateBlockStyle(blockKey, "connectorWidth", v)} min={1} max={4} step={1} />
         </>
       )}
 
       {blockKey === "quote" && (
         <>
+          <SectionDivider label="Quote specifics" />
           <SliderField label="Border Width" value={bs.borderWidth ?? 3} onChange={(v) => updateBlockStyle(blockKey, "borderWidth", v)} min={1} max={8} step={1} />
           <ToggleField label="Italic" checked={bs.italic !== false} onChange={(v) => updateBlockStyle(blockKey, "italic", v)} />
-          <ColorField label="Attribution Color" value={bs.attributionColor || local.mutedForegroundColor} onChange={(v) => updateBlockStyle(blockKey, "attributionColor", v)} />
+          <InheritableColorField label="Attribution Color" blockKey={blockKey} fieldKey="attributionColor" override={bs.attributionColor} resolved={bs.attributionColor || local.mutedForegroundColor} fallbackLabel="Muted FG" updateBlockStyle={updateBlockStyle} />
         </>
       )}
 
       {blockKey === "divider" && (
         <>
-          <ColorField label="Color" value={bs.borderColor || local.borderColor} onChange={(v) => updateBlockStyle(blockKey, "borderColor", v)} />
+          <SectionDivider label="Divider specifics" />
+          <InheritableColorField label="Color" blockKey={blockKey} fieldKey="borderColor" override={bs.borderColor} resolved={bs.borderColor || local.borderColor} fallbackLabel="Border" updateBlockStyle={updateBlockStyle} />
           <SliderField label="Thickness" value={bs.thickness ?? 1} onChange={(v) => updateBlockStyle(blockKey, "thickness", v)} min={1} max={6} step={1} />
           <InlineSelect label="Style" value={bs.dividerStyle || "solid"} onChange={(v) => updateBlockStyle(blockKey, "dividerStyle", v)} options={[
             { value: "solid", label: "Solid" },
@@ -668,6 +799,7 @@ export function BlockControls({
 
       {blockKey === "card" && (
         <>
+          <SectionDivider label="Card specifics" />
           <SliderField label="Title Size" value={bs.titleFontSize ?? local.baseFontSize} onChange={(v) => updateBlockStyle(blockKey, "titleFontSize", v)} min={12} max={24} step={1} />
           <WeightSelect label="Title Weight" value={bs.titleWeight || local.headingWeight} onChange={(v) => updateBlockStyle(blockKey, "titleWeight", v)} />
           <ToggleField label="Shadow" checked={bs.showShadow === true} onChange={(v) => updateBlockStyle(blockKey, "showShadow", v)} />
@@ -676,25 +808,28 @@ export function BlockControls({
 
       {blockKey === "accordion" && (
         <>
-          <ColorField label="Header BG" value={bs.headerBgAccordion || "0 0% 100%"} onChange={(v) => updateBlockStyle(blockKey, "headerBgAccordion", v)} />
-          <ColorField label="Content BG" value={bs.contentBg || "0 0% 100%"} onChange={(v) => updateBlockStyle(blockKey, "contentBg", v)} />
+          <SectionDivider label="Accordion specifics" />
+          <InheritableColorField label="Header BG" blockKey={blockKey} fieldKey="headerBgAccordion" override={bs.headerBgAccordion} resolved={bs.headerBgAccordion || local.backgroundColor} fallbackLabel="Background" updateBlockStyle={updateBlockStyle} />
+          <InheritableColorField label="Content BG" blockKey={blockKey} fieldKey="contentBg" override={bs.contentBg} resolved={bs.contentBg || local.backgroundColor} fallbackLabel="Background" updateBlockStyle={updateBlockStyle} />
           <SliderField label="Icon Size" value={bs.iconSize ?? 12} onChange={(v) => updateBlockStyle(blockKey, "iconSize", v)} min={8} max={18} step={1} />
         </>
       )}
 
       {blockKey === "tabs" && (
         <>
-          <ColorField label="Active Tab" value={bs.activeColor || local.primaryColor} onChange={(v) => updateBlockStyle(blockKey, "activeColor", v)} />
-          <ColorField label="Inactive Tab" value={bs.inactiveColor || local.mutedForegroundColor} onChange={(v) => updateBlockStyle(blockKey, "inactiveColor", v)} />
-          <ColorField label="Indicator" value={bs.indicatorColor || local.primaryColor} onChange={(v) => updateBlockStyle(blockKey, "indicatorColor", v)} />
+          <SectionDivider label="Tabs specifics" />
+          <InheritableColorField label="Active Tab" blockKey={blockKey} fieldKey="activeColor" override={bs.activeColor} resolved={bs.activeColor || local.primaryColor} fallbackLabel="Primary" updateBlockStyle={updateBlockStyle} />
+          <InheritableColorField label="Inactive Tab" blockKey={blockKey} fieldKey="inactiveColor" override={bs.inactiveColor} resolved={bs.inactiveColor || local.mutedForegroundColor} fallbackLabel="Muted FG" updateBlockStyle={updateBlockStyle} />
+          <InheritableColorField label="Indicator" blockKey={blockKey} fieldKey="indicatorColor" override={bs.indicatorColor} resolved={bs.indicatorColor || local.primaryColor} fallbackLabel="Primary" updateBlockStyle={updateBlockStyle} />
           <SliderField label="Tab Padding" value={bs.tabPadding ?? 8} onChange={(v) => updateBlockStyle(blockKey, "tabPadding", v)} min={4} max={20} step={2} />
         </>
       )}
 
       {blockKey === "code_tabs" && (
         <>
-          <ColorField label="Tab Bar BG" value={bs.tabBarBg || local.accentColor} onChange={(v) => updateBlockStyle(blockKey, "tabBarBg", v)} />
-          <ColorField label="Active Tab" value={bs.activeTabColor || local.primaryColor} onChange={(v) => updateBlockStyle(blockKey, "activeTabColor", v)} />
+          <SectionDivider label="Code tabs specifics" />
+          <InheritableColorField label="Tab Bar BG" blockKey={blockKey} fieldKey="tabBarBg" override={bs.tabBarBg} resolved={bs.tabBarBg || local.accentColor} fallbackLabel="Accent" updateBlockStyle={updateBlockStyle} />
+          <InheritableColorField label="Active Tab" blockKey={blockKey} fieldKey="activeTabColor" override={bs.activeTabColor} resolved={bs.activeTabColor || local.primaryColor} fallbackLabel="Primary" updateBlockStyle={updateBlockStyle} />
         </>
       )}
     </>

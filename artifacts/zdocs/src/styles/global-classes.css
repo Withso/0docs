@@ -998,3 +998,11 @@ div.zdocs-list-item-text { display: block; }
   .zdocs-feed-card { align-items: flex-start; padding-top: 0; }
   .zdocs-mobile-sheet-wrapper { display: block; }
 }
+
+/* ───────────────────────── Builder previews ─────────────────────────
+   Trim outer block margins so live previews of doc blocks fit cleanly
+   inside compact preview surfaces in the Configurations panel. The
+   target selector matches DocBlockRenderer's `data-block-type` wrapper. */
+.block-preview-content > [data-block-type] > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+.block-preview-content > [data-block-type] { margin: 0 !important; }
+.block-preview-content > [data-block-type] + [data-block-type] { margin-top: 10px !important; }
