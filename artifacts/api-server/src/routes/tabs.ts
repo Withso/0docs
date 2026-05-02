@@ -43,7 +43,7 @@ router.get("/projects/:projectId/tabs", requireAuth,
         .orderBy(tabsTable.orderIndex);
       res.json(tabs);
     } catch (err) {
-      req.log?.error({ err }, "Failed to list tabs");
+      req.log.error({ err }, "Failed to list tabs");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -64,7 +64,7 @@ router.post("/projects/:projectId/tabs", requireAuth,
       }).returning();
       res.status(201).json(tab);
     } catch (err) {
-      req.log?.error({ err }, "Failed to create tab");
+      req.log.error({ err }, "Failed to create tab");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -82,7 +82,7 @@ router.patch("/tabs/:id", requireAuth, async (req: Request<{ id: string }>, res:
     const [tab] = await db.update(tabsTable).set(updates).where(eq(tabsTable.id, req.params.id)).returning();
     res.json(tab);
   } catch (err) {
-    req.log?.error({ err }, "Failed to update tab");
+    req.log.error({ err }, "Failed to update tab");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -96,7 +96,7 @@ router.delete("/tabs/:id", requireAuth, async (req: Request<{ id: string }>, res
     await db.delete(tabsTable).where(eq(tabsTable.id, req.params.id));
     res.status(204).send();
   } catch (err) {
-    req.log?.error({ err }, "Failed to delete tab");
+    req.log.error({ err }, "Failed to delete tab");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -112,7 +112,7 @@ router.post("/tabs/reorder", requireAuth, async (req: Request, res: Response) =>
     }
     res.json({ ok: true });
   } catch (err) {
-    req.log?.error({ err }, "Failed to reorder tabs");
+    req.log.error({ err }, "Failed to reorder tabs");
     res.status(500).json({ error: "Internal server error" });
   }
 });

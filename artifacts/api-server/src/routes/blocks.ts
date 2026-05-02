@@ -127,10 +127,24 @@ router.patch("/blocks/:id", requireAuth, async (req: Request<{ id: string }>, re
   try {
     const userId = (req as unknown as AuthedReq).userId;
     if (!(await ownedBlock(req.params.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
-    const allowed = ["content", "orderIndex", "sectionId", "type"] as const;
+    const { content, orderIndex, type, sectionId } = req.body as {
+      content?: object; orderIndex?: number; type?: string; sectionId?: string;
+    };
     const updates: Record<string, unknown> & { updatedAt: Date } = { updatedAt: new Date() };
-    for (const k of allowed) {
-      if (req.body[k] !== undefined) updates[k] = req.body[k];
+    if (content !== undefined) updates["content"] = content;
+    if (orderIndex !== undefined) updates["orderIndex"] = orderIndex;
+    if (type !== undefined) updates["type"] = type;
+    // If caller is moving block to a different section, verify they own the destination section too
+    if (sectionId !== undefined) {
+      const destOwned = await db
+        .select({ id: sectionsTable.id })
+        .from(sectionsTable)
+        .innerJoin(pagesTable, eq(pagesTable.id, sectionsTable.pageId))
+        .innerJoin(projectsTable, and(eq(projectsTable.id, pagesTable.projectId), eq(projectsTable.userId, userId)))
+        .where(eq(sectionsTable.id, sectionId))
+        .limit(1);
+      if (destOwned.length === 0) { res.status(403).json({ error: "Forbidden" }); return; }
+      updates["sectionId"] = sectionId;
     }
     const [block] = await db.update(blocksTable).set(updates).where(eq(blocksTable.id, req.params.id)).returning();
     res.json(block);

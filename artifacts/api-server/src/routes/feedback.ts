@@ -1,14 +1,18 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { db, pageFeedbackTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const router = Router();
 
 // Submit feedback (no auth - public)
-router.post("/feedback", async (req: any, res) => {
+router.post("/feedback", async (req: Request, res: Response) => {
   try {
-    const { pageId, isHelpful, comment } = req.body;
-    const [feedback] = await db.insert(pageFeedbackTable).values({ pageId, isHelpful, comment: comment ?? null }).returning();
+    const { pageId, isHelpful, comment } = req.body as {
+      pageId: string; isHelpful: boolean; comment?: string;
+    };
+    const [feedback] = await db.insert(pageFeedbackTable)
+      .values({ pageId, isHelpful, comment: comment ?? null })
+      .returning();
     res.status(201).json(feedback);
   } catch (err) {
     req.log.error({ err }, "Failed to submit feedback");
@@ -17,9 +21,10 @@ router.post("/feedback", async (req: any, res) => {
 });
 
 // Get feedback for page
-router.get("/feedback/:pageId", async (req: any, res) => {
+router.get("/feedback/:pageId", async (req: Request<{ pageId: string }>, res: Response) => {
   try {
-    const feedback = await db.select().from(pageFeedbackTable).where(eq(pageFeedbackTable.pageId, req.params.pageId));
+    const feedback = await db.select().from(pageFeedbackTable)
+      .where(eq(pageFeedbackTable.pageId, req.params.pageId));
     res.json(feedback);
   } catch (err) {
     req.log.error({ err }, "Failed to get feedback");

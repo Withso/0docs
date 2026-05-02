@@ -143,7 +143,11 @@ router.patch("/projects/:projectId/pages/:pageId", requireAuth,
       for (const k of allowed) {
         if (req.body[k] !== undefined) updates[k] = req.body[k];
       }
-      const [page] = await db.update(pagesTable).set(updates).where(eq(pagesTable.id, pageId)).returning();
+      // Scope update to both pageId AND projectId to prevent cross-project mutation
+      const [page] = await db.update(pagesTable).set(updates)
+        .where(and(eq(pagesTable.id, pageId), eq(pagesTable.projectId, projectId)))
+        .returning();
+      if (!page) { res.status(404).json({ error: "Not found" }); return; }
       res.json(page);
     } catch (err) {
       req.log.error({ err }, "Failed to update page");
@@ -160,7 +164,9 @@ router.delete("/projects/:projectId/pages/:pageId", requireAuth,
       if (!(await ownedProject(projectId, userId))) {
         res.status(404).json({ error: "Not found" }); return;
       }
-      await db.delete(pagesTable).where(eq(pagesTable.id, pageId));
+      // Scope delete to both pageId AND projectId to prevent cross-project deletion
+      await db.delete(pagesTable)
+        .where(and(eq(pagesTable.id, pageId), eq(pagesTable.projectId, projectId)));
       res.status(204).send();
     } catch (err) {
       req.log.error({ err }, "Failed to delete page");
@@ -181,9 +187,10 @@ router.post("/projects/:projectId/pages/reorder", requireAuth,
         pages: Array<{ id: string; orderIndex: number; navGroupId?: string | null }>;
       };
       for (const p of pages) {
+        // Scope each update to both page ID AND projectId to prevent cross-project mutation
         await db.update(pagesTable)
           .set({ orderIndex: p.orderIndex, navGroupId: p.navGroupId ?? null, updatedAt: new Date() })
-          .where(eq(pagesTable.id, p.id));
+          .where(and(eq(pagesTable.id, p.id), eq(pagesTable.projectId, projectId)));
       }
       res.json({ ok: true });
     } catch (err) {
