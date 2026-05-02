@@ -389,7 +389,8 @@ const Builder = () => {
                     onOpenSettings={(t: NavSettingsTarget) => {
                       if (t.kind === "page" && t.page) setSettingsTarget({ kind: "page", page: t.page });
                       else if ((t.kind === "group" || t.kind === "dropdown") && t.group) setSettingsTarget({ kind: t.kind, group: t.group });
-                      else if (t.tab) setSettingsTarget({ kind: t.kind as any, tab: t.tab });
+                      else if (t.tab && (t.kind === "tab" || t.kind === "language" || t.kind === "product" || t.kind === "version"))
+                        setSettingsTarget({ kind: t.kind, tab: t.tab });
                     }}
                     /* Nav is only rendered when settingsTarget is null,
                        so no row needs the "selected for settings" highlight here. */

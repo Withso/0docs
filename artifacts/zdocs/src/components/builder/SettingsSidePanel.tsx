@@ -167,13 +167,13 @@ const PageBody = ({
   const [title, setTitle] = useState(page.title);
   const [slug, setSlug] = useState(page.slug || "");
   const [metaDesc, setMetaDesc] = useState(page.meta_description || "");
-  const [meta, setMeta] = useState<PageMetadata>(((page as any).metadata || {}) as PageMetadata);
+  const [meta, setMeta] = useState<PageMetadata>((page.metadata || {}) as PageMetadata);
 
   useEffect(() => {
     setTitle(page.title);
     setSlug(page.slug || "");
     setMetaDesc(page.meta_description || "");
-    setMeta(((page as any).metadata || {}) as PageMetadata);
+    setMeta((page.metadata || {}) as PageMetadata);
   }, [page.id]);
 
   const saveTitle = useDebouncedCallback((v: string) => {
@@ -190,7 +190,7 @@ const PageBody = ({
   }, 500);
   const saveMeta = useDebouncedCallback((next: PageMetadata) => {
     fetch(`/api/pages/${page.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metadata: next }) }).catch(() => {});
-    onPageUpdated?.(page.id, { metadata: next } as any);
+    onPageUpdated?.(page.id, { metadata: next });
   }, 500);
 
   const updateMeta = <K extends keyof PageMetadata>(key: K, value: PageMetadata[K]) => {
@@ -383,15 +383,15 @@ const GroupBody = ({
   onGroupUpdated?: (id: string, u: Partial<NavGroup>) => void;
 }) => {
   const [title, setTitle] = useState(group.title);
-  const [type, setType] = useState<"label" | "text" | "dropdown">((group.type as any) || "label");
-  const [tabId, setTabId] = useState<string>((group.tab_id as string) || "__none__");
-  const [meta, setMeta] = useState<GroupMetadata>(((group as any).metadata || {}) as GroupMetadata);
+  const [type, setType] = useState<"label" | "text" | "dropdown">(group.type ?? "label");
+  const [tabId, setTabId] = useState<string>(group.tab_id ?? "__none__");
+  const [meta, setMeta] = useState<GroupMetadata>((group.metadata || {}) as GroupMetadata);
 
   useEffect(() => {
     setTitle(group.title);
-    setType((group.type as any) || "label");
-    setTabId((group.tab_id as string) || "__none__");
-    setMeta(((group as any).metadata || {}) as GroupMetadata);
+    setType(group.type ?? "label");
+    setTabId(group.tab_id ?? "__none__");
+    setMeta((group.metadata || {}) as GroupMetadata);
   }, [group.id]);
 
   const saveTitle = useDebouncedCallback((v: string) => {
@@ -407,11 +407,11 @@ const GroupBody = ({
     setTabId(v);
     const next = v === "__none__" ? null : v;
     fetch(`/api/navgroups/${group.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tabId: next }) }).catch(() => {});
-    onGroupUpdated?.(group.id, { tab_id: next as any });
+    onGroupUpdated?.(group.id, { tab_id: next });
   };
   const saveMeta = useDebouncedCallback((next: GroupMetadata) => {
     fetch(`/api/navgroups/${group.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metadata: next }) }).catch(() => {});
-    onGroupUpdated?.(group.id, { metadata: next } as any);
+    onGroupUpdated?.(group.id, { metadata: next });
   }, 500);
 
   const updateMeta = <K extends keyof GroupMetadata>(key: K, value: GroupMetadata[K]) => {
@@ -440,7 +440,7 @@ const GroupBody = ({
           </Row>
         )}
         <Row icon={LayersIcon} label="Type">
-          <Select value={type} onValueChange={(v) => saveType(v as any)}>
+          <Select value={type} onValueChange={(v) => saveType(v as "label" | "text" | "dropdown")}>
             <SelectTrigger className="h-8 text-[12px] bg-muted/40 border-transparent hover:border-border/60 focus:border-border">
               <SelectValue />
             </SelectTrigger>
@@ -525,11 +525,11 @@ const TabBody = ({
   onTabUpdated?: (id: string, u: Partial<Tab>) => void;
 }) => {
   const [label, setLabel] = useState(tab.label);
-  const [meta, setMeta] = useState<TabMetadata>(((tab.metadata as any) || {}) as TabMetadata);
+  const [meta, setMeta] = useState<TabMetadata>((tab.metadata || {}) as TabMetadata);
 
   useEffect(() => {
     setLabel(tab.label);
-    setMeta(((tab.metadata as any) || {}) as TabMetadata);
+    setMeta((tab.metadata || {}) as TabMetadata);
   }, [tab.id]);
 
   const saveLabel = useDebouncedCallback((v: string) => {
@@ -538,7 +538,7 @@ const TabBody = ({
   }, 500);
   const saveMeta = useDebouncedCallback((next: TabMetadata) => {
     fetch(`/api/tabs/${tab.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metadata: next }) }).catch(() => {});
-    onTabUpdated?.(tab.id, { metadata: next } as any);
+    onTabUpdated?.(tab.id, { metadata: next });
   }, 500);
 
   const updateMeta = <K extends keyof TabMetadata>(key: K, value: TabMetadata[K]) => {
