@@ -77,7 +77,7 @@ router.get("/projects/:projectId/published-versions", requireAuth,
         .orderBy(desc(publishedVersionsTable.publishedAt));
       res.json(versions);
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to list published versions");
+      req.log?.error({ err }, "Failed to list published versions");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -118,7 +118,7 @@ router.post("/projects/:projectId/published-versions", requireAuth,
 
       res.status(201).json(version);
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to publish version");
+      req.log?.error({ err }, "Failed to publish version");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -141,7 +141,7 @@ router.post("/projects/:projectId/published-versions/:versionId/revert", require
         .where(eq(projectsTable.id, projectId));
       res.json({ ok: true });
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to revert version");
+      req.log?.error({ err }, "Failed to revert version");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -160,7 +160,7 @@ router.get("/projects/:projectId/doc-versions", requireAuth,
         .orderBy(desc(docVersionsTable.createdAt));
       res.json(versions);
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to list doc versions");
+      req.log?.error({ err }, "Failed to list doc versions");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -180,7 +180,7 @@ router.post("/projects/:projectId/doc-versions", requireAuth,
       }).returning();
       res.status(201).json(version);
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to create doc version");
+      req.log?.error({ err }, "Failed to create doc version");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -201,7 +201,7 @@ router.post("/doc-versions/:id/set-default", requireAuth,
       await db.update(docVersionsTable).set({ isDefault: true }).where(eq(docVersionsTable.id, id));
       res.json({ ok: true });
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to set default doc version");
+      req.log?.error({ err }, "Failed to set default doc version");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -218,7 +218,7 @@ router.delete("/doc-versions/:id", requireAuth,
       await db.delete(docVersionsTable).where(eq(docVersionsTable.id, id));
       res.status(204).send();
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to delete doc version");
+      req.log?.error({ err }, "Failed to delete doc version");
       res.status(500).json({ error: "Internal server error" });
     }
   });

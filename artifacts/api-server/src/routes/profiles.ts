@@ -22,7 +22,7 @@ router.get("/profiles/me", requireAuth, async (req: Request, res: Response) => {
     const [profile] = await db.select().from(profilesTable).where(eq(profilesTable.id, userId));
     res.json(profile || null);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to get profile");
+    req.log?.error({ err }, "Failed to get profile");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -47,7 +47,7 @@ router.patch("/profiles/me", requireAuth, async (req: Request, res: Response) =>
     }
     res.json(profile);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to patch profile");
+    req.log?.error({ err }, "Failed to patch profile");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -60,7 +60,7 @@ router.delete("/profiles/me", requireAuth, async (req: Request, res: Response) =
     await db.delete(profilesTable).where(eq(profilesTable.id, userId));
     res.status(204).send();
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to delete profile");
+    req.log?.error({ err }, "Failed to delete profile");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -83,7 +83,7 @@ router.put("/profiles/me", requireAuth, async (req: Request, res: Response) => {
     }
     res.json(profile);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to upsert profile");
+    req.log?.error({ err }, "Failed to upsert profile");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -96,7 +96,7 @@ router.post("/profiles/batch", requireAuth, async (req: Request, res: Response) 
     const profiles = await db.select().from(profilesTable).where(inArray(profilesTable.id, ids));
     res.json(profiles);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to batch get profiles");
+    req.log?.error({ err }, "Failed to batch get profiles");
     res.status(500).json({ error: "Internal server error" });
   }
 });

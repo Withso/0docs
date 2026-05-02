@@ -33,7 +33,7 @@ router.get("/projects", async (req: Request, res: Response) => {
       .orderBy(desc(projectsTable.updatedAt));
     res.json(projects);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to list projects");
+    req.log?.error({ err }, "Failed to list projects");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -47,7 +47,7 @@ router.get("/projects/:id", requireAuth, async (req: Request<{ id: string }>, re
     if (!project) { res.status(404).json({ error: "Not found" }); return; }
     res.json(project);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to get project");
+    req.log?.error({ err }, "Failed to get project");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -65,7 +65,7 @@ router.post("/projects", requireAuth, async (req: Request, res: Response) => {
     });
     res.status(201).json(project);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to create project");
+    req.log?.error({ err }, "Failed to create project");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -81,7 +81,7 @@ router.patch("/projects/:id", requireAuth, async (req: Request<{ id: string }>, 
     if (!project) { res.status(404).json({ error: "Not found" }); return; }
     res.json(project);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to update project");
+    req.log?.error({ err }, "Failed to update project");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -94,7 +94,7 @@ router.delete("/projects/:id", requireAuth, async (req: Request<{ id: string }>,
       .where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, userId)));
     res.status(204).send();
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to delete project");
+    req.log?.error({ err }, "Failed to delete project");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -160,7 +160,7 @@ router.post("/projects/:id/duplicate", requireAuth, async (req: Request<{ id: st
 
     res.status(201).json(newProject);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to duplicate project");
+    req.log?.error({ err }, "Failed to duplicate project");
     res.status(500).json({ error: "Internal server error" });
   }
 });

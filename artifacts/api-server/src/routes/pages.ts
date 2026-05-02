@@ -24,12 +24,35 @@ async function ownedProject(projectId: string, userId: string) {
   return p ?? null;
 }
 
-// GET /pages?projectId=... (flat, public-friendly)
+async function isProjectPublished(projectId: string): Promise<boolean> {
+  const [p] = await db
+    .select({ publishedVersionId: projectsTable.publishedVersionId })
+    .from(projectsTable)
+    .where(eq(projectsTable.id, projectId));
+  return p?.publishedVersionId != null;
+}
+
+// GET /pages?projectId=...
+// Public for published projects; requires auth + ownership for unpublished
 router.get("/pages", async (req: Request, res: Response) => {
   try {
     const projectId = req.query["projectId"] as string | undefined;
     if (!projectId) { res.status(400).json({ error: "projectId required" }); return; }
     if (!isUuid(projectId)) { res.json([]); return; }
+
+    // Check if project is published — if so, allow public read
+    if (await isProjectPublished(projectId)) {
+      const pages = await db.select().from(pagesTable)
+        .where(eq(pagesTable.projectId, projectId))
+        .orderBy(pagesTable.orderIndex);
+      res.json(pages); return;
+    }
+
+    // Not published — require auth + ownership
+    const auth = getAuth(req);
+    const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+    if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+    if (!(await ownedProject(projectId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const pages = await db.select().from(pagesTable)
       .where(eq(pagesTable.projectId, projectId))
       .orderBy(pagesTable.orderIndex);
@@ -76,12 +99,12 @@ router.get("/projects/:projectId/pages", requireAuth,
         .orderBy(pagesTable.orderIndex);
       res.json(pages);
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to list pages");
+      req.log.error({ err }, "Failed to list pages");
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
-// Create page (auth + ownership)
+// Create page
 router.post("/projects/:projectId/pages", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
@@ -101,12 +124,12 @@ router.post("/projects/:projectId/pages", requireAuth,
       }).returning();
       res.status(201).json(page);
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to create page");
+      req.log.error({ err }, "Failed to create page");
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
-// Update page (auth + ownership)
+// Update page
 router.patch("/projects/:projectId/pages/:pageId", requireAuth,
   async (req: Request<{ projectId: string; pageId: string }>, res: Response) => {
     try {
@@ -123,12 +146,12 @@ router.patch("/projects/:projectId/pages/:pageId", requireAuth,
       const [page] = await db.update(pagesTable).set(updates).where(eq(pagesTable.id, pageId)).returning();
       res.json(page);
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to update page");
+      req.log.error({ err }, "Failed to update page");
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
-// Delete page (auth + ownership)
+// Delete page
 router.delete("/projects/:projectId/pages/:pageId", requireAuth,
   async (req: Request<{ projectId: string; pageId: string }>, res: Response) => {
     try {
@@ -140,12 +163,12 @@ router.delete("/projects/:projectId/pages/:pageId", requireAuth,
       await db.delete(pagesTable).where(eq(pagesTable.id, pageId));
       res.status(204).send();
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to delete page");
+      req.log.error({ err }, "Failed to delete page");
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
-// Bulk reorder pages (auth + ownership)
+// Bulk reorder pages
 router.post("/projects/:projectId/pages/reorder", requireAuth,
   async (req: Request<{ projectId: string }>, res: Response) => {
     try {
@@ -164,7 +187,7 @@ router.post("/projects/:projectId/pages/reorder", requireAuth,
       }
       res.json({ ok: true });
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to reorder pages");
+      req.log.error({ err }, "Failed to reorder pages");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -178,7 +201,6 @@ router.get("/projects/:projectId/pages/:pageId/content", requireAuth,
       if (!(await ownedProject(projectId, userId))) {
         res.status(403).json({ error: "Forbidden" }); return;
       }
-      // Verify the page actually belongs to this project (prevents cross-project leakage)
       const [page] = await db.select({ id: pagesTable.id }).from(pagesTable)
         .where(and(eq(pagesTable.id, pageId), eq(pagesTable.projectId, projectId)));
       if (!page) { res.status(404).json({ error: "Not found" }); return; }
@@ -193,7 +215,7 @@ router.get("/projects/:projectId/pages/:pageId/content", requireAuth,
         : [];
       res.json({ sections, blocks });
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to get page content");
+      req.log.error({ err }, "Failed to get page content");
       res.status(500).json({ error: "Internal server error" });
     }
   });

@@ -30,20 +30,66 @@ async function ownedBlock(blockId: string, userId: string) {
   return rows.length > 0;
 }
 
+// Resolve section IDs, verifying their project is published or caller owns it
+async function resolvePublishedSectionIds(sectionIds: string[], auth: ReturnType<typeof getAuth>): Promise<string[] | null> {
+  const validIds = sectionIds.filter(isUuid);
+  if (validIds.length === 0) return [];
+
+  const sections = await db
+    .select({ id: sectionsTable.id, pageId: sectionsTable.pageId })
+    .from(sectionsTable)
+    .where(inArray(sectionsTable.id, validIds));
+  if (sections.length === 0) return [];
+
+  const pageIds = [...new Set(sections.map((s) => s.pageId))];
+  const pages = await db
+    .select({ id: pagesTable.id, projectId: pagesTable.projectId })
+    .from(pagesTable)
+    .where(inArray(pagesTable.id, pageIds));
+
+  const projectIds = [...new Set(pages.map((p) => p.projectId))];
+  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+
+  for (const projectId of projectIds) {
+    const [project] = await db
+      .select({ publishedVersionId: projectsTable.publishedVersionId, userId: projectsTable.userId })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, projectId));
+    if (!project) return null;
+    const isPublished = project.publishedVersionId != null;
+    const isOwner = userId != null && project.userId === userId;
+    if (!isPublished && !isOwner) return null;
+  }
+  return validIds;
+}
+
 // GET /blocks?sectionId=...  OR  /blocks?sectionIds=id1,id2,...
+// Public for published projects; requires ownership for unpublished
 router.get("/blocks", async (req: Request, res: Response) => {
   try {
     const sectionId = req.query["sectionId"] as string | undefined;
     const sectionIds = req.query["sectionIds"] as string | undefined;
+    const auth = getAuth(req);
+
     if (sectionId) {
       if (!isUuid(sectionId)) { res.json([]); return; }
-      const blocks = await db.select().from(blocksTable).where(eq(blocksTable.sectionId, sectionId)).orderBy(blocksTable.orderIndex);
+      const allowed = await resolvePublishedSectionIds([sectionId], auth);
+      if (allowed === null) { res.status(403).json({ error: "Forbidden" }); return; }
+      if (allowed.length === 0) { res.json([]); return; }
+      const blocks = await db.select().from(blocksTable)
+        .where(eq(blocksTable.sectionId, sectionId))
+        .orderBy(blocksTable.orderIndex);
       res.json(blocks); return;
     }
     if (sectionIds) {
       const ids = sectionIds.split(",").filter(Boolean).filter(isUuid);
       if (ids.length === 0) { res.json([]); return; }
-      const blocks = await db.select().from(blocksTable).where(inArray(blocksTable.sectionId, ids)).orderBy(blocksTable.orderIndex);
+      const allowed = await resolvePublishedSectionIds(ids, auth);
+      if (allowed === null) { res.status(403).json({ error: "Forbidden" }); return; }
+      if (allowed.length === 0) { res.json([]); return; }
+      const blocks = await db.select().from(blocksTable)
+        .where(inArray(blocksTable.sectionId, allowed))
+        .orderBy(blocksTable.orderIndex);
       res.json(blocks); return;
     }
     res.status(400).json({ error: "sectionId or sectionIds required" });
@@ -71,7 +117,7 @@ router.post("/blocks", requireAuth, async (req: Request, res: Response) => {
     }).returning();
     res.status(201).json(block);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to create block");
+    req.log.error({ err }, "Failed to create block");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -89,7 +135,7 @@ router.patch("/blocks/:id", requireAuth, async (req: Request<{ id: string }>, re
     const [block] = await db.update(blocksTable).set(updates).where(eq(blocksTable.id, req.params.id)).returning();
     res.json(block);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to update block");
+    req.log.error({ err }, "Failed to update block");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -102,7 +148,7 @@ router.delete("/blocks/:id", requireAuth, async (req: Request<{ id: string }>, r
     await db.delete(blocksTable).where(eq(blocksTable.id, req.params.id));
     res.status(204).send();
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to delete block");
+    req.log.error({ err }, "Failed to delete block");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -118,7 +164,7 @@ router.post("/blocks/reorder", requireAuth, async (req: Request, res: Response) 
     }
     res.json({ ok: true });
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to reorder blocks");
+    req.log.error({ err }, "Failed to reorder blocks");
     res.status(500).json({ error: "Internal server error" });
   }
 });

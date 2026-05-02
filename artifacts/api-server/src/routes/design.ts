@@ -28,7 +28,7 @@ router.get("/projects/:projectId/design", requireAuth,
         .where(eq(projectDesignSettingsTable.projectId, projectId));
       res.json(settings || null);
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to get design settings");
+      req.log?.error({ err }, "Failed to get design settings");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -58,7 +58,7 @@ router.put("/projects/:projectId/design", requireAuth,
       }
       res.json(result);
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to upsert design settings");
+      req.log?.error({ err }, "Failed to upsert design settings");
       res.status(500).json({ error: "Internal server error" });
     }
   });

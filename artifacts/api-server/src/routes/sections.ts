@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { getAuth } from "@clerk/express";
-import { db, sectionsTable, blocksTable, pagesTable, projectsTable } from "@workspace/db";
-import { eq, inArray, and } from "drizzle-orm";
+import { db, sectionsTable, pagesTable, projectsTable } from "@workspace/db";
+import { eq, inArray, and, isNotNull } from "drizzle-orm";
 
 const router = Router();
 
@@ -29,20 +29,63 @@ async function ownedSection(sectionId: string, userId: string) {
   return rows.length > 0;
 }
 
+// Resolve the project ID for a set of page IDs, verifying the project is published or caller owns it
+async function resolvePublishedPageIds(pageIds: string[], auth: ReturnType<typeof getAuth>): Promise<string[] | null> {
+  // Filter to valid UUIDs
+  const validIds = pageIds.filter(isUuid);
+  if (validIds.length === 0) return [];
+
+  // Find the projects these pages belong to
+  const pages = await db
+    .select({ id: pagesTable.id, projectId: pagesTable.projectId })
+    .from(pagesTable)
+    .where(inArray(pagesTable.id, validIds));
+  if (pages.length === 0) return [];
+
+  const projectIds = [...new Set(pages.map((p) => p.projectId))];
+
+  // For each project, check it's either published OR owned by the caller
+  const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+  for (const projectId of projectIds) {
+    const [project] = await db
+      .select({ publishedVersionId: projectsTable.publishedVersionId, userId: projectsTable.userId })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, projectId));
+    if (!project) return null; // project not found
+    const isPublished = project.publishedVersionId != null;
+    const isOwner = userId != null && project.userId === userId;
+    if (!isPublished && !isOwner) return null; // not published, not owner
+  }
+  return validIds;
+}
+
 // GET /sections?pageId=...  OR  /sections?pageIds=id1,id2,...
+// Public for published projects; requires ownership for unpublished
 router.get("/sections", async (req: Request, res: Response) => {
   try {
     const pageId = req.query["pageId"] as string | undefined;
     const pageIds = req.query["pageIds"] as string | undefined;
+    const auth = getAuth(req);
+
     if (pageId) {
       if (!isUuid(pageId)) { res.json([]); return; }
-      const sections = await db.select().from(sectionsTable).where(eq(sectionsTable.pageId, pageId)).orderBy(sectionsTable.orderIndex);
+      const allowed = await resolvePublishedPageIds([pageId], auth);
+      if (allowed === null) { res.status(403).json({ error: "Forbidden" }); return; }
+      if (allowed.length === 0) { res.json([]); return; }
+      const sections = await db.select().from(sectionsTable)
+        .where(eq(sectionsTable.pageId, pageId))
+        .orderBy(sectionsTable.orderIndex);
       res.json(sections); return;
     }
     if (pageIds) {
       const ids = pageIds.split(",").filter(Boolean).filter(isUuid);
       if (ids.length === 0) { res.json([]); return; }
-      const sections = await db.select().from(sectionsTable).where(inArray(sectionsTable.pageId, ids)).orderBy(sectionsTable.orderIndex);
+      const allowed = await resolvePublishedPageIds(ids, auth);
+      if (allowed === null) { res.status(403).json({ error: "Forbidden" }); return; }
+      if (allowed.length === 0) { res.json([]); return; }
+      const sections = await db.select().from(sectionsTable)
+        .where(inArray(sectionsTable.pageId, allowed))
+        .orderBy(sectionsTable.orderIndex);
       res.json(sections); return;
     }
     res.status(400).json({ error: "pageId or pageIds required" });
@@ -66,7 +109,7 @@ router.post("/sections", requireAuth, async (req: Request, res: Response) => {
     }).returning();
     res.status(201).json(section);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to create section");
+    req.log.error({ err }, "Failed to create section");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -84,7 +127,7 @@ router.patch("/sections/:id", requireAuth, async (req: Request<{ id: string }>, 
     const [section] = await db.update(sectionsTable).set(updates).where(eq(sectionsTable.id, req.params.id)).returning();
     res.json(section);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to update section");
+    req.log.error({ err }, "Failed to update section");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -97,7 +140,7 @@ router.delete("/sections/:id", requireAuth, async (req: Request<{ id: string }>,
     await db.delete(sectionsTable).where(eq(sectionsTable.id, req.params.id));
     res.status(204).send();
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to delete section");
+    req.log.error({ err }, "Failed to delete section");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -113,7 +156,7 @@ router.post("/sections/reorder", requireAuth, async (req: Request, res: Response
     }
     res.json({ ok: true });
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to reorder sections");
+    req.log.error({ err }, "Failed to reorder sections");
     res.status(500).json({ error: "Internal server error" });
   }
 });

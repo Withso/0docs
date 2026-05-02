@@ -34,12 +34,33 @@ async function ownedProject(projectId: string, userId: string) {
   return p ?? null;
 }
 
-// GET /navgroups?projectId=... (flat path, public-friendly)
+async function isProjectPublished(projectId: string): Promise<boolean> {
+  const [p] = await db
+    .select({ publishedVersionId: projectsTable.publishedVersionId })
+    .from(projectsTable)
+    .where(eq(projectsTable.id, projectId));
+  return p?.publishedVersionId != null;
+}
+
+// GET /navgroups?projectId=...
+// Public for published projects; requires auth + ownership for unpublished
 router.get("/navgroups", async (req: Request, res: Response) => {
   try {
     const projectId = req.query["projectId"] as string | undefined;
     if (!projectId) { res.status(400).json({ error: "projectId required" }); return; }
     if (!isUuid(projectId)) { res.json([]); return; }
+
+    if (await isProjectPublished(projectId)) {
+      const groups = await db.select().from(navGroupsTable)
+        .where(eq(navGroupsTable.projectId, projectId))
+        .orderBy(navGroupsTable.orderIndex);
+      res.json(groups); return;
+    }
+
+    const auth = getAuth(req);
+    const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+    if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+    if (!(await ownedProject(projectId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const groups = await db.select().from(navGroupsTable)
       .where(eq(navGroupsTable.projectId, projectId))
       .orderBy(navGroupsTable.orderIndex);
@@ -78,7 +99,7 @@ router.get("/projects/:projectId/nav-groups", requireAuth,
         .orderBy(navGroupsTable.orderIndex);
       res.json(groups);
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to list nav groups");
+      req.log.error({ err }, "Failed to list nav groups");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -99,7 +120,7 @@ router.post("/projects/:projectId/nav-groups", requireAuth,
       }).returning();
       res.status(201).json(group);
     } catch (err) {
-      (req as any).log?.error({ err }, "Failed to create nav group");
+      req.log.error({ err }, "Failed to create nav group");
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -117,7 +138,7 @@ router.patch("/nav-groups/:id", requireAuth, async (req: Request<{ id: string }>
     const [group] = await db.update(navGroupsTable).set(updates).where(eq(navGroupsTable.id, req.params.id)).returning();
     res.json(group);
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to update nav group");
+    req.log.error({ err }, "Failed to update nav group");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -131,7 +152,7 @@ router.delete("/nav-groups/:id", requireAuth, async (req: Request<{ id: string }
     await db.delete(navGroupsTable).where(eq(navGroupsTable.id, req.params.id));
     res.status(204).send();
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to delete nav group");
+    req.log.error({ err }, "Failed to delete nav group");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -147,7 +168,7 @@ router.post("/nav-groups/reorder", requireAuth, async (req: Request, res: Respon
     }
     res.json({ ok: true });
   } catch (err) {
-    (req as any).log?.error({ err }, "Failed to reorder nav groups");
+    req.log.error({ err }, "Failed to reorder nav groups");
     res.status(500).json({ error: "Internal server error" });
   }
 });
