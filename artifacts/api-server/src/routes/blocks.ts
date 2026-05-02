@@ -167,6 +167,17 @@ router.delete("/blocks/:id", requireAuth, async (req: Request<{ id: string }>, r
   }
 });
 
+async function ownedSection(sectionId: string, userId: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: sectionsTable.id })
+    .from(sectionsTable)
+    .innerJoin(pagesTable, eq(pagesTable.id, sectionsTable.pageId))
+    .innerJoin(projectsTable, and(eq(projectsTable.id, pagesTable.projectId), eq(projectsTable.userId, userId)))
+    .where(eq(sectionsTable.id, sectionId))
+    .limit(1);
+  return rows.length > 0;
+}
+
 // Reorder blocks
 router.post("/blocks/reorder", requireAuth, async (req: Request, res: Response) => {
   try {
@@ -174,7 +185,11 @@ router.post("/blocks/reorder", requireAuth, async (req: Request, res: Response) 
     const { blocks } = req.body as { blocks: Array<{ id: string; orderIndex: number; sectionId: string }> };
     for (const b of blocks) {
       if (!(await ownedBlock(b.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
-      await db.update(blocksTable).set({ orderIndex: b.orderIndex, sectionId: b.sectionId, updatedAt: new Date() }).where(eq(blocksTable.id, b.id));
+      // Validate destination section ownership to prevent cross-project block moves
+      if (!(await ownedSection(b.sectionId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+      await db.update(blocksTable)
+        .set({ orderIndex: b.orderIndex, sectionId: b.sectionId, updatedAt: new Date() })
+        .where(eq(blocksTable.id, b.id));
     }
     res.json({ ok: true });
   } catch (err) {
