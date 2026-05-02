@@ -22,7 +22,12 @@
   --zdocs-bg6: #5a5a5a;
 
   /* Border */
-  --zdocs-border: #2a2a2a;
+  --zdocs-border: #232220;
+
+  /* Brand accent — emerald (Mintlify-style) */
+  --zdocs-primary: #10b981;
+  --zdocs-primary-soft: rgba(16, 185, 129, 0.12);
+  --zdocs-primary-hover: #34d399;
 
   /* Buttons */
   --zdocs-button: #ffffff;
@@ -147,72 +152,73 @@
      These map Tailwind semantic tokens to zdocs primitives.
      Shadcn components use hsl(var(--background)) etc. internally.
 
-     DESIGN INTENT: Neutral palette with subtle cool-blue hue (220°)
-     for whisper-soft borders and muted surfaces. Foreground stays
-     pure neutral so text reads as crisp black/white. */
+     DESIGN INTENT (Faithful Mintlify Clone):
+     - Warm-tinted near-black palette (30° hue) — feels less clinical than cool blue
+     - Emerald green (#10b981 ≈ hsl(160 84% 39%)) as the brand accent
+     - Whisper-soft borders, generous padding, crisp foreground text */
 
-  --background: 220 9% 5%;        /* near-black w/ cool tint */
-  --foreground: 0 0% 96%;         /* pure neutral text */
+  --background: 30 6% 4%;         /* warm-tinted near-black */
+  --foreground: 30 5% 96%;        /* near-white text */
 
-  --card: 220 8% 8%;
-  --card-foreground: 0 0% 96%;
+  --card: 30 5% 7%;
+  --card-foreground: 30 5% 96%;
 
-  --popover: 220 8% 8%;
-  --popover-foreground: 0 0% 96%;
+  --popover: 30 5% 7%;
+  --popover-foreground: 30 5% 96%;
 
-  --primary: 0 0% 100%;
-  --primary-foreground: 220 9% 5%;
+  --primary: 160 84% 39%;         /* emerald #10b981 */
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 220 7% 12%;
-  --secondary-foreground: 0 0% 96%;
+  --secondary: 30 4% 11%;
+  --secondary-foreground: 30 5% 96%;
 
-  --muted: 220 7% 12%;
-  --muted-foreground: 220 5% 60%;
+  --muted: 30 4% 11%;
+  --muted-foreground: 30 4% 60%;
 
-  --accent: 220 7% 14%;
-  --accent-foreground: 0 0% 96%;
+  --accent: 30 4% 13%;
+  --accent-foreground: 30 5% 96%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 220 7% 14%;
-  --input: 220 7% 16%;
-  --ring: 220 5% 35%;
+  --border: 30 5% 14%;
+  --input: 30 5% 16%;
+  --ring: 160 84% 39%;            /* emerald focus rings */
 
   --radius: 8px;
 
-  --platform-accent: 0 0% 96%;
-  --platform-accent-soft: 220 8% 10%;
-  --platform-accent-foreground: 220 9% 5%;
-  --platform-success: 152 60% 42%;
-  --platform-success-soft: 152 30% 15%;
+  --platform-accent: 160 84% 39%;
+  --platform-accent-soft: 160 50% 10%;
+  --platform-accent-foreground: 0 0% 100%;
+  --platform-success: 160 84% 39%;
+  --platform-success-soft: 160 50% 10%;
   --platform-warning: 38 92% 50%;
   --platform-warning-soft: 38 30% 15%;
   --platform-info: 214 100% 60%;
-  --platform-surface: 220 8% 8%;
-  --platform-surface-hover: 220 8% 11%;
-  --platform-surface-active: 220 7% 14%;
-  --platform-surface-elevated: 220 8% 9%;
+  --platform-surface: 30 5% 7%;
+  --platform-surface-hover: 30 5% 10%;
+  --platform-surface-active: 30 4% 13%;
+  --platform-surface-elevated: 30 5% 9%;
 
   --platform-header-height: 52px;
   --platform-sidebar-width: 260px;
 
-  --doc-link: 0 0% 63%;
-  --doc-section-line: 0 0% 19%;
+  --doc-link: 30 4% 63%;
+  --doc-section-line: 30 4% 19%;
   --doc-sidebar-width: 220px;
   --doc-content-max: 680px;
-  --doc-code-bg: 0 0% 12%;
-  --doc-note-bg: 0 0% 10%;
-  --doc-note-border: 0 0% 17%;
+  --doc-code-bg: 30 4% 11%;
+  --doc-note-bg: 30 4% 10%;
+  --doc-note-border: 30 4% 17%;
 
-  --sidebar-background: 0 0% 4%;
-  --sidebar-foreground: 0 0% 44%;
-  --sidebar-primary: 0 0% 94%;
-  --sidebar-primary-foreground: 0 0% 5%;
-  --sidebar-accent: 0 0% 10%;
-  --sidebar-accent-foreground: 0 0% 94%;
-  --sidebar-border: 0 0% 10%;
-  --sidebar-ring: 0 0% 30%;
+  --sidebar-background: 30 6% 4%;
+  --sidebar-foreground: 30 4% 60%;
+  --sidebar-primary: 160 84% 39%;          /* emerald accent bar / dot */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 30 4% 11%;             /* neutral hover surface */
+  --sidebar-accent-foreground: 30 5% 96%;
+  --sidebar-border: 30 4% 11%;
+  --sidebar-ring: 160 84% 39%;
 }
 
 /* --- LIGHT THEME (Mintlify-style: pure white, near-black text, whisper borders) --- */
@@ -242,59 +248,64 @@
   --zdocs-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.04);
   --zdocs-shadow-card: 0 0 0 1px var(--zdocs-border);
 
-  /* Bridge overrides for light — neutral white w/ subtle cool-blue hue */
+  /* Brand accent — emerald (Mintlify-style) */
+  --zdocs-primary: #059669;
+  --zdocs-primary-soft: rgba(16, 185, 129, 0.10);
+  --zdocs-primary-hover: #047857;
+
+  /* Bridge overrides for light — pure white w/ emerald accent */
   --background: 0 0% 100%;
-  --foreground: 220 14% 5%;
+  --foreground: 30 14% 5%;
 
   --card: 0 0% 100%;
-  --card-foreground: 220 14% 5%;
+  --card-foreground: 30 14% 5%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 220 14% 5%;
+  --popover-foreground: 30 14% 5%;
 
-  --primary: 220 14% 5%;
+  --primary: 160 84% 32%;            /* emerald #059669 — slightly darker for light bg contrast */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 220 14% 96%;
-  --secondary-foreground: 220 14% 5%;
+  --secondary: 30 8% 96%;
+  --secondary-foreground: 30 14% 5%;
 
-  --muted: 220 14% 96%;
-  --muted-foreground: 220 8% 42%;
+  --muted: 30 8% 96%;
+  --muted-foreground: 30 8% 42%;
 
-  --accent: 220 14% 95%;
-  --accent-foreground: 220 14% 5%;
+  --accent: 30 8% 95%;
+  --accent-foreground: 30 14% 5%;
 
-  --border: 220 14% 92%;
-  --input: 220 14% 90%;
-  --ring: 220 8% 60%;
+  --border: 30 8% 92%;
+  --input: 30 8% 90%;
+  --ring: 160 84% 32%;               /* emerald focus rings */
 
-  --platform-accent: 220 14% 5%;
-  --platform-accent-soft: 220 14% 96%;
+  --platform-accent: 160 84% 32%;
+  --platform-accent-soft: 160 60% 95%;
   --platform-accent-foreground: 0 0% 100%;
-  --platform-success: 152 60% 36%;
-  --platform-success-soft: 152 50% 94%;
+  --platform-success: 160 84% 32%;
+  --platform-success-soft: 160 60% 95%;
   --platform-warning: 38 92% 45%;
   --platform-warning-soft: 38 90% 94%;
   --platform-info: 214 100% 50%;
   --platform-surface: 0 0% 100%;
-  --platform-surface-hover: 220 14% 97%;
-  --platform-surface-active: 220 14% 95%;
+  --platform-surface-hover: 30 8% 97%;
+  --platform-surface-active: 30 8% 95%;
   --platform-surface-elevated: 0 0% 100%;
 
-  --doc-link: 240 4% 36%;
-  --doc-section-line: 240 6% 88%;
-  --doc-code-bg: 240 5% 96%;
-  --doc-note-bg: 240 5% 97%;
-  --doc-note-border: 240 6% 90%;
+  --doc-link: 30 4% 36%;
+  --doc-section-line: 30 6% 88%;
+  --doc-code-bg: 30 5% 96%;
+  --doc-note-bg: 30 5% 97%;
+  --doc-note-border: 30 6% 90%;
 
-  --sidebar-background: 240 5% 98%;
-  --sidebar-foreground: 240 4% 36%;
-  --sidebar-primary: 0 0% 4%;
+  --sidebar-background: 30 5% 98%;
+  --sidebar-foreground: 30 4% 36%;
+  --sidebar-primary: 160 84% 32%;        /* emerald accent bar / dot */
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 5% 94%;
-  --sidebar-accent-foreground: 0 0% 4%;
-  --sidebar-border: 240 6% 92%;
-  --sidebar-ring: 240 4% 64%;
+  --sidebar-accent: 30 8% 94%;
+  --sidebar-accent-foreground: 30 14% 5%;
+  --sidebar-border: 30 6% 92%;
+  --sidebar-ring: 160 84% 32%;
 }
 
 /* Smooth theme switch — applied to body so app feels polished */

@@ -52,6 +52,36 @@ Phases 2 (TokenColorField + Visual Branding redesign + split-pane layout)
 and 3 (Header/Footer build-out, Typography preview, code_tabs pre-color
 control) are deferred follow-ups.
 
+## zdocs Builder visual system (Mintlify "Faithful" clone)
+
+The Builder UI follows Mintlify's 4-pane layout: project rail (224px) →
+navigation tree (~228px) → optional settings side-panel → content. Tokens
+in `src/styles/variables.css` drive everything via the shadcn bridge:
+
+- Dark mode uses a **warm 30° tint** (not cool blue) — `--background: 30 6% 4%`
+- `--primary` is **emerald** `160 84% 39%` (≈#10b981) in dark, `160 84% 32%`
+  in light. This cascades to every shadcn `<Button>`, the rail's active row
+  bar, focus rings (`--ring`), and the Monaco editor's keyword color.
+- `--sidebar-accent` stays neutral so non-active rail hovers remain subtle;
+  the active row is `bg-primary/10` + emerald left bar.
+
+Builder components:
+- `ProjectRail.tsx` — Workspace section (Home/Editor/Configurations/
+  Analytics/Settings) plus an **Agents section** with placeholders
+  (Workflows/Agent/Assistant/MCP). Placeholders use `aria-disabled` (not
+  `disabled`) so they remain keyboard-focusable, and a shadcn `Tooltip`
+  surfaces "Coming soon" to keyboard/screen-reader users.
+- `BuilderHeader.tsx` — content-scoped header. Left: Visual/Code icon
+  toggle. Right: search pill (⌘K), preview button, Publish (emerald). The
+  redundant Configurations gear was removed; Configurations now lives only
+  in the rail.
+- `CodeView.tsx` — Monaco uses custom `zdocs-dark`/`zdocs-light` themes
+  registered via `beforeMount`, mirroring the warm bg + emerald accents.
+  A `MutationObserver` on `[data-theme]` keeps the editor in sync with
+  app theme toggles.
+- All custom buttons (rail items, view toggle, preview-shell icons) carry
+  `focus-visible:ring-2 focus-visible:ring-ring` for a11y.
+
 ## Routing (zdocs)
 
 - `/` → `pages/Landing.tsx` — marketing landing (hero, feature trio, footer).

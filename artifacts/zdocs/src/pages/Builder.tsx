@@ -26,7 +26,7 @@ import SettingsSidePanel, { type SettingsTarget } from "@/components/builder/Set
 import CodeView from "@/components/builder/CodeView";
 import SearchDialog from "@/components/docs/SearchDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, FileJson, GripVertical, SlidersHorizontal, RotateCw, X } from "lucide-react";
+import { Plus, FileText, FileJson, GripVertical, RotateCw, X } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
 import type { Page, Section, Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -302,7 +302,7 @@ const Builder = () => {
               onClick={() => setPreviewReloadKey((k) => k + 1)}
               title="Reload"
               aria-label="Reload"
-              className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
             >
               <RotateCw className="h-3.5 w-3.5" />
             </button>
@@ -310,7 +310,7 @@ const Builder = () => {
               onClick={() => handleModeChange("editor")}
               title="Close preview"
               aria-label="Close preview"
-              className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -401,13 +401,6 @@ const Builder = () => {
                 )}
               </div>
 
-              <button
-                onClick={() => handleModeChange("configurations")}
-                className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors border-t border-border/40"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                <span className="truncate flex-1 text-left">Configurations</span>
-              </button>
             </aside>
           )}
 

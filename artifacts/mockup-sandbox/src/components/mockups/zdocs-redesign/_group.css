@@ -1,0 +1,141 @@
+/* 0docs redesign — group-shared tokens.
+   Each variant scopes its tokens to its own [data-variant=...] container so
+   they don't leak across the iframe-sandboxed previews. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Variant A: Current 0docs (cool-blue tinted neutral) ────────────── */
+.zdocs-shell[data-variant="current"] {
+  --bg1: #0d0d0d; --bg2: #161616; --bg3: #1e1e1e; --bg4: #262626; --bg5: #303030;
+  --border: #2a2a2a;
+  --text1: #f0f0f0; --text2: #a0a0a0; --text3: #707070; --text4: #484848;
+  --primary: #ffffff;     --primary-fg: #0d0d0d;
+  --accent-active: #ffffff;
+  --publish-bg: #ffffff;  --publish-fg: #0d0d0d;
+  --sidebar-bg: #0a0a0a;
+  --hover: rgba(255,255,255,.04);
+  --active-row: #1a1a1a;
+  --warning-dot: #fbbf24;
+  --rail-bg: var(--bg1);
+  --tree-bg: #0a0a0a;
+  --content-bg: var(--bg1);
+  --radius: 8px; --radius-sm: 6px;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* ── Variant B: Faithful Mintlify clone (warm-tinted, green accent) ── */
+.zdocs-shell[data-variant="faithful"] {
+  --bg1: #0a0a0a; --bg2: #111111; --bg3: #181818; --bg4: #222222; --bg5: #2a2a2a;
+  --border: rgba(255,255,255,.06);
+  --border-strong: rgba(255,255,255,.10);
+  --text1: #f1f1f1; --text2: #a3a3a3; --text3: #737373; --text4: #525252;
+  --primary: #10b981;       /* mint-green emerald */
+  --primary-soft: rgba(16,185,129,.12);
+  --primary-fg: #052e21;
+  --accent-active: #10b981;
+  --publish-bg: #10b981;  --publish-fg: #052e21;
+  --sidebar-bg: #080808;
+  --hover: rgba(255,255,255,.04);
+  --active-row: rgba(255,255,255,.06);
+  --selected-row: rgba(255,255,255,.10);
+  --warning-dot: #fbbf24;
+  --rail-bg: #080808;
+  --tree-bg: #0a0a0a;
+  --content-bg: #0a0a0a;
+  --radius: 8px; --radius-sm: 6px;
+  --font: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* ── Variant C: Refined Mintlify-inspired (elevated polish) ─────────── */
+.zdocs-shell[data-variant="refined"] {
+  /* Warm near-black with a hint of warm hue (deep coffee) */
+  --bg1: #0b0b0d; --bg2: #131316; --bg3: #1a1a1e; --bg4: #232328; --bg5: #2c2c32;
+  --border: rgba(255,255,255,.05);
+  --border-strong: rgba(255,255,255,.08);
+  --text1: #fafafa; --text2: #b4b4be; --text3: #7a7a85; --text4: #525258;
+  --primary: #22c55e;        /* punchier green */
+  --primary-glow: rgba(34,197,94,.30);
+  --primary-soft: rgba(34,197,94,.10);
+  --primary-fg: #052e16;
+  --accent-active: #22c55e;
+  --publish-bg: #22c55e;  --publish-fg: #052e16;
+  --sidebar-bg: #08080a;
+  --hover: rgba(255,255,255,.035);
+  --active-row: rgba(255,255,255,.05);
+  --selected-row: rgba(34,197,94,.08);  /* tinted on selection */
+  --warning-dot: #f59e0b;
+  --rail-bg: #08080a;
+  --tree-bg: #0b0b0d;
+  --content-bg: #0b0b0d;
+  --radius: 10px; --radius-sm: 7px;
+  --font: 'DM Sans', 'Inter', sans-serif;     /* elevated heading face */
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* ── Shared base styles for all variants ────────────────────────────── */
+.zdocs-shell {
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+  background: var(--content-bg);
+  color: var(--text1);
+  font-feature-settings: 'cv11', 'ss01';
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.zdocs-shell .row {
+  display: flex; align-items: center;
+}
+.zdocs-shell .tree-row {
+  display: flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 8px;
+  font-size: 12.5px; color: var(--text2);
+  border-radius: 6px; cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.zdocs-shell .tree-row:hover { background: var(--hover); color: var(--text1); }
+.zdocs-shell .tree-row[data-active="true"] { background: var(--active-row); color: var(--text1); font-weight: 500; }
+
+.zdocs-shell .icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 24px; width: 24px; border-radius: 6px;
+  color: var(--text3); transition: all .15s ease;
+  background: transparent; border: 0; cursor: pointer;
+}
+.zdocs-shell .icon-btn:hover { background: var(--hover); color: var(--text1); }
+.zdocs-shell .icon-btn:focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 1px;
+}
+
+.zdocs-shell .pane {
+  display: flex; flex-direction: column; min-height: 0;
+  border-right: 1px solid var(--border);
+}
+.zdocs-shell .pane:last-of-type { border-right: 0; }
+
+/* Refined-only flourish */
+.zdocs-shell[data-variant="refined"] .publish-btn {
+  box-shadow: 0 0 0 1px rgba(34,197,94,.30), 0 6px 24px -6px var(--primary-glow);
+}
+.zdocs-shell[data-variant="refined"] .heading-display {
+  font-family: var(--font); /* DM Sans */
+  letter-spacing: -0.02em;
+}
+.zdocs-shell[data-variant="refined"] .body-text {
+  font-family: var(--font-body);
+}
+
+/* Custom scrollbar (subtle) */
+.zdocs-shell ::-webkit-scrollbar { width: 8px; height: 8px; }
+.zdocs-shell ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.08); border-radius: 4px;
+}
+.zdocs-shell ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.14); }
+.zdocs-shell ::-webkit-scrollbar-track { background: transparent; }

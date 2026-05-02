@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Upload, Eye, Play, Code2, FileText, Search, SlidersHorizontal } from "lucide-react";
+import { Upload, Eye, Play, Code2, FileText, Search } from "lucide-react";
 
 export type BuilderMode = "home" | "editor" | "preview" | "analytics" | "settings" | "publish" | "configurations" | "code";
 export type EditorTab = "navigation" | "files";
@@ -32,7 +32,8 @@ const ViewToggle = ({ value, onChange }: { value: BuilderMode; onChange: (v: Bui
             onClick={() => onChange(opt.value)}
             title={opt.title}
             aria-label={opt.title}
-            className={`h-7 w-7 rounded-md flex items-center justify-center transition-all ${
+            aria-pressed={isActive}
+            className={`h-7 w-7 rounded-md flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
               isActive
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -48,7 +49,7 @@ const ViewToggle = ({ value, onChange }: { value: BuilderMode; onChange: (v: Bui
 
 /**
  * Header scoped to the CONTENT AREA only (Mintlify parity).
- * Left:  Visual/Code icon toggle, Configurations
+ * Left:  Visual / Code icon toggle (Configurations now lives in the project rail)
  * Right: Search bar, Preview icon button, Publish button
  */
 const BuilderHeader = ({
@@ -63,17 +64,9 @@ const BuilderHeader = ({
   return (
     <div className="sticky top-0 z-40 px-4 pt-3 pb-2 bg-background/80 backdrop-blur-xl border-b border-border/40">
       <div className="flex items-center justify-between gap-3">
-        {/* Left — view toggle + configurations */}
+        {/* Left — view toggle (Configurations now lives in the project rail) */}
         <div className="flex items-center gap-2 min-w-0">
           <ViewToggle value={mode} onChange={onModeChange} />
-          <button
-            onClick={() => onModeChange("configurations")}
-            title="Configurations"
-            aria-label="Configurations"
-            className="h-8 w-8 rounded-lg flex items-center justify-center border border-border/40 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-          </button>
         </div>
 
         {/* Right — search + preview + publish */}
@@ -81,7 +74,7 @@ const BuilderHeader = ({
           {onSearchClick && (
             <button
               onClick={onSearchClick}
-              className="hidden md:flex items-center gap-2 h-8 px-3 rounded-lg bg-muted/60 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-[12px] min-w-[180px]"
+              className="hidden md:flex items-center gap-2 h-8 px-3 rounded-lg bg-muted/60 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-[12px] min-w-[180px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
             >
               <Search className="h-3.5 w-3.5" />
               <span className="flex-1 text-left">Search</span>
@@ -93,7 +86,7 @@ const BuilderHeader = ({
             onClick={() => onModeChange(isPreview ? "editor" : "preview")}
             title={isPreview ? "Back to editor" : "Preview"}
             aria-label={isPreview ? "Back to editor" : "Preview"}
-            className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all border ${
+            className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
               isPreview
                 ? "bg-foreground text-background border-foreground"
                 : "bg-muted/60 border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted"
