@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useApi } from "@/lib/api-client";
+import { useApi, apiRequest } from "@/lib/api-client";
 import ProfileSettingsContent from "./ProfileSettingsContent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,12 +71,35 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
   const initialDomain = project?.customDomain || project?.custom_domain || "";
   const [domain, setDomain] = useState<string>(initialDomain);
   const [savingDomain, setSavingDomain] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  // Shared in-flight guard for both the manual "Verify Now" button and the
+  // 30-second auto-poll, so the two never overlap and double-write status.
+  const verifyInFlightRef = useRef(false);
+
+  // Live domain status — refreshed via verify endpoint; polled while pending.
+  type DomainStatus = "verified" | "pending" | "failed" | null;
+  const [domainStatus, setDomainStatus] = useState<DomainStatus>(
+    (project?.customDomainStatus ?? project?.custom_domain_status ?? null) as DomainStatus,
+  );
+  const [domainVerifiedAt, setDomainVerifiedAt] = useState<string | null>(
+    project?.customDomainVerifiedAt ?? project?.custom_domain_verified_at ?? null,
+  );
+  const [domainLastError, setDomainLastError] = useState<string | null>(
+    project?.customDomainLastError ?? project?.custom_domain_last_error ?? null,
+  );
+  const [domainLastCheckedAt, setDomainLastCheckedAt] = useState<string | null>(
+    project?.customDomainLastCheckedAt ?? project?.custom_domain_last_checked_at ?? null,
+  );
 
   useEffect(() => {
     if (project) {
       setName(project.name);
       setDescription(project.description || "");
       setDomain(project.customDomain || project.custom_domain || "");
+      setDomainStatus((project.customDomainStatus ?? project.custom_domain_status ?? null) as DomainStatus);
+      setDomainVerifiedAt(project.customDomainVerifiedAt ?? project.custom_domain_verified_at ?? null);
+      setDomainLastError(project.customDomainLastError ?? project.custom_domain_last_error ?? null);
+      setDomainLastCheckedAt(project.customDomainLastCheckedAt ?? project.custom_domain_last_checked_at ?? null);
     }
   }, [project]);
 
@@ -140,6 +163,13 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
   }, [trimmedDomain]);
   const domainChanged = trimmedDomain !== (initialDomain || "");
 
+  const applyProjectStatus = (p: any) => {
+    setDomainStatus((p?.customDomainStatus ?? p?.custom_domain_status ?? null) as DomainStatus);
+    setDomainVerifiedAt(p?.customDomainVerifiedAt ?? p?.custom_domain_verified_at ?? null);
+    setDomainLastError(p?.customDomainLastError ?? p?.custom_domain_last_error ?? null);
+    setDomainLastCheckedAt(p?.customDomainLastCheckedAt ?? p?.custom_domain_last_checked_at ?? null);
+  };
+
   const handleSaveDomain = async () => {
     if (!projectId) return;
     if (trimmedDomain && !DOMAIN_RE.test(trimmedDomain)) {
@@ -148,11 +178,12 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
     }
     setSavingDomain(true);
     try {
-      await api.patch(`/projects/${projectId}`, { customDomain: trimmedDomain || null });
+      const updated = await api.patch<any>(`/projects/${projectId}`, { customDomain: trimmedDomain || null });
+      applyProjectStatus(updated);
       toast({
         title: trimmedDomain ? "Domain saved" : "Domain removed",
         description: trimmedDomain
-          ? "Update your DNS records to complete connection."
+          ? "DNS verification is pending — set up your records and click Verify."
           : "Your project will use the default 0docs subdomain.",
       });
       onSaved?.();
@@ -162,11 +193,89 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
     setSavingDomain(false);
   };
 
+  // Verify uses raw apiRequest so we can introspect 409 responses (race: domain
+  // changed during DNS lookup) and still surface the fresh project state to UI.
+  const verifyOnce = async (): Promise<{ project: any; raced: boolean } | null> => {
+    if (!projectId) return null;
+    const res = await apiRequest(`/projects/${projectId}/verify-domain`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    if (res.ok) {
+      return { project: await res.json(), raced: false };
+    }
+    if (res.status === 409) {
+      const body = await res.json().catch(() => ({}));
+      return { project: body?.project ?? null, raced: true };
+    }
+    const errText = await res.text().catch(() => "Unknown error");
+    throw new Error(`API ${res.status}: ${errText}`);
+  };
+
+  const handleVerifyDomain = async () => {
+    if (!projectId || verifying || verifyInFlightRef.current) return;
+    verifyInFlightRef.current = true;
+    setVerifying(true);
+    try {
+      const result = await verifyOnce();
+      if (result?.project) applyProjectStatus(result.project);
+      if (result?.raced) {
+        toast({
+          title: "Domain changed during verification",
+          description: "Please retry once your latest changes have settled.",
+          variant: "destructive",
+        });
+      } else {
+        const updated = result?.project;
+        const status = updated?.customDomainStatus ?? updated?.custom_domain_status ?? null;
+        if (status === "verified") {
+          toast({ title: "Domain verified", description: "Your custom domain is now active." });
+          onSaved?.();
+        } else {
+          toast({
+            title: "Verification failed",
+            description: updated?.customDomainLastError ?? updated?.custom_domain_last_error ?? "DNS records don't match yet. Try again in a few minutes.",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (e: any) {
+      toast({ title: "Error verifying domain", description: e.message, variant: "destructive" });
+    }
+    verifyInFlightRef.current = false;
+    setVerifying(false);
+  };
+
+  // Auto-poll verification while domain is pending so the UI flips to "verified"
+  // as soon as DNS propagates. Stops once the status flips off "pending".
+  // Guards against overlapping with manual verify via verifyInFlightRef.
+  useEffect(() => {
+    if (!projectId || domainStatus !== "pending" || !initialDomain) return;
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      if (cancelled || verifyInFlightRef.current) return;
+      verifyInFlightRef.current = true;
+      try {
+        const result = await verifyOnce();
+        if (cancelled || !result?.project) return;
+        applyProjectStatus(result.project);
+        const status = result.project?.customDomainStatus ?? result.project?.custom_domain_status ?? null;
+        if (status === "verified") onSaved?.();
+      } catch {
+        /* swallow polling errors */
+      } finally {
+        verifyInFlightRef.current = false;
+      }
+    }, 30_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [projectId, domainStatus, initialDomain]);
+
   const handleRemoveDomain = async () => {
     if (!projectId) return;
     setSavingDomain(true);
     try {
-      await api.patch(`/projects/${projectId}`, { customDomain: null });
+      const updated = await api.patch<any>(`/projects/${projectId}`, { customDomain: null });
+      applyProjectStatus(updated);
       setDomain("");
       toast({ title: "Custom domain removed" });
       onSaved?.();
@@ -293,42 +402,92 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
 
           {activeSection === "domain" && (
             <div className="space-y-6">
-              {/* Status banner */}
-              <div className="rounded-xl border bg-muted/30 px-4 py-3.5 flex items-start gap-3">
-                <div className={`h-8 w-8 rounded-lg shrink-0 flex items-center justify-center ${
-                  initialDomain ? "bg-emerald-500/10 text-emerald-500" : "bg-muted text-muted-foreground"
-                }`}>
-                  {initialDomain ? <CheckCircle2 className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium text-foreground">
-                    {initialDomain ? "Custom domain connected" : "No custom domain"}
-                  </p>
-                  <p className="text-[12px] text-muted-foreground mt-0.5">
-                    {initialDomain ? (
-                      <>
-                        Your docs are configured for{" "}
-                        <span className="font-mono text-foreground">{initialDomain}</span>. DNS must point to our servers — see instructions below.
-                      </>
-                    ) : (
-                      <>
-                        Currently published at{" "}
-                        <span className="font-mono text-foreground">{project?.slug || "your-project"}.0docs.app</span>
-                      </>
-                    )}
-                  </p>
-                </div>
-                {initialDomain && (
-                  <a
-                    href={`https://${initialDomain}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11.5px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1 shrink-0"
-                  >
-                    Visit <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
+              {/* Status banner — reflects live DNS verification state */}
+              {(() => {
+                const status: DomainStatus = initialDomain ? domainStatus : null;
+                const tone =
+                  status === "verified"
+                    ? { iconBg: "bg-emerald-500/10 text-emerald-500", icon: <CheckCircle2 className="h-4 w-4" />, title: "Domain verified", desc: "Your docs are live on this custom domain." }
+                    : status === "pending"
+                    ? { iconBg: "bg-amber-500/10 text-amber-500", icon: <Loader2 className="h-4 w-4 animate-spin" />, title: "Pending DNS verification", desc: "Add the DNS record below, then click Verify. We'll also auto-check every 30 seconds." }
+                    : status === "failed"
+                    ? { iconBg: "bg-destructive/10 text-destructive", icon: <AlertCircle className="h-4 w-4" />, title: "Verification failed", desc: domainLastError || "DNS records don't match. Double-check your provider settings." }
+                    : initialDomain
+                    ? { iconBg: "bg-muted text-muted-foreground", icon: <Globe className="h-4 w-4" />, title: "Custom domain connected", desc: "Set up DNS to complete the connection." }
+                    : { iconBg: "bg-muted text-muted-foreground", icon: <Globe className="h-4 w-4" />, title: "No custom domain", desc: "" };
+
+                return (
+                  <div className="rounded-xl border bg-muted/30 px-4 py-3.5 flex items-start gap-3">
+                    <div className={`h-8 w-8 rounded-lg shrink-0 flex items-center justify-center ${tone.iconBg}`}>
+                      {tone.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium text-foreground flex items-center gap-2">
+                        {tone.title}
+                        {status && (
+                          <span className={`text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-md ${
+                            status === "verified" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                            : status === "pending" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                            : "bg-destructive/15 text-destructive"
+                          }`}>
+                            {status}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-[12px] text-muted-foreground mt-0.5">
+                        {initialDomain ? (
+                          <>
+                            <span className="font-mono text-foreground">{initialDomain}</span>
+                            {tone.desc ? <> — {tone.desc}</> : null}
+                          </>
+                        ) : (
+                          <>
+                            Currently published at{" "}
+                            <span className="font-mono text-foreground">{project?.slug || "your-project"}.0docs.app</span>
+                          </>
+                        )}
+                      </p>
+                      {domainLastCheckedAt && status !== "verified" && (
+                        <p className="text-[10.5px] text-muted-foreground/80 mt-1">
+                          Last checked {new Date(domainLastCheckedAt).toLocaleString()}
+                        </p>
+                      )}
+                      {status === "verified" && domainVerifiedAt && (
+                        <p className="text-[10.5px] text-muted-foreground/80 mt-1">
+                          Verified {new Date(domainVerifiedAt).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {initialDomain && status !== "verified" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleVerifyDomain}
+                          disabled={verifying}
+                          className="h-8 rounded-lg text-[12px]"
+                        >
+                          {verifying ? (
+                            <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> Verifying…</>
+                          ) : (
+                            <>Verify Now</>
+                          )}
+                        </Button>
+                      )}
+                      {initialDomain && status === "verified" && (
+                        <a
+                          href={`https://${initialDomain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11.5px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                        >
+                          Visit <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Domain input */}
               <Field

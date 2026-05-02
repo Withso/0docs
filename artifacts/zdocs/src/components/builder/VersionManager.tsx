@@ -9,18 +9,36 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Star, Trash2, Tag, GitBranch, Check } from "lucide-react";
-import { useVersions } from "@/hooks/use-versions";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Plus, Star, Trash2, Tag, GitBranch, Check, Copy } from "lucide-react";
+import type { DocVersion } from "@/hooks/use-versions";
 import { useToast } from "@/hooks/use-toast";
 
 interface VersionManagerProps {
+  /** Project id is only used for label/empty-state copy. */
   projectId: string;
+  /** Versions list — must come from the SAME `useVersions` instance the parent consumes,
+   *  otherwise creating/cloning/deleting won't reflect in the switcher (single source of truth). */
+  versions: DocVersion[];
+  addVersion: (label: string) => Promise<DocVersion | null>;
+  cloneVersion: (sourceId: string, label: string) => Promise<DocVersion | null>;
+  setDefault: (id: string) => Promise<void>;
+  deleteVersion: (id: string) => Promise<void>;
 }
 
-const VersionManager = ({ projectId }: VersionManagerProps) => {
-  const { versions, addVersion, setDefault, deleteVersion } = useVersions(projectId);
+const VersionManager = ({
+  projectId: _projectId,
+  versions,
+  addVersion,
+  cloneVersion,
+  setDefault,
+  deleteVersion,
+}: VersionManagerProps) => {
   const { toast } = useToast();
   const [newLabel, setNewLabel] = useState("");
+  const [cloneFromId, setCloneFromId] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -33,8 +51,14 @@ const VersionManager = ({ projectId }: VersionManagerProps) => {
     if (!label || adding) return;
     setAdding(true);
     try {
-      await addVersion(label);
+      if (cloneFromId) {
+        await cloneVersion(cloneFromId, label);
+        toast({ title: `Created ${label}`, description: "Pages copied from source version." });
+      } else {
+        await addVersion(label);
+      }
       setNewLabel("");
+      setCloneFromId("");
     } catch (e) {
       toast({ title: "Could not add version", description: errorMessage(e), variant: "destructive" });
     } finally {
@@ -165,32 +189,56 @@ const VersionManager = ({ projectId }: VersionManagerProps) => {
         </div>
 
         {/* Add row */}
-        <div className="px-5 py-4 border-t bg-muted/20">
-          <label className="text-[10.5px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5 block">
-            New version label
-          </label>
-          <div className="flex gap-2">
-            <Input
-              value={newLabel}
-              onChange={(e) => setNewLabel(e.target.value)}
-              placeholder="e.g. v2.0, latest, beta"
-              className="h-9 text-[13px] font-mono rounded-lg"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAdd();
-              }}
-            />
-            <Button
-              size="sm"
-              className="h-9 rounded-lg"
-              onClick={handleAdd}
-              disabled={!newLabel.trim() || adding}
-            >
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              {adding ? "Adding…" : "Add"}
-            </Button>
+        <div className="px-5 py-4 border-t bg-muted/20 space-y-2.5">
+          <div>
+            <label className="text-[10.5px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5 block">
+              New version label
+            </label>
+            <div className="flex gap-2">
+              <Input
+                value={newLabel}
+                onChange={(e) => setNewLabel(e.target.value)}
+                placeholder="e.g. v2.0, latest, beta"
+                className="h-9 text-[13px] font-mono rounded-lg"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAdd();
+                }}
+              />
+              <Button
+                size="sm"
+                className="h-9 rounded-lg shrink-0"
+                onClick={handleAdd}
+                disabled={!newLabel.trim() || adding}
+              >
+                {cloneFromId ? <Copy className="h-3.5 w-3.5 mr-1" /> : <Plus className="h-3.5 w-3.5 mr-1" />}
+                {adding ? (cloneFromId ? "Cloning…" : "Adding…") : (cloneFromId ? "Clone" : "Add")}
+              </Button>
+            </div>
           </div>
-          <p className="text-[10.5px] text-muted-foreground mt-2">
-            Tip: short, semantic labels work best — keep it under 20 characters.
+
+          {versions.length > 0 && (
+            <div>
+              <label className="text-[10.5px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5 block">
+                Copy pages from <span className="text-muted-foreground/60 normal-case font-normal">(optional)</span>
+              </label>
+              <Select value={cloneFromId || "_none"} onValueChange={(v) => setCloneFromId(v === "_none" ? "" : v)}>
+                <SelectTrigger className="h-9 text-[12.5px] rounded-lg">
+                  <SelectValue placeholder="Start empty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none" className="text-[12.5px]">Start empty</SelectItem>
+                  {versions.map((v) => (
+                    <SelectItem key={v.id} value={v.id} className="text-[12.5px] font-mono">
+                      {v.version_label}{v.is_default ? " (default)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <p className="text-[10.5px] text-muted-foreground">
+            Tip: cloning copies every page, section, and block from the source version into the new one — perfect for branching off a release.
           </p>
         </div>
       </DialogContent>

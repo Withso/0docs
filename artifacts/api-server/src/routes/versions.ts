@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { db, publishedVersionsTable, docVersionsTable, projectsTable, profilesTable } from "@workspace/db";
+import { db, publishedVersionsTable, docVersionsTable, projectsTable, profilesTable, pagesTable, sectionsTable, blocksTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
-import { eq, and, desc, inArray } from "drizzle-orm";
+import { eq, and, or, desc, inArray, isNull } from "drizzle-orm";
 
 const router = Router();
 
@@ -311,6 +311,100 @@ router.post("/doc-versions/:id/set-default", requireAuth,
       res.json({ ok: true });
     } catch (err) {
       req.log.error({ err }, "Failed to set default doc version");
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+// POST /doc-versions/:id/clone (auth + ownership)
+// Creates a brand-new doc version on the same project AND deep-copies every page
+// (with its sections + blocks) from the source version into the new version. Pages
+// with NULL versionId on the source project are also copied as part of the clone
+// so the new version starts with a complete content tree, mirroring Mintlify's
+// "duplicate version" workflow.
+router.post("/doc-versions/:id/clone", requireAuth,
+  async (req: Request<{ id: string }>, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const sourceId = req.params.id;
+      if (!(await requireDocVersionOwnership(sourceId, userId))) {
+        res.status(403).json({ error: "Forbidden" }); return;
+      }
+      const [source] = await db.select().from(docVersionsTable).where(eq(docVersionsTable.id, sourceId));
+      if (!source) { res.status(404).json({ error: "Not found" }); return; }
+      const { versionLabel, isDefault } = req.body as { versionLabel: string; isDefault?: boolean };
+      if (!versionLabel || typeof versionLabel !== "string" || !versionLabel.trim()) {
+        res.status(400).json({ error: "versionLabel is required" }); return;
+      }
+
+      const result = await db.transaction(async (tx) => {
+        const [created] = await tx.insert(docVersionsTable).values({
+          projectId: source.projectId,
+          versionLabel: versionLabel.trim(),
+          isDefault: isDefault ?? false,
+        }).returning();
+
+        // Pages on this project that belong to the source version OR have no version yet
+        const sourcePages = await tx.select().from(pagesTable)
+          .where(and(
+            eq(pagesTable.projectId, source.projectId),
+            or(eq(pagesTable.versionId, sourceId), isNull(pagesTable.versionId)),
+          ))
+          .orderBy(pagesTable.orderIndex);
+
+        for (const page of sourcePages) {
+          const [newPage] = await tx.insert(pagesTable).values({
+            projectId: page.projectId,
+            title: page.title,
+            slug: page.slug,
+            orderIndex: page.orderIndex,
+            navGroupId: page.navGroupId,
+            navTitle: page.navTitle,
+            metaDescription: page.metaDescription,
+            metadata: page.metadata,
+            versionId: created.id,
+          }).returning();
+
+          const sourceSections = await tx.select().from(sectionsTable)
+            .where(eq(sectionsTable.pageId, page.id))
+            .orderBy(sectionsTable.orderIndex);
+
+          for (const sec of sourceSections) {
+            const [newSec] = await tx.insert(sectionsTable).values({
+              pageId: newPage.id,
+              title: sec.title,
+              orderIndex: sec.orderIndex,
+              navTitle: sec.navTitle,
+            }).returning();
+
+            const sourceBlocks = await tx.select().from(blocksTable)
+              .where(eq(blocksTable.sectionId, sec.id))
+              .orderBy(blocksTable.orderIndex);
+            for (const blk of sourceBlocks) {
+              await tx.insert(blocksTable).values({
+                sectionId: newSec.id,
+                type: blk.type,
+                content: blk.content,
+                orderIndex: blk.orderIndex,
+              });
+            }
+          }
+        }
+
+        if (isDefault) {
+          await tx.update(docVersionsTable)
+            .set({ isDefault: false })
+            .where(and(eq(docVersionsTable.projectId, source.projectId), eq(docVersionsTable.isDefault, true)));
+          await tx.update(docVersionsTable)
+            .set({ isDefault: true })
+            .where(eq(docVersionsTable.id, created.id));
+        }
+
+        return created;
+      });
+
+      res.status(201).json(result);
+    } catch (err) {
+      req.log.error({ err }, "Failed to clone doc version");
       res.status(500).json({ error: "Internal server error" });
     }
   });

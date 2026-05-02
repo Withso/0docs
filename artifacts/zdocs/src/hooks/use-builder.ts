@@ -223,12 +223,13 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     loadPageContent();
   }, [loadPageContent]);
 
-  const addPage = async (navGroupId?: string, _tabId?: string | null) => {
+  const addPage = async (navGroupId?: string, _tabId?: string | null, versionId?: string | null) => {
     if (!projectId) return;
     const title = "New Page";
     const slug = `page-${Date.now()}`;
     const body: any = { title, slug, orderIndex: pages.length };
     if (navGroupId) body.navGroupId = navGroupId;
+    if (versionId !== undefined) body.versionId = versionId;
     const data = await api.post<any>(`/projects/${projectId}/pages`, body);
     if (data) {
       const page = normPage(data);
@@ -245,6 +246,7 @@ export function useBuilder(projectId: string | undefined, userId: string | undef
     if (updates.nav_group_id !== undefined) body.navGroupId = updates.nav_group_id;
     if (updates.nav_title !== undefined) body.navTitle = updates.nav_title;
     if (updates.meta_description !== undefined) body.metaDescription = updates.meta_description;
+    if (updates.version_id !== undefined) body.versionId = updates.version_id;
     await api.patch<any>(`/projects/${projectId}/pages/${pageId}`, body);
     setPages((p) => p.map((pg) => (pg.id === pageId ? { ...pg, ...updates } : pg)));
     if (activePage?.id === pageId) setActivePage((prev) => prev ? { ...prev, ...updates } : prev);

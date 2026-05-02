@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { db, pagesTable, projectsTable, sectionsTable, blocksTable } from "@workspace/db";
+import { db, pagesTable, projectsTable, sectionsTable, blocksTable, docVersionsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and, inArray } from "drizzle-orm";
 
@@ -14,6 +14,15 @@ async function ownedProject(projectId: string, userId: string) {
   const [p] = await db.select({ id: projectsTable.id }).from(projectsTable)
     .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
   return p ?? null;
+}
+
+// Confirms a doc version belongs to the given project — protects against
+// clients smuggling another project's versionId into a page write.
+async function versionBelongsToProject(versionId: string, projectId: string): Promise<boolean> {
+  if (!isUuid(versionId)) return false;
+  const [v] = await db.select({ id: docVersionsTable.id }).from(docVersionsTable)
+    .where(and(eq(docVersionsTable.id, versionId), eq(docVersionsTable.projectId, projectId)));
+  return !!v;
 }
 
 async function isProjectPublished(projectId: string): Promise<boolean> {
@@ -64,10 +73,18 @@ router.patch("/pages/:id", requireAuth,
       if (!(await ownedProject(page.projectId, userId))) {
         res.status(403).json({ error: "Forbidden" }); return;
       }
-      const allowed = ["title", "slug", "orderIndex", "navGroupId", "navTitle", "metaDescription", "metadata"] as const;
+      const allowed = ["title", "slug", "orderIndex", "navGroupId", "navTitle", "metaDescription", "metadata", "versionId"] as const;
       const updates: Record<string, unknown> & { updatedAt: Date } = { updatedAt: new Date() };
       for (const k of allowed) {
         if (req.body[k] !== undefined) updates[k] = req.body[k];
+      }
+      // Coerce empty string to null + validate versionId belongs to the same project.
+      if ("versionId" in updates && updates["versionId"] === "") updates["versionId"] = null;
+      if (updates["versionId"] != null) {
+        if (!(await versionBelongsToProject(updates["versionId"] as string, page.projectId))) {
+          res.status(400).json({ error: "versionId does not belong to this project." });
+          return;
+        }
       }
       const [updated] = await db.update(pagesTable).set(updates).where(eq(pagesTable.id, id)).returning();
       res.json(updated);
@@ -104,14 +121,25 @@ router.post("/projects/:projectId/pages", requireAuth,
       if (!(await ownedProject(projectId, userId))) {
         res.status(404).json({ error: "Not found" }); return;
       }
-      const { title, slug, orderIndex, navGroupId, navTitle, metaDescription } = req.body as {
+      const { title, slug, orderIndex, navGroupId, navTitle, metaDescription, versionId } = req.body as {
         title: string; slug: string; orderIndex?: number;
         navGroupId?: string; navTitle?: string; metaDescription?: string;
+        versionId?: string | null;
       };
+      // Coerce empty string to null and reject non-UUID / cross-project ids with 400
+      // (otherwise Postgres would fail the insert and return an opaque 500).
+      const cleanVersionId = versionId === "" ? null : versionId ?? null;
+      if (cleanVersionId != null) {
+        if (!(await versionBelongsToProject(cleanVersionId, projectId))) {
+          res.status(400).json({ error: "versionId does not belong to this project." });
+          return;
+        }
+      }
       const [page] = await db.insert(pagesTable).values({
         projectId, title, slug, orderIndex: orderIndex ?? 0,
         navGroupId: navGroupId ?? null, navTitle: navTitle ?? null,
         metaDescription: metaDescription ?? null,
+        versionId: cleanVersionId,
       }).returning();
       res.status(201).json(page);
     } catch (err) {
@@ -129,10 +157,18 @@ router.patch("/projects/:projectId/pages/:pageId", requireAuth,
       if (!(await ownedProject(projectId, userId))) {
         res.status(404).json({ error: "Not found" }); return;
       }
-      const allowed = ["title", "slug", "orderIndex", "navGroupId", "navTitle", "metaDescription"] as const;
+      const allowed = ["title", "slug", "orderIndex", "navGroupId", "navTitle", "metaDescription", "metadata", "versionId"] as const;
       const updates: Record<string, unknown> & { updatedAt: Date } = { updatedAt: new Date() };
       for (const k of allowed) {
         if (req.body[k] !== undefined) updates[k] = req.body[k];
+      }
+      // Coerce empty string to null + validate versionId belongs to the same project.
+      if ("versionId" in updates && updates["versionId"] === "") updates["versionId"] = null;
+      if (updates["versionId"] != null) {
+        if (!(await versionBelongsToProject(updates["versionId"] as string, projectId))) {
+          res.status(400).json({ error: "versionId does not belong to this project." });
+          return;
+        }
       }
       // Scope update to both pageId AND projectId to prevent cross-project mutation
       const [page] = await db.update(pagesTable).set(updates)

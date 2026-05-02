@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useApi } from "@/lib/api-client";
 
 export interface DocVersion {
@@ -43,14 +43,25 @@ export function useVersions(projectId: string | undefined) {
     load();
   }, [projectId]);
 
+  const defaultVersion = useMemo(() => versions.find((v) => v.is_default) || null, [versions]);
+
   const addVersion = async (label: string) => {
-    if (!projectId) return;
+    if (!projectId) return null;
     const data = await api.post<any>(`/projects/${projectId}/doc-versions`, { versionLabel: label, isDefault: versions.length === 0 });
-    if (data) {
-      const row = normDocVersion(data);
-      setVersions((v) => [row, ...v]);
-      if (versions.length === 0) setActiveVersion(row);
-    }
+    if (!data) return null;
+    const row = normDocVersion(data);
+    setVersions((v) => [row, ...v]);
+    if (versions.length === 0) setActiveVersion(row);
+    return row;
+  };
+
+  const cloneVersion = async (sourceId: string, label: string) => {
+    if (!projectId) return null;
+    const data = await api.post<any>(`/doc-versions/${sourceId}/clone`, { versionLabel: label, isDefault: false });
+    if (!data) return null;
+    const row = normDocVersion(data);
+    setVersions((v) => [row, ...v]);
+    return row;
   };
 
   const setDefault = async (versionId: string) => {
@@ -68,5 +79,15 @@ export function useVersions(projectId: string | undefined) {
     });
   };
 
-  return { versions, activeVersion, setActiveVersion, loading, addVersion, setDefault, deleteVersion };
+  return {
+    versions,
+    activeVersion,
+    setActiveVersion,
+    defaultVersion,
+    loading,
+    addVersion,
+    cloneVersion,
+    setDefault,
+    deleteVersion,
+  };
 }

@@ -25,6 +25,8 @@ import NavigationTree, { type NavSettingsTarget } from "@/components/builder/Nav
 import SettingsSidePanel, { type SettingsTarget } from "@/components/builder/SettingsSidePanel";
 import CodeView from "@/components/builder/CodeView";
 import SearchDialog from "@/components/docs/SearchDialog";
+import VersionSwitcher from "@/components/builder/VersionSwitcher";
+import { useVersions } from "@/hooks/use-versions";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical, RotateCw, X } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
@@ -127,14 +129,58 @@ const Builder = () => {
   }, [projectId, navigate]);
 
   const {
-    project, pages, activePage, setActivePage, sections, blocks, loading,
-    addPage, updatePage, deletePage, addSection, updateSection, deleteSection,
+    project, pages: allPages, activePage, setActivePage, sections, blocks, loading,
+    addPage: addPageRaw, updatePage, deletePage, addSection, updateSection, deleteSection,
     addBlock, updateBlock, deleteBlock, reloadPages, loadPageContent,
     navGroups, addNavGroup, updateNavGroup, deleteNavGroup,
     tabs, activeTabId, setActiveTabId, addTab, updateTab, deleteTab, reorderTabs,
     reorderPages, reorderNavGroups, reorderSections, reorderBlocks,
     refreshProject,
   } = useBuilder(projectId, user?.id);
+
+  // Versions: drive editor-side filtering and addPage assignment so authors
+  // can branch their docs without leaving the builder (Mintlify-style).
+  // This is the SINGLE source of truth — VersionManager + VersionSwitcher
+  // receive these handlers via props so creates/clones/deletes propagate instantly.
+  const {
+    versions, activeVersion, setActiveVersion, defaultVersion,
+    addVersion, cloneVersion, setDefault: setVersionDefault, deleteVersion,
+  } = useVersions(projectId);
+
+  // Always derive the live active version from `versions` by id so flag changes
+  // (e.g. is_default flipping after setDefault) are reflected immediately.
+  const liveActiveVersion = useMemo(
+    () => (activeVersion ? versions.find((v) => v.id === activeVersion.id) ?? null : null),
+    [versions, activeVersion],
+  );
+  const editingVersionId = liveActiveVersion?.id || null;
+  const isEditingDefault = liveActiveVersion?.is_default ?? (defaultVersion == null);
+
+  // Filter pages by the editing version: a page is shown if (a) no versions exist,
+  // (b) its versionId matches the editing version, or (c) it has no versionId AND
+  // we're editing the default version (legacy pages belong to the default).
+  const pages = useMemo(() => {
+    if (versions.length === 0) return allPages;
+    return allPages.filter((p) =>
+      p.version_id === editingVersionId || (!p.version_id && isEditingDefault),
+    );
+  }, [allPages, versions.length, editingVersionId, isEditingDefault]);
+
+  // Wrapper around useBuilder.addPage that injects the current editing version.
+  const addPage = useCallback(
+    (navGroupId?: string, tabId?: string | null) =>
+      addPageRaw(navGroupId, tabId ?? null, editingVersionId),
+    [addPageRaw, editingVersionId],
+  );
+
+  // Keep activePage consistent when version filter changes
+  useEffect(() => {
+    if (!activePage) return;
+    const stillVisible = pages.some((p) => p.id === activePage.id);
+    if (!stillVisible) {
+      setActivePage(pages[0] || null);
+    }
+  }, [pages, activePage, setActivePage]);
 
   const { settings, loading: settingsLoading, saving, saveSettings, resetSettings } = useDesignSettings(projectId);
   const { resolved: resolvedSettings } = useResolvedDesignSettings(settings);
@@ -294,6 +340,18 @@ const Builder = () => {
       onPublishClick={() => handleModeChange("publish")}
       hasUnpublishedChanges={hasUnpublishedChanges}
       onSearchClick={() => setSearchOpen(true)}
+      leftSlot={
+        <VersionSwitcher
+          projectId={projectId!}
+          versions={versions}
+          activeVersionId={editingVersionId}
+          onSelect={(id) => setActiveVersion(versions.find((v) => v.id === id) || null)}
+          addVersion={addVersion}
+          cloneVersion={cloneVersion}
+          setDefault={setVersionDefault}
+          deleteVersion={deleteVersion}
+        />
+      }
     />
   ) : null;
 

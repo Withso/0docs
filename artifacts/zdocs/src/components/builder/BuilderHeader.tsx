@@ -11,6 +11,8 @@ interface BuilderHeaderProps {
   onPublishClick?: () => void;
   hasUnpublishedChanges?: boolean;
   onSearchClick?: () => void;
+  /** Optional slot rendered next to the view toggle (e.g. the version switcher). */
+  leftSlot?: React.ReactNode;
 }
 
 /** Icon-only Visual / Code toggle (Mintlify style). */
@@ -58,15 +60,17 @@ const BuilderHeader = ({
   onPublishClick,
   hasUnpublishedChanges,
   onSearchClick,
+  leftSlot,
 }: BuilderHeaderProps) => {
   const isPreview = mode === "preview";
 
   return (
     <div className="sticky top-0 z-40 px-4 pt-3 pb-2 bg-background/80 backdrop-blur-xl border-b border-border/40">
       <div className="flex items-center justify-between gap-3">
-        {/* Left — view toggle (Configurations now lives in the project rail) */}
+        {/* Left — view toggle + optional slot (e.g. version switcher) */}
         <div className="flex items-center gap-2 min-w-0">
           <ViewToggle value={mode} onChange={onModeChange} />
+          {leftSlot}
         </div>
 
         {/* Right — search + preview + publish */}
