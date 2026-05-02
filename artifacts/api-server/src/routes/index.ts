@@ -10,6 +10,7 @@ import designRouter from "./design";
 import versionsRouter from "./versions";
 import profilesRouter from "./profiles";
 import feedbackRouter from "./feedback";
+import askDocsRouter from "./ask-docs";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(designRouter);
 router.use(versionsRouter);
 router.use(profilesRouter);
 router.use(feedbackRouter);
+router.use(askDocsRouter);
 
 export default router;

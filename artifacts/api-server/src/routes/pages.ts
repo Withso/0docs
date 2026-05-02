@@ -30,16 +30,21 @@ router.get("/pages", async (req: any, res) => {
 });
 
 // PATCH /pages/:id (flat path — used by PageSettingsPanel, SettingsSidePanel)
-router.patch("/pages/:id", async (req: any, res) => {
+router.patch("/pages/:id", requireAuth, async (req: any, res) => {
   try {
+    // Verify ownership via page → project
+    const [page] = await db.select().from(pagesTable).where(eq(pagesTable.id, req.params.id));
+    if (!page) return res.status(404).json({ error: "Not found" });
+    const [project] = await db.select().from(projectsTable).where(and(eq(projectsTable.id, page.projectId), eq(projectsTable.userId, req.userId)));
+    if (!project) return res.status(403).json({ error: "Forbidden" });
     const updates: any = {};
     const allowed = ["title", "slug", "orderIndex", "navGroupId", "navTitle", "metaDescription", "metadata"];
     for (const k of allowed) {
       if (req.body[k] !== undefined) updates[k] = req.body[k];
     }
     updates.updatedAt = new Date();
-    const [page] = await db.update(pagesTable).set(updates).where(eq(pagesTable.id, req.params.id)).returning();
-    res.json(page);
+    const [updated] = await db.update(pagesTable).set(updates).where(eq(pagesTable.id, req.params.id)).returning();
+    res.json(updated);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

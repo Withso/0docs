@@ -16,6 +16,17 @@ const requireAuth = (req: any, res: any, next: any) => {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string) => UUID_RE.test(s);
 
+// Verify nav group belongs to a project owned by userId
+async function ownedNavGroup(navGroupId: string, userId: string) {
+  const rows = await db
+    .select({ id: navGroupsTable.id })
+    .from(navGroupsTable)
+    .innerJoin(projectsTable, and(eq(projectsTable.id, navGroupsTable.projectId), eq(projectsTable.userId, userId)))
+    .where(eq(navGroupsTable.id, navGroupId))
+    .limit(1);
+  return rows.length > 0;
+}
+
 // GET /navgroups?projectId=... (flat path, public-friendly)
 router.get("/navgroups", async (req: any, res) => {
   try {
@@ -32,6 +43,7 @@ router.get("/navgroups", async (req: any, res) => {
 // PATCH /navgroups/:id (alias for /nav-groups/:id)
 router.patch("/navgroups/:id", requireAuth, async (req: any, res) => {
   try {
+    if (!(await ownedNavGroup(req.params.id, req.userId))) return res.status(403).json({ error: "Forbidden" });
     const updates: any = {};
     const allowed = ["title", "type", "orderIndex", "tabId", "metadata"];
     for (const k of allowed) {
@@ -61,6 +73,8 @@ router.get("/projects/:projectId/nav-groups", requireAuth, async (req: any, res)
 // Create nav group
 router.post("/projects/:projectId/nav-groups", requireAuth, async (req: any, res) => {
   try {
+    const [project] = await db.select().from(projectsTable).where(and(eq(projectsTable.id, req.params.projectId), eq(projectsTable.userId, req.userId)));
+    if (!project) return res.status(404).json({ error: "Not found" });
     const { title, type, orderIndex, tabId } = req.body;
     const [group] = await db.insert(navGroupsTable).values({
       projectId: req.params.projectId, title: title ?? "New Label",
@@ -76,6 +90,7 @@ router.post("/projects/:projectId/nav-groups", requireAuth, async (req: any, res
 // Update nav group
 router.patch("/nav-groups/:id", requireAuth, async (req: any, res) => {
   try {
+    if (!(await ownedNavGroup(req.params.id, req.userId))) return res.status(403).json({ error: "Forbidden" });
     const updates: any = {};
     const allowed = ["title", "type", "orderIndex", "tabId", "metadata"];
     for (const k of allowed) {
@@ -93,6 +108,7 @@ router.patch("/nav-groups/:id", requireAuth, async (req: any, res) => {
 // Delete nav group
 router.delete("/nav-groups/:id", requireAuth, async (req: any, res) => {
   try {
+    if (!(await ownedNavGroup(req.params.id, req.userId))) return res.status(403).json({ error: "Forbidden" });
     // Unassign pages
     await db.update(pagesTable).set({ navGroupId: null }).where(eq(pagesTable.navGroupId, req.params.id));
     await db.delete(navGroupsTable).where(eq(navGroupsTable.id, req.params.id));
@@ -108,6 +124,7 @@ router.post("/nav-groups/reorder", requireAuth, async (req: any, res) => {
   try {
     const { groups } = req.body as { groups: Array<{ id: string; orderIndex: number }> };
     for (const g of groups) {
+      if (!(await ownedNavGroup(g.id, req.userId))) return res.status(403).json({ error: "Forbidden" });
       await db.update(navGroupsTable).set({ orderIndex: g.orderIndex, updatedAt: new Date() }).where(eq(navGroupsTable.id, g.id));
     }
     res.json({ ok: true });
