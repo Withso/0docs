@@ -28,10 +28,37 @@ app.use(
   }),
 );
 
-app.use(cors({ credentials: true, origin: true }));
+// CORS allow-list. In dev we accept any origin (so Vite preview & tunnel work);
+// in production we only accept Replit-served domains plus configurable extras
+// from CORS_ALLOWLIST (comma-separated).
+const corsAllowlist = (process.env.CORS_ALLOWLIST ?? "")
+  .split(",").map((s) => s.trim()).filter(Boolean);
+const isProd = process.env.NODE_ENV === "production";
+app.use(cors({
+  credentials: true,
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); // same-origin / curl / server-to-server
+    if (!isProd) return cb(null, true);
+    try {
+      const u = new URL(origin);
+      const host = u.hostname;
+      const ok =
+        host.endsWith(".replit.dev") ||
+        host.endsWith(".replit.app") ||
+        host.endsWith(".repl.co") ||
+        corsAllowlist.includes(origin);
+      return cb(null, ok);
+    } catch {
+      return cb(null, false);
+    }
+  },
+}));
 app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Cap JSON bodies at 5 MB so we can't be DoS'd with huge OpenAPI specs / nav
+// snapshots; raise via env if a project legitimately needs more.
+const JSON_LIMIT = process.env.JSON_BODY_LIMIT || "5mb";
+app.use(express.json({ limit: JSON_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: JSON_LIMIT }));
 
 app.use(authMiddleware);
 

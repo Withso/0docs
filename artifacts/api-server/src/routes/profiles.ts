@@ -80,12 +80,21 @@ router.put("/profiles/me", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// Get profiles by ids (for publisher names)
+// Get profiles by ids (for publisher names). Validates each id is a UUID and
+// caps batch size to prevent unbounded enumeration.
+const PROFILES_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_BATCH_IDS = 200;
 router.post("/profiles/batch", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { ids } = req.body as { ids: string[] };
-    if (!ids || ids.length === 0) { res.json([]); return; }
-    const profiles = await db.select().from(profilesTable).where(inArray(profilesTable.id, ids));
+    const body = req.body as { ids?: unknown };
+    if (!Array.isArray(body.ids)) { res.status(400).json({ error: "ids must be an array" }); return; }
+    if (body.ids.length === 0) { res.json([]); return; }
+    if (body.ids.length > MAX_BATCH_IDS) {
+      res.status(400).json({ error: `too many ids (max ${MAX_BATCH_IDS})` }); return;
+    }
+    const validIds = body.ids.filter((x): x is string => typeof x === "string" && PROFILES_UUID_RE.test(x));
+    if (validIds.length === 0) { res.json([]); return; }
+    const profiles = await db.select().from(profilesTable).where(inArray(profilesTable.id, validIds));
     res.json(profiles);
   } catch (err) {
     req.log.error({ err }, "Failed to batch get profiles");

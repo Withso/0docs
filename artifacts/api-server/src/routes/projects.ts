@@ -1,22 +1,47 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db, projectsTable, pagesTable, navGroupsTable, sectionsTable, blocksTable, projectDesignSettingsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
-import { eq, and, desc, ne, isNotNull } from "drizzle-orm";
+import { eq, and, desc, ne, inArray } from "drizzle-orm";
 import dns from "node:dns/promises";
 
 const router = Router();
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuid = (s: string) => UUID_RE.test(s);
 
 // DNS targets that a custom domain must point to in order to verify.
 // Apex domains (example.com) need an A record; subdomains need a CNAME.
 const EXPECTED_CNAME_TARGET = "cname.0docs.app";
 const EXPECTED_A_TARGET = "76.76.21.21";
 
-const DOMAIN_RE = /^(?!-)(?:[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,}$/;
+// Linear-time domain validation: cap input length and validate label-by-label
+// instead of a single backtracking regex (the previous regex was flagged as
+// ReDoS-vulnerable by SAST due to the `(?<!-)` lookbehind interacting with the
+// `+` quantifier on label group).
+const MAX_DOMAIN_LEN = 253;
+const LABEL_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
+const TLD_RE = /^[a-zA-Z]{2,63}$/;
+function isValidDomain(s: string): boolean {
+  if (s.length === 0 || s.length > MAX_DOMAIN_LEN) return false;
+  const labels = s.split(".");
+  if (labels.length < 2) return false;
+  for (let i = 0; i < labels.length; i++) {
+    const label = labels[i];
+    if (i === labels.length - 1) {
+      if (!TLD_RE.test(label)) return false;
+    } else {
+      if (!LABEL_RE.test(label)) return false;
+    }
+  }
+  return true;
+}
 function normalizeDomain(input: unknown): string | null {
   if (typeof input !== "string") return null;
+  // Cap input length defensively before doing any regex work.
+  if (input.length > 2048) return null;
   const trimmed = input.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
   if (!trimmed) return null;
-  return DOMAIN_RE.test(trimmed) ? trimmed : null;
+  return isValidDomain(trimmed) ? trimmed : null;
 }
 
 
@@ -60,6 +85,7 @@ router.get("/projects", async (req: Request, res: Response) => {
 router.get("/projects/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
     const userId = req.user!.id;
+    if (!isUuid(req.params.id)) { res.status(404).json({ error: "Not found" }); return; }
     const [project] = await db.select().from(projectsTable)
       .where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, userId)));
     if (!project) { res.status(404).json({ error: "Not found" }); return; }
@@ -70,13 +96,28 @@ router.get("/projects/:id", requireAuth, async (req: Request<{ id: string }>, re
   }
 });
 
-// Create project
+// Create project — validates required fields up-front so we don't hit DB constraint errors.
+const MAX_PROJECT_NAME_LEN = 200;
+const MAX_PROJECT_SLUG_LEN = 80;
+const MAX_PROJECT_DESC_LEN = 2000;
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/;
 router.post("/projects", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { name, slug, description } = req.body as { name: string; slug: string; description?: string };
+    const { name, slug, description } = req.body as { name?: unknown; slug?: unknown; description?: unknown };
+    if (typeof name !== "string" || !name.trim() || name.length > MAX_PROJECT_NAME_LEN) {
+      res.status(400).json({ error: "name is required (1-200 chars)" }); return;
+    }
+    if (typeof slug !== "string" || !SLUG_RE.test(slug) || slug.length > MAX_PROJECT_SLUG_LEN) {
+      res.status(400).json({ error: "slug must be lowercase alphanumeric with hyphens (1-80 chars)" }); return;
+    }
+    if (description != null && (typeof description !== "string" || description.length > MAX_PROJECT_DESC_LEN)) {
+      res.status(400).json({ error: "description must be a string up to 2000 chars" }); return;
+    }
+    const cleanName = name.trim();
+    const cleanDesc = typeof description === "string" ? description : undefined;
     const [project] = await db.insert(projectsTable)
-      .values({ name, slug, description, userId })
+      .values({ name: cleanName, slug, description: cleanDesc, userId })
       .returning();
     await db.insert(pagesTable).values({
       projectId: project.id, title: "Introduction", slug: "introduction", orderIndex: 0,
@@ -93,17 +134,48 @@ router.patch("/projects/:id", requireAuth, async (req: Request<{ id: string }>, 
   try {
     const userId = req.user!.id;
     const projectId = req.params.id;
+    if (!isUuid(projectId)) { res.status(404).json({ error: "Not found" }); return; }
 
     const [existing] = await db.select().from(projectsTable)
       .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
     if (!existing) { res.status(404).json({ error: "Not found" }); return; }
 
-    const allowed = [
-      "name", "slug", "description", "isHomepage", "customDomain", "publishedVersionId",
-    ] as const;
+    // Per-field type validation — replaces blind body-spread to prevent type
+    // confusion attacks (e.g. boolean isHomepage smuggled as a string).
     const updates: Record<string, unknown> & { updatedAt: Date } = { updatedAt: new Date() };
-    for (const k of allowed) {
-      if (req.body[k] !== undefined) updates[k] = req.body[k];
+    const body = req.body as Record<string, unknown>;
+    if (body["name"] !== undefined) {
+      if (typeof body["name"] !== "string" || !body["name"].trim() || body["name"].length > MAX_PROJECT_NAME_LEN) {
+        res.status(400).json({ error: "name must be a non-empty string up to 200 chars" }); return;
+      }
+      updates["name"] = (body["name"] as string).trim();
+    }
+    if (body["slug"] !== undefined) {
+      if (typeof body["slug"] !== "string" || !SLUG_RE.test(body["slug"]) || body["slug"].length > MAX_PROJECT_SLUG_LEN) {
+        res.status(400).json({ error: "slug must be lowercase alphanumeric with hyphens" }); return;
+      }
+      updates["slug"] = body["slug"];
+    }
+    if (body["description"] !== undefined) {
+      if (body["description"] !== null && (typeof body["description"] !== "string" || (body["description"] as string).length > MAX_PROJECT_DESC_LEN)) {
+        res.status(400).json({ error: "description must be a string up to 2000 chars" }); return;
+      }
+      updates["description"] = body["description"];
+    }
+    if (body["isHomepage"] !== undefined) {
+      if (typeof body["isHomepage"] !== "boolean") {
+        res.status(400).json({ error: "isHomepage must be a boolean" }); return;
+      }
+      updates["isHomepage"] = body["isHomepage"];
+    }
+    if (body["publishedVersionId"] !== undefined) {
+      if (body["publishedVersionId"] !== null && (typeof body["publishedVersionId"] !== "string" || !isUuid(body["publishedVersionId"] as string))) {
+        res.status(400).json({ error: "publishedVersionId must be a UUID or null" }); return;
+      }
+      updates["publishedVersionId"] = body["publishedVersionId"];
+    }
+    if (body["customDomain"] !== undefined) {
+      updates["customDomain"] = body["customDomain"];
     }
 
     // Custom domain handling: normalize, dedupe, reset verification status when changed
@@ -162,6 +234,7 @@ router.post("/projects/:id/verify-domain", requireAuth, async (req: Request<{ id
   try {
     const userId = req.user!.id;
     const projectId = req.params.id;
+    if (!isUuid(projectId)) { res.status(404).json({ error: "Not found" }); return; }
     const [project] = await db.select().from(projectsTable)
       .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
     if (!project) { res.status(404).json({ error: "Not found" }); return; }
@@ -249,6 +322,7 @@ router.post("/projects/:id/verify-domain", requireAuth, async (req: Request<{ id
 router.delete("/projects/:id", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
     const userId = req.user!.id;
+    if (!isUuid(req.params.id)) { res.status(404).json({ error: "Not found" }); return; }
     await db.delete(projectsTable)
       .where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, userId)));
     res.status(204).send();
@@ -258,64 +332,82 @@ router.delete("/projects/:id", requireAuth, async (req: Request<{ id: string }>,
   }
 });
 
-// Duplicate project
+// Duplicate project — wrapped in a single transaction so a partial failure
+// rolls back cleanly. Sections + blocks are batch-inserted (one round-trip per
+// table per parent) to avoid N+1 inserts on large projects.
 router.post("/projects/:id/duplicate", requireAuth, async (req: Request<{ id: string }>, res: Response) => {
   try {
     const userId = req.user!.id;
+    if (!isUuid(req.params.id)) { res.status(404).json({ error: "Not found" }); return; }
     const [src] = await db.select().from(projectsTable)
       .where(and(eq(projectsTable.id, req.params.id), eq(projectsTable.userId, userId)));
     if (!src) { res.status(404).json({ error: "Not found" }); return; }
 
-    const newSlug = `${src.slug}-copy-${Date.now().toString(36)}`;
-    const [newProject] = await db.insert(projectsTable).values({
-      name: `${src.name} (Copy)`, slug: newSlug, description: src.description, userId,
-    }).returning();
-
-    const srcGroups = await db.select().from(navGroupsTable)
-      .where(eq(navGroupsTable.projectId, src.id))
-      .orderBy(navGroupsTable.orderIndex);
-    const groupIdMap = new Map<string, string>();
-    for (const g of srcGroups) {
-      const [newG] = await db.insert(navGroupsTable).values({
-        projectId: newProject.id, title: g.title, orderIndex: g.orderIndex, type: g.type,
+    const newProject = await db.transaction(async (tx) => {
+      const newSlug = `${src.slug}-copy-${Date.now().toString(36)}`;
+      const [created] = await tx.insert(projectsTable).values({
+        name: `${src.name} (Copy)`, slug: newSlug, description: src.description, userId,
       }).returning();
-      groupIdMap.set(g.id, newG.id);
-    }
 
-    const srcPages = await db.select().from(pagesTable)
-      .where(eq(pagesTable.projectId, src.id))
-      .orderBy(pagesTable.orderIndex);
-    for (const page of srcPages) {
-      const newNavGroupId = page.navGroupId ? groupIdMap.get(page.navGroupId) ?? null : null;
-      const [newPage] = await db.insert(pagesTable).values({
-        projectId: newProject.id, title: page.title, slug: page.slug,
-        orderIndex: page.orderIndex, navGroupId: newNavGroupId,
-        navTitle: page.navTitle, metaDescription: page.metaDescription,
-      }).returning();
-      const srcSections = await db.select().from(sectionsTable)
-        .where(eq(sectionsTable.pageId, page.id))
-        .orderBy(sectionsTable.orderIndex);
-      for (const sec of srcSections) {
-        const [newSec] = await db.insert(sectionsTable).values({
-          pageId: newPage.id, title: sec.title, orderIndex: sec.orderIndex, navTitle: sec.navTitle,
+      // Nav groups: clone in batch, build id map
+      const srcGroups = await tx.select().from(navGroupsTable)
+        .where(eq(navGroupsTable.projectId, src.id))
+        .orderBy(navGroupsTable.orderIndex);
+      const groupIdMap = new Map<string, string>();
+      for (const g of srcGroups) {
+        const [newG] = await tx.insert(navGroupsTable).values({
+          projectId: created.id, title: g.title, orderIndex: g.orderIndex, type: g.type,
         }).returning();
-        const srcBlocks = await db.select().from(blocksTable)
-          .where(eq(blocksTable.sectionId, sec.id))
+        groupIdMap.set(g.id, newG.id);
+      }
+
+      const srcPages = await tx.select().from(pagesTable)
+        .where(eq(pagesTable.projectId, src.id))
+        .orderBy(pagesTable.orderIndex);
+      for (const page of srcPages) {
+        const newNavGroupId = page.navGroupId ? groupIdMap.get(page.navGroupId) ?? null : null;
+        const [newPage] = await tx.insert(pagesTable).values({
+          projectId: created.id, title: page.title, slug: page.slug,
+          orderIndex: page.orderIndex, navGroupId: newNavGroupId,
+          navTitle: page.navTitle, metaDescription: page.metaDescription,
+        }).returning();
+        const srcSections = await tx.select().from(sectionsTable)
+          .where(eq(sectionsTable.pageId, page.id))
+          .orderBy(sectionsTable.orderIndex);
+        if (srcSections.length === 0) continue;
+
+        // Batch-insert all sections for this page in one round-trip
+        const newSections = await tx.insert(sectionsTable).values(
+          srcSections.map((sec) => ({
+            pageId: newPage.id, title: sec.title, orderIndex: sec.orderIndex, navTitle: sec.navTitle,
+          })),
+        ).returning();
+        const sectionIdMap = new Map<string, string>();
+        srcSections.forEach((s, i) => sectionIdMap.set(s.id, newSections[i].id));
+
+        // Fetch all blocks across all sections of this page in one query
+        const srcBlocks = await tx.select().from(blocksTable)
+          .where(inArray(blocksTable.sectionId, srcSections.map((s) => s.id)))
           .orderBy(blocksTable.orderIndex);
-        for (const blk of srcBlocks) {
-          await db.insert(blocksTable).values({
-            sectionId: newSec.id, type: blk.type, content: blk.content, orderIndex: blk.orderIndex,
-          });
+        if (srcBlocks.length > 0) {
+          await tx.insert(blocksTable).values(
+            srcBlocks.map((blk) => ({
+              sectionId: sectionIdMap.get(blk.sectionId)!,
+              type: blk.type, content: blk.content, orderIndex: blk.orderIndex,
+            })),
+          );
         }
       }
-    }
 
-    const [srcDesign] = await db.select().from(projectDesignSettingsTable)
-      .where(eq(projectDesignSettingsTable.projectId, src.id));
-    if (srcDesign) {
-      await db.insert(projectDesignSettingsTable)
-        .values({ projectId: newProject.id, settings: srcDesign.settings });
-    }
+      const [srcDesign] = await tx.select().from(projectDesignSettingsTable)
+        .where(eq(projectDesignSettingsTable.projectId, src.id));
+      if (srcDesign) {
+        await tx.insert(projectDesignSettingsTable)
+          .values({ projectId: created.id, settings: srcDesign.settings });
+      }
+
+      return created;
+    });
 
     res.status(201).json(newProject);
   } catch (err) {

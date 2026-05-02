@@ -1,10 +1,12 @@
 import { Router, Request, Response } from "express";
-import { db, pageFeedbackTable, pagesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, pageFeedbackTable, pagesTable, projectsTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuid = (s: string) => UUID_RE.test(s);
 const MAX_COMMENT_LEN = 2000;
 
 // Submit feedback (no auth - public). Validates inputs and ensures the page
@@ -46,11 +48,23 @@ router.post("/feedback", async (req: Request, res: Response) => {
   }
 });
 
-// Get feedback for page
-router.get("/feedback/:pageId", async (req: Request<{ pageId: string }>, res: Response) => {
+// Get feedback for a page. Owner-only — feedback comments may contain
+// sensitive user reports and must not be enumerable by arbitrary visitors.
+router.get("/feedback/:pageId", requireAuth, async (req: Request<{ pageId: string }>, res: Response) => {
   try {
+    const userId = req.user!.id;
+    const { pageId } = req.params;
+    if (!isUuid(pageId)) { res.status(404).json({ error: "Not found" }); return; }
+    const [page] = await db.select({ projectId: pagesTable.projectId }).from(pagesTable)
+      .where(eq(pagesTable.id, pageId)).limit(1);
+    if (!page) { res.status(404).json({ error: "Not found" }); return; }
+    const [project] = await db.select({ id: projectsTable.id }).from(projectsTable)
+      .where(and(eq(projectsTable.id, page.projectId), eq(projectsTable.userId, userId)))
+      .limit(1);
+    if (!project) { res.status(403).json({ error: "Forbidden" }); return; }
+
     const feedback = await db.select().from(pageFeedbackTable)
-      .where(eq(pageFeedbackTable.pageId, req.params.pageId));
+      .where(eq(pageFeedbackTable.pageId, pageId));
     res.json(feedback);
   } catch (err) {
     req.log.error({ err }, "Failed to get feedback");

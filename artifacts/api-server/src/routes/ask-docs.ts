@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 
 const router = Router();
 
@@ -7,9 +7,39 @@ const MAX_MESSAGE_CHARS = 4000;
 const MAX_TOTAL_CHARS = 32_000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Lightweight in-memory IP-based rate limiter (no extra deps).
+// 30 requests per minute per IP. Adequate for a single-instance app; if we
+// scale horizontally this should move to Redis.
+type Bucket = { count: number; resetAt: number };
+const buckets = new Map<string, Bucket>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 30;
+function rateLimit(req: Request, res: Response, next: NextFunction) {
+  const ip = (req.ip || req.socket.remoteAddress || "unknown").toString();
+  const now = Date.now();
+  const cur = buckets.get(ip);
+  if (!cur || cur.resetAt < now) {
+    buckets.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+  } else {
+    cur.count++;
+    if (cur.count > RATE_LIMIT_MAX) {
+      const retryAfter = Math.ceil((cur.resetAt - now) / 1000);
+      res.setHeader("Retry-After", String(retryAfter));
+      res.status(429).json({ error: "Too many requests. Try again shortly." });
+      return;
+    }
+  }
+  // Periodic GC so the map doesn't grow unbounded.
+  if (buckets.size > 5000) {
+    for (const [k, v] of buckets) if (v.resetAt < now) buckets.delete(k);
+  }
+  next();
+}
+
 // POST /ask-docs — AI chat about documentation
-// Streams back proper SSE format matching what AskDocsChat.tsx expects
-router.post("/ask-docs", async (req: Request, res: Response) => {
+// Streams back proper SSE format matching what AskDocsChat.tsx expects.
+// Rate-limited because the route hits a paid AI endpoint.
+router.post("/ask-docs", rateLimit, async (req: Request, res: Response) => {
   try {
     const { messages, projectId } = req.body as {
       messages?: unknown;
