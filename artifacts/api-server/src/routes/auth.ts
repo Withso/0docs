@@ -1,5 +1,6 @@
 import * as oidc from "openid-client";
 import { Router, type IRouter, type Request, type Response } from "express";
+import { eq } from "drizzle-orm";
 import {
   GetCurrentAuthUserResponse,
   ExchangeMobileAuthorizationCodeBody,
@@ -57,29 +58,96 @@ function getSafeReturnTo(value: unknown): string {
   return value;
 }
 
-async function upsertUser(claims: Record<string, unknown>) {
-  const userData = {
-    id: claims.sub as string,
-    email: (claims.email as string) || null,
-    firstName: (claims.first_name as string) || null,
-    lastName: (claims.last_name as string) || null,
-    profileImageUrl: (claims.profile_image_url || claims.picture) as
-      | string
-      | null,
-  };
+type PgErrorShape = {
+  name?: string;
+  message?: string;
+  code?: string;
+  detail?: string;
+  schema?: string;
+  table?: string;
+  column?: string;
+  constraint?: string;
+  cause?: PgErrorShape;
+};
 
-  const [user] = await db
-    .insert(usersTable)
-    .values(userData)
-    .onConflictDoUpdate({
-      target: usersTable.id,
-      set: {
-        ...userData,
-        updatedAt: new Date(),
-      },
-    })
-    .returning();
-  return user;
+function describeDbError(err: unknown): Record<string, unknown> {
+  const e = err as PgErrorShape;
+  return {
+    name: e?.name,
+    message: e?.message,
+    code: e?.code,
+    detail: e?.detail,
+    schema: e?.schema,
+    table: e?.table,
+    column: e?.column,
+    constraint: e?.constraint,
+    cause: e?.cause
+      ? {
+          name: e.cause.name,
+          message: e.cause.message,
+          code: e.cause.code,
+          detail: e.cause.detail,
+          schema: e.cause.schema,
+          table: e.cause.table,
+          column: e.cause.column,
+          constraint: e.cause.constraint,
+        }
+      : undefined,
+  };
+}
+
+async function upsertUser(claims: Record<string, unknown>) {
+  const id = String(claims.sub ?? "");
+  const email = (claims.email as string) || null;
+  const firstName = (claims.first_name as string) || null;
+  const lastName = (claims.last_name as string) || null;
+  const profileImageUrl =
+    ((claims.profile_image_url as string | undefined) ||
+      (claims.picture as string | undefined)) ??
+    null;
+
+  if (!id) {
+    throw new Error("upsertUser: missing claims.sub");
+  }
+
+  // Use explicit SELECT-then-UPDATE-or-INSERT instead of ON CONFLICT DO UPDATE.
+  // Some Postgres providers (Neon) intermittently reject ON CONFLICT updates
+  // that touch the conflict-target column; this pattern sidesteps that and is
+  // also easier to reason about / log.
+  try {
+    const existing = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.id, id))
+      .limit(1);
+
+    if (existing.length > 0) {
+      const [user] = await db
+        .update(usersTable)
+        .set({
+          email,
+          firstName,
+          lastName,
+          profileImageUrl,
+          updatedAt: new Date(),
+        })
+        .where(eq(usersTable.id, id))
+        .returning();
+      return user;
+    }
+
+    const [user] = await db
+      .insert(usersTable)
+      .values({ id, email, firstName, lastName, profileImageUrl })
+      .returning();
+    return user;
+  } catch (err: unknown) {
+    console.error("[upsertUser] failed", {
+      ...describeDbError(err),
+      userData: { id, email, firstName, lastName, profileImageUrl },
+    });
+    throw err;
+  }
 }
 
 router.get("/auth/user", (req: Request, res: Response) => {
@@ -164,27 +232,44 @@ router.get("/callback", async (req: Request, res: Response) => {
     return;
   }
 
-  const dbUser = await upsertUser(
-    claims as unknown as Record<string, unknown>,
-  );
+  try {
+    const dbUser = await upsertUser(
+      claims as unknown as Record<string, unknown>,
+    );
 
-  const now = Math.floor(Date.now() / 1000);
-  const sessionData: SessionData = {
-    user: {
-      id: dbUser.id,
-      email: dbUser.email,
-      firstName: dbUser.firstName,
-      lastName: dbUser.lastName,
-      profileImageUrl: dbUser.profileImageUrl,
-    },
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
-    expires_at: tokens.expiresIn() ? now + tokens.expiresIn()! : claims.exp,
-  };
+    const now = Math.floor(Date.now() / 1000);
+    const sessionData: SessionData = {
+      user: {
+        id: dbUser.id,
+        email: dbUser.email,
+        firstName: dbUser.firstName,
+        lastName: dbUser.lastName,
+        profileImageUrl: dbUser.profileImageUrl,
+      },
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: tokens.expiresIn() ? now + tokens.expiresIn()! : claims.exp,
+    };
 
-  const sid = await createSession(sessionData);
-  setSessionCookie(res, sid);
-  res.redirect(returnTo);
+    const sid = await createSession(sessionData);
+    setSessionCookie(res, sid);
+    res.redirect(returnTo);
+  } catch (err: unknown) {
+    const e = err as { message?: string; code?: string; cause?: { message?: string; code?: string } };
+    req.log.error(
+      {
+        err,
+        errMessage: e?.message,
+        errCode: e?.code,
+        causeMessage: e?.cause?.message,
+        causeCode: e?.cause?.code,
+        sub: claims.sub,
+        email: claims.email,
+      },
+      "[callback] upsert/session failed",
+    );
+    res.redirect("/api/login?error=callback");
+  }
 });
 
 router.get("/logout", async (req: Request, res: Response) => {
