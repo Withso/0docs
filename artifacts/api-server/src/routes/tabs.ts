@@ -5,6 +5,9 @@ import { eq, and } from "drizzle-orm";
 
 const router = Router();
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuid = (s: string) => UUID_RE.test(s);
+
 type AuthedReq = Request & { userId: string };
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -14,6 +17,46 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
   (req as unknown as AuthedReq).userId = userId;
   next();
 }
+
+async function isProjectPublished(projectId: string): Promise<boolean> {
+  const [p] = await db
+    .select({ publishedVersionId: projectsTable.publishedVersionId })
+    .from(projectsTable)
+    .where(eq(projectsTable.id, projectId));
+  return p?.publishedVersionId != null;
+}
+
+// GET /tabs?projectId=...
+// Public for published projects; requires auth + ownership for unpublished.
+// Used by the public docs viewer to render the top-level tab navigator.
+router.get("/tabs", async (req: Request, res: Response) => {
+  try {
+    const projectId = req.query["projectId"] as string | undefined;
+    if (!projectId) { res.status(400).json({ error: "projectId required" }); return; }
+    if (!isUuid(projectId)) { res.json([]); return; }
+
+    if (await isProjectPublished(projectId)) {
+      const tabs = await db.select().from(tabsTable)
+        .where(eq(tabsTable.projectId, projectId))
+        .orderBy(tabsTable.orderIndex);
+      res.json(tabs); return;
+    }
+
+    const auth = getAuth(req);
+    const userId = (auth?.sessionClaims?.userId as string | undefined) || auth?.userId;
+    if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+    const [owned] = await db.select({ id: projectsTable.id }).from(projectsTable)
+      .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
+    if (!owned) { res.status(403).json({ error: "Forbidden" }); return; }
+    const tabs = await db.select().from(tabsTable)
+      .where(eq(tabsTable.projectId, projectId))
+      .orderBy(tabsTable.orderIndex);
+    res.json(tabs);
+  } catch (err) {
+    req.log.error({ err }, "Failed to list tabs");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 async function ownedTab(tabId: string, userId: string) {
   const rows = await db

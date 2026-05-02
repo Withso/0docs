@@ -20,6 +20,8 @@ interface Page {
   order_index: number;
   meta_description?: string | null;
   version_id?: string | null;
+  nav_group_id?: string | null;
+  nav_title?: string | null;
 }
 interface Section {
   id: string;
@@ -34,6 +36,20 @@ interface Block {
   content: any;
   order_index: number;
 }
+interface Tab {
+  id: string;
+  label: string;
+  order_index: number;
+  metadata?: Record<string, any>;
+}
+interface NavGroup {
+  id: string;
+  title: string;
+  order_index: number;
+  type?: string;
+  tab_id?: string | null;
+  metadata?: Record<string, any>;
+}
 
 // Normalize API response rows from Drizzle camelCase to frontend snake_case convention
 function normPage(r: any): Page {
@@ -45,7 +61,16 @@ function normPage(r: any): Page {
     meta_description: r.metaDescription ?? r.meta_description ?? null,
     version_id: r.versionId ?? r.version_id ?? null,
     nav_group_id: r.navGroupId ?? r.nav_group_id ?? null,
-  } as Page;
+    nav_title: r.navTitle ?? r.nav_title ?? null,
+  };
+}
+function normTab(r: any): Tab {
+  return {
+    id: r.id,
+    label: r.label,
+    order_index: r.orderIndex ?? r.order_index ?? 0,
+    metadata: r.metadata ?? {},
+  };
 }
 function normSection(r: any): Section {
   return {
@@ -64,12 +89,14 @@ function normBlock(r: any): Block {
     order_index: r.orderIndex ?? r.order_index ?? 0,
   };
 }
-function normNavGroup(r: any): any {
+function normNavGroup(r: any): NavGroup {
   return {
-    ...r,
+    id: r.id,
+    title: r.title,
     order_index: r.orderIndex ?? r.order_index ?? 0,
-    page_id: r.pageId ?? r.page_id ?? undefined,
+    type: r.type ?? "label",
     tab_id: r.tabId ?? r.tab_id ?? null,
+    metadata: r.metadata ?? {},
   };
 }
 
@@ -85,7 +112,9 @@ const Index = () => {
   const [allBlocks, setAllBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishedDesign, setPublishedDesign] = useState<any>(null);
-  const [navGroups, setNavGroups] = useState<any[]>([]);
+  const [navGroups, setNavGroups] = useState<NavGroup[]>([]);
+  const [tabs, setTabs] = useState<Tab[]>([]);
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [usingPublished, setUsingPublished] = useState(false);
 
   // Load homepage project
@@ -103,6 +132,21 @@ const Index = () => {
 
         const proj = projects[0];
         setProject(proj);
+
+        // Load tabs in parallel — public endpoint returns tabs for published projects.
+        // Default activeTabId to the first tab so users see content immediately when
+        // every nav group is assigned to a tab.
+        fetch(`/api/tabs?projectId=${proj.id}`)
+          .then((r) => (r.ok ? r.json() : []))
+          .then((rows: any[]) => {
+            const normalized = (rows || []).map(normTab)
+              .sort((a, b) => a.order_index - b.order_index);
+            setTabs(normalized);
+            // Default to the first VISIBLE tab — hidden tabs aren't selectable in the UI
+            const firstVisible = normalized.find((t) => !t.metadata?.hidden);
+            if (firstVisible) setActiveTabId(firstVisible.id);
+          })
+          .catch(() => setTabs([]));
 
         // Check for published version first — serve published snapshot if available
         if (proj.publishedVersionId || proj.published_version_id) {
@@ -241,10 +285,33 @@ const Index = () => {
   }, [activePage, usingPublished, allSections, allBlocks]);
 
   const { versions, activeVersion, setActiveVersion } = useVersions(project?.id);
-  const filteredPages =
+  const versionFilteredPages =
     usingPublished || !(versions.length > 0 && activeVersion)
       ? pages
       : pages.filter((p) => p.version_id === activeVersion.id || !p.version_id);
+
+  // Filter pages by active tab: a page belongs to a tab when its nav group's tab_id matches.
+  // Pages without a nav group, or whose nav group has no tab_id, only show when no tab is active.
+  const filteredPages = activeTabId
+    ? versionFilteredPages.filter((p) => {
+        const group = navGroups.find((g) => g.id === p.nav_group_id);
+        return group?.tab_id === activeTabId;
+      })
+    : versionFilteredPages.filter((p) => {
+        if (!p.nav_group_id) return true;
+        const group = navGroups.find((g) => g.id === p.nav_group_id);
+        return !group?.tab_id;
+      });
+
+  // Keep activePage in sync with filtered pages — switch to first available when tab changes,
+  // when version switches, or whenever the filtered membership changes (not just length).
+  const filteredPageIdsKey = filteredPages.map((p) => p.id).join("|");
+  useEffect(() => {
+    if (filteredPages.length === 0) return;
+    if (!activePage || !filteredPages.some((p) => p.id === activePage.id)) {
+      setActivePage(filteredPages[0]);
+    }
+  }, [filteredPageIdsKey]);
 
   const { settings: liveSettings } = useDesignSettings(project?.id);
   const rawSettings = publishedDesign || liveSettings;
@@ -425,6 +492,33 @@ const Index = () => {
             </div>
             <span className="font-semibold text-[15px] tracking-tight text-foreground">0docs</span>
           </div>
+          {tabs.length > 0 && (
+            <div className="hidden md:flex items-center gap-1 mr-4">
+              {[...tabs]
+                .filter((tab) => !tab.metadata?.hidden)
+                .sort((a, b) => a.order_index - b.order_index)
+                .map((tab) => {
+                  const isActive = activeTabId === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTabId(isActive ? null : tab.id)}
+                      className="px-3.5 py-1.5 rounded-full transition-colors text-[13px]"
+                      style={{
+                        color: isActive
+                          ? `hsl(${settings.foregroundColor})`
+                          : `hsl(${settings.mutedForegroundColor})`,
+                        fontWeight: isActive ? 500 : 400,
+                        fontFamily: `'${settings.bodyFont}', sans-serif`,
+                        backgroundColor: isActive ? `hsl(${settings.mutedColor})` : "transparent",
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+            </div>
+          )}
           <div className="flex-1 min-w-0 lg:pl-4">
             <button
               onClick={() => setSearchOpen(true)}
@@ -502,6 +596,9 @@ const Index = () => {
         onExternalSearchOpenChange={setSearchOpen}
         navGroups={navGroups}
         hideHeaderLabel
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onSelectTab={setActiveTabId}
       />
       {project?.id && <AskDocsChat projectId={project.id} settings={settings} />}
       <MadeWithBanner />

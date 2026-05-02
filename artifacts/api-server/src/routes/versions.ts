@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { getAuth } from "@clerk/express";
-import { db, publishedVersionsTable, docVersionsTable, projectsTable } from "@workspace/db";
-import { eq, and, desc } from "drizzle-orm";
+import { db, publishedVersionsTable, docVersionsTable, projectsTable, profilesTable } from "@workspace/db";
+import { eq, and, desc, inArray } from "drizzle-orm";
 
 const router = Router();
 
@@ -44,7 +44,36 @@ router.get("/versions", async (req: Request, res: Response) => {
       .where(eq(publishedVersionsTable.projectId, projectId))
       .orderBy(desc(publishedVersionsTable.publishedAt))
       .limit(limitN);
-    res.json(versions);
+
+    // Resolve publisher display names from profiles table
+    const publisherIds = Array.from(new Set(
+      versions.map((v) => v.publishedBy).filter((id): id is string => Boolean(id)),
+    ));
+    const profileMap = new Map<string, string>();
+    if (publisherIds.length > 0) {
+      const profiles = await db.select({
+        id: profilesTable.id,
+        displayName: profilesTable.displayName,
+      }).from(profilesTable).where(inArray(profilesTable.id, publisherIds));
+      for (const p of profiles) {
+        if (p.displayName) profileMap.set(p.id, p.displayName);
+      }
+    }
+
+    // Compute counts per version snapshot for the activity feed
+    const enriched = versions.map((v) => {
+      const pages = Array.isArray(v.pagesSnapshot) ? v.pagesSnapshot : [];
+      const sections = Array.isArray(v.sectionsSnapshot) ? v.sectionsSnapshot : [];
+      const blocks = Array.isArray(v.blocksSnapshot) ? v.blocksSnapshot : [];
+      return {
+        ...v,
+        publisherName: v.publishedBy ? (profileMap.get(v.publishedBy) ?? null) : null,
+        pagesCount: pages.length,
+        sectionsCount: sections.length,
+        blocksCount: blocks.length,
+      };
+    });
+    res.json(enriched);
   } catch (err: unknown) {
     res.status(500).json({ error: err instanceof Error ? err.message : "Server error" });
   }
@@ -75,7 +104,26 @@ router.get("/projects/:projectId/published-versions", requireAuth,
       const versions = await db.select().from(publishedVersionsTable)
         .where(eq(publishedVersionsTable.projectId, projectId))
         .orderBy(desc(publishedVersionsTable.publishedAt));
-      res.json(versions);
+
+      const publisherIds = Array.from(new Set(
+        versions.map((v) => v.publishedBy).filter((id): id is string => Boolean(id)),
+      ));
+      const profileMap = new Map<string, string>();
+      if (publisherIds.length > 0) {
+        const profiles = await db.select({
+          id: profilesTable.id,
+          displayName: profilesTable.displayName,
+        }).from(profilesTable).where(inArray(profilesTable.id, publisherIds));
+        for (const p of profiles) {
+          if (p.displayName) profileMap.set(p.id, p.displayName);
+        }
+      }
+
+      const enriched = versions.map((v) => ({
+        ...v,
+        publisherName: v.publishedBy ? (profileMap.get(v.publishedBy) ?? null) : null,
+      }));
+      res.json(enriched);
     } catch (err) {
       req.log.error({ err }, "Failed to list published versions");
       res.status(500).json({ error: "Internal server error" });
@@ -92,29 +140,35 @@ router.post("/projects/:projectId/published-versions", requireAuth,
         .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
       if (!project) { res.status(404).json({ error: "Not found" }); return; }
 
-      await db.update(publishedVersionsTable).set({ isActive: false })
-        .where(eq(publishedVersionsTable.projectId, projectId));
-
       const { versionNumber, pagesSnapshot, sectionsSnapshot, blocksSnapshot, designSnapshot,
         navGroupsSnapshot, editorChanges, designChanges, notes } = req.body;
-      const [version] = await db.insert(publishedVersionsTable).values({
-        projectId,
-        versionNumber,
-        isActive: true,
-        publishedBy: userId,
-        pagesSnapshot: pagesSnapshot ?? [],
-        sectionsSnapshot: sectionsSnapshot ?? [],
-        blocksSnapshot: blocksSnapshot ?? [],
-        designSnapshot: designSnapshot ?? {},
-        navGroupsSnapshot: navGroupsSnapshot ?? [],
-        editorChanges: editorChanges ?? [],
-        designChanges: designChanges ?? [],
-        notes: notes ?? null,
-      }).returning();
 
-      await db.update(projectsTable)
-        .set({ publishedVersionId: version.id, updatedAt: new Date() })
-        .where(eq(projectsTable.id, projectId));
+      // Atomic: deactivate old, insert new, update project pointer in a single transaction
+      const version = await db.transaction(async (tx) => {
+        await tx.update(publishedVersionsTable).set({ isActive: false })
+          .where(eq(publishedVersionsTable.projectId, projectId));
+
+        const [v] = await tx.insert(publishedVersionsTable).values({
+          projectId,
+          versionNumber,
+          isActive: true,
+          publishedBy: userId,
+          pagesSnapshot: pagesSnapshot ?? [],
+          sectionsSnapshot: sectionsSnapshot ?? [],
+          blocksSnapshot: blocksSnapshot ?? [],
+          designSnapshot: designSnapshot ?? {},
+          navGroupsSnapshot: navGroupsSnapshot ?? [],
+          editorChanges: editorChanges ?? [],
+          designChanges: designChanges ?? [],
+          notes: notes ?? null,
+        }).returning();
+
+        await tx.update(projectsTable)
+          .set({ publishedVersionId: v.id, updatedAt: new Date() })
+          .where(eq(projectsTable.id, projectId));
+
+        return v;
+      });
 
       res.status(201).json(version);
     } catch (err) {
@@ -139,13 +193,16 @@ router.post("/projects/:projectId/published-versions/:versionId/revert", require
         .where(and(eq(publishedVersionsTable.id, versionId), eq(publishedVersionsTable.projectId, projectId)));
       if (!targetVersion) { res.status(404).json({ error: "Not found" }); return; }
 
-      await db.update(publishedVersionsTable).set({ isActive: false })
-        .where(eq(publishedVersionsTable.projectId, projectId));
-      await db.update(publishedVersionsTable).set({ isActive: true })
-        .where(and(eq(publishedVersionsTable.id, versionId), eq(publishedVersionsTable.projectId, projectId)));
-      await db.update(projectsTable)
-        .set({ publishedVersionId: versionId, updatedAt: new Date() })
-        .where(eq(projectsTable.id, projectId));
+      // Atomic revert: deactivate all, activate target, update project pointer
+      await db.transaction(async (tx) => {
+        await tx.update(publishedVersionsTable).set({ isActive: false })
+          .where(eq(publishedVersionsTable.projectId, projectId));
+        await tx.update(publishedVersionsTable).set({ isActive: true })
+          .where(and(eq(publishedVersionsTable.id, versionId), eq(publishedVersionsTable.projectId, projectId)));
+        await tx.update(projectsTable)
+          .set({ publishedVersionId: versionId, updatedAt: new Date() })
+          .where(eq(projectsTable.id, projectId));
+      });
       res.json({ ok: true });
     } catch (err) {
       req.log.error({ err }, "Failed to revert version");
