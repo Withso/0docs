@@ -1,4 +1,14 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="180" height="180" rx="36" fill="#0A0A0A"/>
-  <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-weight="800" font-size="118" fill="#FFFFFF" letter-spacing="-4">0</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#111111"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="14" y1="10" x2="50" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#B5B5B5"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <path d="M32 12c-9.94 0-18 8.95-18 20s8.06 20 18 20 18-8.95 18-20S41.94 12 32 12zm0 8c5.52 0 10 5.37 10 12s-4.48 12-10 12-10-5.37-10-12 4.48-12 10-12z" fill="url(#ring)"/>
 </svg>

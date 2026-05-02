@@ -1,4 +1,0 @@
-project_id = "qvjyyvzkbaldczdocdgg"
-
-[functions.ask-docs]
-verify_jwt = false

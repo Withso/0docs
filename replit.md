@@ -58,7 +58,29 @@ control) are deferred follow-ups.
   "Documentation" / "Learn more" buttons → `/docs`. "Sign In" / "Get started"
   → `/auth`.
 - `/docs` → `pages/Index.tsx` — public docs viewer for the homepage project.
-- `/auth`, `/dashboard`, `/profile`, `/builder/:id` — Clerk-gated app routes.
+- `/auth` → `pages/Auth.tsx` — single "Log in to continue" button that hits
+  `GET /api/login` (Replit OIDC).
+- `/dashboard`, `/builder/:projectId`, `/settings/profile` — auth-gated app
+  routes wrapped in `ProtectedRoute`.
+
+## Authentication
+
+- Replit Auth (OIDC) end-to-end. No Clerk anywhere.
+- Server: `artifacts/api-server/src/lib/auth.ts` runs the OIDC handshake;
+  `middlewares/authMiddleware.ts` populates `req.user` from the session;
+  `middlewares/requireAuth.ts` is the gate for write routes.
+- Client: `lib/replit-auth-web` exposes `useReplitAuth()`; `AuthContext.tsx`
+  wraps it and `lib/api-client.ts` sends `credentials: "include"` so cookies
+  carry the session.
+- Mixed-auth read endpoints (`projects`, `sections`, `blocks`, `navgroups`,
+  `versions`) gate on "is the project published, OR is the caller the owner?".
+
+## Shared dev/prod database
+
+`lib/db/src/index.ts` prefers `SHARED_DATABASE_URL` over the auto-provisioned
+`DATABASE_URL`. Setting `SHARED_DATABASE_URL` to the dev connection string
+makes the deployed app read/write the same data as development, so the user
+sees one consistent dataset across environments.
 
 ## Public docs viewer (zdocs Index.tsx)
 

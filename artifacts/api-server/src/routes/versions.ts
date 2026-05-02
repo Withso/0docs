@@ -24,7 +24,9 @@ async function requireDocVersionOwnership(docVersionId: string, userId: string):
   return requireProjectOwnership(version.projectId, userId);
 }
 
-// GET /versions?projectId=...&limit=N — public for published projects, owner-only otherwise
+// GET /versions?projectId=...&limit=N — public for published projects, owner-only otherwise.
+// Public callers receive metadata only (counts, publisher name); snapshots and internal
+// notes/changelog are reserved for the project owner.
 router.get("/versions", async (req: Request, res: Response) => {
   try {
     const projectId = req.query["projectId"] as string | undefined;
@@ -38,10 +40,11 @@ router.get("/versions", async (req: Request, res: Response) => {
     }).from(projectsTable).where(eq(projectsTable.id, projectId));
     if (!project) { res.status(404).json({ error: "Not found" }); return; }
     const isPublished = project.publishedVersionId != null;
-    if (!isPublished) {
-      const userId = req.user?.id;
+    const userId = req.user?.id;
+    const isOwner = userId != null && project.userId === userId;
+    if (!isPublished && !isOwner) {
       if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-      if (project.userId !== userId) { res.status(403).json({ error: "Forbidden" }); return; }
+      res.status(403).json({ error: "Forbidden" }); return;
     }
 
     const limitN = Math.min(parseInt(limit || "10", 10), 100);
@@ -70,12 +73,25 @@ router.get("/versions", async (req: Request, res: Response) => {
       const pages = Array.isArray(v.pagesSnapshot) ? v.pagesSnapshot : [];
       const sections = Array.isArray(v.sectionsSnapshot) ? v.sectionsSnapshot : [];
       const blocks = Array.isArray(v.blocksSnapshot) ? v.blocksSnapshot : [];
-      return {
-        ...v,
-        publisherName: v.publishedBy ? (profileMap.get(v.publishedBy) ?? null) : null,
+      const publisherName = v.publishedBy ? (profileMap.get(v.publishedBy) ?? null) : null;
+      const counts = {
+        publisherName,
         pagesCount: pages.length,
         sectionsCount: sections.length,
         blocksCount: blocks.length,
+      };
+      if (isOwner) {
+        return { ...v, ...counts };
+      }
+      // Public callers: metadata only, no snapshots / internal notes / changelog
+      return {
+        id: v.id,
+        projectId: v.projectId,
+        versionNumber: v.versionNumber,
+        isActive: v.isActive,
+        publishedAt: v.publishedAt,
+        publishedBy: v.publishedBy,
+        ...counts,
       };
     });
     res.json(enriched);

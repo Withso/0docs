@@ -2,19 +2,58 @@ import { Router, Request, Response } from "express";
 
 const router = Router();
 
+const MAX_MESSAGES = 30;
+const MAX_MESSAGE_CHARS = 4000;
+const MAX_TOTAL_CHARS = 32_000;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // POST /ask-docs — AI chat about documentation
 // Streams back proper SSE format matching what AskDocsChat.tsx expects
 router.post("/ask-docs", async (req: Request, res: Response) => {
   try {
     const { messages, projectId } = req.body as {
-      messages: Array<{ role: "user" | "assistant"; content: string }>;
-      projectId?: string;
+      messages?: unknown;
+      projectId?: unknown;
     };
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    if (!Array.isArray(messages) || messages.length === 0) {
       res.status(400).json({ error: "messages required" });
       return;
     }
+    if (messages.length > MAX_MESSAGES) {
+      res.status(400).json({ error: `too many messages (max ${MAX_MESSAGES})` });
+      return;
+    }
+    let total = 0;
+    for (const m of messages) {
+      if (
+        !m || typeof m !== "object" ||
+        ((m as { role?: unknown }).role !== "user" && (m as { role?: unknown }).role !== "assistant") ||
+        typeof (m as { content?: unknown }).content !== "string"
+      ) {
+        res.status(400).json({ error: "each message must be { role: 'user'|'assistant', content: string }" });
+        return;
+      }
+      const content = (m as { content: string }).content;
+      if (content.length > MAX_MESSAGE_CHARS) {
+        res.status(400).json({ error: `message exceeds ${MAX_MESSAGE_CHARS} chars` });
+        return;
+      }
+      total += content.length;
+    }
+    if (total > MAX_TOTAL_CHARS) {
+      res.status(400).json({ error: `total content exceeds ${MAX_TOTAL_CHARS} chars` });
+      return;
+    }
+    let safeProjectId: string | undefined;
+    if (projectId != null) {
+      if (typeof projectId !== "string" || !UUID_RE.test(projectId)) {
+        res.status(400).json({ error: "projectId must be a UUID" });
+        return;
+      }
+      safeProjectId = projectId;
+    }
+    const safeMessages = messages as Array<{ role: "user" | "assistant"; content: string }>;
 
     const apiKey = process.env.REPLIT_AI_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
     const baseUrl = (process.env.REPLIT_AI_OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
@@ -30,7 +69,7 @@ router.post("/ask-docs", async (req: Request, res: Response) => {
       return;
     }
 
-    const systemPrompt = `You are a helpful documentation assistant for project "${projectId || "this site"}". Answer questions about the documentation clearly and concisely.`;
+    const systemPrompt = `You are a helpful documentation assistant for project "${safeProjectId || "this site"}". Answer questions about the documentation clearly and concisely.`;
 
     const aiRes = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
@@ -43,7 +82,7 @@ router.post("/ask-docs", async (req: Request, res: Response) => {
         stream: true,
         messages: [
           { role: "system", content: systemPrompt },
-          ...messages,
+          ...safeMessages,
         ],
       }),
     });
