@@ -35,6 +35,43 @@ interface Block {
   order_index: number;
 }
 
+// Normalize API response rows from Drizzle camelCase to frontend snake_case convention
+function normPage(r: any): Page {
+  return {
+    id: r.id,
+    title: r.title,
+    slug: r.slug,
+    order_index: r.orderIndex ?? r.order_index ?? 0,
+    meta_description: r.metaDescription ?? r.meta_description ?? null,
+    version_id: r.versionId ?? r.version_id ?? null,
+  };
+}
+function normSection(r: any): Section {
+  return {
+    id: r.id,
+    page_id: r.pageId ?? r.page_id,
+    title: r.title,
+    order_index: r.orderIndex ?? r.order_index ?? 0,
+  };
+}
+function normBlock(r: any): Block {
+  return {
+    id: r.id,
+    section_id: r.sectionId ?? r.section_id,
+    type: r.type,
+    content: r.content ?? {},
+    order_index: r.orderIndex ?? r.order_index ?? 0,
+  };
+}
+function normNavGroup(r: any): any {
+  return {
+    ...r,
+    order_index: r.orderIndex ?? r.order_index ?? 0,
+    page_id: r.pageId ?? r.page_id ?? undefined,
+    tab_id: r.tabId ?? r.tab_id ?? null,
+  };
+}
+
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -73,15 +110,16 @@ const Index = () => {
           if (pubRes.ok) {
             const published = await pubRes.json();
             if (published && published.isActive) {
-              const snapPages = ((published.pagesSnapshot || []) as Page[]).slice();
-              const snapSections = ((published.sectionsSnapshot || []) as Section[]).slice();
-              const snapBlocks = ((published.blocksSnapshot || []) as Block[]).slice();
-              const snapNavGroups = ((published.navGroupsSnapshot || []) as any[]).slice();
+              // Normalize snapshot data — may be stored in either camelCase or snake_case
+              const snapPages = ((published.pagesSnapshot || []) as any[]).map(normPage);
+              const snapSections = ((published.sectionsSnapshot || []) as any[]).map(normSection);
+              const snapBlocks = ((published.blocksSnapshot || []) as any[]).map(normBlock);
+              const snapNavGroups = ((published.navGroupsSnapshot || []) as any[]).map(normNavGroup);
 
               snapPages.sort((a, b) => a.order_index - b.order_index);
               snapSections.sort((a, b) => a.order_index - b.order_index);
               snapBlocks.sort((a, b) => a.order_index - b.order_index);
-              snapNavGroups.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+              snapNavGroups.sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
 
               setPages(snapPages);
               setAllSections(snapSections);
@@ -106,9 +144,10 @@ const Index = () => {
           }
         }
 
-        // Fallback to live data if no published version
+        // Fallback to live data if no published version — normalize Drizzle camelCase to snake_case
         const pagesRes = await fetch(`/api/pages?projectId=${proj.id}`);
-        const pagesData: Page[] = pagesRes.ok ? await pagesRes.json() : [];
+        const pagesRaw: any[] = pagesRes.ok ? await pagesRes.json() : [];
+        const pagesData: Page[] = pagesRaw.map(normPage);
 
         if (pagesData && pagesData.length > 0) {
           const sorted = [...pagesData].sort((a, b) => a.order_index - b.order_index);
@@ -123,8 +162,10 @@ const Index = () => {
             fetch(`/api/sections?pageId=${firstPage.id}`),
           ]);
 
-          const allSecs: Section[] = allSecsRes.ok ? await allSecsRes.json() : [];
-          const firstPageSecs: Section[] = firstPageSecsRes.ok ? await firstPageSecsRes.json() : [];
+          const allSecs: Section[] = allSecsRes.ok
+            ? ((await allSecsRes.json()) as any[]).map(normSection) : [];
+          const firstPageSecs: Section[] = firstPageSecsRes.ok
+            ? ((await firstPageSecsRes.json()) as any[]).map(normSection) : [];
 
           setAllSections(allSecs);
           setSections(firstPageSecs);
@@ -142,8 +183,10 @@ const Index = () => {
                 : Promise.resolve(new Response("[]")),
             ]);
 
-            const firstBlks: Block[] = firstBlksRes.ok ? await firstBlksRes.json() : [];
-            const allBlks: Block[] = allBlksRes.ok ? await allBlksRes.json() : [];
+            const firstBlks: Block[] = firstBlksRes.ok
+              ? ((await firstBlksRes.json()) as any[]).map(normBlock) : [];
+            const allBlks: Block[] = allBlksRes.ok
+              ? ((await allBlksRes.json()) as any[]).map(normBlock) : [];
 
             setBlocks(firstBlks);
             setAllBlocks(allBlks);
@@ -152,8 +195,8 @@ const Index = () => {
           // Load nav groups for live data
           const groupsRes = await fetch(`/api/navgroups?projectId=${proj.id}`);
           if (groupsRes.ok) {
-            const groups = await groupsRes.json();
-            setNavGroups(groups || []);
+            const groupsRaw: any[] = await groupsRes.json();
+            setNavGroups((groupsRaw || []).map(normNavGroup));
           }
         } else {
           setPages([]);
@@ -180,12 +223,14 @@ const Index = () => {
 
     const loadContent = async () => {
       const secsRes = await fetch(`/api/sections?pageId=${activePage.id}`);
-      const secs: Section[] = secsRes.ok ? await secsRes.json() : [];
+      const secs: Section[] = secsRes.ok
+        ? ((await secsRes.json()) as any[]).map(normSection) : [];
       setSections(secs);
       if (secs.length > 0) {
         const secIds = secs.map((s) => s.id);
         const blksRes = await fetch(`/api/blocks?sectionIds=${secIds.join(",")}`);
-        const blks: Block[] = blksRes.ok ? await blksRes.json() : [];
+        const blks: Block[] = blksRes.ok
+          ? ((await blksRes.json()) as any[]).map(normBlock) : [];
         setBlocks(blks);
       } else {
         setBlocks([]);
