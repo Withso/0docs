@@ -53,8 +53,24 @@ const SECTION_TITLES: Record<SectionId, { title: string; subtitle: string }> = {
 
 const VALID_SECTIONS: SectionId[] = ["general", "domain", "profile", "delete-account"];
 
-// Domain validation: simple, allows subdomains, disallows protocol/path
-const DOMAIN_RE = /^(?!-)(?:[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,}$/;
+// Linear-time domain validation — replaces a backtracking regex flagged by SAST
+// as ReDoS-vulnerable. Validates each label individually (max 63 chars, no
+// leading/trailing hyphen) and the TLD separately.
+const MAX_DOMAIN_LEN = 253;
+const DOMAIN_LABEL_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
+const DOMAIN_TLD_RE = /^[a-zA-Z]{2,63}$/;
+function isValidDomainStr(s: string): boolean {
+  if (!s || s.length > MAX_DOMAIN_LEN) return false;
+  const labels = s.split(".");
+  if (labels.length < 2) return false;
+  for (let i = 0; i < labels.length; i++) {
+    const label = labels[i];
+    if (i === labels.length - 1) {
+      if (!DOMAIN_TLD_RE.test(label)) return false;
+    } else if (!DOMAIN_LABEL_RE.test(label)) return false;
+  }
+  return true;
+}
 
 const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) => {
   const navigate = useNavigate();
@@ -156,7 +172,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
 
   // Domain validation + helpers
   const trimmedDomain = domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
-  const isValidDomain = !trimmedDomain || DOMAIN_RE.test(trimmedDomain);
+  const isValidDomain = !trimmedDomain || isValidDomainStr(trimmedDomain);
   const isApex = useMemo(() => {
     if (!trimmedDomain) return false;
     return trimmedDomain.split(".").length === 2;
@@ -172,7 +188,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
 
   const handleSaveDomain = async () => {
     if (!projectId) return;
-    if (trimmedDomain && !DOMAIN_RE.test(trimmedDomain)) {
+    if (trimmedDomain && !isValidDomainStr(trimmedDomain)) {
       toast({ title: "Invalid domain", description: "Enter a domain like docs.example.com (no protocol or path).", variant: "destructive" });
       return;
     }
@@ -299,9 +315,9 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
   return (
     <div className="flex-1 flex min-h-0 animate-fade-in">
       {/* Sidebar nav (Mintlify-style) */}
-      <aside className="w-[240px] shrink-0 border-r border-border/40 bg-muted/20 px-3 py-6 overflow-y-auto">
+      <aside className="w-[240px] shrink-0 border-r border-border/40 bg-muted/20 px-3 py-6 overflow-y-auto" aria-label="Settings sections">
 
-        <nav className="space-y-5">
+        <nav className="space-y-5" aria-label="Settings">
           {NAV_GROUPS.map((group) => (
             <div key={group.label}>
               <p className="px-2 mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">

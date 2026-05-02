@@ -132,7 +132,21 @@ const TreeRow = ({
       {...handleProps}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
-      className={`group/row relative flex items-center h-7 cursor-pointer select-none rounded-sm transition-colors ${
+      onKeyDown={(e) => {
+        // Make the clickable row keyboard-accessible. Enter/Space activates
+        // the same handler as click; F2 starts inline rename (if available).
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); }
+        else if (e.key === "F2") { e.preventDefault(); onDoubleClick?.(); }
+        else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && expandable) {
+          e.preventDefault(); onToggle?.();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-pressed={active || selected ? true : undefined}
+      aria-expanded={expandable ? expanded : undefined}
+      className={`group/row relative flex items-center h-7 cursor-pointer select-none rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${
         active ? "bg-primary/10" : selected ? "bg-muted/70 ring-1 ring-border/50" : "hover:bg-muted/45"
       }`}
       style={{ paddingLeft, paddingRight: 4 }}
@@ -158,7 +172,9 @@ const TreeRow = ({
         {...(iconColor ? { style: { color: iconColor } } : {})}
       />
 
-      {/* Label */}
+      {/* Label — `label` may contain user-controlled HTML from inline rich-text
+          editing (bold/italic/links). We sanitize defensively rather than trust
+          arbitrary keystrokes; an empty fallback prevents nameless rows. */}
       {editing ? (
         <input
           autoFocus
@@ -170,12 +186,17 @@ const TreeRow = ({
           }}
           onClick={(e) => e.stopPropagation()}
           className="flex-1 min-w-0 bg-transparent text-[12.5px] outline-none border-b border-border"
+          aria-label="Rename"
         />
       ) : (
         <span
           className={`flex-1 min-w-0 truncate text-[12.5px] ${active ? "font-medium text-foreground" : "text-foreground/85"}`}
-          dangerouslySetInnerHTML={{ __html: label || "Untitled" }}
-        />
+          // Strip tags for safe display in the nav list — keeps rich-text intent
+          // (showing the label) without inviting <script>/<img onerror> XSS.
+          title={(label || "Untitled").replace(/<[^>]*>/g, "")}
+        >
+          {(label || "Untitled").replace(/<[^>]*>/g, "") || "Untitled"}
+        </span>
       )}
 
       {!editing && badges && (

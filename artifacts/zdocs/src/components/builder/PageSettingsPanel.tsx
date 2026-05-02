@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -6,9 +6,15 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
-import { ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { useApi } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
+import { ChevronDown, ChevronUp, FileText, AlertCircle } from "lucide-react";
 import type { Page } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
+
+// Slugs must be lowercase URL-safe identifiers. Empty or invalid slugs would
+// 404 the published page so we block save until the field is well-formed.
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/;
 
 interface Props {
   page: Page;
@@ -29,13 +35,18 @@ interface PageMetadata {
   hidden?: boolean;
 }
 
-/** Per-page settings panel — supports floating (legacy) and bottomBar (Mintlify-style) variants. */
+/** Per-page settings panel — supports floating (legacy) and bottomBar (Mintlify-style) variants.
+ *  All writes go through the authenticated API client so cookies + error handling are consistent. */
 const PageSettingsPanel = ({ page, settings, projectSlug, variant = "floating" }: Props) => {
   const [collapsed, setCollapsed] = useState(true);
+  const api = useApi();
+  const { toast } = useToast();
 
   const [slug, setSlug] = useState(page.slug || "");
   const [metaDesc, setMetaDesc] = useState(page.meta_description || "");
   const [meta, setMeta] = useState<PageMetadata>(((page as any).metadata || {}) as PageMetadata);
+
+  const slugIsValid = useMemo(() => !slug || SLUG_RE.test(slug), [slug]);
 
   useEffect(() => {
     setSlug(page.slug || "");
@@ -43,15 +54,26 @@ const PageSettingsPanel = ({ page, settings, projectSlug, variant = "floating" }
     setMeta(((page as any).metadata || {}) as PageMetadata);
   }, [page.id, page.slug, page.meta_description, (page as any).metadata]);
 
+  // All saves go through useApi so cookies are sent and errors surface as toasts.
   const saveSlug = useDebouncedCallback((v: string) => {
-    fetch(`/api/pages/${page.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: v }) }).catch(() => {});
+    if (!v || !SLUG_RE.test(v)) return; // never persist a malformed slug
+    api.patch(`/pages/${page.id}`, { slug: v })
+      .catch((e: any) => toast({ title: "Couldn't save slug", description: e?.message, variant: "destructive" }));
   }, 700);
   const saveMetaDesc = useDebouncedCallback((v: string) => {
-    fetch(`/api/pages/${page.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metaDescription: v }) }).catch(() => {});
+    api.patch(`/pages/${page.id}`, { metaDescription: v })
+      .catch((e: any) => toast({ title: "Couldn't save description", description: e?.message, variant: "destructive" }));
   }, 700);
   const saveMeta = useDebouncedCallback((next: PageMetadata) => {
-    fetch(`/api/pages/${page.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metadata: next }) }).catch(() => {});
+    api.patch(`/pages/${page.id}`, { metadata: next })
+      .catch((e: any) => toast({ title: "Couldn't save metadata", description: e?.message, variant: "destructive" }));
   }, 700);
+  const saveTitle = useDebouncedCallback((v: string) => {
+    const title = v.trim();
+    if (!title) return; // titles must not be empty
+    api.patch(`/pages/${page.id}`, { title })
+      .catch((e: any) => toast({ title: "Couldn't save title", description: e?.message, variant: "destructive" }));
+  }, 500);
 
   const updateMeta = <K extends keyof PageMetadata>(key: K, value: PageMetadata[K]) => {
     const next = { ...meta, [key]: value };
@@ -86,6 +108,8 @@ const PageSettingsPanel = ({ page, settings, projectSlug, variant = "floating" }
               slug={slug}
               setSlug={setSlug}
               saveSlug={saveSlug}
+              saveTitle={saveTitle}
+              slugIsValid={slugIsValid}
               metaDesc={metaDesc}
               setMetaDesc={setMetaDesc}
               saveMetaDesc={saveMetaDesc}
@@ -133,6 +157,8 @@ const PageSettingsPanel = ({ page, settings, projectSlug, variant = "floating" }
               slug={slug}
               setSlug={setSlug}
               saveSlug={saveSlug}
+              saveTitle={saveTitle}
+              slugIsValid={slugIsValid}
               metaDesc={metaDesc}
               setMetaDesc={setMetaDesc}
               saveMetaDesc={saveMetaDesc}
@@ -152,6 +178,8 @@ interface FormProps {
   slug: string;
   setSlug: (v: string) => void;
   saveSlug: (v: string) => void;
+  saveTitle: (v: string) => void;
+  slugIsValid: boolean;
   metaDesc: string;
   setMetaDesc: (v: string) => void;
   saveMetaDesc: (v: string) => void;
@@ -161,26 +189,40 @@ interface FormProps {
 }
 
 const PageSettingsForm = ({
-  page, slug, setSlug, saveSlug, metaDesc, setMetaDesc, saveMetaDesc, meta, updateMeta, filePath,
-}: FormProps) => (
+  page, slug, setSlug, saveSlug, saveTitle, slugIsValid, metaDesc, setMetaDesc, saveMetaDesc, meta, updateMeta, filePath,
+}: FormProps) => {
+  // Local mirror so the input is responsive even though saves are debounced.
+  const [titleLocal, setTitleLocal] = useState(page.title);
+  useEffect(() => { setTitleLocal(page.title); }, [page.id, page.title]);
+  const titleInvalid = !titleLocal.trim();
+
+  return (
   <>
     <Field label="Title">
       <Input
-        value={page.title}
-        onChange={(e) => {
-          fetch(`/api/pages/${page.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: e.target.value }) }).catch(() => {});
-        }}
-        className="h-8 text-[12px]"
+        value={titleLocal}
+        onChange={(e) => { setTitleLocal(e.target.value); saveTitle(e.target.value); }}
+        className={`h-8 text-[12px] ${titleInvalid ? "border-destructive focus-visible:ring-destructive/40" : ""}`}
       />
+      {titleInvalid && (
+        <p className="mt-1 text-[10.5px] text-destructive flex items-center gap-1">
+          <AlertCircle className="h-3 w-3" /> Title is required
+        </p>
+      )}
     </Field>
 
     <Field label="Slug">
       <Input
         value={slug}
         onChange={(e) => { setSlug(e.target.value); saveSlug(e.target.value); }}
-        className="h-8 text-[12px] font-mono"
+        className={`h-8 text-[12px] font-mono ${!slugIsValid ? "border-destructive focus-visible:ring-destructive/40" : ""}`}
         placeholder="page-slug"
       />
+      {!slugIsValid && (
+        <p className="mt-1 text-[10.5px] text-destructive flex items-center gap-1">
+          <AlertCircle className="h-3 w-3" /> Lowercase letters, numbers, and hyphens only
+        </p>
+      )}
     </Field>
 
     <Field label="External URL">
@@ -278,7 +320,8 @@ const PageSettingsForm = ({
       </div>
     </div>
   </>
-);
+  );
+};
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div>
