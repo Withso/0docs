@@ -70,6 +70,10 @@ const ConfigurationsPanel = ({ projectName, settings, saving, saveSettings, rese
   };
   const update = <K extends keyof DS>(key: K, value: DS[K]) =>
     updateAndSave({ ...local, [key]: value });
+  /** Atomic multi-field update — required for theme presets (avoids
+   *  the stale-closure bug where successive `update` calls overwrite
+   *  each other because they all read the same captured `local`). */
+  const applyPatch = (patch: Partial<DS>) => updateAndSave({ ...local, ...patch });
   const updateBlockStyle = (
     block: keyof DS["blockStyles"],
     key: keyof BlockStyleSettings,
@@ -140,7 +144,7 @@ const ConfigurationsPanel = ({ projectName, settings, saving, saveSettings, rese
             {active === "branding" && (
               <>
                 <SettingsSection title="Appearance" icon={Palette} defaultOpen>
-                  <AppearanceControls local={local} update={update} />
+                  <AppearanceControls local={local} update={update} applyPatch={applyPatch} />
                 </SettingsSection>
                 <SettingsSection title="Advanced Colors" icon={Palette}>
                   <ColorControls local={local} update={update} />

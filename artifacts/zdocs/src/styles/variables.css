@@ -145,51 +145,54 @@
 
   /* ─── BRIDGE: Shadcn / Tailwind compatibility ───
      These map Tailwind semantic tokens to zdocs primitives.
-     Shadcn components use hsl(var(--background)) etc. internally,
-     so we provide HSL values that match our hex palette. */
+     Shadcn components use hsl(var(--background)) etc. internally.
 
-  --background: 0 0% 5%;          /* ~#0d0d0d */
-  --foreground: 0 0% 94%;         /* ~#f0f0f0 */
+     DESIGN INTENT: Neutral palette with subtle cool-blue hue (220°)
+     for whisper-soft borders and muted surfaces. Foreground stays
+     pure neutral so text reads as crisp black/white. */
 
-  --card: 0 0% 9%;                /* ~#161616 */
-  --card-foreground: 0 0% 94%;
+  --background: 220 9% 5%;        /* near-black w/ cool tint */
+  --foreground: 0 0% 96%;         /* pure neutral text */
 
-  --popover: 0 0% 9%;
-  --popover-foreground: 0 0% 94%;
+  --card: 220 8% 8%;
+  --card-foreground: 0 0% 96%;
 
-  --primary: 0 0% 100%;           /* #ffffff */
-  --primary-foreground: 0 0% 5%;  /* #0d0d0d */
+  --popover: 220 8% 8%;
+  --popover-foreground: 0 0% 96%;
 
-  --secondary: 0 0% 12%;          /* ~#1e1e1e */
-  --secondary-foreground: 0 0% 94%;
+  --primary: 0 0% 100%;
+  --primary-foreground: 220 9% 5%;
 
-  --muted: 0 0% 12%;
-  --muted-foreground: 0 0% 44%;   /* ~#707070 */
+  --secondary: 220 7% 12%;
+  --secondary-foreground: 0 0% 96%;
 
-  --accent: 0 0% 12%;
-  --accent-foreground: 0 0% 94%;
+  --muted: 220 7% 12%;
+  --muted-foreground: 220 5% 60%;
+
+  --accent: 220 7% 14%;
+  --accent-foreground: 0 0% 96%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 0 0% 12%;
-  --input: 0 0% 14%;
-  --ring: 0 0% 30%;
+  --border: 220 7% 14%;
+  --input: 220 7% 16%;
+  --ring: 220 5% 35%;
 
   --radius: 8px;
 
-  --platform-accent: 0 0% 94%;
-  --platform-accent-soft: 0 0% 10%;
-  --platform-accent-foreground: 0 0% 5%;
+  --platform-accent: 0 0% 96%;
+  --platform-accent-soft: 220 8% 10%;
+  --platform-accent-foreground: 220 9% 5%;
   --platform-success: 152 60% 42%;
   --platform-success-soft: 152 30% 15%;
   --platform-warning: 38 92% 50%;
   --platform-warning-soft: 38 30% 15%;
   --platform-info: 214 100% 60%;
-  --platform-surface: 0 0% 9%;
-  --platform-surface-hover: 0 0% 11%;
-  --platform-surface-active: 0 0% 13%;
-  --platform-surface-elevated: 0 0% 10%;
+  --platform-surface: 220 8% 8%;
+  --platform-surface-hover: 220 8% 11%;
+  --platform-surface-active: 220 7% 14%;
+  --platform-surface-elevated: 220 8% 9%;
 
   --platform-header-height: 52px;
   --platform-sidebar-width: 260px;
@@ -239,34 +242,34 @@
   --zdocs-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.04);
   --zdocs-shadow-card: 0 0 0 1px var(--zdocs-border);
 
-  /* Bridge overrides for light */
+  /* Bridge overrides for light — neutral white w/ subtle cool-blue hue */
   --background: 0 0% 100%;
-  --foreground: 0 0% 4%;
+  --foreground: 220 14% 5%;
 
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 4%;
+  --card-foreground: 220 14% 5%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 4%;
+  --popover-foreground: 220 14% 5%;
 
-  --primary: 0 0% 4%;
+  --primary: 220 14% 5%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 240 5% 96%;
-  --secondary-foreground: 0 0% 4%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 220 14% 5%;
 
-  --muted: 240 5% 96%;
-  --muted-foreground: 240 4% 36%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 8% 42%;
 
-  --accent: 240 5% 95%;
-  --accent-foreground: 0 0% 4%;
+  --accent: 220 14% 95%;
+  --accent-foreground: 220 14% 5%;
 
-  --border: 240 6% 92%;
-  --input: 240 6% 90%;
-  --ring: 240 4% 64%;
+  --border: 220 14% 92%;
+  --input: 220 14% 90%;
+  --ring: 220 8% 60%;
 
-  --platform-accent: 0 0% 4%;
-  --platform-accent-soft: 240 5% 96%;
+  --platform-accent: 220 14% 5%;
+  --platform-accent-soft: 220 14% 96%;
   --platform-accent-foreground: 0 0% 100%;
   --platform-success: 152 60% 36%;
   --platform-success-soft: 152 50% 94%;
@@ -274,8 +277,8 @@
   --platform-warning-soft: 38 90% 94%;
   --platform-info: 214 100% 50%;
   --platform-surface: 0 0% 100%;
-  --platform-surface-hover: 240 5% 97%;
-  --platform-surface-active: 240 5% 95%;
+  --platform-surface-hover: 220 14% 97%;
+  --platform-surface-active: 220 14% 95%;
   --platform-surface-elevated: 0 0% 100%;
 
   --doc-link: 240 4% 36%;

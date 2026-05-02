@@ -12,6 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown, Type, AlignLeft, Code, ImageIcon, Film, Youtube, ListOrdered, List, StickyNote, AlertCircle, Layout as LayoutIcon, Columns, CreditCard, Footprints, Table2, Minus, Quote, Globe, CodeSquare, FileEdit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DesignSettings as DS, BlockStyleSettings } from "@/hooks/use-design-settings";
+import { THEME_PRESET_LIST, applyThemePreset, type ThemePresetId } from "@/lib/theme/theme-presets";
 
 // ─── Helpers ─────────────────────────────────────────
 export function hslToHex(hsl: string | null | undefined): string {
@@ -336,7 +337,13 @@ export function WeightSelect({ label, value, onChange }: { label: string; value:
 // ─── Grouped Controls ────────────────────────────────
 
 /** Mintlify-style appearance: brand colours + light/dark mode behaviour. */
-export function AppearanceControls({ local, update }: { local: DS; update: <K extends keyof DS>(k: K, v: DS[K]) => void }) {
+export function AppearanceControls({ local, update, applyPatch }: {
+  local: DS;
+  update: <K extends keyof DS>(k: K, v: DS[K]) => void;
+  /** Atomic multi-field patch — required for theme presets. Optional so callers
+   *  that don't show the preset picker can omit it. */
+  applyPatch?: (patch: Partial<DS>) => void;
+}) {
   const colors = local.colors || {};
   const updateColor = (k: "primary" | "light" | "dark", hex: string) => {
     update("colors" as keyof DS, { ...colors, [k]: hex } as any);
@@ -361,6 +368,7 @@ export function AppearanceControls({ local, update }: { local: DS; update: <K ex
 
   return (
     <>
+      {applyPatch && <ThemePresetPicker local={local} applyPatch={applyPatch} />}
       <HexColorRow label="Primary" hex={colors.primary || "#0a0a0a"} onChange={(h) => updateColor("primary", h)} />
       <HexColorRow label="Light Accent" hex={colors.light || "#ffffff"} onChange={(h) => updateColor("light", h)} />
       <HexColorRow label="Dark Accent" hex={colors.dark || "#0a0a0a"} onChange={(h) => updateColor("dark", h)} />
@@ -378,6 +386,78 @@ export function AppearanceControls({ local, update }: { local: DS; update: <K ex
       />
       <ToggleField label="Strict (hide toggle)" checked={appearance.strict} onChange={(v) => updateAppearance({ strict: v })} />
     </>
+  );
+}
+
+/**
+ * Mintlify theme preset picker — Mint, Maple, Palm, Willow.
+ * Clicking a preset writes the preset's brand colors + per-mode overrides
+ * onto settings via the unified `applyThemePreset` helper.
+ */
+export function ThemePresetPicker({ local, applyPatch }: {
+  local: DS;
+  /** Atomic multi-field patch from ConfigurationsPanel.applyPatch. */
+  applyPatch: (patch: Partial<DS>) => void;
+}) {
+  const activeId = local.themePreset;
+
+  const handlePick = (id: ThemePresetId) => {
+    const next = applyThemePreset(local, id);
+    // ATOMIC: write all preset-managed fields in one go to avoid the
+    // stale-closure bug where consecutive `update` calls overwrite each
+    // other (each captured the same `local`).
+    applyPatch({
+      colors: next.colors,
+      backgroundColors: next.backgroundColors,
+      colorsLight: next.colorsLight,
+      colorsDark: next.colorsDark,
+      themePreset: next.themePreset,
+    });
+  };
+
+  return (
+    <div className="mb-3">
+      <div className="flex items-center justify-between mb-2 px-1">
+        <span className="text-[11px] font-medium" style={{ color: "hsl(var(--foreground) / 0.7)" }}>Theme preset</span>
+        {activeId && (
+          <span className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(var(--foreground) / 0.4)" }}>
+            {activeId}
+          </span>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {THEME_PRESET_LIST.map((p) => {
+          const isActive = activeId === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => handlePick(p.id)}
+              className={cn(
+                "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-all",
+                isActive
+                  ? "border-foreground/60 bg-foreground/[0.04] ring-1 ring-foreground/20"
+                  : "border-border/60 hover:border-foreground/30 hover:bg-foreground/[0.025]",
+              )}
+            >
+              <span
+                className="h-7 w-7 shrink-0 rounded-md border border-black/5 dark:border-white/10"
+                style={{
+                  background: `linear-gradient(135deg, ${p.swatch} 0%, ${p.colors.light || p.swatch} 100%)`,
+                  boxShadow: `0 1px 0 0 hsl(var(--foreground) / 0.04)`,
+                }}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12px] font-semibold leading-tight">{p.name}</span>
+                <span className="block truncate text-[10.5px] leading-tight" style={{ color: "hsl(var(--foreground) / 0.5)" }}>
+                  {p.description.split(".")[0]}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

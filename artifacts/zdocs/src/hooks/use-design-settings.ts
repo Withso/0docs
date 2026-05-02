@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useApi } from "@/lib/api-client";
 import { hslStringToHex, type AppearanceSettings, type MintlifyColors, type PerModeColors } from "@/lib/theme/resolve-doc-theme";
+import type { ThemePresetId } from "@/lib/theme/theme-presets";
 
 export interface BlockStyleSettings {
   color: string;
@@ -99,6 +100,8 @@ export interface DesignSettings {
   backgroundColors?: { light?: string; dark?: string };
   colorsLight?: Partial<PerModeColors>;
   colorsDark?: Partial<PerModeColors>;
+  /** Optional Mintlify-style theme preset marker (Mint / Maple / Palm / Willow). */
+  themePreset?: ThemePresetId;
   blockStyles: {
     heading: Partial<BlockStyleSettings>;
     paragraph: Partial<BlockStyleSettings>;
