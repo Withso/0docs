@@ -301,7 +301,7 @@ const tabIcon = (kind?: string) => {
 };
 
 const tabKind = (t: Tab): NavSettingsKind => {
-  const k = (t.metadata as any)?.kind;
+  const k = t.metadata?.kind;
   if (k === "language" || k === "product" || k === "version") return k;
   return "tab";
 };
@@ -350,7 +350,7 @@ const NavigationTree = forwardRef<HTMLDivElement, Props>(({
   }, [storageKey, expandedTabs, expandedGroups]);
 
   const isTabOpen = (id: string) => expandedTabs[id] ?? true;
-  const isGroupOpen = (group: NavGroup) => expandedGroups[group.id] ?? ((group.metadata as any)?.expanded !== false);
+  const isGroupOpen = (group: NavGroup) => expandedGroups[group.id] ?? (group.metadata?.expanded !== false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -419,7 +419,7 @@ const NavigationTree = forwardRef<HTMLDivElement, Props>(({
         label={page.nav_title || page.title}
         active={active}
         selected={selected}
-        badges={<MetadataBadges meta={(page as any).metadata} />}
+        badges={<MetadataBadges meta={page.metadata} />}
         handleProps={handleProps}
         editing={isEditing}
         editValue={editing?.value ?? ""}
@@ -449,10 +449,10 @@ const NavigationTree = forwardRef<HTMLDivElement, Props>(({
         <TreeRow
           depth={depth}
           icon={Icon}
-          iconColor={(g.metadata as any)?.color || `hsl(${s.mutedForegroundColor})`}
+          iconColor={g.metadata?.color || `hsl(${s.mutedForegroundColor})`}
           label={g.title}
           selected={selected}
-          badges={<MetadataBadges meta={(g as any).metadata} />}
+          badges={<MetadataBadges meta={g.metadata} />}
           expandable
           expanded={open}
           onToggle={() => setExpandedGroups((p) => ({ ...p, [g.id]: !open }))}
@@ -497,7 +497,7 @@ const NavigationTree = forwardRef<HTMLDivElement, Props>(({
 
   const renderTab = (tab: Tab) => {
     const open = isTabOpen(tab.id);
-    const Icon = tabIcon((tab.metadata as any)?.kind);
+    const Icon = tabIcon(tab.metadata?.kind);
     const kind = tabKind(tab);
     const selected = selectedSettingsId === tab.id;
     const groups = groupsForTab(tab.id);
@@ -510,7 +510,7 @@ const NavigationTree = forwardRef<HTMLDivElement, Props>(({
           iconColor={`hsl(${s.sidebarActiveColor})`}
           label={tab.label}
           selected={selected}
-          badges={<MetadataBadges meta={(tab as any).metadata} />}
+          badges={<MetadataBadges meta={tab.metadata} />}
           expandable
           expanded={open}
           onToggle={() => setExpandedTabs((p) => ({ ...p, [tab.id]: !open }))}
