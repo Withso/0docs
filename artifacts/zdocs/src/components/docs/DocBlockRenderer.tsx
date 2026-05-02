@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import DOMPurify from "dompurify";
 import {
   Info,
@@ -379,9 +379,256 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
         />,
       );
 
+    case "frame":
+      return wrapHighlight(<FrameBlock content={content} settings={s} bs={bs} />);
+
+    case "expandable":
+      return wrapHighlight(<ExpandableBlock content={content} settings={s} bs={bs} />);
+
+    case "update":
+      return wrapHighlight(<UpdateBlock content={content} settings={s} bs={bs} />);
+
     default:
       return null;
   }
+};
+
+/* ───────────────────────── Frame (Mintlify) ─────────────────────────
+   - Image wrapped in a thin bordered container with subtle muted background
+     padding, optional caption beneath.
+   - Distinct from the bare `image` block in that it always renders a
+     "frame" around the image — useful for screenshots / illustrations
+     where you want chrome regardless of image transparency.
+*/
+const FrameBlock = ({
+  content,
+  settings: s,
+  bs,
+}: {
+  content: any;
+  settings: DesignSettings;
+  bs: Partial<BlockStyleSettings>;
+}) => {
+  if (!content.url) return null;
+  const widthPct = content.width ? `${content.width}%` : "100%";
+  const align = (content.align || "center") as "left" | "center" | "right";
+  const justify: Record<string, string> = { left: "flex-start", center: "center", right: "flex-end" };
+  const caption = content.caption || content.alt;
+
+  return (
+    <div className="my-6 flex" style={{ justifyContent: justify[align] }}>
+      <div style={{ width: widthPct, maxWidth: "100%" }}>
+        <div
+          style={{
+            border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+            borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : "12px",
+            backgroundColor: bs.backgroundColor
+              ? `hsl(${bs.backgroundColor})`
+              : `hsl(${s.mutedColor})`,
+            padding: bs.padding != null ? `${bs.padding}px` : "16px",
+          }}
+        >
+          <img
+            src={content.url}
+            alt={content.alt || ""}
+            loading="lazy"
+            className="block w-full h-auto"
+            style={{
+              borderRadius: "6px",
+              boxShadow: "0 1px 2px hsl(0 0% 0% / 0.04)",
+            }}
+          />
+        </div>
+        {caption && (
+          <p
+            style={{
+              color: `hsl(${s.mutedForegroundColor})`,
+              fontFamily: `'${s.bodyFont}', sans-serif`,
+              fontSize: `${s.baseFontSize - 2}px`,
+              marginTop: "10px",
+              textAlign: "center",
+              lineHeight: s.lineHeight,
+            }}
+          >
+            {caption}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ───────────────────────── Expandable (Mintlify) ─────────────────────────
+   - Single-row disclosure: a quiet, chrome-light alternative to the
+     accordion. Useful inline within a section to reveal optional detail
+     without breaking flow.
+*/
+const ExpandableBlock = ({
+  content,
+  settings: s,
+  bs,
+}: {
+  content: any;
+  settings: DesignSettings;
+  bs: Partial<BlockStyleSettings>;
+}) => {
+  const [open, setOpen] = useState(content.defaultOpen === true);
+  const panelId = useMemo(
+    () => `expandable-${Math.random().toString(36).slice(2, 9)}`,
+    [],
+  );
+  return (
+    <div
+      className="my-4"
+      style={{
+        borderTop: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+        borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+      }}
+    >
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-3 text-left"
+        style={{
+          padding: `${bs.padding ?? 12}px 4px`,
+          fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
+          fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
+          fontWeight: bs.fontWeight || 500,
+          color: `hsl(${s.foregroundColor})`,
+          background: "transparent",
+          cursor: "pointer",
+        }}
+        aria-expanded={open}
+        aria-controls={panelId}
+      >
+        <span>{content.title || "Show details"}</span>
+        <ChevronDown
+          className="shrink-0 transition-transform"
+          style={{
+            width: 16,
+            height: 16,
+            color: `hsl(${s.mutedForegroundColor})`,
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
+      </button>
+      {open && (
+        <div
+          id={panelId}
+          role="region"
+          style={{
+            padding: "0 4px 14px 4px",
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            fontSize: `${s.baseFontSize}px`,
+            color: `hsl(${s.mutedForegroundColor})`,
+            lineHeight: s.lineHeight,
+          }}
+        >
+          {content.content || content.text}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ───────────────────────── Update (Mintlify changelog) ─────────────────────────
+   - Two-column layout on wide screens: timestamp + version pill in a left
+     gutter, content body on the right. Stacks on narrow screens.
+   - Distinctive Mintlify pattern used in /changelog pages.
+*/
+const UpdateBlock = ({
+  content,
+  settings: s,
+  bs,
+}: {
+  content: any;
+  settings: DesignSettings;
+  bs: Partial<BlockStyleSettings>;
+}) => {
+  const date = content.date || "";
+  const version = content.version || "";
+  const title = content.title || "";
+  const body = content.body || content.text || content.html;
+  const isHtml = typeof content.html === "string" && content.html.length > 0;
+
+  return (
+    <div
+      className="doc-update-block my-6 grid gap-3 md:gap-10"
+      style={{
+        borderTop: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+        paddingTop: "24px",
+      }}
+    >
+      <aside className="doc-update-block__meta flex flex-row md:flex-col gap-2 md:gap-1.5 items-center md:items-start">
+        {date && (
+          <span
+            style={{
+              fontFamily: `'${s.bodyFont}', sans-serif`,
+              fontSize: `${s.baseFontSize - 2}px`,
+              color: `hsl(${s.mutedForegroundColor})`,
+              fontWeight: 500,
+            }}
+          >
+            {date}
+          </span>
+        )}
+        {version && (
+          <span
+            className="inline-flex items-center self-start px-2 py-0.5 rounded-full text-[11px] font-semibold tracking-wide"
+            style={{
+              backgroundColor: `hsl(${s.mutedColor})`,
+              color: `hsl(${s.foregroundColor})`,
+              border: `1px solid hsl(${bs.borderColor || s.borderColor})`,
+              fontFamily: `'${s.codeFont}', monospace`,
+            }}
+          >
+            {version}
+          </span>
+        )}
+      </aside>
+      <div>
+        {title && (
+          <h3
+            style={{
+              fontFamily: `'${s.headingFont}', sans-serif`,
+              fontWeight: s.headingWeight,
+              fontSize: `${s.headingFontSize}px`,
+              letterSpacing: "-0.015em",
+              margin: 0,
+              marginBottom: "10px",
+              color: `hsl(${s.foregroundColor})`,
+            }}
+          >
+            {title}
+          </h3>
+        )}
+        {isHtml ? (
+          <div
+            style={{
+              fontFamily: `'${s.bodyFont}', sans-serif`,
+              fontSize: `${s.baseFontSize}px`,
+              lineHeight: s.lineHeight,
+              color: `hsl(${s.foregroundColor})`,
+            }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.html || "") }}
+          />
+        ) : (
+          body && (
+            <p
+              style={{
+                fontFamily: `'${s.bodyFont}', sans-serif`,
+                fontSize: `${s.baseFontSize}px`,
+                lineHeight: s.lineHeight,
+                color: `hsl(${s.foregroundColor})`,
+                margin: 0,
+              }}
+            >
+              {body}
+            </p>
+          )
+        )}
+      </div>
+    </div>
+  );
 };
 
 /* ───────────────────────── Code Block (Mintlify) ─────────────────────────

@@ -229,6 +229,22 @@ code, pre {
   color: var(--zdocs-text3);
   transition: color var(--zdocs-duration) var(--zdocs-ease);
 }
+/* Mintlify-style sidebar row hover — picks up the doc viewer's resolved
+   muted color so it works in both light and dark themes. */
+.doc-sidebar-row:hover:not([aria-current="page"]) {
+  background-color: hsl(var(--ds-muted, var(--muted)) / 0.6);
+}
+
+/* Update block: single-column on mobile, 2-col gutter+body at md+. */
+.doc-update-block {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+  .doc-update-block {
+    grid-template-columns: minmax(0, 160px) 1fr;
+  }
+}
+
 .doc-sidebar-link:hover {
   color: var(--zdocs-text1);
 }

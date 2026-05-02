@@ -3,6 +3,7 @@ import {
   ListOrdered, List, StickyNote, AlertCircle, X,
   Columns, ChevronDown, CreditCard, Footprints,
   Table2, Minus, Quote, Globe, CodeXml, FileJson,
+  Frame as FrameIcon, Megaphone, ChevronsUpDown,
 } from "lucide-react";
 
 const blockTypes = [
@@ -11,6 +12,7 @@ const blockTypes = [
   { type: "code_block", label: "Code Block", icon: Code },
   { type: "code_tabs", label: "Code Tabs", icon: CodeXml },
   { type: "image", label: "Image", icon: ImageIcon },
+  { type: "frame", label: "Frame", icon: FrameIcon },
   { type: "video", label: "Video", icon: Film },
   { type: "youtube", label: "YouTube", icon: Youtube },
   { type: "ordered_list", label: "Numbered List", icon: ListOrdered },
@@ -19,11 +21,13 @@ const blockTypes = [
   { type: "callout", label: "Callout", icon: AlertCircle },
   { type: "tabs", label: "Tabs", icon: Columns },
   { type: "accordion", label: "Accordion", icon: ChevronDown },
+  { type: "expandable", label: "Expandable", icon: ChevronsUpDown },
   { type: "card", label: "Card", icon: CreditCard },
   { type: "steps", label: "Steps", icon: Footprints },
   { type: "table", label: "Table", icon: Table2 },
   { type: "divider", label: "Divider", icon: Minus },
   { type: "quote", label: "Quote", icon: Quote },
+  { type: "update", label: "Update", icon: Megaphone },
   { type: "api_endpoint", label: "API Endpoint", icon: Globe },
   { type: "inline_editor", label: "Inline Editor", icon: AlignLeft },
   { type: "import_openapi", label: "Import OpenAPI", icon: FileJson },

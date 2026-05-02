@@ -172,7 +172,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
       fontFamily: `'${s.bodyFont}', sans-serif`,
     };
 
-    const rowClasses = "flex-1 flex items-center gap-2 truncate h-8 pl-4 pr-3 rounded-md transition-colors w-full text-left relative";
+    const rowClasses = "doc-sidebar-row flex-1 flex items-center gap-2 truncate h-[30px] pl-4 pr-3 rounded-md transition-colors w-full text-left relative";
 
     const button = renderPageActions ? (
       renderPageActions(page, isActive)
@@ -194,6 +194,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
           onSelectPage(page);
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
+        aria-current={isActive ? "page" : undefined}
         className={rowClasses}
         style={baseStyle}
       >
@@ -312,10 +313,12 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
           const open = isGroupOpen(group);
 
           return (
-            <div key={group.id} className="mt-7">
+            <div key={group.id} className="mt-5">
               <button
                 onClick={() => toggleGroup(group)}
-                className="w-full flex items-center justify-between gap-2 pl-4 pr-3 mb-2 text-left select-none"
+                aria-expanded={open}
+                aria-controls={`sidebar-group-${group.id}`}
+                className="w-full flex items-center justify-between gap-2 pl-4 pr-3 mb-1.5 text-left select-none"
                 style={{
                   fontSize: `${s.sidebarLabelFontSize || 12}px`,
                   color: `hsl(${s.sidebarLabelColor || s.foregroundColor})`,
@@ -331,6 +334,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
               </button>
               {open && (
                 <div
+                  id={`sidebar-group-${group.id}`}
                   className="flex flex-col"
                   style={{ gap: `${Math.max(s.sidebarPageGap, 0)}px` }}
                 >

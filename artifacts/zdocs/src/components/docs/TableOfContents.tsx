@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
 interface TOCSection {
@@ -12,6 +12,15 @@ interface TableOfContentsProps {
   stickyTop?: number;
 }
 
+/**
+ * Mintlify-style table of contents.
+ *
+ * Visual: tiny "On this page" caps label, then a vertical guide rail with
+ * each section as a row whose left indicator turns from neutral (border) to
+ * primary as it scrolls into view. Inactive rows do not show a dot — only the
+ * vertical rail. The active row gets a primary-colored 2px bar that overlays
+ * the rail at the row position (this matches Mintlify's docs sidebar TOC).
+ */
 const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfContentsProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -103,23 +112,22 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
       }}
     >
       <div
-        className="flex items-center gap-2 mb-3 text-[13px] font-medium"
+        className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em]"
         style={{
-          color: `hsl(${s.foregroundColor})`,
+          color: `hsl(${s.mutedForegroundColor})`,
           fontFamily: `'${s.bodyFont}', sans-serif`,
         }}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="8" y1="6" x2="21" y2="6" />
-          <line x1="8" y1="12" x2="21" y2="12" />
-          <line x1="8" y1="18" x2="21" y2="18" />
-          <circle cx="4" cy="6" r="1" fill="currentColor" />
-          <circle cx="4" cy="12" r="1" fill="currentColor" />
-          <circle cx="4" cy="18" r="1" fill="currentColor" />
-        </svg>
-        <span>On this page</span>
+        On this page
       </div>
-      <nav className="flex flex-col">
+
+      {/* Vertical rail anchors all rows; active row's bar overlays it. */}
+      <nav
+        className="relative flex flex-col"
+        style={{
+          borderLeft: `1px solid hsl(${s.borderColor})`,
+        }}
+      >
         {sections.map((section) => {
           const isActive = activeId === section.id;
           return (
@@ -134,7 +142,8 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
                   window.scrollTo({ top, behavior: "smooth" });
                 }
               }}
-              className="flex items-center gap-2 py-1.5 transition-colors"
+              aria-current={isActive ? "location" : undefined}
+              className="relative flex items-center py-1.5 pl-4 pr-1 transition-colors hover:opacity-100"
               style={{
                 color: isActive
                   ? `hsl(${s.primaryColor})`
@@ -142,16 +151,20 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
                 fontSize: "13px",
                 fontWeight: isActive ? 500 : 400,
                 fontFamily: `'${s.bodyFont}', sans-serif`,
+                opacity: isActive ? 1 : 0.85,
+                lineHeight: 1.4,
               }}
             >
-              <span
-                className="inline-block w-1 h-1 rounded-full shrink-0"
-                style={{
-                  backgroundColor: isActive
-                    ? `hsl(${s.primaryColor})`
-                    : "transparent",
-                }}
-              />
+              {isActive && (
+                <span
+                  aria-hidden
+                  className="absolute top-1.5 bottom-1.5 w-[2px] rounded-full"
+                  style={{
+                    left: "-1px",
+                    backgroundColor: `hsl(${s.primaryColor})`,
+                  }}
+                />
+              )}
               <span className="truncate" dangerouslySetInnerHTML={{ __html: section.title }} />
             </a>
           );

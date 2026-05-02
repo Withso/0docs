@@ -140,11 +140,42 @@ const Dashboard = () => {
     return d.toLocaleDateString();
   };
 
+  // Time-aware greeting matches Linear/Vercel style dashboards.
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 5 ? "Working late" :
+    hour < 12 ? "Good morning" :
+    hour < 18 ? "Good afternoon" :
+    "Good evening";
+  const firstName = user?.displayName?.split(" ")[0] || "";
+
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="relative">
+        {/* Ambient backdrop — coheres /dashboard with / and /auth. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-[280px] -z-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(40rem 20rem at 80% 0%, hsl(var(--primary) / 0.05), transparent 65%), radial-gradient(36rem 18rem at 0% 0%, hsl(var(--platform-accent-blue, var(--primary)) / 0.04), transparent 65%)",
+          }}
+        />
+      <div className="relative max-w-5xl mx-auto px-6 py-8">
+        {/* Greeting row */}
+        <div className="mb-7">
+          <h1 className="text-[22px] font-semibold tracking-tight text-foreground">
+            {greeting}{firstName ? `, ${firstName}` : ""}
+          </h1>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            {visibleProjects.length === 0
+              ? "Spin up your first documentation project below."
+              : `You have ${visibleProjects.length} project${visibleProjects.length === 1 ? "" : "s"}. Pick up where you left off.`}
+          </p>
+        </div>
+
         <div className="flex items-center gap-3 mb-6">
-          <h1 className="text-[14px] font-medium text-foreground shrink-0">Projects</h1>
+          <h2 className="text-[13px] font-medium text-foreground shrink-0">Projects</h2>
           <span className="text-[11px] text-muted-foreground bg-accent/60 px-1.5 py-0.5 rounded-md shrink-0">{visibleProjects.length}</span>
 
           <div className="relative flex-1 max-w-sm">
@@ -288,6 +319,7 @@ const Dashboard = () => {
             ))}
           </div>
         )}
+      </div>
       </div>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
