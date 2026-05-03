@@ -224,7 +224,7 @@ const DocsPreviewHeader = ({
                   tabIndex={isActive ? 0 : -1}
                   onKeyDown={(e) => onTabKey(e, idx)}
                   onClick={() => onSelectTab?.(isActive ? null : tab.id)}
-                  className="relative h-full inline-flex items-center px-3.5 text-[14px] transition-colors focus-visible:outline-none focus-visible:bg-accent/40"
+                  className="relative h-full inline-flex items-center px-3.5 text-[14px] transition-colors focus-visible:outline-none focus-visible:bg-accent/40 focus-visible:ring-2 focus-visible:ring-inset"
                   style={{
                     color: isActive
                       ? `hsl(${settings.foregroundColor})`

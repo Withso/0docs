@@ -139,27 +139,35 @@ const DocContentView = ({
 
   return (
     <DesignSettingsWrapper settings={s} className="min-h-full">
-      <a
-        href="#content-area"
-        onClick={(e) => {
-          e.preventDefault();
-          const el = document.getElementById("content-area");
-          if (el) {
-            el.focus();
-            el.scrollIntoView({ behavior: smoothBehavior(), block: "start" });
-          }
-        }}
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-3 focus:py-2 focus:rounded-md focus:outline-none focus:ring-2"
-        style={{
-          backgroundColor: `hsl(${settings.backgroundColor})`,
-          color: `hsl(${settings.foregroundColor})`,
-          border: `1px solid hsl(${settings.borderColor})`,
-          fontFamily: `'${settings.bodyFont}', sans-serif`,
-          fontSize: "13px",
-        }}
-      >
-        Skip to content
-      </a>
+      {/* Only render this skip link when DocContentView owns the page chrome
+          (i.e., the Builder preview pane). On the public /docs and /p/:slug
+          routes, Index renders its own skip link as the first focusable
+          element — rendering a second one here would just be redundant. */}
+      {!hideHeader && (
+        <a
+          href="#content-area"
+          onClick={(e) => {
+            e.preventDefault();
+            const el = document.getElementById("content-area");
+            if (el) {
+              el.focus();
+              el.scrollIntoView({ behavior: smoothBehavior(), block: "start" });
+            }
+          }}
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-3 focus:py-2 focus:rounded-md focus:outline-none focus:ring-2"
+          style={{
+            backgroundColor: `hsl(${settings.backgroundColor})`,
+            color: `hsl(${settings.foregroundColor})`,
+            border: `1px solid hsl(${settings.borderColor})`,
+            fontFamily: `'${settings.bodyFont}', sans-serif`,
+            fontSize: "13px",
+            // Keep ring color aligned with the rest of the doc chrome.
+            ['--tw-ring-color' as any]: `hsl(${settings.primaryColor})`,
+          }}
+        >
+          Skip to content
+        </a>
+      )}
       {!hideHeader && (
         <DocsPreviewHeader
           settings={settings}
