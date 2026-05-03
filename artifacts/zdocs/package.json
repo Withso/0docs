@@ -57,7 +57,6 @@
     "framer-motion": "catalog:",
     "input-otp": "^1.4.2",
     "lucide-react": "catalog:",
-    "next-themes": "^0.4.6",
     "postcss": "^8.5.13",
     "react": "catalog:",
     "react-day-picker": "^9.11.1",
