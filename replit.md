@@ -104,15 +104,40 @@ Builder components:
 
 ## Authentication
 
-- Replit Auth (OIDC) end-to-end. No Clerk anywhere.
-- Server: `artifacts/api-server/src/lib/auth.ts` runs the OIDC handshake;
-  `middlewares/authMiddleware.ts` populates `req.user` from the session;
-  `middlewares/requireAuth.ts` is the gate for write routes.
-- Client: `lib/replit-auth-web` exposes `useReplitAuth()`; `AuthContext.tsx`
-  wraps it and `lib/api-client.ts` sends `credentials: "include"` so cookies
-  carry the session.
-- Mixed-auth read endpoints (`projects`, `sections`, `blocks`, `navgroups`,
-  `versions`) gate on "is the project published, OR is the caller the owner?".
+0docs supports two auth modes selected by the `AUTH_MODE` env var
+(default `replit` so the Replit-hosted demo keeps working unchanged):
+
+- `AUTH_MODE=replit`   — OIDC flow against `replit.com/oidc`.
+- `AUTH_MODE=selfhost` — email + password, runnable on any infra.
+
+Both implementations live behind a tiny `AuthProvider` interface
+(`artifacts/api-server/src/lib/auth/types.ts`). Code partitioning:
+
+- `lib/auth/shared.ts` — sessions, cookies, `getSessionId`. Shared.
+- `lib/auth/replit/` — OIDC config + `/api/login`, `/api/callback`,
+  `/api/logout`, mobile token-exchange.
+- `lib/auth/selfhost/` — email/password: `/api/auth/{signup,login,
+  logout,forgot-password,reset-password}`, scrypt hashing
+  (`password.ts`), in-memory rate limit (`ratelimit.ts`), optional
+  SMTP for reset emails (`email.ts`, falls back to console.log).
+- `lib/auth/index.ts` picks the active provider at boot and exports
+  `buildAuthRouter()` which mounts `/api/auth/user` (current user) and
+  `/api/auth/config` (mode hint for the frontend) plus the active
+  provider's routes.
+
+The frontend (`artifacts/zdocs/src/contexts/AuthContext.tsx`) reads
+`/api/auth/config` once on mount. `pages/Auth.tsx` renders sign-in,
+sign-up, forgot-password, and reset-password forms in selfhost mode and
+auto-redirects to `/api/login` in replit mode. The rest of the app only
+touches `useAuth()` so new features automatically work in both modes.
+
+DB additions for selfhost: `users.password_hash`, `users.is_admin`, and
+the `password_reset_tokens` table — all nullable/default so the existing
+Replit data is unaffected.
+
+Self-host docs: top-level [`README.md`](./README.md) and
+[`SELFHOSTING.md`](./SELFHOSTING.md). One-command install: `./install.sh`
+or `pnpm run selfhost`. Full stack via `docker compose up`.
 
 ## Shared dev/prod database
 

@@ -4,7 +4,9 @@ pnpm install --frozen-lockfile
 
 # Schema push is slow on Neon (~25s for the introspection step alone, even
 # with zero diff) — well over the 20s post-merge timeout. Only run it when
-# the merged commit actually touched schema files.
+# the merged commit actually touched schema files. The auth schema picked
+# up `password_hash`, `is_admin`, and `password_reset_tokens` for self-host
+# mode; this hook handles applying them after a merge in the Replit env.
 if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -qE '^lib/db/src/schema/'; then
   echo "[post-merge] schema files changed — pushing to SHARED_DATABASE_URL"
   if [ -n "$SHARED_DATABASE_URL" ]; then

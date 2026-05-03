@@ -1,0 +1,71 @@
+# 0docs self-hosted stack.
+#
+# Two ways to use this file:
+#
+#   1. `docker compose up postgres` — just run Postgres, then run the Node
+#      app on your host with `pnpm install && pnpm run selfhost:dev`.
+#      Best for active development.
+#
+#   2. `docker compose up` — run the full stack (Postgres + API server +
+#      web app) in containers. No host Node install required.
+#      Best for trying it out and for production-ish deployments.
+#
+# All settings come from `.env`. Run `./install.sh` first to generate it.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zerodocs
+    ports:
+      - "5432:5432"
+    volumes:
+      - zerodocs_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d zerodocs"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AUTH_MODE: ${AUTH_MODE:-selfhost}
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/zerodocs
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      NODE_ENV: production
+      PORT: 8081
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      SELFHOST_DISABLE_SIGNUP: ${SELFHOST_DISABLE_SIGNUP:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SMTP_URL: ${SMTP_URL:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      CORS_ALLOWLIST: ${CORS_ALLOWLIST:-}
+    ports:
+      - "${API_PORT:-8081}:8081"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      PORT: 8080
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+
+volumes:
+  zerodocs_pgdata:

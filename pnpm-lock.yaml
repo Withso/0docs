@@ -697,6 +697,10 @@ importers:
         version: 19.1.0
 
   scripts:
+    dependencies:
+      pg:
+        specifier: ^8.20.0
+        version: 8.20.0
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

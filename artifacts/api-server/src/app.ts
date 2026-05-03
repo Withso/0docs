@@ -46,6 +46,11 @@ app.use(cors({
         host.endsWith(".replit.dev") ||
         host.endsWith(".replit.app") ||
         host.endsWith(".repl.co") ||
+        // Self-hosted defaults — operators add public origins via
+        // CORS_ALLOWLIST. localhost is always trusted in case the user
+        // runs the API behind a non-standard reverse proxy.
+        host === "localhost" ||
+        host === "127.0.0.1" ||
         corsAllowlist.includes(origin);
       return cb(null, ok);
     } catch {

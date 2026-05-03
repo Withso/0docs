@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Builder from "./pages/Builder";
+import AuthPage from "./pages/Auth";
 
 const BuilderEntry = lazy(() => import("./pages/BuilderEntry"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
@@ -57,7 +58,9 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
                     auto-triggers the OIDC sign-in flow when no user. Kept
                     as a route so existing links from Landing/Index that
                     point at "/auth" still work. */}
-                <Route path="/auth" element={<Navigate to="/builder" replace />} />
+                {/* /auth renders the self-host email/password forms. In
+                    Replit (OIDC) mode it auto-redirects to /api/login. */}
+                <Route path="/auth" element={<AuthPage />} />
                 <Route
                   path="/dashboard"
                   element={<Navigate to="/builder" replace />}
