@@ -6,11 +6,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import DocContentView from "@/components/docs/DocContentView";
 import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
-import { LogIn, LayoutDashboard, Search, Sun, Moon } from "lucide-react";
+import { LogIn, LayoutDashboard } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
 import DocMobileNavComponent from "@/components/docs/DocMobileNav";
+import DocsPreviewHeader from "@/components/docs/DocsPreviewHeader";
 import { useResolvedDesignSettings } from "@/components/docs/DesignSettingsWrapper";
-import { usePlatformTheme } from "@/hooks/use-platform-theme";
 import { getAppearance } from "@/lib/theme/resolve-doc-theme";
 
 interface Page {
@@ -325,8 +325,9 @@ const Index = () => {
   const { settings: liveSettings } = useDesignSettings(project?.id);
   const rawSettings = publishedDesign || liveSettings;
   const { resolved: settings } = useResolvedDesignSettings(rawSettings);
-  const { theme: platformTheme, toggle: togglePlatformTheme } = usePlatformTheme();
   const showThemeToggle = !getAppearance(rawSettings).strict;
+  const headerFrameMaxWidth =
+    settings.contentMaxWidth + settings.sidebarWidth + 240 + 96;
 
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -383,113 +384,48 @@ const Index = () => {
 
   return (
     <div className="min-h-screen relative">
-      {/* Header bar */}
-      <div
-        className="sticky top-0 z-50 h-12"
-        style={{ backgroundColor: `hsl(${settings.backgroundColor})` }}
-      >
-        <div
-          className="mx-auto h-full flex items-center justify-between px-6"
-          style={{
-            maxWidth: `${settings.contentMaxWidth + settings.sidebarWidth + 200 + 48}px`,
-          }}
-        >
-          <div className="flex items-center gap-2" style={{ width: `${settings.sidebarWidth}px`, flexShrink: 0 }}>
-            <div className="lg:hidden">
-              <DocMobileNavComponent
-                settings={settings}
-                pages={filteredPages}
-                activePage={activePage}
-                sections={allSections}
-                onSelectPage={setActivePage}
-                onSearchOpen={() => setSearchOpen(true)}
-                navGroups={navGroups}
-                projectName="0docs"
-              />
-            </div>
-            <span className="font-semibold text-[15px] tracking-tight text-foreground">0docs</span>
-          </div>
-          {tabs.length > 0 && (
-            <div className="hidden md:flex items-center gap-1 mr-4">
-              {[...tabs]
-                .filter((tab) => !tab.metadata?.hidden)
-                .sort((a, b) => a.order_index - b.order_index)
-                .map((tab) => {
-                  const isActive = activeTabId === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTabId(isActive ? null : tab.id)}
-                      className="px-3.5 py-1.5 rounded-full transition-colors text-[13px]"
-                      style={{
-                        color: isActive
-                          ? `hsl(${settings.foregroundColor})`
-                          : `hsl(${settings.mutedForegroundColor})`,
-                        fontWeight: isActive ? 500 : 400,
-                        fontFamily: `'${settings.bodyFont}', sans-serif`,
-                        backgroundColor: isActive ? `hsl(${settings.mutedColor})` : "transparent",
-                      }}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-            </div>
-          )}
-          <div className="flex-1 min-w-0 lg:pl-4">
+      <DocsPreviewHeader
+        settings={settings}
+        projectName={project?.name || "0docs"}
+        onLogoClick={() => {
+          if (filteredPages.length > 0) setActivePage(filteredPages[0]);
+        }}
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onSelectTab={setActiveTabId}
+        onSearchOpen={() => setSearchOpen(true)}
+        showThemeToggle={showThemeToggle}
+        frameMaxWidth={headerFrameMaxWidth}
+        mobileNav={
+          <DocMobileNavComponent
+            settings={settings}
+            pages={filteredPages}
+            activePage={activePage}
+            sections={allSections}
+            onSelectPage={setActivePage}
+            onSearchOpen={() => setSearchOpen(true)}
+            navGroups={navGroups}
+            projectName={project?.name || "0docs"}
+          />
+        }
+        rightActions={
+          user ? (
             <button
-              onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/40 transition-colors hover:bg-accent/80"
-              style={{
-                borderColor: `hsl(${settings.borderColor})`,
-                color: `hsl(${settings.mutedForegroundColor})`,
-                fontSize: "13px",
-                fontFamily: `'${settings.bodyFont}', sans-serif`,
-                minWidth: "220px",
-                maxWidth: "280px",
-              }}
+              onClick={() => navigate("/builder")}
+              className="h-9 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
             >
-              <Search className="h-3.5 w-3.5" />
-              <span>Search</span>
-              <kbd
-                className="ml-auto hidden sm:inline-flex items-center gap-0.5 rounded border border-border/40 px-1.5 py-0.5 text-[10px]"
-                style={{ borderColor: `hsl(${settings.borderColor})` }}
-              >
-                ⌘K
-              </kbd>
+              <LayoutDashboard className="h-3.5 w-3.5" /> Workspace
             </button>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            {showThemeToggle && (
-              <button
-                onClick={togglePlatformTheme}
-                aria-label="Toggle theme"
-                title={`Switch to ${platformTheme === "dark" ? "light" : "dark"} theme`}
-                className="h-8 w-8 rounded-lg inline-flex items-center justify-center transition-colors hover:bg-accent"
-                style={{ color: `hsl(${settings.mutedForegroundColor})` }}
-              >
-                {platformTheme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-              </button>
-            )}
-            {user ? (
-              <button
-                onClick={() => navigate("/builder")}
-                className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
-              >
-                <LayoutDashboard className="h-3.5 w-3.5" /> Workspace
-              </button>
-            ) : (
-              <button
-                onClick={() => navigate("/auth")}
-                className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
-              >
-                <LogIn className="h-3.5 w-3.5" /> Sign In
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+          ) : (
+            <button
+              onClick={() => navigate("/auth")}
+              className="h-9 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
+            >
+              <LogIn className="h-3.5 w-3.5" /> Sign In
+            </button>
+          )
+        }
+      />
 
       {/* Pass rawSettings — DocContentView's DesignSettingsWrapper resolves
           against the live platform theme so the doc body flips with the
