@@ -2,12 +2,16 @@
 set -e
 pnpm install --frozen-lockfile
 
-# The api-server only ever reads SHARED_DATABASE_URL (the persistent
-# project-shared Neon DB). Push schema there only — pushing to the
-# per-environment DATABASE_URL too pushes us past the 20s post-merge
-# timeout and isn't needed since nothing in this stack queries it.
-if [ -n "$SHARED_DATABASE_URL" ]; then
-  DATABASE_URL="$SHARED_DATABASE_URL" pnpm --filter db push
+# Schema push is slow on Neon (~25s for the introspection step alone, even
+# with zero diff) — well over the 20s post-merge timeout. Only run it when
+# the merged commit actually touched schema files.
+if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -qE '^lib/db/src/schema/'; then
+  echo "[post-merge] schema files changed — pushing to SHARED_DATABASE_URL"
+  if [ -n "$SHARED_DATABASE_URL" ]; then
+    DATABASE_URL="$SHARED_DATABASE_URL" pnpm --filter db push
+  else
+    pnpm --filter db push
+  fi
 else
-  pnpm --filter db push
+  echo "[post-merge] no schema changes detected — skipping db push"
 fi
