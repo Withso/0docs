@@ -41,6 +41,10 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/docs" element={<Index />} />
+                {/* Default published-doc URL — every project gets a free
+                    shareable URL at <host>/p/<slug>. Index reads :slug from
+                    useParams and looks the project up via /api/projects?slug=. */}
+                <Route path="/p/:slug" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route
                   path="/dashboard"

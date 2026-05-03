@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDesignSettings } from "@/hooks/use-design-settings";
 import { useVersions } from "@/hooks/use-versions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -103,6 +103,8 @@ function normNavGroup(r: any): NavGroup {
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  // /p/:slug → look up that specific project. /docs (no slug) → homepage project.
+  const { slug: routeSlug } = useParams<{ slug?: string }>();
   const [project, setProject] = useState<any>(null);
   const [pages, setPages] = useState<Page[]>([]);
   const [activePage, setActivePage] = useState<Page | null>(null);
@@ -117,11 +119,14 @@ const Index = () => {
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [usingPublished, setUsingPublished] = useState(false);
 
-  // Load homepage project
+  // Load project by route slug (subpath publishing) or fall back to homepage.
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch("/api/projects?homepage=true");
+        const lookupUrl = routeSlug
+          ? `/api/projects?slug=${encodeURIComponent(routeSlug)}`
+          : "/api/projects?homepage=true";
+        const res = await fetch(lookupUrl);
         if (!res.ok) { setLoading(false); return; }
         const projects = await res.json();
 
@@ -251,8 +256,12 @@ const Index = () => {
       }
       setLoading(false);
     };
+    setLoading(true);
     load();
-  }, []);
+    // Re-run when the route slug changes so navigating between /p/:slug
+    // routes within the SPA loads the right project (instead of showing
+    // stale data from the previous slug).
+  }, [routeSlug]);
 
   // Load content for active page
   useEffect(() => {

@@ -442,6 +442,76 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
 
           {activeSection === "domain" && (
             <div className="space-y-6">
+              {/* Default URL — every project gets a free, instantly-working
+                  shareable URL on Replit's free domain at <host>/p/<slug>.
+                  No DNS setup required; this is what users see by default. */}
+              {(() => {
+                const slug = project?.slug || "your-project";
+                const origin = typeof window !== "undefined" ? window.location.origin : "";
+                const defaultUrl = `${origin}/p/${slug}`;
+                const handleCopyDefault = async () => {
+                  try {
+                    await navigator.clipboard.writeText(defaultUrl);
+                    toast({ title: "URL copied", description: defaultUrl });
+                  } catch {
+                    toast({ title: "Copy failed", description: "Select and copy manually.", variant: "destructive" });
+                  }
+                };
+                return (
+                  <div className="rounded-xl border border-border/40 bg-muted/30 px-4 py-3.5">
+                    <div className="flex items-start gap-3">
+                      <div className="h-8 w-8 rounded-lg shrink-0 flex items-center justify-center bg-emerald-500/10 text-emerald-500">
+                        <Globe className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-foreground flex items-center gap-2">
+                          Default URL
+                          <span className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                            live
+                          </span>
+                        </p>
+                        <p className="text-[12px] text-muted-foreground mt-0.5">
+                          Your docs are always available at this URL — no DNS setup needed.
+                        </p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <code className="flex-1 min-w-0 truncate font-mono text-[12px] text-foreground bg-background/60 border border-border/40 rounded-md px-2.5 py-1.5">
+                            {defaultUrl}
+                          </code>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleCopyDefault}
+                            className="h-8 rounded-lg text-[12px] shrink-0"
+                            title="Copy URL"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                          <a
+                            href={defaultUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg text-[12px] border border-border/40 hover:bg-muted/60 text-foreground shrink-0"
+                            title="Open in new tab"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Optional upgrade — connect a custom domain on top of the
+                  default URL above. Existing DNS verification flow follows. */}
+              <div className="flex items-center gap-3 pt-2">
+                <div className="h-px flex-1 bg-border/40" />
+                <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                  Optional · custom domain
+                </span>
+                <div className="h-px flex-1 bg-border/40" />
+              </div>
+
               {/* Status banner — reflects live DNS verification state */}
               {(() => {
                 const status: DomainStatus = initialDomain ? domainStatus : null;
@@ -481,10 +551,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
                             {tone.desc ? <> — {tone.desc}</> : null}
                           </>
                         ) : (
-                          <>
-                            Currently published at{" "}
-                            <span className="font-mono text-foreground">{project?.slug || "your-project"}.0docs.app</span>
-                          </>
+                          <>Connect your own domain (e.g. docs.yourcompany.com) to publish on top of your brand.</>
                         )}
                       </p>
                       {domainLastCheckedAt && status !== "verified" && (

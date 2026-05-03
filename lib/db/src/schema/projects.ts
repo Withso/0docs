@@ -23,6 +23,10 @@ export const projectsTable = pgTable("projects", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => ({
   customDomainUniqueIdx: uniqueIndex("projects_custom_domain_unique_idx").on(t.customDomain),
+  // Slug drives the public /p/:slug URL — a duplicate would silently shadow
+  // another project, so enforce uniqueness at the DB layer (defense in depth
+  // against race conditions that the app-level pre-insert check can miss).
+  slugUniqueIdx: uniqueIndex("projects_slug_unique_idx").on(t.slug),
 }));
 
 export const insertProjectSchema = createInsertSchema(projectsTable).omit({ id: true, createdAt: true, updatedAt: true });

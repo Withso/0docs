@@ -46,11 +46,14 @@ function normalizeDomain(input: unknown): string | null {
 
 
 
-// List projects (authenticated) or homepage project (public) or by custom domain (public)
+// List projects (authenticated) or homepage project (public) or by custom
+// domain (public) or by slug (public — drives the default subpath publishing
+// route at <host>/p/:slug).
 router.get("/projects", async (req: Request, res: Response) => {
   try {
     const homepage = req.query["homepage"] as string | undefined;
     const domain = req.query["domain"] as string | undefined;
+    const slug = req.query["slug"] as string | undefined;
     if (homepage === "true") {
       const projects = await db.select().from(projectsTable)
         .where(eq(projectsTable.isHomepage, true))
@@ -66,6 +69,20 @@ router.get("/projects", async (req: Request, res: Response) => {
           eq(projectsTable.customDomain, norm),
           eq(projectsTable.customDomainStatus, "verified"),
         ))
+        .limit(1);
+      res.json(projects); return;
+    }
+    if (slug) {
+      // Public slug lookup. We don't require a published version here — the
+      // page renderer falls back to live content when no snapshot exists, so
+      // unpublished projects still resolve (useful for previewing). Slug must
+      // pass the same validation as on create to prevent path-traversal-style
+      // probes hitting the DB with weird payloads.
+      if (typeof slug !== "string" || !SLUG_RE.test(slug) || slug.length > MAX_PROJECT_SLUG_LEN) {
+        res.json([]); return;
+      }
+      const projects = await db.select().from(projectsTable)
+        .where(eq(projectsTable.slug, slug))
         .limit(1);
       res.json(projects); return;
     }
@@ -116,9 +133,28 @@ router.post("/projects", requireAuth, async (req: Request, res: Response) => {
     }
     const cleanName = name.trim();
     const cleanDesc = typeof description === "string" ? description : undefined;
-    const [project] = await db.insert(projectsTable)
-      .values({ name: cleanName, slug, description: cleanDesc, userId })
-      .returning();
+    // Enforce slug uniqueness at the app level — slug drives the public
+    // /p/:slug URL, so a collision would silently shadow another project.
+    const [slugConflict] = await db.select({ id: projectsTable.id }).from(projectsTable)
+      .where(eq(projectsTable.slug, slug))
+      .limit(1);
+    if (slugConflict) {
+      res.status(409).json({ error: "This slug is already taken. Try another." });
+      return;
+    }
+    let project;
+    try {
+      [project] = await db.insert(projectsTable)
+        .values({ name: cleanName, slug, description: cleanDesc, userId })
+        .returning();
+    } catch (err: any) {
+      // 23505 = unique_violation. Race-safe fallback for the slug check above.
+      if (err?.code === "23505") {
+        res.status(409).json({ error: "This slug is already taken. Try another." });
+        return;
+      }
+      throw err;
+    }
     await db.insert(pagesTable).values({
       projectId: project.id, title: "Introduction", slug: "introduction", orderIndex: 0,
     });
@@ -154,7 +190,17 @@ router.patch("/projects/:id", requireAuth, async (req: Request<{ id: string }>, 
       if (typeof body["slug"] !== "string" || !SLUG_RE.test(body["slug"]) || body["slug"].length > MAX_PROJECT_SLUG_LEN) {
         res.status(400).json({ error: "slug must be lowercase alphanumeric with hyphens" }); return;
       }
-      updates["slug"] = body["slug"];
+      const newSlug = body["slug"] as string;
+      if (newSlug !== existing.slug) {
+        const [slugConflict] = await db.select({ id: projectsTable.id }).from(projectsTable)
+          .where(and(eq(projectsTable.slug, newSlug), ne(projectsTable.id, projectId)))
+          .limit(1);
+        if (slugConflict) {
+          res.status(409).json({ error: "This slug is already taken. Try another." });
+          return;
+        }
+      }
+      updates["slug"] = newSlug;
     }
     if (body["description"] !== undefined) {
       if (body["description"] !== null && (typeof body["description"] !== "string" || (body["description"] as string).length > MAX_PROJECT_DESC_LEN)) {
@@ -237,7 +283,14 @@ router.patch("/projects/:id", requireAuth, async (req: Request<{ id: string }>, 
     res.json(project);
   } catch (err: any) {
     if (err?.code === "23505") {
-      res.status(409).json({ error: "This domain is already connected to another project." });
+      // Disambiguate which unique index was violated so the client can show
+      // the right message (slug vs custom_domain).
+      const constraint: string = err?.constraint || err?.constraint_name || "";
+      if (constraint.includes("slug")) {
+        res.status(409).json({ error: "This slug is already taken. Try another." });
+      } else {
+        res.status(409).json({ error: "This domain is already connected to another project." });
+      }
       return;
     }
     req.log.error({ err }, "Failed to update project");
