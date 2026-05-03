@@ -104,7 +104,35 @@ export function useResolvedDesignSettings(settings: DesignSettings, forceMode?: 
       ? (appearance.default === "system" ? theme : appearance.default)
       : theme);
 
-  const resolved = useMemo(() => applyModeToSettings(settings, mode), [settings, mode]);
+  // Resolve per-mode colors, then patch in the layered preview surfaces
+  // (sidebarBg nudged away from bg) and run the WCAG AA contrast guard
+  // on body & muted text. Every consumer of the hook (Index header,
+  // Builder, DocContentView, DocSidebarNavMintlify, TOC, etc.) reads
+  // these patched fields via inline `hsl(${settings.*})` styles, so the
+  // guard and the layered surfaces are applied at the actual render
+  // site — not just exposed as CSS variables.
+  const resolved = useMemo(() => {
+    const base = applyModeToSettings(settings, mode);
+    const safe = safeSurfaces(mode);
+    const surfaces = derivePreviewSurfaces(base, mode);
+    surfaces.foreground = ensureAa(surfaces.foreground, surfaces.bg, safe.foreground);
+    surfaces.mutedForeground = ensureAa(
+      surfaces.mutedForeground,
+      surfaces.bg,
+      safe.mutedForeground,
+    );
+    return {
+      ...base,
+      foregroundColor: surfaces.foreground,
+      mutedForegroundColor: surfaces.mutedForeground,
+      sidebarBg: surfaces.sidebarBg,
+      borderColor: surfaces.border,
+      mutedColor: surfaces.muted,
+      codeBlockBg: surfaces.codeBg,
+      noteBg: surfaces.calloutBg,
+      noteBorderColor: surfaces.calloutBorder,
+    };
+  }, [settings, mode]);
 
   return { resolved, mode } as const;
 }
