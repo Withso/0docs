@@ -158,9 +158,6 @@ const ProjectHome = forwardRef<HTMLElement, ProjectHomeProps>(({ project, pages,
               <IconButton title="Edit" onClick={() => onModeChange("editor")}>
                 <FilePenLine className="h-3.5 w-3.5" />
               </IconButton>
-              <IconButton title="Publish" onClick={() => onModeChange("publish")}>
-                <RefreshCw className="h-3.5 w-3.5" />
-              </IconButton>
               {isLive && (
                 <a
                   href={liveUrl}

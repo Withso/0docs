@@ -29,6 +29,15 @@ const LegacyDesignRouteRedirect = () => {
   return <Navigate to={`/builder/${projectId}/configurations`} replace />;
 };
 
+// /publish was removed in favour of an in-header dropdown (PublishPopover);
+// keep the URL alive so old bookmarks land in the editor where the dropdown
+// is reachable rather than 404'ing.
+const LegacyPublishRouteRedirect = () => {
+  const { projectId } = useParams<{ projectId: string }>();
+  if (!projectId) return <Navigate to="/builder" replace />;
+  return <Navigate to={`/builder/${projectId}/editor`} replace />;
+};
+
 const App = forwardRef<HTMLDivElement>((_, ref) => (
   <div ref={ref} className="contents">
     <QueryClientProvider client={queryClient}>
@@ -118,7 +127,7 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
                   path="/builder/:projectId/publish"
                   element={
                     <ProtectedRoute>
-                      <Builder />
+                      <LegacyPublishRouteRedirect />
                     </ProtectedRoute>
                   }
                 />

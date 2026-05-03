@@ -37,7 +37,7 @@ const agentItems: AgentItem[] = [
 const ProjectRail = forwardRef<HTMLElement, ProjectRailProps>(({ mode, onModeChange, hasUnpublishedChanges }, ref) => {
   // map current mode → which rail item is active
   const activeId: string =
-    mode === "editor" || mode === "preview" || mode === "publish" || mode === "code"
+    mode === "editor" || mode === "preview" || mode === "code"
       ? "editor"
       : mode;
 

@@ -13,7 +13,7 @@ import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SettingsContent from "@/components/builder/SettingsContent";
-import PublishContent from "@/components/builder/PublishContent";
+import PublishPopover from "@/components/builder/PublishPopover";
 import WorkspaceShell from "@/components/builder/WorkspaceShell";
 import ProjectHome from "@/components/builder/ProjectHome";
 import EditorTabs from "@/components/builder/EditorTabs";
@@ -88,6 +88,7 @@ const BranchKeyedBuilder = () => {
 const BuilderInner = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
+  const { activeBranch } = useBranchContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [openApiOpen, setOpenApiOpen] = useState(false);
@@ -100,7 +101,6 @@ const BuilderInner = () => {
     if (location.pathname.endsWith("/editor")) return "editor";
     
     if (location.pathname.endsWith("/configurations")) return "configurations";
-    if (location.pathname.endsWith("/publish")) return "publish";
     if (location.pathname.endsWith("/analytics")) return "analytics";
     if (location.pathname.endsWith("/code")) return "code";
     if (location.pathname.endsWith("/preview")) return "preview";
@@ -153,7 +153,6 @@ const BuilderInner = () => {
     else if (newMode === "editor") navigate(`${base}/editor`, { replace: true });
     
     else if (newMode === "configurations") navigate(`${base}/configurations`, { replace: true });
-    else if (newMode === "publish") navigate(`${base}/publish`, { replace: true });
     else if (newMode === "analytics") navigate(`${base}/analytics`, { replace: true });
     else if (newMode === "code") navigate(`${base}/code`, { replace: true });
     else if (newMode === "preview") navigate(`${base}/preview`, { replace: true });
@@ -369,8 +368,21 @@ const BuilderInner = () => {
       projectId={projectId!}
       mode={mode}
       onModeChange={handleModeChange}
-      onPublishClick={() => handleModeChange("publish")}
-      hasUnpublishedChanges={hasUnpublishedChanges}
+      publishSlot={
+        <PublishPopover
+          editorChanges={publishPreview.editorChanges}
+          designChanges={publishPreview.designChanges}
+          nextVersion={publishPreview.nextVersion}
+          isFirstPublish={publishPreview.isFirstPublish}
+          publishing={publishing}
+          hasUnpublishedChanges={hasUnpublishedChanges}
+          onPublish={handlePublish}
+          projectSlug={project?.slug || ""}
+          customDomain={project?.custom_domain ?? undefined}
+          branchName={activeBranch?.name}
+          isDefaultBranch={activeBranch?.isDefault ?? true}
+        />
+      }
       onSearchClick={() => setSearchOpen(true)}
       leftSlot={
         <div className="flex items-center gap-2 min-w-0">
@@ -632,27 +644,9 @@ const BuilderInner = () => {
               <SettingsContent projectId={projectId!} project={project} onSaved={refreshProject} />
             )}
 
-            {/* Mode: Publish */}
-            {mode === "publish" && (
-              <PublishContent
-                editorChanges={publishPreview.editorChanges}
-                designChanges={publishPreview.designChanges}
-                nextVersion={publishPreview.nextVersion}
-                isFirstPublish={publishPreview.isFirstPublish}
-                publishing={publishing}
-                onPublish={handlePublish}
-                versions={publishedVersions}
-                onRevert={async (versionId) => {
-                  await revertToVersion(versionId);
-                  const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.toast }));
-                  toast({ title: "Version reverted", description: "The active published version has been updated." });
-                }}
-                projectSlug={project?.slug || ""}
-                customDomain={project?.custom_domain}
-                blocks={publishSnapshot.allBlocks}
-                settings={resolvedSettings}
-              />
-            )}
+            {/* Publish UI is now a Mintlify-style dropdown anchored to the
+                Publish button in BuilderHeader (PublishPopover). No dedicated
+                publish page anymore. */}
           </div>
         </div>
 

@@ -1,15 +1,15 @@
-import { Button } from "@/components/ui/button";
-import { Upload, Eye, Play, Code2, FileText, Search } from "lucide-react";
+import { Eye, Play, Code2, FileText, Search } from "lucide-react";
 
-export type BuilderMode = "home" | "editor" | "preview" | "analytics" | "settings" | "publish" | "configurations" | "code";
+export type BuilderMode = "home" | "editor" | "preview" | "analytics" | "settings" | "configurations" | "code";
 export type EditorTab = "navigation" | "files";
 
 interface BuilderHeaderProps {
   projectId: string;
   mode: BuilderMode;
   onModeChange: (mode: BuilderMode) => void;
-  onPublishClick?: () => void;
-  hasUnpublishedChanges?: boolean;
+  /** Render slot for the Publish dropdown (Mintlify-style). When provided,
+   *  replaces the default no-op button. */
+  publishSlot?: React.ReactNode;
   onSearchClick?: () => void;
   /** Optional slot rendered next to the view toggle (e.g. the version switcher). */
   leftSlot?: React.ReactNode;
@@ -57,8 +57,7 @@ const ViewToggle = ({ value, onChange }: { value: BuilderMode; onChange: (v: Bui
 const BuilderHeader = ({
   mode,
   onModeChange,
-  onPublishClick,
-  hasUnpublishedChanges,
+  publishSlot,
   onSearchClick,
   leftSlot,
 }: BuilderHeaderProps) => {
@@ -112,19 +111,7 @@ const BuilderHeader = ({
             <Play className="h-3.5 w-3.5 fill-current" />
           </button>
 
-          {onPublishClick && (
-            <Button
-              size="sm"
-              className="h-8 rounded-lg px-4 text-[12px] font-medium relative"
-              onClick={onPublishClick}
-            >
-              <Upload className="h-3.5 w-3.5 mr-1.5" />
-              Publish
-              {hasUnpublishedChanges && (
-                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-background" />
-              )}
-            </Button>
-          )}
+          {publishSlot}
         </div>
       </div>
     </div>

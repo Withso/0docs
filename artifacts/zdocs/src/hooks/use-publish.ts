@@ -29,6 +29,13 @@ export interface EditorChange {
     | "nav_group_added" | "nav_group_removed" | "nav_group_modified";
   label: string;
   details?: string;
+  /** Structural page reference so consumers (e.g. PublishPopover's
+   *  Mintlify-style file list) can roll section/block edits up to their
+   *  parent page without parsing display labels. Undefined for nav-group
+   *  changes (those map to docs.json instead). */
+  pageId?: string;
+  pageTitle?: string;
+  pageSlug?: string;
 }
 
 export interface DesignChange {
@@ -53,33 +60,56 @@ function computeEditorChanges(
   prevNavGroups: NavGroup[], currentNavGroups: NavGroup[],
 ): EditorChange[] {
   const changes: EditorChange[] = [];
+
+  // Page lookup helpers used to resolve every section/block change back to
+  // its owning page (Mintlify file-list rollup needs a stable page id/slug).
+  const pageById = new Map<string, Page>();
+  for (const p of currentPages) pageById.set(p.id, p);
+  for (const p of prevPages) if (!pageById.has(p.id)) pageById.set(p.id, p);
+  const sectionPageId = new Map<string, string>();
+  for (const s of currentSections) sectionPageId.set(s.id, s.page_id);
+  for (const s of prevSections) if (!sectionPageId.has(s.id)) sectionPageId.set(s.id, s.page_id);
+  const blockSectionId = new Map<string, string>();
+  for (const b of currentBlocks) blockSectionId.set(b.id, b.section_id);
+  for (const b of prevBlocks) if (!blockSectionId.has(b.id)) blockSectionId.set(b.id, b.section_id);
+  const pageRef = (pageId: string | undefined) => {
+    if (!pageId) return {};
+    const p = pageById.get(pageId);
+    return p ? { pageId: p.id, pageTitle: p.title, pageSlug: p.slug } : { pageId };
+  };
+  const pageRefForSection = (sectionId: string) => pageRef(sectionPageId.get(sectionId));
+  const pageRefForBlock = (blockId: string) => {
+    const secId = blockSectionId.get(blockId);
+    return secId ? pageRefForSection(secId) : {};
+  };
+
   const prevPageIds = new Set(prevPages.map((p) => p.id));
   const curPageIds = new Set(currentPages.map((p) => p.id));
   for (const p of currentPages) {
     if (!prevPageIds.has(p.id)) {
-      changes.push({ type: "page_added", label: `Added page "${p.title}"` });
+      changes.push({ type: "page_added", label: `Added page "${p.title}"`, ...pageRef(p.id) });
     } else {
       const old = prevPages.find((op) => op.id === p.id);
       if (old && (old.title !== p.title || old.slug !== p.slug || old.order_index !== p.order_index || old.meta_description !== p.meta_description || old.nav_title !== p.nav_title || old.nav_group_id !== p.nav_group_id)) {
-        changes.push({ type: "page_modified", label: `Modified page "${p.title}"`, details: old?.title !== p.title ? `Title: "${old?.title}" → "${p.title}"` : old?.nav_title !== p.nav_title ? "Updated sidebar label" : old?.nav_group_id !== p.nav_group_id ? "Moved page in sidebar" : undefined });
+        changes.push({ type: "page_modified", label: `Modified page "${p.title}"`, details: old?.title !== p.title ? `Title: "${old?.title}" → "${p.title}"` : old?.nav_title !== p.nav_title ? "Updated sidebar label" : old?.nav_group_id !== p.nav_group_id ? "Moved page in sidebar" : undefined, ...pageRef(p.id) });
       }
     }
   }
-  for (const p of prevPages) { if (!curPageIds.has(p.id)) changes.push({ type: "page_removed", label: `Removed page "${p.title}"` }); }
+  for (const p of prevPages) { if (!curPageIds.has(p.id)) changes.push({ type: "page_removed", label: `Removed page "${p.title}"`, ...pageRef(p.id) }); }
   const prevSecIds = new Set(prevSections.map((s) => s.id));
   const curSecIds = new Set(currentSections.map((s) => s.id));
   for (const s of currentSections) {
-    if (!prevSecIds.has(s.id)) { const page = currentPages.find((p) => p.id === s.page_id); changes.push({ type: "section_added", label: `Added section in "${page?.title || "unknown"}"` }); }
-    else { const old = prevSections.find((os) => os.id === s.id); if (old && (old.title !== s.title || old.nav_title !== s.nav_title || old.order_index !== s.order_index)) changes.push({ type: "section_modified", label: "Modified section", details: old.title !== s.title ? `Title: "${old.title}" → "${s.title}"` : old.nav_title !== s.nav_title ? "Updated section sidebar label" : "Reordered sections" }); }
+    if (!prevSecIds.has(s.id)) { const page = currentPages.find((p) => p.id === s.page_id); changes.push({ type: "section_added", label: `Added section in "${page?.title || "unknown"}"`, ...pageRefForSection(s.id) }); }
+    else { const old = prevSections.find((os) => os.id === s.id); if (old && (old.title !== s.title || old.nav_title !== s.nav_title || old.order_index !== s.order_index)) changes.push({ type: "section_modified", label: "Modified section", details: old.title !== s.title ? `Title: "${old.title}" → "${s.title}"` : old.nav_title !== s.nav_title ? "Updated section sidebar label" : "Reordered sections", ...pageRefForSection(s.id) }); }
   }
-  for (const s of prevSections) { if (!curSecIds.has(s.id)) changes.push({ type: "section_removed", label: "Removed a section" }); }
+  for (const s of prevSections) { if (!curSecIds.has(s.id)) changes.push({ type: "section_removed", label: "Removed a section", ...pageRefForSection(s.id) }); }
   const prevBlockIds = new Set(prevBlocks.map((b) => b.id));
   const curBlockIds = new Set(currentBlocks.map((b) => b.id));
   for (const b of currentBlocks) {
-    if (!prevBlockIds.has(b.id)) changes.push({ type: "block_added", label: `Added ${b.type.replace(/_/g, " ")} block` });
-    else { const old = prevBlocks.find((ob) => ob.id === b.id); if (old && !areJsonEqual(old.content, b.content)) changes.push({ type: "block_modified", label: `Modified ${b.type.replace(/_/g, " ")} block` }); }
+    if (!prevBlockIds.has(b.id)) changes.push({ type: "block_added", label: `Added ${b.type.replace(/_/g, " ")} block`, ...pageRefForBlock(b.id) });
+    else { const old = prevBlocks.find((ob) => ob.id === b.id); if (old && !areJsonEqual(old.content, b.content)) changes.push({ type: "block_modified", label: `Modified ${b.type.replace(/_/g, " ")} block`, ...pageRefForBlock(b.id) }); }
   }
-  for (const b of prevBlocks) { if (!curBlockIds.has(b.id)) changes.push({ type: "block_removed", label: `Removed ${b.type.replace(/_/g, " ")} block` }); }
+  for (const b of prevBlocks) { if (!curBlockIds.has(b.id)) changes.push({ type: "block_removed", label: `Removed ${b.type.replace(/_/g, " ")} block`, ...pageRefForBlock(b.id) }); }
   const prevGroupIds = new Set(prevNavGroups.map((g) => g.id));
   const curGroupIds = new Set(currentNavGroups.map((g) => g.id));
   for (const g of currentNavGroups) {

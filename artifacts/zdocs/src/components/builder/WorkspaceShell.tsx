@@ -100,7 +100,7 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
     }
   };
 
-  const hideTopHeader = ["editor", "code", "preview", "configurations", "publish", "settings"].includes(mode);
+  const hideTopHeader = ["editor", "code", "preview", "configurations", "settings"].includes(mode);
 
   return (
     <div className="h-screen bg-background flex overflow-hidden">
