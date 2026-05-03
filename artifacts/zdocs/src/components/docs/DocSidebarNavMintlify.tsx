@@ -65,17 +65,6 @@ function persistCollapse(projectId: string | undefined, state: Record<string, bo
   }
 }
 
-/**
- * Mintlify-faithful sidebar.
- * - Layered surface (uses settings.sidebarBg, which the resolver patches
- *   to a distinct surface from page background).
- * - Right divider against content. Internal scrolling, sticky under header.
- * - Group headers: small, semibold, uppercase tracking. Collapsible with
- *   per-project persistence via localStorage.
- * - Items: hover tint, focus-visible ring, active state with 2px accent
- *   bar + inset surface tint.
- * - Active item is auto-scrolled into view within the sidebar.
- */
 const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>({
   settings: s,
   pages,
@@ -95,7 +84,6 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
   const asideRef = useRef<HTMLElement | null>(null);
   const activeRowRef = useRef<HTMLDivElement | null>(null);
 
-  /* ─── Section scroll-spy ────────────────────────────────────────── */
   useEffect(() => {
     if (!s.sidebarShowSectionTracker || sections.length === 0) return;
     const visMap = new Map<string, IntersectionObserverEntry>();
@@ -154,7 +142,6 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
 
   const ungroupedPages = sortedPages.filter((p) => !p.nav_group_id);
 
-  /* ─── Per-group collapse state, persisted per project ───────────── */
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => loadCollapse(projectId));
 
   // Reload collapse state when the project changes (e.g. SPA navigation
@@ -190,7 +177,6 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
     });
   }, [projectId]);
 
-  /* ─── Scroll active row into view inside the sidebar ────────────── */
   useEffect(() => {
     const aside = asideRef.current;
     const row = activeRowRef.current;
@@ -204,14 +190,8 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
     } else if (rBot > aBot - 16) {
       aside.scrollTo({ top: rBot - aside.clientHeight + 24, behavior: "smooth" });
     }
-    // Re-run after openGroups changes so a row that was hidden inside a
-    // collapsed group still scrolls into view once its group auto-opens.
   }, [activePage?.id, openGroups]);
 
-  /* ─── Arrow-key roving navigation ────────────────────────────────
-   * Treat all rendered rows + group toggles + section links as a flat
-   * vertical list. ArrowDown/Up moves focus, Home/End jump to ends.
-   * Tab still works (everything is in the natural tab order). */
   const onNavKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
     const root = e.currentTarget as HTMLElement;
@@ -232,7 +212,6 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
     }
   }, []);
 
-  /* ─── Tag pill ──────────────────────────────────────────────────── */
   const renderTag = (tag: string | undefined) => {
     if (!tag) return null;
     const lc = tag.toLowerCase();
@@ -253,7 +232,6 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
     );
   };
 
-  /* ─── Single page row ───────────────────────────────────────────── */
   const renderPageRow = (page: TPage) => {
     const meta = (page as any).metadata || {};
     const isActive = activePage?.id === page.id;

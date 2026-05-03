@@ -59,14 +59,12 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
   const [open, setOpen] = useState(false);
   const [showTOC, setShowTOC] = useState(false);
   const drawerRef = useRef<HTMLDivElement | null>(null);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const sortedPages = [...pages].sort((a, b) => a.order_index - b.order_index);
   const sortedNavGroups = [...navGroups].sort((a, b) => a.order_index - b.order_index);
   const ungroupedPages = sortedPages.filter((p) => !p.nav_group_id);
   const activeSections = sections.filter((sec) => sec.page_id === activePage?.id);
 
-  /* ─── Focus trap, escape-to-close, body scroll lock ──────────────── */
   useEffect(() => {
     if (!open) return;
 
@@ -108,7 +106,6 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
     };
   }, [open]);
 
-  /* Arrow-key roving navigation within the drawer's nav list. */
   const onNavKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
     const root = e.currentTarget as HTMLElement;
@@ -149,7 +146,6 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
   return (
     <div ref={ref} className="lg:hidden">
       <button
-        ref={triggerRef}
         onClick={() => setOpen(true)}
         className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
         style={{ color: `hsl(${s.foregroundColor})` }}
