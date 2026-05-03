@@ -1,22 +1,57 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useApi } from "@/lib/api-client";
 import ShaderBackground from "@/components/ShaderBackground";
+
+interface LandingProject {
+  id: string;
+  isHomepage?: boolean;
+}
 
 const Landing = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const api = useApi();
+  // `checkingProjects` is true while we look up whether a signed-in user
+  // has a workspace to bounce them into. Signed-in users with at least one
+  // non-homepage project skip the marketing page on hard refresh; users
+  // with zero projects (or a fetch failure) see Landing as a terminal page
+  // — otherwise we'd bounce them /builder → / → /builder forever, since
+  // BuilderEntry sends zero-project users back to "/".
+  const [checkingProjects, setCheckingProjects] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
-  // Authenticated users always land in their workspace, including on a
-  // hard refresh that hits "/". We wait for the auth check to finish so
-  // we don't accidentally bounce a logged-in user to the marketing page
-  // for a moment before redirecting.
   useEffect(() => {
-    if (!loading && user) navigate("/builder", { replace: true });
-  }, [loading, user, navigate]);
+    if (loading || !user) return;
+    let cancelled = false;
+    setCheckingProjects(true);
+    (async () => {
+      try {
+        const projects = await api.get<LandingProject[]>("/projects");
+        if (cancelled) return;
+        const hasWorkspace = (projects || []).some((p) => !p.isHomepage);
+        if (hasWorkspace) {
+          setShouldRedirect(true);
+          navigate("/builder", { replace: true });
+        }
+      } catch {
+        /* fall through to render Landing as the terminal page */
+      } finally {
+        if (!cancelled) setCheckingProjects(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Intentionally only depend on auth-state transitions. `useApi()`
+    // and `navigate` return fresh identities each render, which would
+    // cause this effect to re-fire and re-poll /projects continuously.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, user?.id]);
 
-  if (loading || user) {
+  if (loading || (user && (checkingProjects || shouldRedirect))) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <span className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />

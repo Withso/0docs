@@ -5,6 +5,7 @@ import { useBuilder, normSection, normBlock } from "@/hooks/use-builder";
 import { useDesignSettings } from "@/hooks/use-design-settings";
 import { usePublish } from "@/hooks/use-publish";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
+import { setLastProjectId } from "@/lib/last-project";
 // BuilderSidebar replaced by NavigationTree (Mintlify-style compact tree)
 import SectionEditor from "@/components/builder/SectionEditor";
 import DesignSettingsWrapper, { useResolvedDesignSettings } from "@/components/docs/DesignSettingsWrapper";
@@ -61,6 +62,11 @@ export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
 // way to invalidate all in-flight state without touching every hook.
 const Builder = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  // Persist the active project id so a subsequent visit to /builder
+  // (BuilderEntry) returns the user to the project they were last in.
+  useEffect(() => {
+    if (projectId) setLastProjectId(projectId);
+  }, [projectId]);
   if (!projectId) return <Navigate to="/builder" replace />;
   return (
     <BranchProvider projectId={projectId}>

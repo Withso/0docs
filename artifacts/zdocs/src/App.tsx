@@ -65,14 +65,11 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
                   path="/dashboard"
                   element={<Navigate to="/builder" replace />}
                 />
-                <Route
-                  path="/builder"
-                  element={
-                    <ProtectedRoute>
-                      <BuilderEntry />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* /builder is a pure redirect entry-point. It must NOT be
+                    wrapped in ProtectedRoute — signed-out visitors should
+                    land on the Landing page, not the OIDC sign-in flow.
+                    BuilderEntry handles the signed-out case itself. */}
+                <Route path="/builder" element={<BuilderEntry />} />
                 <Route
                   path="/builder/:projectId"
                   element={
