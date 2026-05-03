@@ -6,7 +6,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { ChevronDown, Moon, Search, Sun } from "lucide-react";
+import { ChevronDown, MoreHorizontal, Moon, Search, Sun } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import type { DocVersion } from "@/hooks/use-versions";
 import { usePlatformTheme } from "@/hooks/use-platform-theme";
@@ -14,6 +14,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -282,57 +284,139 @@ const DocsPreviewHeader = ({
         </button>
 
         {hasSwitchers && (
-          <div className="hidden md:flex items-center gap-1">
-            {showVersions && (
-              <SwitcherButton
-                settings={settings}
-                ringStyle={ringStyle}
-                label={activeVersion!.version_label || "Version"}
-                ariaLabel="Select version"
-                items={versions!.map((v) => ({
-                  id: v.id,
-                  label:
-                    v.version_label + (v.is_default ? " (default)" : ""),
-                  active: v.id === activeVersion!.id,
-                  onSelect: () => onSelectVersion!(v),
-                }))}
-              />
-            )}
-            {showLanguages && (
-              <SwitcherButton
-                settings={settings}
-                ringStyle={ringStyle}
-                label={
-                  languages!.find((l) => l.id === activeLanguageId)?.label ||
-                  languages![0].label
-                }
-                ariaLabel="Select language"
-                items={languages!.map((l) => ({
-                  id: l.id,
-                  label: l.label,
-                  active: l.id === activeLanguageId,
-                  onSelect: () => onSelectLanguage?.(l.id),
-                }))}
-              />
-            )}
-            {showProducts && (
-              <SwitcherButton
-                settings={settings}
-                ringStyle={ringStyle}
-                label={
-                  products!.find((p) => p.id === activeProductId)?.label ||
-                  products![0].label
-                }
-                ariaLabel="Select product"
-                items={products!.map((p) => ({
-                  id: p.id,
-                  label: p.label,
-                  active: p.id === activeProductId,
-                  onSelect: () => onSelectProduct?.(p.id),
-                }))}
-              />
-            )}
-          </div>
+          <>
+            <div className="hidden md:flex items-center gap-1">
+              {showVersions && (
+                <SwitcherButton
+                  settings={settings}
+                  ringStyle={ringStyle}
+                  label={activeVersion!.version_label || "Version"}
+                  ariaLabel="Select version"
+                  items={versions!.map((v) => ({
+                    id: v.id,
+                    label:
+                      v.version_label + (v.is_default ? " (default)" : ""),
+                    active: v.id === activeVersion!.id,
+                    onSelect: () => onSelectVersion!(v),
+                  }))}
+                />
+              )}
+              {showLanguages && (
+                <SwitcherButton
+                  settings={settings}
+                  ringStyle={ringStyle}
+                  label={
+                    languages!.find((l) => l.id === activeLanguageId)?.label ||
+                    languages![0].label
+                  }
+                  ariaLabel="Select language"
+                  items={languages!.map((l) => ({
+                    id: l.id,
+                    label: l.label,
+                    active: l.id === activeLanguageId,
+                    onSelect: () => onSelectLanguage?.(l.id),
+                  }))}
+                />
+              )}
+              {showProducts && (
+                <SwitcherButton
+                  settings={settings}
+                  ringStyle={ringStyle}
+                  label={
+                    products!.find((p) => p.id === activeProductId)?.label ||
+                    products![0].label
+                  }
+                  ariaLabel="Select product"
+                  items={products!.map((p) => ({
+                    id: p.id,
+                    label: p.label,
+                    active: p.id === activeProductId,
+                    onSelect: () => onSelectProduct?.(p.id),
+                  }))}
+                />
+              )}
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  aria-label="More options"
+                  className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-lg border focus-visible:outline-none focus-visible:ring-2"
+                  style={{
+                    borderColor: `hsl(${settings.borderColor})`,
+                    color: `hsl(${settings.mutedForegroundColor})`,
+                    ...ringStyle,
+                  }}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {showVersions && (
+                  <>
+                    <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Version
+                    </DropdownMenuLabel>
+                    {versions!.map((v) => (
+                      <DropdownMenuItem
+                        key={`v-${v.id}`}
+                        onClick={() => onSelectVersion!(v)}
+                        className={`text-xs ${
+                          v.id === activeVersion!.id ? "font-semibold" : ""
+                        }`}
+                      >
+                        {v.version_label}
+                        {v.is_default && (
+                          <span className="ml-2 text-[10px] text-muted-foreground">
+                            (default)
+                          </span>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+                {showVersions && (showLanguages || showProducts) && (
+                  <DropdownMenuSeparator />
+                )}
+                {showLanguages && (
+                  <>
+                    <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Language
+                    </DropdownMenuLabel>
+                    {languages!.map((l) => (
+                      <DropdownMenuItem
+                        key={`l-${l.id}`}
+                        onClick={() => onSelectLanguage?.(l.id)}
+                        className={`text-xs ${
+                          l.id === activeLanguageId ? "font-semibold" : ""
+                        }`}
+                      >
+                        {l.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+                {showLanguages && showProducts && <DropdownMenuSeparator />}
+                {showProducts && (
+                  <>
+                    <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Product
+                    </DropdownMenuLabel>
+                    {products!.map((p) => (
+                      <DropdownMenuItem
+                        key={`p-${p.id}`}
+                        onClick={() => onSelectProduct?.(p.id)}
+                        className={`text-xs ${
+                          p.id === activeProductId ? "font-semibold" : ""
+                        }`}
+                      >
+                        {p.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
         )}
 
         <div className="flex items-center gap-1.5 shrink-0">
