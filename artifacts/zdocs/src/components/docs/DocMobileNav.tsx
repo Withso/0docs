@@ -26,6 +26,13 @@ interface MobileNavGroup {
   type?: string;
 }
 
+interface MobileNavTab {
+  id: string;
+  label: string;
+  order_index: number;
+  metadata?: Record<string, any>;
+}
+
 interface DocMobileNavProps {
   settings: DesignSettings;
   pages: MobileNavPage[];
@@ -35,6 +42,9 @@ interface DocMobileNavProps {
   onSearchOpen?: () => void;
   navGroups?: MobileNavGroup[];
   projectName?: string;
+  tabs?: MobileNavTab[];
+  activeTabId?: string | null;
+  onSelectTab?: (id: string | null) => void;
 }
 
 const FOCUSABLE = [
@@ -55,6 +65,9 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
   onSearchOpen,
   navGroups = [],
   projectName,
+  tabs = [],
+  activeTabId = null,
+  onSelectTab,
 }, ref) => {
   const [open, setOpen] = useState(false);
   const [showTOC, setShowTOC] = useState(false);
@@ -201,6 +214,46 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
                 <X className="h-4 w-4" />
               </button>
             </div>
+
+            {tabs.length > 0 && (
+              <div
+                className="flex flex-wrap gap-1 px-3 pt-3"
+                role="tablist"
+                aria-label="Documentation sections"
+              >
+                {[...tabs]
+                  .filter((t) => !t.metadata?.hidden)
+                  .sort((a, b) => a.order_index - b.order_index)
+                  .map((tab) => {
+                    const isActive = activeTabId === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        role="tab"
+                        aria-selected={isActive}
+                        data-sidebar-item
+                        onClick={() => {
+                          onSelectTab?.(isActive ? null : tab.id);
+                        }}
+                        className="px-3 py-1.5 rounded-full text-[12px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
+                        style={{
+                          backgroundColor: isActive
+                            ? `hsl(${s.mutedColor})`
+                            : "transparent",
+                          color: isActive
+                            ? `hsl(${s.foregroundColor})`
+                            : `hsl(${s.mutedForegroundColor})`,
+                          fontWeight: isActive ? 500 : 400,
+                          fontFamily: `'${s.bodyFont}', sans-serif`,
+                          border: `1px solid hsl(${s.borderColor})`,
+                        }}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+              </div>
+            )}
 
             {onSearchOpen && (
               <div className="px-3 py-2">

@@ -387,12 +387,16 @@ const Index = () => {
       <DocsPreviewHeader
         settings={settings}
         projectName={project?.name || "0docs"}
+        projectLogo={(project as any)?.logoUrl ?? null}
         onLogoClick={() => {
           if (filteredPages.length > 0) setActivePage(filteredPages[0]);
         }}
         tabs={tabs}
         activeTabId={activeTabId}
         onSelectTab={setActiveTabId}
+        versions={usingPublished ? [] : versions}
+        activeVersion={usingPublished ? null : activeVersion}
+        onSelectVersion={usingPublished ? undefined : setActiveVersion}
         onSearchOpen={() => setSearchOpen(true)}
         showThemeToggle={showThemeToggle}
         frameMaxWidth={headerFrameMaxWidth}
@@ -406,6 +410,9 @@ const Index = () => {
             onSearchOpen={() => setSearchOpen(true)}
             navGroups={navGroups}
             projectName={project?.name || "0docs"}
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onSelectTab={setActiveTabId}
           />
         }
         rightActions={

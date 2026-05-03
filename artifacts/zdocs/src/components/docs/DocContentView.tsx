@@ -185,6 +185,9 @@ const DocContentView = ({
                 onSearchOpen={() => setSearchOpen(true)}
                 navGroups={navGroups as any}
                 projectName={projectName}
+                tabs={tabs}
+                activeTabId={activeTabId}
+                onSelectTab={onSelectTab}
               />
             ) : undefined
           }
