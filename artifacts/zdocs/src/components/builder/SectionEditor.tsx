@@ -318,7 +318,7 @@ const SectionEditor = ({
       {sortedBlocks.length === 0 && !showAddMenu && (
         <button
           onClick={() => setShowAddMenu(true)}
-          className="w-full rounded-xl border-2 border-dashed border-border/70 hover:border-primary/50 bg-muted/20 hover:bg-primary/[0.03] transition-all duration-150 py-8 flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="zdocs-editor-dashed w-full rounded-xl bg-muted/20 hover:bg-primary/[0.03] py-8 flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
             <Plus className="h-4 w-4" />
@@ -347,7 +347,7 @@ const SectionEditor = ({
           sortedBlocks.length > 0 && (
             <button
               onClick={() => setShowAddMenu(true)}
-              className="w-full border border-dashed border-border/70 rounded-xl py-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/[0.03] transition-all duration-150 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="zdocs-editor-dashed w-full rounded-xl py-2.5 text-xs text-muted-foreground hover:text-foreground hover:bg-primary/[0.03] flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Plus className="h-3.5 w-3.5" /> Add Block
             </button>

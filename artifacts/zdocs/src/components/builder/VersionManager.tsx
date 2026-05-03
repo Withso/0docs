@@ -117,7 +117,7 @@ const VersionManager = ({
         {/* Versions list */}
         <div className="px-5 py-4 max-h-[320px] overflow-y-auto">
           {versions.length === 0 ? (
-            <div className="rounded-xl border border-dashed py-8 flex flex-col items-center justify-center text-center">
+            <div className="zdocs-editor-dashed rounded-xl py-8 flex flex-col items-center justify-center text-center">
               <div className="h-9 w-9 rounded-full bg-muted/60 flex items-center justify-center mb-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />
               </div>

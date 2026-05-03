@@ -576,7 +576,7 @@ const BuilderInner = () => {
 
                       <button
                         onClick={addSection}
-                        className="w-full border-2 border-dashed rounded-xl py-6 text-[13px] text-muted-foreground hover:text-primary hover:border-primary/30 transition-all mt-6 flex items-center justify-center gap-2"
+                        className="zdocs-editor-dashed w-full rounded-xl py-6 text-[13px] text-muted-foreground hover:text-primary transition-all mt-6 flex items-center justify-center gap-2"
                       >
                         <Plus className="h-4 w-4" /> Add Section
                       </button>

@@ -35,7 +35,7 @@ const AnalyticsContent = ({ projectName, projectSlug }: AnalyticsContentProps) =
         ))}
       </div>
 
-      <div className="rounded-xl border border-dashed border-border/60 p-10 text-center">
+      <div className="zdocs-editor-dashed rounded-xl p-10 text-center">
         <p className="text-[13px] text-muted-foreground mb-4">
           Detailed analytics dashboards arrive in Phase 2. For now, raw data is captured in the
           backend.

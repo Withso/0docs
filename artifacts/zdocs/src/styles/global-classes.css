@@ -446,6 +446,25 @@ code, pre {
 }
 
 
+/* ─── 7b. EDITOR CHROME ───
+   Single shared token for builder editor placeholders & wrappers
+   (Add Section, Add Block, empty-state cards, etc.).
+   Uses Tailwind `--border` so it tracks light/dark themes correctly. */
+
+.zdocs-editor-dashed {
+  border: 1px dashed hsl(var(--border) / 0.5);
+  transition: border-color 150ms var(--zdocs-ease, ease),
+              background-color 150ms var(--zdocs-ease, ease);
+}
+.zdocs-editor-dashed:hover {
+  border-color: hsl(var(--primary) / 0.4);
+}
+
+.zdocs-editor-border {
+  border: 1px solid hsl(var(--border) / 0.5);
+}
+
+
 /* ─── 8. ANIMATIONS ─── */
 
 @keyframes slideInLeft {

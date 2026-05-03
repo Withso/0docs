@@ -249,7 +249,7 @@ const PublishContent = ({
               </h2>
 
               {!hasChanges && !isFirstPublish ? (
-                <div className="rounded-2xl border border-dashed py-12 flex flex-col items-center justify-center">
+                <div className="zdocs-editor-dashed rounded-2xl py-12 flex flex-col items-center justify-center">
                   <Check className="h-10 w-10 text-emerald-500 mb-3" />
                   <p className="text-[13px] text-muted-foreground">Everything is up to date</p>
                 </div>
@@ -361,7 +361,7 @@ const PublishContent = ({
             </h2>
 
             {versions.length === 0 ? (
-              <div className="rounded-2xl border border-dashed py-10 flex flex-col items-center justify-center">
+              <div className="zdocs-editor-dashed rounded-2xl py-10 flex flex-col items-center justify-center">
                 <Tag className="h-7 w-7 text-muted-foreground mb-2" />
                 <p className="text-[12px] text-muted-foreground">No versions yet</p>
               </div>

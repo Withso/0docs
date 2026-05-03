@@ -81,14 +81,14 @@ const OpenAPIImportDialog = forwardRef<HTMLDivElement, OpenAPIImportDialogProps>
         {!preview ? (
           <div className="flex flex-col gap-3 flex-1 min-h-0">
             <div className="flex gap-2">
-              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg cursor-pointer hover:bg-accent transition-colors">
+              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border border-border/50 rounded-lg cursor-pointer hover:bg-accent transition-colors">
                 <Upload className="h-3.5 w-3.5" />
                 Upload file
                 <input type="file" accept=".json,.yaml,.yml" className="hidden" onChange={handleFileUpload} />
               </label>
             </div>
             <textarea
-              className="flex-1 min-h-[200px] w-full border rounded-lg p-3 font-mono text-xs bg-muted/30 resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              className="flex-1 min-h-[200px] w-full border border-border/50 rounded-lg p-3 font-mono text-xs bg-muted/30 resize-none focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder={`Paste OpenAPI JSON here...\n\n{\n  "openapi": "3.0.0",\n  "info": { "title": "My API", "version": "1.0" },\n  "paths": { ... }\n}`}
               value={rawInput}
               onChange={(e) => setRawInput(e.target.value)}
@@ -102,7 +102,7 @@ const OpenAPIImportDialog = forwardRef<HTMLDivElement, OpenAPIImportDialogProps>
           </div>
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className="border rounded-lg p-4 bg-muted/20">
+            <div className="border border-border/50 rounded-lg p-4 bg-muted/20">
               <div className="flex items-center gap-2 mb-3">
                 <Check className="h-4 w-4 text-green-500" />
                 <span className="font-semibold text-sm">{preview.title}</span>

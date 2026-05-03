@@ -143,7 +143,7 @@ const AddBlockMenu = ({ onSelect, onClose }: AddBlockMenuProps) => {
 
   return (
     <div
-      className="border rounded-xl bg-card text-card-foreground shadow-platform-lg overflow-hidden animate-fade-in"
+      className="border border-border/50 rounded-xl bg-card text-card-foreground shadow-platform-lg overflow-hidden animate-fade-in"
       onKeyDown={handleKeyDown}
       role="combobox"
       aria-haspopup="listbox"
@@ -151,7 +151,7 @@ const AddBlockMenu = ({ onSelect, onClose }: AddBlockMenuProps) => {
       aria-owns={listboxId}
     >
       {/* Search bar */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40">
         <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
         <input
           ref={inputRef}
@@ -164,7 +164,7 @@ const AddBlockMenu = ({ onSelect, onClose }: AddBlockMenuProps) => {
           aria-activedescendant={filtered[activeIdx] ? optionId(activeIdx) : undefined}
           aria-label="Search blocks"
         />
-        <span className="hidden md:inline text-[10px] uppercase tracking-wider text-muted-foreground/70 px-1.5 py-0.5 rounded border border-border">
+        <span className="hidden md:inline text-[10px] uppercase tracking-wider text-muted-foreground/70 px-1.5 py-0.5 rounded border border-border/50">
           Esc
         </span>
         <button
@@ -236,14 +236,14 @@ const AddBlockMenu = ({ onSelect, onClose }: AddBlockMenuProps) => {
       </div>
 
       {/* Footer keyboard hint */}
-      <div className="border-t px-3 py-1.5 flex items-center justify-between text-[10.5px] text-muted-foreground bg-muted/30">
+      <div className="border-t border-border/40 px-3 py-1.5 flex items-center justify-between text-[10.5px] text-muted-foreground bg-muted/30">
         <span className="flex items-center gap-1.5">
-          <kbd className="px-1 py-0.5 rounded border border-border bg-background text-[10px]">↑</kbd>
-          <kbd className="px-1 py-0.5 rounded border border-border bg-background text-[10px]">↓</kbd>
+          <kbd className="px-1 py-0.5 rounded border border-border/50 bg-background text-[10px]">↑</kbd>
+          <kbd className="px-1 py-0.5 rounded border border-border/50 bg-background text-[10px]">↓</kbd>
           <span>navigate</span>
         </span>
         <span className="flex items-center gap-1.5">
-          <kbd className="px-1 py-0.5 rounded border border-border bg-background text-[10px]">↵</kbd>
+          <kbd className="px-1 py-0.5 rounded border border-border/50 bg-background text-[10px]">↵</kbd>
           <span>insert</span>
         </span>
       </div>

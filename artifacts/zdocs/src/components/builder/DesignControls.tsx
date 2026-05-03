@@ -443,7 +443,7 @@ export function ThemePresetPicker({ local, applyPatch }: {
               )}
             >
               <span
-                className="h-7 w-7 shrink-0 rounded-md border border-black/5 dark:border-white/10"
+                className="h-7 w-7 shrink-0 rounded-md border border-border/50"
                 style={{
                   background: `linear-gradient(135deg, ${p.swatch} 0%, ${p.colors.light || p.swatch} 100%)`,
                   boxShadow: `0 1px 0 0 hsl(var(--foreground) / 0.04)`,

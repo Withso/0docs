@@ -166,12 +166,6 @@ const TreeRow = ({
         <span className="h-4 w-4 shrink-0" />
       )}
 
-      {/* Icon */}
-      <Icon
-        className="h-3.5 w-3.5 shrink-0 mr-1.5"
-        {...(iconColor ? { style: { color: iconColor } } : {})}
-      />
-
       {/* Label — `label` may contain user-controlled HTML from inline rich-text
           editing (bold/italic/links). We sanitize defensively rather than trust
           arbitrary keystrokes; an empty fallback prevents nameless rows. */}
