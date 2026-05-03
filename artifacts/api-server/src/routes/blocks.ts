@@ -185,7 +185,11 @@ router.delete("/blocks/:id", requireAuth, async (req: Request<{ id: string }>, r
   try {
     const userId = req.user!.id;
     const blockId = req.params.id;
-    if (!isUuid(blockId)) { res.status(404).json({ error: "Not found" }); return; }
+    if (!isUuid(blockId)) { res.status(204).send(); return; }
+    // DELETE is idempotent: if the block is already gone, return 204 instead
+    // of 403 so double-clicks / retries don't surface as errors in the UI.
+    const [existing] = await db.select({ id: blocksTable.id }).from(blocksTable).where(eq(blocksTable.id, blockId));
+    if (!existing) { res.status(204).send(); return; }
     if (!(await ownedBlock(blockId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const [target] = await db.select({
       branchId: blocksTable.branchId,
