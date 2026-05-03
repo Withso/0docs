@@ -163,13 +163,20 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
     setOpenGroups(loadCollapse(projectId));
   }, [projectId]);
 
-  // When the active page lives in a group, make sure that group is open.
+  // When the active page lives in a group, make sure that group is open —
+  // whether it was closed by user action OR by `metadata.expanded === false`
+  // default. Find the group to check its metadata default.
   useEffect(() => {
-    if (!activePage?.nav_group_id) return;
-    setOpenGroups((prev) => prev[activePage.nav_group_id!] === false
-      ? { ...prev, [activePage.nav_group_id!]: true }
-      : prev);
-  }, [activePage?.nav_group_id]);
+    const gid = activePage?.nav_group_id;
+    if (!gid) return;
+    const group = navGroups.find((g) => g.id === gid);
+    setOpenGroups((prev) => {
+      const explicit = prev[gid];
+      const effectivelyOpen = explicit ?? (group?.metadata?.expanded !== false);
+      if (effectivelyOpen) return prev;
+      return { ...prev, [gid]: true };
+    });
+  }, [activePage?.nav_group_id, navGroups]);
 
   const isGroupOpen = useCallback(
     (g: SidebarNavGroup) => openGroups[g.id] ?? (g.metadata?.expanded !== false),
