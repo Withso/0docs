@@ -1,6 +1,6 @@
 import { forwardRef, useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
-  ChevronRight, ChevronDown, FileText, Folder, FolderOpen, Layers,
+  ChevronRight, ChevronDown, FileText, Folder, Layers,
   Languages, Box, GitBranch, Plus, Settings as SettingsIcon,
   Trash2, Tag, EyeOff, Globe,
 } from "lucide-react";
@@ -88,8 +88,6 @@ const Sortable = ({
 /* ─── Universal row (28px Mintlify clone) ─── */
 const TreeRow = ({
   depth = 0,
-  icon: Icon,
-  iconColor,
   label,
   active,
   selected,
@@ -107,8 +105,6 @@ const TreeRow = ({
   editValue,
 }: {
   depth?: number;
-  icon: React.ComponentType<{ className?: string }>;
-  iconColor?: string;
   label: string;
   active?: boolean;
   selected?: boolean;
@@ -306,15 +302,6 @@ const MetadataBadges = ({ meta }: { meta?: Record<string, any> | null }) => {
 };
 
 /* ─── Main component ─── */
-const tabIcon = (kind?: string) => {
-  switch (kind) {
-    case "language": return Languages;
-    case "product":  return Box;
-    case "version":  return GitBranch;
-    default:         return Layers;
-  }
-};
-
 const tabKind = (t: Tab): NavSettingsKind => {
   const k = t.metadata?.kind;
   if (k === "language" || k === "product" || k === "version") return k;
@@ -322,7 +309,6 @@ const tabKind = (t: Tab): NavSettingsKind => {
 };
 
 const NavigationTree = forwardRef<HTMLDivElement, Props>(({
-  settings: s,
   pages,
   activePage,
   navGroups,
@@ -429,8 +415,6 @@ const NavigationTree = forwardRef<HTMLDivElement, Props>(({
     return (
       <TreeRow
         depth={depth}
-        icon={FileText}
-        iconColor={`hsl(${s.mutedForegroundColor})`}
         label={page.nav_title || page.title}
         active={active}
         selected={selected}
@@ -457,14 +441,11 @@ const NavigationTree = forwardRef<HTMLDivElement, Props>(({
     const selected = selectedSettingsId === g.id;
     const groupPages = pagesForGroup(g.id);
     const isEditing = editing?.kind === "group" && editing.id === g.id;
-    const Icon = open ? FolderOpen : Folder;
     const kind: NavSettingsKind = g.type === "dropdown" ? "dropdown" : "group";
     return (
       <div>
         <TreeRow
           depth={depth}
-          icon={Icon}
-          iconColor={g.metadata?.color || `hsl(${s.mutedForegroundColor})`}
           label={g.title}
           selected={selected}
           badges={<MetadataBadges meta={g.metadata} />}
@@ -512,7 +493,6 @@ const NavigationTree = forwardRef<HTMLDivElement, Props>(({
 
   const renderTab = (tab: Tab) => {
     const open = isTabOpen(tab.id);
-    const Icon = tabIcon(tab.metadata?.kind);
     const kind = tabKind(tab);
     const selected = selectedSettingsId === tab.id;
     const groups = groupsForTab(tab.id);
@@ -521,8 +501,6 @@ const NavigationTree = forwardRef<HTMLDivElement, Props>(({
       <div key={tab.id}>
         <TreeRow
           depth={0}
-          icon={Icon}
-          iconColor={`hsl(${s.sidebarActiveColor})`}
           label={tab.label}
           selected={selected}
           badges={<MetadataBadges meta={tab.metadata} />}
