@@ -16,6 +16,16 @@ your own infrastructure.
 
 ---
 
+## MCP server for AI agents
+
+0docs ships a built-in **Model Context Protocol** endpoint at `POST /api/mcp`
+so AI agents (Claude Desktop, Cursor, Continue, custom clients) can read and
+edit your docs. Mint a per-project access token under **Settings → MCP Server**,
+or run the server in anonymous read-only mode. See
+[`artifacts/api-server/MCP.md`](./artifacts/api-server/MCP.md) for the full
+tool catalog, auth modes, and environment defaults
+(`MCP_ENABLED`, `MCP_ALLOW_ANONYMOUS`, `MCP_DISABLED_TOOLS`).
+
 ## Two ways to run it
 
 | Mode | When to use it | Auth |

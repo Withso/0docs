@@ -15,9 +15,10 @@ import {
 import {
   Save, Trash2,
   Settings2, AlertTriangle, UserCircle, Inbox, Search,
-  Globe, Copy, ExternalLink, CheckCircle2, AlertCircle, Loader2,
+  Globe, Copy, ExternalLink, CheckCircle2, AlertCircle, Loader2, Server,
 } from "lucide-react";
 import ProfileMenu from "./ProfileMenu";
+import MCPSettings from "./MCPSettings";
 
 interface SettingsContentProps {
   projectId: string;
@@ -25,7 +26,7 @@ interface SettingsContentProps {
   onSaved?: () => void;
 }
 
-type SectionId = "general" | "domain" | "profile" | "delete-account";
+type SectionId = "general" | "domain" | "mcp" | "profile" | "delete-account";
 
 const NAV_GROUPS: { label: string; items: { id: SectionId; label: string; icon: any }[] }[] = [
   {
@@ -33,6 +34,7 @@ const NAV_GROUPS: { label: string; items: { id: SectionId; label: string; icon: 
     items: [
       { id: "general", label: "General", icon: Settings2 },
       { id: "domain", label: "Domain", icon: Globe },
+      { id: "mcp", label: "MCP Server", icon: Server },
     ],
   },
   {
@@ -47,11 +49,12 @@ const NAV_GROUPS: { label: string; items: { id: SectionId; label: string; icon: 
 const SECTION_TITLES: Record<SectionId, { title: string; subtitle: string }> = {
   general: { title: "General", subtitle: "Basic information about your project" },
   domain: { title: "Domain", subtitle: "Connect a custom domain to your published documentation" },
+  mcp: { title: "MCP Server", subtitle: "Let AI agents read and edit your docs via the Model Context Protocol" },
   profile: { title: "My Profile", subtitle: "Manage your personal account and preferences" },
   "delete-account": { title: "Delete Account", subtitle: "Permanently delete your organization and account" },
 };
 
-const VALID_SECTIONS: SectionId[] = ["general", "domain", "profile", "delete-account"];
+const VALID_SECTIONS: SectionId[] = ["general", "domain", "mcp", "profile", "delete-account"];
 
 // Linear-time domain validation — replaces a backtracking regex flagged by SAST
 // as ReDoS-vulnerable. Validates each label individually (max 63 chars, no
@@ -793,6 +796,8 @@ async function handleRequest(request) {
               )}
             </div>
           )}
+
+          {activeSection === "mcp" && <MCPSettings projectId={projectId} />}
 
           {activeSection === "profile" && <ProfileSettingsContent />}
 

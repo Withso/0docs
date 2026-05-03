@@ -15,6 +15,7 @@ import askDocsRouter from "./ask-docs";
 import branchesRouter from "./branches";
 import commitsRouter from "./commits";
 import analyticsRouter from "./analytics";
+import mcpRouter from "./mcp";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(askDocsRouter);
 router.use(branchesRouter);
 router.use(commitsRouter);
 router.use(analyticsRouter);
+router.use(mcpRouter);
 
 export default router;
