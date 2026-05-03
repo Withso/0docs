@@ -85,7 +85,7 @@ const DesignSettingsWrapper = forwardRef<HTMLDivElement, DesignSettingsWrapperPr
     <div
       ref={ref}
       style={style}
-      className={`docs-preview-root theme-${mode} ${className}`}
+      className={["docs-preview-root", `theme-${mode}`, className].filter(Boolean).join(" ")}
       data-doc-mode={mode}
     >
       {children}
