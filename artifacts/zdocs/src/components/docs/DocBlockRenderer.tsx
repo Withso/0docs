@@ -514,7 +514,7 @@ const ExpandableBlock = ({
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between gap-3 text-left transition-colors"
         onMouseEnter={(e) => (e.currentTarget.style.color = `hsl(${s.primaryColor})`)}
-        onMouseLeave={(e) => (e.currentTarget.style.color = `hsl(${s.foregroundColor})`)}
+        onMouseLeave={(e) => (e.currentTarget.style.color = "")}
         style={{
           padding: `${bs.padding ?? 12}px 4px`,
           fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
