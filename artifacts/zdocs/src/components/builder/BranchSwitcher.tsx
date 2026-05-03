@@ -105,11 +105,6 @@ const BranchSwitcher = () => {
           >
             <GitBranch className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate max-w-[140px] text-foreground">{activeBranch.name}</span>
-            {activeBranch.isDefault && (
-              <span className="ml-0.5 rounded-sm px-1 py-px text-[9px] uppercase tracking-wide bg-background text-muted-foreground border border-border/60">
-                default
-              </span>
-            )}
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64">

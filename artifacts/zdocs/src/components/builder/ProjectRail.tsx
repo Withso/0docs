@@ -71,9 +71,6 @@ const ProjectRail = forwardRef<HTMLElement, ProjectRailProps>(({ mode, onModeCha
             )}
             <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-sidebar-primary" : ""}`} />
             <span className="truncate">{item.label}</span>
-            {item.id === "editor" && hasUnpublishedChanges && (
-              <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary" />
-            )}
           </button>
         );
       })}

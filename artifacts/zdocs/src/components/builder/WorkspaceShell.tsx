@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Check, ChevronsUpDown, FileText, Inbox, Plus, Search } from "lucide-react";
+import { Check, ChevronsUpDown, FileText, Plus } from "lucide-react";
 import ProfileMenu from "./ProfileMenu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useApi } from "@/lib/api-client";
@@ -194,12 +194,6 @@ const WorkspaceShell = ({ project, mode, onModeChange, hasUnpublishedChanges, ch
               )}
             </div>
             <div className="flex items-center gap-1.5">
-              <button className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors" title="Inbox" aria-label="Inbox">
-                <Inbox className="h-4 w-4" />
-              </button>
-              <button className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors" title="Search" aria-label="Search">
-                <Search className="h-4 w-4" />
-              </button>
               <ProfileMenu projectId={project.id} />
             </div>
           </header>

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   LayoutGrid, Palette, Type as TypeIcon, PanelTop, PanelBottom,
-  Sparkles, MessageSquareText, Plug, Code2, Settings2,
+  Sparkles,
   RotateCcw, Sidebar as SidebarIcon, Layout as LayoutIcon, Minus,
 } from "lucide-react";
 import {
@@ -24,11 +24,7 @@ type CategoryId =
   | "sidebar"
   | "header"
   | "footer"
-  | "content"
-  | "assistant"
-  | "integrations"
-  | "api"
-  | "advanced";
+  | "content";
 
 const categories: { id: CategoryId; label: string; icon: any }[] = [
   { id: "overview",     label: "Overview",            icon: LayoutGrid },
@@ -38,10 +34,6 @@ const categories: { id: CategoryId; label: string; icon: any }[] = [
   { id: "header",       label: "Header & Topbar",     icon: PanelTop },
   { id: "footer",       label: "Footer",              icon: PanelBottom },
   { id: "content",      label: "Content Features",    icon: Sparkles },
-  { id: "assistant",    label: "Assistant & Search",  icon: MessageSquareText },
-  { id: "integrations", label: "Integrations",        icon: Plug },
-  { id: "api",          label: "API Documentation",   icon: Code2 },
-  { id: "advanced",     label: "Advanced",            icon: Settings2 },
 ];
 
 interface Props {
@@ -204,34 +196,6 @@ const ConfigurationsPanel = ({ projectName, settings, saving, saveSettings, rese
                   </SettingsSection>
                 ))}
               </>
-            )}
-
-            {active === "assistant" && (
-              <EmptyView
-                title="Assistant & Search"
-                description="Configure the AI documentation assistant and search experience. Coming soon."
-              />
-            )}
-
-            {active === "integrations" && (
-              <EmptyView
-                title="Integrations"
-                description="Connect analytics, support tools, and other services. Coming soon."
-              />
-            )}
-
-            {active === "api" && (
-              <EmptyView
-                title="API Documentation"
-                description="Configure OpenAPI/AsyncAPI playground and API reference settings. Use the OpenAPI import button on any page to get started."
-              />
-            )}
-
-            {active === "advanced" && (
-              <EmptyView
-                title="Advanced"
-                description="Custom CSS, custom HTML head, and other advanced settings. Coming soon."
-              />
             )}
 
             <div className="h-12" />
