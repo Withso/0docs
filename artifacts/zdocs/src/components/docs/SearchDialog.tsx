@@ -450,11 +450,16 @@ const SearchDialog = ({
         onSearch?.(debouncedQuery, grouped.flat.length);
       }
       if (opts.newTab) {
-        // Open the page slug in a new tab. Sections deep-link via #section-...
-        const base = `${window.location.pathname}`;
-        const url = r.sectionId
-          ? `${base}#section-${r.sectionId}`
-          : base;
+        // Open the target page in a new tab. The SPA routes (/docs and
+        // /p/:slug) load a project, so we encode the target page slug as a
+        // ?page=<slug> query that Index reads on mount, plus an optional
+        // section anchor for deep-linking.
+        const base = window.location.pathname;
+        const params = new URLSearchParams();
+        if (r.page.slug) params.set("page", r.page.slug);
+        const qs = params.toString();
+        const hash = r.sectionId ? `#section-${r.sectionId}` : "";
+        const url = `${base}${qs ? `?${qs}` : ""}${hash}`;
         window.open(url, "_blank", "noopener,noreferrer");
         return;
       }
@@ -480,11 +485,43 @@ const SearchDialog = ({
     ],
   );
 
+  const dialogContentRef = useRef<HTMLDivElement>(null);
+
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key === "Escape") {
         e.preventDefault();
         onOpenChange(false);
+        return;
+      }
+      // Focus trap: keep Tab/Shift+Tab inside the dialog content.
+      if (e.key === "Tab") {
+        const root = dialogContentRef.current;
+        if (root) {
+          const FOCUSABLE = [
+            'a[href]',
+            'button:not([disabled])',
+            'input:not([disabled])',
+            'textarea:not([disabled])',
+            'select:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])',
+          ].join(",");
+          const focusables = Array.from(
+            root.querySelectorAll<HTMLElement>(FOCUSABLE),
+          ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+          if (focusables.length > 0) {
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            const active = document.activeElement as HTMLElement | null;
+            if (e.shiftKey && (active === first || !root.contains(active))) {
+              e.preventDefault();
+              last.focus();
+            } else if (!e.shiftKey && active === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }
         return;
       }
       const total = grouped.flat.length;
@@ -533,6 +570,7 @@ const SearchDialog = ({
       />
 
       <div
+        ref={dialogContentRef}
         className="relative w-full sm:max-w-2xl sm:w-[640px] mx-0 sm:mx-4 bg-[hsl(var(--docs-background))] text-[hsl(var(--docs-foreground))] sm:rounded-2xl shadow-2xl border border-[hsl(var(--docs-border))] flex flex-col max-h-screen sm:max-h-[70vh] animate-in fade-in-0 zoom-in-95"
         style={{
           fontFamily: "var(--docs-body-font, inherit)",

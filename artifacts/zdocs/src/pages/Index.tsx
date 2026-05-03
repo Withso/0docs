@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useDesignSettings } from "@/hooks/use-design-settings";
 import { useVersions } from "@/hooks/use-versions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -105,6 +105,10 @@ const Index = () => {
   const { user } = useAuth();
   // /p/:slug → look up that specific project. /docs (no slug) → homepage project.
   const { slug: routeSlug } = useParams<{ slug?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Honor ?page=<slug> on initial mount (used by "open in new tab" from
+  // search results so the linked page actually loads instead of the first).
+  const initialPageSlugRef = useRef<string | null>(searchParams.get("page"));
   const [project, setProject] = useState<any>(null);
   const [pages, setPages] = useState<Page[]>([]);
   const [activePage, setActivePage] = useState<Page | null>(null);
@@ -317,6 +321,23 @@ const Index = () => {
   const filteredPageIdsKey = filteredPages.map((p) => p.id).join("|");
   useEffect(() => {
     if (filteredPages.length === 0) return;
+    // First priority on the very first render: honor a ?page=<slug> query
+    // (e.g. coming from "open in new tab" in the search dialog).
+    if (initialPageSlugRef.current) {
+      const wantedSlug = initialPageSlugRef.current;
+      const target = filteredPages.find((p) => p.slug === wantedSlug);
+      initialPageSlugRef.current = null;
+      // Strip the param so reloads/back-button stay clean.
+      if (searchParams.has("page")) {
+        const next = new URLSearchParams(searchParams);
+        next.delete("page");
+        setSearchParams(next, { replace: true });
+      }
+      if (target) {
+        setActivePage(target);
+        return;
+      }
+    }
     if (!activePage || !filteredPages.some((p) => p.id === activePage.id)) {
       setActivePage(filteredPages[0]);
     }
