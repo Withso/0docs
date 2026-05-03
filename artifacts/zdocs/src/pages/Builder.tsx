@@ -384,8 +384,13 @@ const Builder = () => {
           </div>
         </div>
         <div key={previewReloadKey} className="flex-1 min-h-0 overflow-auto relative">
+          {/* Pass RAW settings here (not resolvedSettings). DesignSettingsWrapper
+              inside DocContentView resolves against the live platform theme,
+              so the doc body flips immediately when the user clicks the
+              sun/moon toggle inside the doc header. Pre-resolving at the parent
+              previously double-resolved and froze body colours on toggle. */}
           <DocContentView
-            settings={resolvedSettings}
+            settings={settings}
             projectName={project?.name || ""}
             pages={pages}
             activePage={activePage}

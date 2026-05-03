@@ -482,8 +482,13 @@ const Index = () => {
         </div>
       </div>
 
+      {/* Pass rawSettings — DocContentView's DesignSettingsWrapper resolves
+          against the live platform theme so the doc body flips with the
+          sun/moon toggle. (Index's own chrome above uses pre-resolved
+          `settings` for local inline styles, which is fine because Index
+          itself re-renders on theme change via the same hook.) */}
       <DocContentView
-        settings={settings}
+        settings={rawSettings}
         projectName={project?.name || ""}
         pages={filteredPages}
         activePage={activePage}

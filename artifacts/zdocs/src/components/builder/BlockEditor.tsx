@@ -236,13 +236,13 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
       case "callout":
         return (
           <div style={{
-            backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${settings.accentColor})`,
-            border: `1px solid ${bs.borderColor ? `hsl(${bs.borderColor})` : `hsl(${settings.borderColor})`}`,
+            backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${settings.noteBg})`,
+            border: `1px solid ${bs.borderColor ? `hsl(${bs.borderColor})` : `hsl(${settings.noteBorderColor})`}`,
             borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : "8px",
             padding: bs.padding != null ? `${bs.padding}px` : "16px",
             fontSize: `${bs.fontSize ?? settings.baseFontSize}px`,
             fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${settings.bodyFont}', sans-serif`,
-            color: bs.color ? `hsl(${bs.color})` : undefined, marginBottom: "16px",
+            color: bs.color ? `hsl(${bs.color})` : `hsl(${settings.foregroundColor})`, marginBottom: "16px",
           }}>
             <AutoTextarea value={localContent.text || ""} onChange={(val) => updateContent({ text: val })}
               className="w-full bg-transparent outline-none resize-none" placeholder="Callout text..."
@@ -261,18 +261,22 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
       case "card":
         return (
           <div style={{
-            border: `1px solid hsl(${bs.borderColor || settings.borderColor})`,
+            border: `1px solid hsl(${bs.borderColor || settings.noteBorderColor || settings.borderColor})`,
             borderRadius: `${bs.borderRadius ?? 8}px`, padding: `${bs.padding ?? 20}px`,
-            backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${settings.accentColor})`, marginBottom: "16px",
+            // Use noteBg (mode-aware) so cards stay legible in dark mode where
+            // accentColor often collapses into the background.
+            backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : `hsl(${settings.noteBg})`,
+            marginBottom: "16px",
           }}>
-            <input className="w-full bg-transparent outline-none mb-2" style={{
+            <input className="w-full bg-transparent outline-none mb-2 placeholder:opacity-60" style={{
               fontFamily: `'${settings.headingFont}', sans-serif`, fontWeight: settings.headingWeight,
-              fontSize: `${bs.fontSize ?? settings.baseFontSize}px`, color: bs.color ? `hsl(${bs.color})` : undefined,
+              fontSize: `${bs.fontSize ?? settings.baseFontSize}px`,
+              color: bs.color ? `hsl(${bs.color})` : `hsl(${settings.foregroundColor})`,
             }} value={localContent.title || ""} onChange={(e) => updateContent({ title: e.target.value })} placeholder="Card title..." />
             <AutoTextarea value={localContent.description || ""} onChange={(val) => updateContent({ description: val })}
-              className="w-full bg-transparent outline-none resize-none" placeholder="Card description..."
+              className="w-full bg-transparent outline-none resize-none placeholder:opacity-60" placeholder="Card description..."
               style={{ fontFamily: `'${settings.bodyFont}', sans-serif`, fontSize: `${settings.baseFontSize - 1}px`, color: `hsl(${settings.mutedForegroundColor})`, lineHeight: settings.lineHeight }} />
-            <input className="w-full bg-transparent outline-none mt-2" style={{ fontSize: `${settings.baseFontSize - 1}px`, color: `hsl(${settings.linkColor})` }}
+            <input className="w-full bg-transparent outline-none mt-2 placeholder:opacity-60" style={{ fontSize: `${settings.baseFontSize - 1}px`, color: `hsl(${settings.linkColor})` }}
               value={localContent.link || ""} onChange={(e) => updateContent({ link: e.target.value })} placeholder="Link URL (optional)..." />
           </div>
         );

@@ -37,47 +37,35 @@ interface Props {
 */
 type CalloutVariant = "note" | "info" | "tip" | "warning" | "check" | "danger";
 
-const CALLOUT_PALETTE: Record<
-  CalloutVariant,
-  { bg: string; border: string; icon: string; Icon: React.ComponentType<any> }
-> = {
-  note: {
-    bg: "214 100% 97%",
-    border: "214 95% 88%",
-    icon: "214 90% 50%",
-    Icon: Info,
-  },
-  info: {
-    bg: "0 0% 97%",
-    border: "0 0% 88%",
-    icon: "0 0% 35%",
-    Icon: Info,
-  },
-  tip: {
-    bg: "152 76% 96%",
-    border: "152 65% 82%",
-    icon: "152 70% 38%",
-    Icon: Lightbulb,
-  },
-  warning: {
-    bg: "45 100% 95%",
-    border: "38 95% 78%",
-    icon: "32 95% 44%",
-    Icon: AlertTriangle,
-  },
-  check: {
-    bg: "152 76% 96%",
-    border: "152 65% 82%",
-    icon: "152 70% 38%",
-    Icon: CheckCircle2,
-  },
-  danger: {
-    bg: "0 86% 97%",
-    border: "0 86% 88%",
-    icon: "0 80% 55%",
-    Icon: XCircle,
-  },
+type CalloutSwatch = { bg: string; border: string; icon: string; Icon: React.ComponentType<any> };
+
+/* Light callout palette — soft tinted backgrounds, deep accents. */
+const CALLOUT_PALETTE_LIGHT: Record<CalloutVariant, CalloutSwatch> = {
+  note:    { bg: "214 100% 97%", border: "214 95% 88%", icon: "214 90% 50%", Icon: Info },
+  info:    { bg: "0 0% 97%",     border: "0 0% 88%",    icon: "0 0% 35%",    Icon: Info },
+  tip:     { bg: "152 76% 96%",  border: "152 65% 82%", icon: "152 70% 38%", Icon: Lightbulb },
+  warning: { bg: "45 100% 95%",  border: "38 95% 78%",  icon: "32 95% 44%",  Icon: AlertTriangle },
+  check:   { bg: "152 76% 96%",  border: "152 65% 82%", icon: "152 70% 38%", Icon: CheckCircle2 },
+  danger:  { bg: "0 86% 97%",    border: "0 86% 88%",   icon: "0 80% 55%",   Icon: XCircle },
 };
+
+/* Dark callout palette — desaturated tinted surfaces that stay readable
+   on top of deep doc backgrounds, with brighter icons for AAA contrast. */
+const CALLOUT_PALETTE_DARK: Record<CalloutVariant, CalloutSwatch> = {
+  note:    { bg: "214 60% 14%",  border: "214 55% 24%", icon: "214 95% 72%", Icon: Info },
+  info:    { bg: "0 0% 14%",     border: "0 0% 22%",    icon: "0 0% 78%",    Icon: Info },
+  tip:     { bg: "152 45% 12%",  border: "152 40% 22%", icon: "152 70% 60%", Icon: Lightbulb },
+  warning: { bg: "38 50% 13%",   border: "38 45% 24%",  icon: "38 95% 65%",  Icon: AlertTriangle },
+  check:   { bg: "152 45% 12%",  border: "152 40% 22%", icon: "152 70% 60%", Icon: CheckCircle2 },
+  danger:  { bg: "0 50% 14%",    border: "0 45% 24%",   icon: "0 85% 68%",   Icon: XCircle },
+};
+
+function pickCalloutPalette(s: DesignSettings): Record<CalloutVariant, CalloutSwatch> {
+  // Infer doc mode from background lightness — same heuristic the theme
+  // resolver uses so callouts stay coherent with the surrounding surface.
+  const lightness = parseFloat((s.backgroundColor || "0 0% 100%").split(/\s+/)[2] || "100");
+  return lightness < 50 ? CALLOUT_PALETTE_DARK : CALLOUT_PALETTE_LIGHT;
+}
 
 const Callout = ({
   text,
@@ -90,7 +78,7 @@ const Callout = ({
   settings: DesignSettings;
   bs: Partial<BlockStyleSettings>;
 }) => {
-  const p = CALLOUT_PALETTE[variant];
+  const p = pickCalloutPalette(s)[variant];
   const Icon = p.Icon;
   const bgOverride = bs.backgroundColor;
   const borderOverride = bs.borderColor;

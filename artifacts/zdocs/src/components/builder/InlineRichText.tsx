@@ -17,15 +17,21 @@ interface InlineRichTextProps {
   autoFocus?: boolean;
 }
 
-const PRESET_COLORS = [
-  "0 0% 13%",
-  "0 0% 45%",
-  "214 100% 50%",
-  "0 72% 51%",
-  "142 71% 45%",
-  "38 92% 50%",
-  "262 83% 58%",
-  "0 0% 100%",
+/** A swatch may be a literal HSL string (color is fixed across themes) or a
+ *  `token:` ref that the picker resolves against the active DesignSettings —
+ *  so "Default" and "Muted" follow the doc theme instead of being baked white/black. */
+type ColorSwatch = { label: string; hsl: string; token?: keyof Pick<DesignSettings,
+  "foregroundColor" | "mutedForegroundColor" | "linkColor"> };
+
+const PRESET_COLORS: ColorSwatch[] = [
+  { label: "Default",  hsl: "",            token: "foregroundColor" },
+  { label: "Muted",    hsl: "",            token: "mutedForegroundColor" },
+  { label: "Link",     hsl: "",            token: "linkColor" },
+  { label: "Red",      hsl: "0 72% 51%" },
+  { label: "Green",    hsl: "142 71% 45%" },
+  { label: "Amber",    hsl: "38 92% 50%" },
+  { label: "Violet",   hsl: "262 83% 58%" },
+  { label: "Blue",     hsl: "214 100% 50%" },
 ];
 
 /** A contentEditable inline rich-text field with a floating toolbar on selection */
@@ -370,20 +376,25 @@ const InlineRichText = ({
           {showColorPicker && (
             <div
               className="absolute left-0 top-full mt-1 flex flex-wrap gap-1.5 p-2 rounded-lg shadow-xl border bg-popover text-popover-foreground"
-              style={{ width: "140px" }}
+              style={{ width: "168px" }}
               onMouseDown={(e) => e.preventDefault()}
             >
-              {PRESET_COLORS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => applyColor(c)}
-                  className="w-5 h-5 rounded-full border-border transition-transform hover:scale-110"
-                  style={{
-                    backgroundColor: `hsl(${c})`,
-                    border: c === "0 0% 100%" ? "1px solid hsl(var(--border))" : "1px solid transparent",
-                  }}
-                />
-              ))}
+              {PRESET_COLORS.map((c) => {
+                const hsl = c.token ? (s[c.token] as string) : c.hsl;
+                return (
+                  <button
+                    key={c.label}
+                    onClick={() => applyColor(hsl)}
+                    title={c.label}
+                    aria-label={c.label}
+                    className="w-5 h-5 rounded-full transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    style={{
+                      backgroundColor: `hsl(${hsl})`,
+                      border: "1px solid hsl(var(--border))",
+                    }}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
