@@ -177,12 +177,29 @@ router.patch("/projects/:id", requireAuth, async (req: Request<{ id: string }>, 
     if (body["customDomain"] !== undefined) {
       updates["customDomain"] = body["customDomain"];
     }
+    // Optional base path (e.g. "/docs"). Allowed: null, "", or "/" + 1-30
+    // url-safe chars. Stored normalized: leading slash, no trailing slash.
+    if (body["customDomainBasePath"] !== undefined) {
+      const raw = body["customDomainBasePath"];
+      if (raw === null || raw === "") {
+        updates["customDomainBasePath"] = null;
+      } else if (typeof raw !== "string") {
+        res.status(400).json({ error: "customDomainBasePath must be a string or null" }); return;
+      } else {
+        const normPath = "/" + raw.trim().replace(/^\/+/, "").replace(/\/+$/, "");
+        if (!/^\/[a-z0-9](?:[a-z0-9-]{0,28}[a-z0-9])?$/i.test(normPath)) {
+          res.status(400).json({ error: "Base path must be like /docs (1-30 url-safe chars)" }); return;
+        }
+        updates["customDomainBasePath"] = normPath.toLowerCase();
+      }
+    }
 
     // Custom domain handling: normalize, dedupe, reset verification status when changed
     if ("customDomain" in updates) {
       const raw = updates["customDomain"];
       if (raw === null || raw === "") {
         updates["customDomain"] = null;
+        updates["customDomainBasePath"] = null;
         updates["customDomainStatus"] = null;
         updates["customDomainVerifiedAt"] = null;
         updates["customDomainLastCheckedAt"] = null;

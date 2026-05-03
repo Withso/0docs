@@ -52,6 +52,23 @@ const InlineRichText = ({
   const linkInputRef = useRef<HTMLInputElement>(null);
   const savedSelectionRef = useRef<Range | null>(null);
   const doneCalledRef = useRef(false);
+  // Track all pending timers so we can cancel them on unmount; otherwise a
+  // late-arriving setState fires after the component is gone and React warns.
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const scheduleTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timersRef.current.delete(id);
+      fn();
+    }, ms);
+    timersRef.current.add(id);
+    return id;
+  }, []);
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach((id) => clearTimeout(id));
+      timersRef.current.clear();
+    };
+  }, []);
 
   const debouncedChange = useDebouncedCallback((html: string) => {
     onChange(html);
@@ -136,7 +153,7 @@ const InlineRichText = ({
   const checkSelection = useCallback(() => {
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !ref.current) {
-      setTimeout(() => {
+      scheduleTimeout(() => {
         if (keepOpenRef.current) return;
         const sel2 = window.getSelection();
         if (!sel2 || sel2.isCollapsed) {
@@ -185,7 +202,7 @@ const InlineRichText = ({
     keepOpenRef.current = true;
     setShowLinkInput(true);
     setShowColorPicker(false);
-    setTimeout(() => linkInputRef.current?.focus(), 50);
+    scheduleTimeout(() => linkInputRef.current?.focus(), 50);
   };
 
   const applyLink = () => {
@@ -266,7 +283,7 @@ const InlineRichText = ({
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         onBlur={() => {
-          setTimeout(() => {
+          scheduleTimeout(() => {
             if (keepOpenRef.current) return;
             if (toolbarRef.current?.contains(document.activeElement)) return;
             finishEditing();

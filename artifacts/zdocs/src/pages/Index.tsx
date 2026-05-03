@@ -430,7 +430,7 @@ const Index = () => {
           <div className="flex-1 min-w-0 lg:pl-4">
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors hover:bg-accent/80"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/40 transition-colors hover:bg-accent/80"
               style={{
                 borderColor: `hsl(${settings.borderColor})`,
                 color: `hsl(${settings.mutedForegroundColor})`,
@@ -443,7 +443,7 @@ const Index = () => {
               <Search className="h-3.5 w-3.5" />
               <span>Search</span>
               <kbd
-                className="ml-auto hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px]"
+                className="ml-auto hidden sm:inline-flex items-center gap-0.5 rounded border border-border/40 px-1.5 py-0.5 text-[10px]"
                 style={{ borderColor: `hsl(${settings.borderColor})` }}
               >
                 ⌘K

@@ -85,7 +85,12 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
 
   // Custom domain state
   const initialDomain = project?.customDomain || project?.custom_domain || "";
+  const initialBasePath: string = project?.customDomainBasePath ?? project?.custom_domain_base_path ?? "";
   const [domain, setDomain] = useState<string>(initialDomain);
+  // Mintlify-style "Host at /docs" subpath toggle. When on, docs are served at
+  // `${domain}${basePath}` instead of the apex; persisted as customDomainBasePath.
+  const [basePathEnabled, setBasePathEnabled] = useState<boolean>(!!initialBasePath);
+  const [basePath, setBasePath] = useState<string>(initialBasePath || "/docs");
   const [savingDomain, setSavingDomain] = useState(false);
   const [verifying, setVerifying] = useState(false);
   // Shared in-flight guard for both the manual "Verify Now" button and the
@@ -112,6 +117,9 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
       setName(project.name);
       setDescription(project.description || "");
       setDomain(project.customDomain || project.custom_domain || "");
+      const bp: string = project.customDomainBasePath ?? project.custom_domain_base_path ?? "";
+      setBasePathEnabled(!!bp);
+      setBasePath(bp || "/docs");
       setDomainStatus((project.customDomainStatus ?? project.custom_domain_status ?? null) as DomainStatus);
       setDomainVerifiedAt(project.customDomainVerifiedAt ?? project.custom_domain_verified_at ?? null);
       setDomainLastError(project.customDomainLastError ?? project.custom_domain_last_error ?? null);
@@ -177,7 +185,16 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
     if (!trimmedDomain) return false;
     return trimmedDomain.split(".").length === 2;
   }, [trimmedDomain]);
-  const domainChanged = trimmedDomain !== (initialDomain || "");
+  // Normalize the base path the same way the API will: leading slash, no trailing.
+  const normalizedBasePath = useMemo(() => {
+    if (!basePathEnabled) return "";
+    const raw = basePath.trim();
+    if (!raw || raw === "/") return "";
+    return "/" + raw.replace(/^\/+/, "").replace(/\/+$/, "").toLowerCase();
+  }, [basePath, basePathEnabled]);
+  const isValidBasePath = !basePathEnabled || /^\/[a-z0-9](?:[a-z0-9-]{0,28}[a-z0-9])?$/i.test(normalizedBasePath);
+  const domainChanged =
+    trimmedDomain !== (initialDomain || "") || normalizedBasePath !== (initialBasePath || "");
 
   const applyProjectStatus = (p: any) => {
     setDomainStatus((p?.customDomainStatus ?? p?.custom_domain_status ?? null) as DomainStatus);
@@ -192,9 +209,16 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
       toast({ title: "Invalid domain", description: "Enter a domain like docs.example.com (no protocol or path).", variant: "destructive" });
       return;
     }
+    if (basePathEnabled && !isValidBasePath) {
+      toast({ title: "Invalid base path", description: "Use a path like /docs (lowercase letters, numbers, hyphens).", variant: "destructive" });
+      return;
+    }
     setSavingDomain(true);
     try {
-      const updated = await api.patch<any>(`/projects/${projectId}`, { customDomain: trimmedDomain || null });
+      const updated = await api.patch<any>(`/projects/${projectId}`, {
+        customDomain: trimmedDomain || null,
+        customDomainBasePath: trimmedDomain ? (normalizedBasePath || null) : null,
+      });
       applyProjectStatus(updated);
       toast({
         title: trimmedDomain ? "Domain saved" : "Domain removed",
@@ -433,7 +457,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
                     : { iconBg: "bg-muted text-muted-foreground", icon: <Globe className="h-4 w-4" />, title: "No custom domain", desc: "" };
 
                 return (
-                  <div className="rounded-xl border bg-muted/30 px-4 py-3.5 flex items-start gap-3">
+                  <div className="rounded-xl border border-border/40 bg-muted/30 px-4 py-3.5 flex items-start gap-3">
                     <div className={`h-8 w-8 rounded-lg shrink-0 flex items-center justify-center ${tone.iconBg}`}>
                       {tone.icon}
                     </div>
@@ -505,30 +529,65 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
                 );
               })()}
 
-              {/* Domain input */}
+              {/* Domain input + Mintlify-style "Host at /docs" toggle */}
               <Field
-                label="Custom domain"
+                label={
+                  <div className="flex items-center justify-between w-full">
+                    <span>Custom domain</span>
+                    <label className="flex items-center gap-2 text-[11.5px] font-normal text-muted-foreground select-none cursor-pointer">
+                      <span>Host at</span>
+                      <code className="px-1.5 py-0.5 rounded bg-muted/60 text-foreground text-[11px] font-mono">
+                        {normalizedBasePath || "/docs"}
+                      </code>
+                      {/* Lightweight switch — avoids importing Switch just for this row */}
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={basePathEnabled}
+                        onClick={() => setBasePathEnabled((v) => !v)}
+                        className={`relative h-4 w-7 rounded-full transition-colors ${
+                          basePathEnabled ? "bg-primary" : "bg-muted-foreground/30"
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 h-3 w-3 rounded-full bg-background shadow transition-all ${
+                            basePathEnabled ? "left-3.5" : "left-0.5"
+                          }`}
+                        />
+                      </button>
+                    </label>
+                  </div>
+                }
                 hint="Enter the full domain you want to use, like docs.example.com (no http:// or trailing slash)."
               >
                 <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                    <Input
+                  <div
+                    className={`flex-1 flex items-stretch h-10 rounded-lg border bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring/40 ${
+                      !isValidDomain ? "border-destructive" : "border-border/60"
+                    }`}
+                  >
+                    <span className="px-3 inline-flex items-center text-[12px] font-mono text-muted-foreground bg-muted/30 border-r border-border/40 select-none">
+                      https://
+                    </span>
+                    <input
                       value={domain}
                       onChange={(e) => setDomain(e.target.value)}
                       placeholder="docs.yourcompany.com"
-                      className={`h-10 pl-9 rounded-lg font-mono text-[13px] ${
-                        !isValidDomain ? "border-destructive focus-visible:ring-destructive/40" : ""
-                      }`}
+                      className="flex-1 min-w-0 bg-transparent px-3 font-mono text-[13px] outline-none placeholder:text-muted-foreground/70"
                       spellCheck={false}
                       autoCapitalize="off"
                       autoCorrect="off"
                     />
+                    {basePathEnabled && (
+                      <span className="px-3 inline-flex items-center text-[12px] font-mono text-foreground bg-muted/40 border-l border-border/40 select-none">
+                        {normalizedBasePath || "/docs"}
+                      </span>
+                    )}
                   </div>
                   <Button
                     size="sm"
                     onClick={handleSaveDomain}
-                    disabled={savingDomain || !isValidDomain || !domainChanged}
+                    disabled={savingDomain || !isValidDomain || !isValidBasePath || !domainChanged}
                     className="h-10 rounded-lg shrink-0"
                   >
                     {savingDomain ? (
@@ -549,12 +608,29 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
                     <AlertCircle className="h-3 w-3" /> Use a format like <span className="font-mono">docs.example.com</span>
                   </p>
                 )}
+                {basePathEnabled && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Label className="text-[11.5px] text-muted-foreground shrink-0">Subpath</Label>
+                    <Input
+                      value={basePath}
+                      onChange={(e) => setBasePath(e.target.value)}
+                      placeholder="/docs"
+                      className={`h-8 rounded-md font-mono text-[12px] max-w-[200px] ${
+                        !isValidBasePath ? "border-destructive focus-visible:ring-destructive/40" : ""
+                      }`}
+                      spellCheck={false}
+                    />
+                    {!isValidBasePath && (
+                      <span className="text-[11px] text-destructive">Use a path like /docs</span>
+                    )}
+                  </div>
+                )}
               </Field>
 
               {/* DNS instructions */}
               {trimmedDomain && isValidDomain && (
-                <div className="rounded-xl border overflow-hidden">
-                  <div className="px-4 py-3 border-b bg-muted/30 flex items-center gap-2">
+                <div className="rounded-xl border border-border/40 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border/40 bg-muted/30 flex items-center gap-2">
                     <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
                       DNS Configuration
                     </span>
@@ -562,7 +638,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
                       Add the record below at your DNS provider
                     </span>
                   </div>
-                  <div className="divide-y">
+                  <div className="divide-y divide-border/40">
                     {isApex ? (
                       <DnsRow
                         type="A"
@@ -579,12 +655,50 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
                       />
                     )}
                   </div>
-                  <div className="px-4 py-3 border-t bg-muted/20">
+                  <div className="px-4 py-3 border-t border-border/40 bg-muted/20">
                     <p className="text-[11.5px] text-muted-foreground leading-relaxed">
                       DNS changes can take anywhere from a few minutes to 48 hours to propagate. Once your domain resolves, your docs will be reachable at{" "}
-                      <span className="font-mono text-foreground">https://{trimmedDomain}</span>. SSL is provisioned automatically.
+                      <span className="font-mono text-foreground">
+                        https://{trimmedDomain}{basePathEnabled ? (normalizedBasePath || "/docs") : ""}
+                      </span>
+                      . SSL is provisioned automatically.
                     </p>
                   </div>
+                </div>
+              )}
+
+              {/* Cloudflare worker snippet — only relevant when hosting at a subpath
+                  on a domain the user already serves from another origin. */}
+              {trimmedDomain && isValidDomain && basePathEnabled && (
+                <div className="rounded-xl border border-border/40 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border/40 bg-muted/30 flex items-center gap-2">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                      Cloudflare worker (optional)
+                    </span>
+                    <span className="text-[10.5px] text-muted-foreground/70">
+                      Proxy <span className="font-mono">{normalizedBasePath || "/docs"}</span> through your existing site
+                    </span>
+                  </div>
+                  <pre className="text-[11.5px] leading-relaxed font-mono p-4 overflow-x-auto bg-muted/10 text-foreground">
+{`addEventListener("fetch", (event) => {
+  event.respondWith(handleRequest(event.request));
+});
+
+async function handleRequest(request) {
+  const url = new URL(request.url);
+  // If the request is for the docs subpath, proxy to 0docs
+  if (url.pathname.startsWith("${normalizedBasePath || "/docs"}")) {
+    const docsUrl = new URL(request.url);
+    docsUrl.hostname = "${trimmedDomain}";
+    const proxyReq = new Request(docsUrl, request);
+    proxyReq.headers.set("X-Forwarded-Host", url.hostname);
+    proxyReq.headers.set("X-Forwarded-Proto", "https");
+    return fetch(proxyReq);
+  }
+  // Otherwise, fall through to your existing site
+  return fetch(request);
+}`}
+                  </pre>
                 </div>
               )}
 

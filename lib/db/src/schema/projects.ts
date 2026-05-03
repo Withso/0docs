@@ -10,6 +10,10 @@ export const projectsTable = pgTable("projects", {
   description: text("description"),
   isHomepage: boolean("is_homepage").notNull().default(false),
   customDomain: text("custom_domain"),
+  // Optional URL prefix at which the docs are served on the custom domain
+  // (e.g. "/docs"). Null/empty means the docs live at the domain root. Stored
+  // with a leading slash and no trailing slash. Mintlify-style hosting.
+  customDomainBasePath: text("custom_domain_base_path"),
   customDomainStatus: text("custom_domain_status"),
   customDomainVerifiedAt: timestamp("custom_domain_verified_at", { withTimezone: true }),
   customDomainLastCheckedAt: timestamp("custom_domain_last_checked_at", { withTimezone: true }),
