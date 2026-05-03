@@ -452,6 +452,7 @@ const BuilderInner = () => {
             tabs={tabs}
             activeTabId={activeTabId}
             onSelectTab={setActiveTabId}
+            projectId={project?.id}
           />
           <MadeWithBanner />
         </div>

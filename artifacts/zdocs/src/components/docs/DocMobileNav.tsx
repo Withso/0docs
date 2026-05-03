@@ -1,4 +1,4 @@
-import { forwardRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { Menu, X, Search, ChevronRight } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
@@ -37,6 +37,15 @@ interface DocMobileNavProps {
   projectName?: string;
 }
 
+const FOCUSABLE = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
 const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
   settings: s,
   pages,
@@ -49,11 +58,55 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
 }, ref) => {
   const [open, setOpen] = useState(false);
   const [showTOC, setShowTOC] = useState(false);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const sortedPages = [...pages].sort((a, b) => a.order_index - b.order_index);
   const sortedNavGroups = [...navGroups].sort((a, b) => a.order_index - b.order_index);
   const ungroupedPages = sortedPages.filter((p) => !p.nav_group_id);
   const activeSections = sections.filter((sec) => sec.page_id === activePage?.id);
+
+  /* ─── Focus trap, escape-to-close, body scroll lock ──────────────── */
+  useEffect(() => {
+    if (!open) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    // Move focus into the drawer on open.
+    requestAnimationFrame(() => {
+      const first = drawerRef.current?.querySelector<HTMLElement>(FOCUSABLE);
+      first?.focus();
+    });
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setOpen(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusables = drawerRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
+      if (!focusables || focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      // Restore focus to whatever opened the drawer.
+      previouslyFocused?.focus?.();
+    };
+  }, [open]);
 
   const handleSelectPage = (page: MobileNavPage) => {
     onSelectPage(page);
@@ -75,40 +128,58 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
   return (
     <div ref={ref} className="lg:hidden">
       <button
+        ref={triggerRef}
         onClick={() => setOpen(true)}
-        className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-accent transition-colors"
+        className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
         style={{ color: `hsl(${s.foregroundColor})` }}
         aria-label="Open navigation"
+        aria-expanded={open}
+        aria-controls="doc-mobile-drawer"
       >
         <Menu className="h-5 w-5" />
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[100]">
+        <div
+          className="fixed inset-0 z-[100]"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Documentation navigation"
+        >
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
+            aria-hidden
           />
 
           <div
+            id="doc-mobile-drawer"
+            ref={drawerRef}
             className="absolute left-0 top-0 bottom-0 w-[300px] max-w-[85vw] overflow-y-auto"
             style={{
-              backgroundColor: `hsl(${s.backgroundColor})`,
+              backgroundColor: `hsl(${s.sidebarBg})`,
               borderRight: `1px solid hsl(${s.borderColor})`,
               animation: "slideInLeft 0.2s ease-out",
             }}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: `hsl(${s.borderColor})` }}>
+            <div
+              className="flex items-center justify-between px-4 py-3 border-b sticky top-0 z-10"
+              style={{
+                backgroundColor: `hsl(${s.sidebarBg})`,
+                borderColor: `hsl(${s.borderColor})`,
+              }}
+            >
               <span
-                className="font-semibold text-sm"
+                className="font-semibold text-sm truncate"
                 style={{ fontFamily: `'${s.bodyFont}', sans-serif`, color: `hsl(${s.foregroundColor})` }}
               >
                 {projectName || "Navigation"}
               </span>
               <button
                 onClick={() => setOpen(false)}
-                className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-accent transition-colors"
+                className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
                 style={{ color: `hsl(${s.mutedForegroundColor})` }}
+                aria-label="Close navigation"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -118,7 +189,7 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
               <div className="px-3 py-2">
                 <button
                   onClick={() => { setOpen(false); onSearchOpen(); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors hover:bg-accent"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors hover:bg-[hsl(var(--docs-muted)/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
                   style={{
                     borderColor: `hsl(${s.borderColor})`,
                     color: `hsl(${s.mutedForegroundColor})`,
@@ -133,10 +204,16 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
             )}
 
             {activeSections.length > 0 && (
-              <div className="flex mx-3 mt-1 mb-2 rounded-lg p-0.5" style={{ backgroundColor: `hsl(${s.accentColor})` }}>
+              <div
+                className="flex mx-3 mt-1 mb-2 rounded-lg p-0.5"
+                style={{ backgroundColor: `hsl(${s.mutedColor})` }}
+                role="tablist"
+              >
                 <button
                   onClick={() => setShowTOC(false)}
-                  className="flex-1 py-1.5 rounded-md text-[11px] font-medium transition-colors"
+                  role="tab"
+                  aria-selected={!showTOC}
+                  className="flex-1 py-1.5 rounded-md text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
                   style={{
                     backgroundColor: !showTOC ? `hsl(${s.backgroundColor})` : "transparent",
                     color: !showTOC ? `hsl(${s.foregroundColor})` : `hsl(${s.mutedForegroundColor})`,
@@ -146,7 +223,9 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
                 </button>
                 <button
                   onClick={() => setShowTOC(true)}
-                  className="flex-1 py-1.5 rounded-md text-[11px] font-medium transition-colors"
+                  role="tab"
+                  aria-selected={showTOC}
+                  className="flex-1 py-1.5 rounded-md text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
                   style={{
                     backgroundColor: showTOC ? `hsl(${s.backgroundColor})` : "transparent",
                     color: showTOC ? `hsl(${s.foregroundColor})` : `hsl(${s.mutedForegroundColor})`,
@@ -157,14 +236,14 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
               </div>
             )}
 
-            <div className="px-3 py-2">
+            <div className="px-3 py-2 pb-8">
               {showTOC ? (
-                <nav className="flex flex-col gap-0.5">
+                <nav className="flex flex-col gap-0.5" aria-label="Page sections">
                   {activeSections.map((section) => (
                     <button
                       key={section.id}
                       onClick={() => handleSectionClick(section.id)}
-                      className="text-left px-3 py-2 rounded-lg transition-colors hover:bg-accent"
+                      className="text-left px-3 py-2 rounded-lg transition-colors hover:bg-[hsl(var(--docs-muted)/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
                       style={{
                         fontSize: "13px",
                         color: `hsl(${s.foregroundColor})`,
@@ -176,16 +255,17 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
                   ))}
                 </nav>
               ) : (
-                <nav className="flex flex-col gap-0.5">
+                <nav className="flex flex-col gap-0.5" aria-label="Pages">
                   {ungroupedPages.map((page) => {
                     const isActive = activePage?.id === page.id;
                     return (
                       <button
                         key={page.id}
                         onClick={() => handleSelectPage(page)}
-                        className="flex items-center justify-between text-left px-3 py-2 rounded-lg transition-colors"
+                        aria-current={isActive ? "page" : undefined}
+                        className="flex items-center justify-between text-left px-3 py-2 rounded-lg transition-colors hover:bg-[hsl(var(--docs-muted)/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
                         style={{
-                          backgroundColor: isActive ? `hsl(${s.accentColor})` : undefined,
+                          backgroundColor: isActive ? `hsl(${s.mutedColor})` : undefined,
                           fontSize: `${s.sidebarFontSize}px`,
                           color: isActive ? `hsl(${s.sidebarActiveColor})` : `hsl(${s.sidebarTextColor})`,
                           fontWeight: isActive ? 500 : 400,
@@ -225,8 +305,9 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
                         <div
                           className="font-semibold uppercase tracking-widest px-3 mb-1"
                           style={{
-                            color: `hsl(${s.sidebarLabelColor || s.sidebarTextColor} / 0.5)`,
-                            fontSize: `${s.sidebarLabelFontSize || 10}px`,
+                            color: `hsl(${s.sidebarLabelColor || s.sidebarTextColor})`,
+                            fontSize: `${(s.sidebarLabelFontSize || 12) - 1}px`,
+                            letterSpacing: "0.06em",
                           }}
                         >
                           <span dangerouslySetInnerHTML={{ __html: group.title }} />
@@ -237,9 +318,10 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
                             <button
                               key={page.id}
                               onClick={() => handleSelectPage(page)}
-                              className="w-full flex items-center justify-between text-left px-3 py-2 rounded-lg transition-colors"
+                              aria-current={isActive ? "page" : undefined}
+                              className="w-full flex items-center justify-between text-left px-3 py-2 rounded-lg transition-colors hover:bg-[hsl(var(--docs-muted)/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
                               style={{
-                                backgroundColor: isActive ? `hsl(${s.accentColor})` : undefined,
+                                backgroundColor: isActive ? `hsl(${s.mutedColor})` : undefined,
                                 fontSize: `${s.sidebarFontSize}px`,
                                 color: isActive ? `hsl(${s.sidebarActiveColor})` : `hsl(${s.sidebarTextColor})`,
                                 fontWeight: isActive ? 500 : 400,

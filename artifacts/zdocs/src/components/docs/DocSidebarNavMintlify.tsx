@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, type ReactNode, useMemo } from "react";
-import { ExternalLink } from "lucide-react";
+import { useState, useEffect, useRef, type ReactNode, useMemo, useCallback } from "react";
+import { ChevronDown, ExternalLink } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
 export interface SidebarPageBase {
@@ -40,14 +40,41 @@ interface MintlifyProps<TPage extends SidebarPageBase = SidebarPageBase> {
   hideHeaderLabel?: boolean;
   navGroups?: SidebarNavGroup[];
   activeTabId?: string | null;
+  /** Used to namespace per-project collapse state in localStorage. */
+  projectId?: string;
+}
+
+const COLLAPSE_KEY_PREFIX = "zdocs.sidebar.collapsed.";
+
+function loadCollapse(projectId?: string): Record<string, boolean> {
+  if (!projectId || typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(COLLAPSE_KEY_PREFIX + projectId);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistCollapse(projectId: string | undefined, state: Record<string, boolean>) {
+  if (!projectId || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(COLLAPSE_KEY_PREFIX + projectId, JSON.stringify(state));
+  } catch {
+    /* quota exceeded — silently ignore */
+  }
 }
 
 /**
  * Mintlify-faithful sidebar.
- * - No icons. Plain text labels.
- * - Group label = small bold black uppercase-ish heading
- * - Active page = primary color text + thin primary bar on left
- * - Sections appear nested under active page with vertical guide line
+ * - Layered surface (uses settings.sidebarBg, which the resolver patches
+ *   to a distinct surface from page background).
+ * - Right divider against content. Internal scrolling, sticky under header.
+ * - Group headers: small, semibold, uppercase tracking. Collapsible with
+ *   per-project persistence via localStorage.
+ * - Items: hover tint, focus-visible ring, active state with 2px accent
+ *   bar + inset surface tint.
+ * - Active item is auto-scrolled into view within the sidebar.
  */
 const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>({
   settings: s,
@@ -61,10 +88,14 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
   hideHeaderLabel = false,
   navGroups = [],
   activeTabId = null,
+  projectId,
 }: MintlifyProps<TPage>) => {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const rafRef = useRef<number | null>(null);
+  const asideRef = useRef<HTMLElement | null>(null);
+  const activeRowRef = useRef<HTMLDivElement | null>(null);
 
+  /* ─── Section scroll-spy ────────────────────────────────────────── */
   useEffect(() => {
     if (!s.sidebarShowSectionTracker || sections.length === 0) return;
     const visMap = new Map<string, IntersectionObserverEntry>();
@@ -123,19 +154,54 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
 
   const ungroupedPages = sortedPages.filter((p) => !p.nav_group_id);
 
-  // Per-group open state
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  /* ─── Per-group collapse state, persisted per project ───────────── */
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => loadCollapse(projectId));
+
+  // Reload collapse state when the project changes (e.g. SPA navigation
+  // between /p/:slug routes without a remount).
+  useEffect(() => {
+    setOpenGroups(loadCollapse(projectId));
+  }, [projectId]);
+
+  // When the active page lives in a group, make sure that group is open.
   useEffect(() => {
     if (!activePage?.nav_group_id) return;
-    setOpenGroups((prev) => prev[activePage.nav_group_id!] === undefined
+    setOpenGroups((prev) => prev[activePage.nav_group_id!] === false
       ? { ...prev, [activePage.nav_group_id!]: true }
       : prev);
   }, [activePage?.nav_group_id]);
 
-  const isGroupOpen = (g: SidebarNavGroup) => openGroups[g.id] ?? (g.metadata?.expanded !== false);
-  const toggleGroup = (g: SidebarNavGroup) =>
-    setOpenGroups((prev) => ({ ...prev, [g.id]: !isGroupOpen(g) }));
+  const isGroupOpen = useCallback(
+    (g: SidebarNavGroup) => openGroups[g.id] ?? (g.metadata?.expanded !== false),
+    [openGroups],
+  );
+  const toggleGroup = useCallback((g: SidebarNavGroup) => {
+    setOpenGroups((prev) => {
+      const next = { ...prev, [g.id]: !(prev[g.id] ?? (g.metadata?.expanded !== false)) };
+      persistCollapse(projectId, next);
+      return next;
+    });
+  }, [projectId]);
 
+  /* ─── Scroll active row into view inside the sidebar ────────────── */
+  useEffect(() => {
+    const aside = asideRef.current;
+    const row = activeRowRef.current;
+    if (!aside || !row) return;
+    const aTop = aside.scrollTop;
+    const aBot = aTop + aside.clientHeight;
+    const rTop = row.offsetTop;
+    const rBot = rTop + row.offsetHeight;
+    if (rTop < aTop + 16) {
+      aside.scrollTo({ top: Math.max(0, rTop - 24), behavior: "smooth" });
+    } else if (rBot > aBot - 16) {
+      aside.scrollTo({ top: rBot - aside.clientHeight + 24, behavior: "smooth" });
+    }
+    // Re-run after openGroups changes so a row that was hidden inside a
+    // collapsed group still scrolls into view once its group auto-opens.
+  }, [activePage?.id, openGroups]);
+
+  /* ─── Tag pill ──────────────────────────────────────────────────── */
   const renderTag = (tag: string | undefined) => {
     if (!tag) return null;
     const lc = tag.toLowerCase();
@@ -156,6 +222,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
     );
   };
 
+  /* ─── Single page row ───────────────────────────────────────────── */
   const renderPageRow = (page: TPage) => {
     const meta = (page as any).metadata || {};
     const isActive = activePage?.id === page.id;
@@ -170,9 +237,29 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
         : `hsl(${s.sidebarTextColor})`,
       fontWeight: isActive ? 500 : 400,
       fontFamily: `'${s.bodyFont}', sans-serif`,
+      backgroundColor: isActive ? `hsl(${s.mutedColor})` : undefined,
     };
 
-    const rowClasses = "doc-sidebar-row flex-1 flex items-center gap-2 truncate h-[30px] pl-4 pr-3 rounded-md transition-colors w-full text-left relative";
+    const rowClasses = [
+      "doc-sidebar-row group/row relative flex-1 flex items-center gap-2 truncate w-full text-left",
+      "h-[30px] pl-4 pr-3 rounded-md transition-colors",
+      "hover:bg-[hsl(var(--docs-muted)/0.7)]",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--docs-sidebar-bg))]",
+    ].join(" ");
+
+    const innerLabel = (
+      <>
+        {isActive && (
+          <span
+            aria-hidden
+            className="absolute left-0 top-1 bottom-1 w-[2px] rounded-full"
+            style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
+          />
+        )}
+        <span className="truncate" dangerouslySetInnerHTML={{ __html: page.nav_title || page.title }} />
+        {renderTag(tag)}
+      </>
+    );
 
     const button = renderPageActions ? (
       renderPageActions(page, isActive)
@@ -190,6 +277,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
       </a>
     ) : (
       <button
+        type="button"
         onClick={() => {
           onSelectPage(page);
           window.scrollTo({ top: 0, behavior: "smooth" });
@@ -198,27 +286,19 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
         className={rowClasses}
         style={baseStyle}
       >
-        {isActive && (
-          <span
-            className="absolute left-0 top-1 bottom-1 w-[2px] rounded-full"
-            style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
-          />
-        )}
-        <span className="truncate" dangerouslySetInnerHTML={{ __html: page.nav_title || page.title }} />
-        {renderTag(tag)}
+        {innerLabel}
       </button>
     );
 
     return (
-      <div key={page.id}>
+      <div key={page.id} ref={isActive ? activeRowRef : undefined}>
         <div className="group flex items-center">{button}</div>
 
         {isActive && pageSections.length > 0 && (
           <nav
             className="ml-4 mt-1 mb-2 flex flex-col"
-            style={{
-              borderLeft: `1px solid hsl(${s.borderColor})`,
-            }}
+            aria-label="Page sections"
+            style={{ borderLeft: `1px solid hsl(${s.borderColor})` }}
           >
             {pageSections.map((section) => {
               const isSA = s.sidebarShowSectionTracker && activeSectionId === section.id;
@@ -234,7 +314,11 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
                       window.scrollTo({ top, behavior: "smooth" });
                     }
                   }}
-                  className="flex items-center h-7 pl-5 transition-colors relative"
+                  className={[
+                    "flex items-center h-7 pl-5 transition-colors relative rounded-md",
+                    "hover:bg-[hsl(var(--docs-muted)/0.6)]",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--docs-sidebar-bg))]",
+                  ].join(" ")}
                   style={{
                     color: isSA
                       ? `hsl(${s.sidebarActiveColor})`
@@ -246,6 +330,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
                 >
                   {isSA && (
                     <span
+                      aria-hidden
                       className="absolute left-[-1px] top-1 bottom-1 w-[2px] rounded-full"
                       style={{ backgroundColor: `hsl(${s.sidebarIndicatorColor})` }}
                     />
@@ -262,13 +347,16 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
 
   return (
     <aside
+      ref={asideRef}
       style={{
         width: `${s.sidebarWidth}px`,
         backgroundColor: `hsl(${s.sidebarBg})`,
+        borderRight: `1px solid hsl(${s.borderColor})`,
         top: `${stickyTop}px`,
         height: `calc(100vh - ${stickyTop}px)`,
       }}
-      className="shrink-0 sticky overflow-y-auto py-8 pr-6 hidden lg:block"
+      className="shrink-0 sticky overflow-y-auto py-8 pr-4 pl-2 hidden lg:block"
+      aria-label="Documentation navigation"
     >
       {!hideHeaderLabel && (
         <div
@@ -315,22 +403,33 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
           return (
             <div key={group.id} className="mt-5">
               <button
+                type="button"
                 onClick={() => toggleGroup(group)}
                 aria-expanded={open}
                 aria-controls={`sidebar-group-${group.id}`}
-                className="w-full flex items-center justify-between gap-2 pl-4 pr-3 mb-1.5 text-left select-none"
+                className={[
+                  "w-full flex items-center justify-between gap-2 pl-4 pr-3 mb-1.5 text-left select-none rounded-md py-1",
+                  "hover:bg-[hsl(var(--docs-muted)/0.5)]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--docs-sidebar-bg))]",
+                ].join(" ")}
                 style={{
-                  fontSize: `${s.sidebarLabelFontSize || 12}px`,
+                  fontSize: `${(s.sidebarLabelFontSize || 12) - 1}px`,
                   color: `hsl(${s.sidebarLabelColor || s.foregroundColor})`,
                   fontFamily: `'${s.bodyFont}', sans-serif`,
                   fontWeight: 600,
-                  letterSpacing: "0.01em",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
                 }}
               >
                 <span className="truncate flex items-center gap-1.5">
                   <span dangerouslySetInnerHTML={{ __html: group.title }} />
                   {renderTag(tag)}
                 </span>
+                <ChevronDown
+                  aria-hidden
+                  className="h-3 w-3 shrink-0 opacity-60 transition-transform"
+                  style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
+                />
               </button>
               {open && (
                 <div

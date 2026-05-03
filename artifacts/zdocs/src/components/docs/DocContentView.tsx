@@ -99,6 +99,7 @@ const DocContentView = ({
   allSections,
   allBlocks,
   showFeedback = false,
+  projectId,
   versions = [],
   activeVersion,
   onSelectVersion,
@@ -139,6 +140,27 @@ const DocContentView = ({
 
   return (
     <DesignSettingsWrapper settings={s} className="min-h-full">
+      <a
+        href="#docs-main-content"
+        onClick={(e) => {
+          e.preventDefault();
+          const el = document.getElementById("docs-main-content");
+          if (el) {
+            el.focus();
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }}
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-3 focus:py-2 focus:rounded-md focus:outline-none focus:ring-2"
+        style={{
+          backgroundColor: `hsl(${settings.backgroundColor})`,
+          color: `hsl(${settings.foregroundColor})`,
+          border: `1px solid hsl(${settings.borderColor})`,
+          fontFamily: `'${settings.bodyFont}', sans-serif`,
+          fontSize: "13px",
+        }}
+      >
+        Skip to content
+      </a>
       {!hideHeader && (
         <header
           className="sticky z-40 border-b"
@@ -257,9 +279,10 @@ const DocContentView = ({
           navGroups={navGroups}
           hideHeaderLabel={hideHeaderLabel}
           activeTabId={activeTabId}
+          projectId={projectId}
         />
 
-        <main className="flex-1 min-w-0 py-12">
+        <main id="docs-main-content" tabIndex={-1} className="flex-1 min-w-0 py-12 focus:outline-none">
           {activePage ? (
             <article style={{ maxWidth: `${settings.contentMaxWidth}px` }}>
               {eyebrow && (
