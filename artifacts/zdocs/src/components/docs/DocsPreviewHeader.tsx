@@ -153,16 +153,11 @@ const DocsPreviewHeader = ({
   const headerStyle: CSSProperties = {
     top: stickyTop,
     height,
-    backgroundColor: scrolled
-      ? `hsl(${settings.backgroundColor} / 0.85)`
-      : `hsl(${settings.backgroundColor} / 0)`,
-    backdropFilter: scrolled ? "saturate(180%) blur(12px)" : "none",
-    WebkitBackdropFilter: scrolled ? "saturate(180%) blur(12px)" : "none",
+    backgroundColor: `hsl(${settings.backgroundColor})`,
     borderBottom: `1px solid ${
       scrolled ? `hsl(${settings.borderColor})` : "transparent"
     }`,
-    transition:
-      "background-color 200ms ease, border-color 200ms ease, backdrop-filter 200ms ease",
+    transition: "border-color 200ms ease",
   };
 
   return (
@@ -171,10 +166,7 @@ const DocsPreviewHeader = ({
       style={headerStyle}
       data-preserve-motion
     >
-      <div
-        className="mx-auto h-full px-6 lg:px-8 flex items-center gap-4"
-        style={frameMaxWidth ? { maxWidth: `${frameMaxWidth}px` } : undefined}
-      >
+      <div className="h-full px-6 lg:px-8 flex items-center gap-4">
         <div className="flex items-center gap-2 min-w-0 shrink-0">
           {mobileNav && <div className="lg:hidden">{mobileNav}</div>}
           <button

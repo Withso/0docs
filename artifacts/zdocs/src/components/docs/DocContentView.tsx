@@ -219,10 +219,7 @@ const DocContentView = ({
         />
       )}
 
-      <div
-        style={{ maxWidth: `${frameMaxWidth}px` }}
-        className="mx-auto flex px-6 lg:px-8 gap-12 xl:gap-16"
-      >
+      <div className="flex items-start px-6 lg:px-8 gap-8 xl:gap-12">
         <DocSidebarNavMintlify
           settings={settings}
           pages={pages}
@@ -236,6 +233,10 @@ const DocContentView = ({
           projectId={projectId}
         />
 
+        <div
+          className="flex-1 min-w-0 flex items-start gap-12 xl:gap-16 mx-auto"
+          style={{ maxWidth: `${settings.contentMaxWidth + 240 + 96}px` }}
+        >
         <main id="content-area" tabIndex={-1} className="flex-1 min-w-0 py-12 focus:outline-none">
           {activePage ? (
             <article style={{ maxWidth: `${settings.contentMaxWidth}px` }}>
@@ -361,6 +362,7 @@ const DocContentView = ({
             />
           </div>
         )}
+        </div>
       </div>
 
       <SearchDialog
