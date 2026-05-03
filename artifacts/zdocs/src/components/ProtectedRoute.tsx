@@ -1,19 +1,26 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, signIn } = useAuth();
+  // Guard against React-StrictMode double-invocation triggering two
+  // simultaneous OIDC redirects.
+  const triggered = useRef(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && !user && !triggered.current) {
+      triggered.current = true;
+      signIn();
+    }
+  }, [loading, user, signIn]);
+
+  if (loading || !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
-        Loading...
+        <span className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
-
-  if (!user) return <Navigate to="/auth" replace />;
 
   return <>{children}</>;
 };

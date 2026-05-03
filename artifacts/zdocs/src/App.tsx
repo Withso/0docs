@@ -10,7 +10,6 @@ import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Builder from "./pages/Builder";
 
-const Auth = lazy(() => import("./pages/Auth"));
 const BuilderEntry = lazy(() => import("./pages/BuilderEntry"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -54,7 +53,11 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
                     shareable URL at <host>/p/<slug>. Index reads :slug from
                     useParams and looks the project up via /api/projects?slug=. */}
                 <Route path="/p/:slug" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
+                {/* /auth is a thin redirect into /builder; ProtectedRoute
+                    auto-triggers the OIDC sign-in flow when no user. Kept
+                    as a route so existing links from Landing/Index that
+                    point at "/auth" still work. */}
+                <Route path="/auth" element={<Navigate to="/builder" replace />} />
                 <Route
                   path="/dashboard"
                   element={<Navigate to="/builder" replace />}
