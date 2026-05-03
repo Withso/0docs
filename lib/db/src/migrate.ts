@@ -214,11 +214,12 @@ export async function runMigrations(): Promise<void> {
     const statements = parseStatements(sqlContents);
     const hash = hashStatements(statements);
 
-    if (applied.has(hash)) continue;
-
-    // Apply each statement in idempotent form so that a database which has
-    // been partially patched (e.g. some tables already exist, others are
-    // missing columns) converges to the desired schema instead of failing.
+    // Always apply each statement in idempotent form. We do NOT skip purely
+    // based on the journal hash, because the journal could have been written
+    // (e.g. by a previous run, by drizzle-kit, or by a hand-patch) without
+    // the underlying objects actually being created. Since every statement
+    // we emit is idempotent (CREATE ... IF NOT EXISTS, ADD COLUMN IF NOT
+    // EXISTS), re-running is cheap and self-healing.
     for (const statement of statements) {
       const idempotent = makeIdempotent(statement);
       for (const stmt of idempotent) {
@@ -235,10 +236,12 @@ export async function runMigrations(): Promise<void> {
       }
     }
 
-    await db.execute(sql`
-      INSERT INTO "drizzle"."__drizzle_migrations" (hash, created_at)
-      VALUES (${hash}, ${entry.when})
-    `);
+    if (!applied.has(hash)) {
+      await db.execute(sql`
+        INSERT INTO "drizzle"."__drizzle_migrations" (hash, created_at)
+        VALUES (${hash}, ${entry.when})
+      `);
+    }
   }
 }
 
