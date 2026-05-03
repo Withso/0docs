@@ -52,14 +52,14 @@ const ProjectHome = forwardRef<HTMLElement, ProjectHomeProps>(({ project, pages,
 
   const greeting = useMemo(() => greetingFor(new Date()), []);
   const isLive = Boolean(project?.publishedVersionId || (project as any)?.published_version_id);
-  // Published-doc URL must match the `/p/:slug` route in App.tsx, which
-  // sits under the BrowserRouter basename `/docs`. Previously this built
-  // `${origin}/docs/${slug}` which doesn't match any route → the iframe
-  // and "Visit site" button both rendered the in-app 404 page.
+  // Published-doc URL must match the `/p/:slug` route in App.tsx. The
+  // zdocs artifact is mounted at the root of the host (BASE_PATH=/), so
+  // the URL is just `${origin}/p/${slug}` — NOT `/docs/...` (which would
+  // 404, as we discovered when the iframe rendered the in-app NotFound).
   const customDomain = project?.customDomain || (project as any)?.custom_domain;
   const liveUrl = customDomain
     ? `https://${customDomain}`
-    : `${window.location.origin}/docs/p/${project?.slug}`;
+    : `${window.location.origin}/p/${project?.slug}`;
   const domainLabel = customDomain
     ?? (project?.slug ? `${window.location.host}/p/${project.slug}` : "");
   const latest = activity[0];
