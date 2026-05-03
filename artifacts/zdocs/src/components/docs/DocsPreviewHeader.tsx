@@ -166,7 +166,11 @@ const DocsPreviewHeader = ({
   };
 
   return (
-    <header className="sticky z-50" style={headerStyle}>
+    <header
+      className="sticky z-50"
+      style={headerStyle}
+      data-preserve-motion
+    >
       <div
         className="mx-auto h-full px-6 lg:px-8 flex items-center gap-4"
         style={frameMaxWidth ? { maxWidth: `${frameMaxWidth}px` } : undefined}

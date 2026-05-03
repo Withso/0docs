@@ -539,10 +539,12 @@ code, pre {
   to { transform: translateX(0); }
 }
 
-/* Respect users who prefer reduced motion: collapse all transitions and
-   animations to near-instant so the docs viewer never causes vestibular
-   discomfort. Keeps state changes (active markers, theme swap, dialog open)
-   functional but removes the motion. */
+/* Respect users who prefer reduced motion: collapse non-essential transitions
+   and animations to near-instant so the docs viewer never causes vestibular
+   discomfort. Elements explicitly marked with [data-preserve-motion]
+   (e.g. the sticky header's subtle background/blur fade) keep their
+   transitions, since those are essential affordances rather than decorative
+   motion. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -551,6 +553,13 @@ code, pre {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+  [data-preserve-motion],
+  [data-preserve-motion] *,
+  [data-preserve-motion]::before,
+  [data-preserve-motion]::after {
+    animation-duration: revert !important;
+    transition-duration: revert !important;
   }
 }
 
