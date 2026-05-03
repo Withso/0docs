@@ -143,7 +143,7 @@ export const defaultDesignSettings: DesignSettings = {
   codeBlockBg: "240 5% 96%", noteBg: "152 60% 97%", noteBorderColor: "152 50% 88%",
   contentMaxWidth: 720, sidebarWidth: 280, sectionSpacing: 48, pageTitleSize: 36,
   headingWeight: "600", paragraphSpacing: 18, codeBlockBorderRadius: 10, noteBorderWidth: 0, imageRounded: true,
-  sidebarBg: "0 0% 100%", sidebarTextColor: "240 4% 46%", sidebarActiveColor: "152 78% 40%",
+  sidebarBg: "0 0% 98%", sidebarTextColor: "240 4% 32%", sidebarActiveColor: "152 78% 40%",
   sidebarFontSize: 14, sidebarPageGap: 2, sidebarIndicatorColor: "152 78% 40%",
   sidebarShowSectionTracker: true, sidebarShowPageArrows: false, sidebarActivePageBg: false,
   sidebarLabelFontSize: 12, sidebarLabelColor: "0 0% 4%",

@@ -40,7 +40,10 @@ export interface ThemePreset {
    popovers, dropdowns, and sidebar chrome. */
 
 export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
-  /* Mint — the Mintlify default. Crisp neutral surfaces, green accent. */
+  /* Mint — the Mintlify default. Crisp neutral surfaces, green accent.
+     Per-mode overrides give the sidebar / code / muted regions a subtly
+     distinct surface from the page background so the layout reads as
+     layered panes instead of one flat sheet. */
   mint: {
     id: "mint",
     name: "Mint",
@@ -48,7 +51,31 @@ export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
       "The classic Mintlify look. Crisp white surfaces, near-black text, subtle borders, green emphasis.",
     swatch: "#15B36E",
     colors: { primary: "#15B36E", light: "#4ADE80", dark: "#0E8A55" },
-    backgroundColors: { light: "#ffffff", dark: "#0d0d0d" },
+    backgroundColors: { light: "#ffffff", dark: "#0a0a0a" },
+    colorsLight: {
+      sidebarBg: "#fafafa",
+      muted: "#f4f4f5",
+      accent: "#f4f4f5",
+      codeBg: "#f4f4f5",
+      noteBg: "#fafafa",
+      border: "#e4e4e7",
+      sectionLine: "#e4e4e7",
+      noteBorder: "#e4e4e7",
+      mutedForeground: "#6b7280",
+      sidebarText: "#52525b",
+    },
+    colorsDark: {
+      sidebarBg: "#0f0f0f",
+      muted: "#161616",
+      accent: "#1a1a1a",
+      codeBg: "#141414",
+      noteBg: "#141414",
+      border: "#262626",
+      sectionLine: "#262626",
+      noteBorder: "#262626",
+      mutedForeground: "#8a8a8a",
+      sidebarText: "#a3a3a3",
+    },
   },
 
   /* Maple — warm cream surfaces, amber emphasis, denser type. */

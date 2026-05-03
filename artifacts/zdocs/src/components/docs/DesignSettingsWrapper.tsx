@@ -3,6 +3,12 @@ import type { DesignSettings } from "@/hooks/use-design-settings";
 import { designSettingsToCSSVars } from "@/hooks/use-design-settings";
 import { applyModeToSettings, getAppearance } from "@/lib/theme/resolve-doc-theme";
 import { usePlatformTheme } from "@/hooks/use-platform-theme";
+import {
+  derivePreviewSurfaces,
+  previewSurfacesToCssVars,
+  safeSurfaces,
+} from "@/lib/theme/derive-preview-surfaces";
+import { ensureAa } from "@/lib/theme/contrast-guard";
 
 /** Wraps children with CSS custom properties derived from design settings.
  *
@@ -10,6 +16,14 @@ import { usePlatformTheme } from "@/hooks/use-platform-theme";
  *    so the editor surface and the doc preview always agree.
  *  - The `forceMode` prop overrides this — used by the published doc viewer's
  *    sun/moon toggle.
+ *  - Emits a scoped `--docs-*` token contract (bg / surface / sidebarBg /
+ *    headerBg / border / muted / foreground / accent / ring / codeBg /
+ *    callout) consumed by downstream preview components. The legacy
+ *    `--ds-*` and shadcn `--background` etc. tokens are still emitted so
+ *    existing consumers keep working until they're migrated.
+ *  - Runs a WCAG AA contrast guard on (foreground vs bg) and (muted-fg
+ *    vs bg). Failing combos fall back to the safe per-mode scale so a
+ *    low-contrast custom palette can never produce unreadable text.
  */
 interface DesignSettingsWrapperProps {
   settings: DesignSettings;
@@ -28,8 +42,23 @@ const DesignSettingsWrapper = forwardRef<HTMLDivElement, DesignSettingsWrapperPr
   const { resolved, mode } = useResolvedDesignSettings(settings, forceMode);
   const cssVars = useMemo(() => designSettingsToCSSVars(resolved), [resolved]);
 
+  // Derive layered preview surfaces and run contrast guards. These are
+  // memoised on the resolved settings so theme toggles are cheap.
+  const docsVars = useMemo(() => {
+    const safe = safeSurfaces(mode);
+    const surfaces = derivePreviewSurfaces(resolved, mode);
+    surfaces.foreground = ensureAa(surfaces.foreground, surfaces.bg, safe.foreground);
+    surfaces.mutedForeground = ensureAa(
+      surfaces.mutedForeground,
+      surfaces.bg,
+      safe.mutedForeground,
+    );
+    return previewSurfacesToCssVars(surfaces);
+  }, [resolved, mode]);
+
   const style: React.CSSProperties = {
     ...Object.fromEntries(Object.entries(cssVars)),
+    ...docsVars,
     // Override core CSS variables so themed components pick them up
     "--background": cssVars["--ds-bg"],
     "--foreground": cssVars["--ds-fg"],
@@ -53,7 +82,12 @@ const DesignSettingsWrapper = forwardRef<HTMLDivElement, DesignSettingsWrapperPr
   } as React.CSSProperties;
 
   return (
-    <div ref={ref} style={style} className={className} data-doc-mode={mode}>
+    <div
+      ref={ref}
+      style={style}
+      className={`docs-preview-root theme-${mode} ${className}`}
+      data-doc-mode={mode}
+    >
       {children}
     </div>
   );

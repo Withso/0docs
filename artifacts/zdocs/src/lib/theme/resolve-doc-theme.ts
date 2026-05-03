@@ -55,48 +55,52 @@ export interface PerModeColors {
 
 /* ─── Default Mintlify-style palettes ─────────────────────────────── */
 
+/* Layered defaults — page bg is pure, sidebar/code/muted sit on a
+   subtly distinct surface so the regions are visibly separated even
+   without per-component restyling. Border/sectionLine stay below the
+   "BORDER RULE" lightness invariant for each mode. */
 export const DEFAULT_LIGHT: PerModeColors = {
   background: "#ffffff",
   foreground: "#0a0a0a",
   primary: "#0a0a0a",
   primaryForeground: "#ffffff",
   muted: "#f4f4f5",
-  mutedForeground: "#71717a",
+  mutedForeground: "#6b7280",
   accent: "#f4f4f5",
-  border: "#ececee",
+  border: "#e4e4e7",
   link: "#3b82f6",
   sectionLine: "#e4e4e7",
   codeBg: "#f4f4f5",
   noteBg: "#fafafa",
   noteBorder: "#e4e4e7",
-  sidebarBg: "#ffffff",
-  sidebarText: "#71717a",
+  sidebarBg: "#fafafa",
+  sidebarText: "#52525b",
   sidebarActive: "#0a0a0a",
   sidebarIndicator: "#0a0a0a",
-  sidebarLabel: "#a1a1aa",
+  sidebarLabel: "#71717a",
   sidebarSection: "#52525b",
 };
 
 export const DEFAULT_DARK: PerModeColors = {
-  background: "#0d0d0d",
+  background: "#0a0a0a",
   foreground: "#f0f0f0",
   primary: "#ffffff",
-  primaryForeground: "#0d0d0d",
-  muted: "#1e1e1e",
-  mutedForeground: "#707070",
-  accent: "#1e1e1e",
-  border: "#2a2a2a",
+  primaryForeground: "#0a0a0a",
+  muted: "#161616",
+  mutedForeground: "#8a8a8a",
+  accent: "#1a1a1a",
+  border: "#262626",
   link: "#a1a1aa",
-  sectionLine: "#303030",
-  codeBg: "#161616",
-  noteBg: "#161616",
-  noteBorder: "#2a2a2a",
-  sidebarBg: "#0d0d0d",
-  sidebarText: "#8a8a8a",
+  sectionLine: "#262626",
+  codeBg: "#141414",
+  noteBg: "#141414",
+  noteBorder: "#262626",
+  sidebarBg: "#0f0f0f",
+  sidebarText: "#a3a3a3",
   sidebarActive: "#f5f5f5",
   sidebarIndicator: "#f5f5f5",
-  sidebarLabel: "#e5e5e5",
-  sidebarSection: "#8a8a8a",
+  sidebarLabel: "#d4d4d8",
+  sidebarSection: "#a3a3a3",
 };
 
 /* ─── Hex ↔ HSL helpers (HSL in our settings is "h s% l%") ────────── */
