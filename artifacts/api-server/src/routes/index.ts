@@ -14,6 +14,7 @@ import feedbackRouter from "./feedback";
 import askDocsRouter from "./ask-docs";
 import branchesRouter from "./branches";
 import commitsRouter from "./commits";
+import analyticsRouter from "./analytics";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(feedbackRouter);
 router.use(askDocsRouter);
 router.use(branchesRouter);
 router.use(commitsRouter);
+router.use(analyticsRouter);
 
 export default router;

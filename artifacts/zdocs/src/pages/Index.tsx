@@ -13,6 +13,7 @@ import DocMobileNavComponent from "@/components/docs/DocMobileNav";
 import DocsPreviewHeader from "@/components/docs/DocsPreviewHeader";
 import { useResolvedDesignSettings } from "@/components/docs/DesignSettingsWrapper";
 import { getAppearance } from "@/lib/theme/resolve-doc-theme";
+import { track as trackAnalytics } from "@/lib/analytics-tracker";
 
 interface Page {
   id: string;
@@ -352,6 +353,21 @@ const Index = () => {
     settings.contentMaxWidth + settings.sidebarWidth + 240 + 96;
 
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Fire a `page_view` analytics event whenever the active page changes
+  // on the public docs reader. We send the page's slug as `pagePath` so
+  // the dashboard's "Top pages" table groups by the canonical slug
+  // regardless of which custom domain / fallback URL the visitor came
+  // in on. Server fills in host + UA + referrer.
+  useEffect(() => {
+    if (!project?.id || !activePage?.id) return;
+    trackAnalytics({
+      projectId: project.id,
+      eventType: "page_view",
+      pagePath: `/${activePage.slug}`,
+      pageId: activePage.id,
+    });
+  }, [project?.id, activePage?.id, activePage?.slug]);
 
   useSEOHead({
     title: activePage?.title,

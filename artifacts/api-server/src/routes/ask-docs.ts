@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
+import { recordEvent } from "../lib/analytics";
 
 const router = Router();
 
@@ -84,6 +85,17 @@ router.post("/ask-docs", rateLimit, async (req: Request, res: Response) => {
       safeProjectId = projectId;
     }
     const safeMessages = messages as Array<{ role: "user" | "assistant"; content: string }>;
+
+    // Log this assistant interaction in the analytics fact table so the
+    // dashboard's "Assistant" card and Agents tab can surface AI usage.
+    if (safeProjectId) {
+      const lastUser = [...safeMessages].reverse().find((m) => m.role === "user");
+      void recordEvent(req, {
+        projectId: safeProjectId,
+        eventType: "assistant_message",
+        query: lastUser?.content?.slice(0, 500) ?? null,
+      });
+    }
 
     const apiKey = process.env.REPLIT_AI_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
     const baseUrl = (process.env.REPLIT_AI_OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");

@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { db, pageFeedbackTable, pagesTable, projectsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
+import { recordEvent } from "../lib/analytics";
 
 const router = Router();
 
@@ -34,13 +35,25 @@ router.post("/feedback", async (req: Request, res: Response) => {
       normalizedComment = comment.trim() || null;
     }
 
-    const [page] = await db.select({ id: pagesTable.id }).from(pagesTable)
-      .where(eq(pagesTable.id, pageId)).limit(1);
+    const [page] = await db.select({ id: pagesTable.id, projectId: pagesTable.projectId })
+      .from(pagesTable).where(eq(pagesTable.id, pageId)).limit(1);
     if (!page) { res.status(404).json({ error: "page not found" }); return; }
 
     const [feedback] = await db.insert(pageFeedbackTable)
       .values({ pageId, isHelpful, comment: normalizedComment })
       .returning();
+
+    // Mirror feedback into the analytics fact table so the dashboard's
+    // "Feedback" card and helpful/not-helpful split stay in sync without
+    // a second client request. Best-effort — never blocks the response.
+    void recordEvent(req, {
+      projectId: page.projectId,
+      eventType: "feedback",
+      pageId,
+      helpful: isHelpful,
+      query: normalizedComment,
+    });
+
     res.status(201).json(feedback);
   } catch (err) {
     req.log.error({ err }, "Failed to submit feedback");

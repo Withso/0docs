@@ -667,7 +667,7 @@ const BuilderInner = () => {
             {/* Mode: Analytics */}
             {mode === "analytics" && (
               <div className="flex-1 min-h-0 overflow-y-auto">
-                <AnalyticsContent projectName={project?.name} projectSlug={project?.slug} />
+                <AnalyticsContent projectId={projectId!} projectName={project?.name} projectSlug={project?.slug} />
               </div>
             )}
 

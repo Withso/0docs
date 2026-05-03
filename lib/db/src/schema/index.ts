@@ -12,3 +12,4 @@ export * from "./pageFeedback";
 export * from "./auth";
 export * from "./branches";
 export * from "./commits";
+export * from "./analyticsEvents";

@@ -135,7 +135,21 @@ const DocContentView = ({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const handleSearch = useCallback((_query: string, _resultsCount: number) => {}, []);
+  // Fire a `search` analytics event on every committed query so the
+  // dashboard's "Searches" card and Top-Queries view (Phase 2) reflect
+  // real reader intent. SearchDialog already debounces before invoking
+  // this, so we don't generate an event per keystroke.
+  const handleSearch = useCallback((query: string, resultsCount: number) => {
+    if (!projectId || !query) return;
+    void import("@/lib/analytics-tracker").then(({ track }) => {
+      track({
+        projectId,
+        eventType: "search",
+        query,
+        metadata: { resultsCount },
+      });
+    });
+  }, [projectId]);
 
   return (
     <DesignSettingsWrapper settings={s} className="min-h-full">
