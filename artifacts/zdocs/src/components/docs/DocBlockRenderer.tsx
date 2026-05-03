@@ -83,12 +83,14 @@ const Callout = ({
   const bgOverride = bs.backgroundColor;
   const borderOverride = bs.borderColor;
   const iconOverride = bs.color;
+  const accent = `hsl(${iconOverride || p.icon})`;
   return (
     <div
-      className="flex gap-3 my-4"
+      className="relative flex gap-3 my-5"
       style={{
         backgroundColor: `hsl(${bgOverride || p.bg})`,
         border: `1px solid hsl(${borderOverride || p.border})`,
+        borderLeft: `3px solid ${accent}`,
         borderRadius: bs.borderRadius != null ? `${bs.borderRadius}px` : "10px",
         padding: bs.padding != null ? `${bs.padding}px` : "14px 16px",
       }}
@@ -96,7 +98,7 @@ const Callout = ({
       <Icon
         className="shrink-0 mt-[3px]"
         style={{
-          color: `hsl(${iconOverride || p.icon})`,
+          color: accent,
           width: 16,
           height: 16,
         }}
@@ -185,12 +187,14 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
       return wrapHighlight(
         <p
           style={{
+            marginTop: 0,
             marginBottom: `${s.paragraphSpacing}px`,
             fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
             fontSize: `${bs.fontSize ?? s.baseFontSize}px`,
             fontWeight: bs.fontWeight as any,
             lineHeight: s.lineHeight,
             color: bs.color ? `hsl(${bs.color})` : `hsl(${s.foregroundColor})`,
+            maxWidth: "72ch",
           }}
         >
           {content.text}
@@ -278,12 +282,13 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
             fontSize: `${s.baseFontSize}px`,
             lineHeight: s.lineHeight,
             listStyleType: "decimal",
-            paddingLeft: "26px",
+            paddingLeft: "1.5em",
             color: `hsl(${s.foregroundColor})`,
+            maxWidth: "72ch",
           }}
         >
           {(content.items || []).map((item: string, i: number) => (
-            <li key={i} style={{ marginBottom: "6px", paddingLeft: "4px" }}>
+            <li key={i} style={{ marginBottom: "0.5em", paddingLeft: "0.25em" }}>
               {item}
             </li>
           ))}
@@ -299,12 +304,13 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
             fontSize: `${s.baseFontSize}px`,
             lineHeight: s.lineHeight,
             listStyleType: "disc",
-            paddingLeft: "26px",
+            paddingLeft: "1.5em",
             color: `hsl(${s.foregroundColor})`,
+            maxWidth: "72ch",
           }}
         >
           {(content.items || []).map((item: string, i: number) => (
-            <li key={i} style={{ marginBottom: "6px", paddingLeft: "4px" }}>
+            <li key={i} style={{ marginBottom: "0.5em", paddingLeft: "0.25em" }}>
               {item}
             </li>
           ))}
@@ -506,7 +512,9 @@ const ExpandableBlock = ({
     >
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 text-left"
+        className="w-full flex items-center justify-between gap-3 text-left transition-colors"
+        onMouseEnter={(e) => (e.currentTarget.style.color = `hsl(${s.primaryColor})`)}
+        onMouseLeave={(e) => (e.currentTarget.style.color = `hsl(${s.foregroundColor})`)}
         style={{
           padding: `${bs.padding ?? 12}px 4px`,
           fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
@@ -692,7 +700,7 @@ const CodeBlock = ({
     >
       {hasHeader && (
         <div
-          className="flex items-center justify-between"
+          className="flex items-center justify-between gap-2"
           style={{
             padding: "8px 14px",
             borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`,
@@ -700,25 +708,39 @@ const CodeBlock = ({
           }}
         >
           <span
+            className="truncate"
             style={{
               fontFamily: `'${s.codeFont}', monospace`,
               fontSize: "12px",
               color: `hsl(${s.mutedForegroundColor})`,
+              letterSpacing: filename ? "normal" : "0.02em",
+              textTransform: filename ? "none" : "uppercase",
             }}
           >
             {filename || language}
           </span>
           <button
             onClick={handleCopy}
-            className="inline-flex items-center gap-1.5 transition-colors"
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors"
             style={{
               fontSize: "11px",
-              color: `hsl(${s.mutedForegroundColor})`,
+              color: copied ? `hsl(${s.primaryColor})` : `hsl(${s.mutedForegroundColor})`,
               fontFamily: `'${s.bodyFont}', sans-serif`,
+              background: "transparent",
+              border: `1px solid transparent`,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = `hsl(${s.borderColor})`;
+              e.currentTarget.style.backgroundColor = `hsl(${s.backgroundColor})`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "transparent";
+              e.currentTarget.style.backgroundColor = "transparent";
             }}
             aria-label="Copy code"
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copied ? "Copied" : "Copy"}</span>
           </button>
         </div>
       )}
@@ -726,10 +748,10 @@ const CodeBlock = ({
         {!hasHeader && (
           <button
             onClick={handleCopy}
-            className="absolute top-2 right-2 inline-flex items-center justify-center w-7 h-7 rounded-md transition-opacity opacity-0 group-hover:opacity-100"
+            className="absolute top-2 right-2 inline-flex items-center justify-center w-7 h-7 rounded-md transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
             style={{
               backgroundColor: `hsl(${s.mutedColor})`,
-              color: `hsl(${s.mutedForegroundColor})`,
+              color: copied ? `hsl(${s.primaryColor})` : `hsl(${s.mutedForegroundColor})`,
               border: `1px solid hsl(${s.borderColor})`,
             }}
             aria-label="Copy code"
@@ -770,24 +792,36 @@ const TabsBlock = ({ content, settings: s, bs }: { content: any; settings: Desig
 
   return (
     <div className="my-5">
-      <div className="flex" style={{ borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`, gap: "20px" }}>
+      <div
+        className="flex"
+        style={{ borderBottom: `1px solid hsl(${bs.borderColor || s.borderColor})`, gap: "20px" }}
+        role="tablist"
+      >
         {tabs.map((tab: any, i: number) => {
           const isActive = active === i;
           return (
             <button
               key={i}
+              role="tab"
+              aria-selected={isActive}
               onClick={() => setActive(i)}
+              onMouseEnter={(e) => {
+                if (!isActive) e.currentTarget.style.color = activeColor;
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) e.currentTarget.style.color = inactiveColor;
+              }}
               style={{
-                padding: "8px 0",
+                padding: "10px 0",
                 marginBottom: "-1px",
                 fontSize: `${bs.fontSize ?? s.baseFontSize - 1}px`,
                 fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
-                fontWeight: isActive ? 500 : 400,
+                fontWeight: isActive ? 600 : 400,
                 color: isActive ? activeColor : inactiveColor,
                 borderBottom: isActive ? `2px solid ${indicatorColor}` : "2px solid transparent",
                 background: "none",
                 cursor: "pointer",
-                transition: "color 0.15s",
+                transition: "color 0.15s, border-color 0.15s",
               }}
             >
               {tab.label}
@@ -839,7 +873,10 @@ const AccordionBlock = ({ content, settings: s, bs }: { content: any; settings: 
           >
             <button
               onClick={() => setOpenIndex(open ? null : i)}
-              className="w-full text-left flex items-center justify-between gap-3"
+              className="w-full text-left flex items-center justify-between gap-3 transition-colors"
+              aria-expanded={open}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `hsl(${s.mutedColor})`)}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
               style={{
                 padding: `${bs.padding ?? 14}px 18px`,
                 fontFamily: bs.fontFamily ? `'${bs.fontFamily}', sans-serif` : `'${s.bodyFont}', sans-serif`,
@@ -944,10 +981,18 @@ const CardBlock = ({ content, settings: s, bs }: { content: any; settings: Desig
         href={content.link}
         target="_blank"
         rel="noopener noreferrer"
-        className="block group my-4 hover:shadow-sm"
+        className="block group my-4 transition-all"
         style={styles}
-        onMouseEnter={(e) => ((e.currentTarget.style.borderColor = `hsl(${s.primaryColor} / 0.4)`))}
-        onMouseLeave={(e) => ((e.currentTarget.style.borderColor = `hsl(${bs.borderColor || s.borderColor})`))}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = `hsl(${s.primaryColor} / 0.45)`;
+          e.currentTarget.style.boxShadow = `0 1px 2px hsl(0 0% 0% / 0.04), 0 4px 12px hsl(0 0% 0% / 0.06)`;
+          e.currentTarget.style.transform = "translateY(-1px)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = `hsl(${bs.borderColor || s.borderColor})`;
+          e.currentTarget.style.boxShadow = "none";
+          e.currentTarget.style.transform = "translateY(0)";
+        }}
       >
         {inner}
       </a>
@@ -966,7 +1011,7 @@ const CardBlock = ({ content, settings: s, bs }: { content: any; settings: Desig
 */
 const StepsBlock = ({ content, settings: s, bs }: { content: any; settings: DesignSettings; bs: Partial<BlockStyleSettings> }) => {
   const items = content.items || [];
-  const circleSize = bs.circleSize ?? 26;
+  const circleSize = bs.circleSize ?? 28;
   const circleBg = bs.circleBg || s.mutedColor;
   const circleColor = bs.circleColor || s.foregroundColor;
   const connColor = bs.connectorColor || s.borderColor;
@@ -1082,9 +1127,15 @@ const TableBlock = ({ content, settings: s, bs }: { content: any; settings: Desi
           {(content.rows || []).map((row: string[], ri: number) => (
             <tr
               key={ri}
+              className="transition-colors"
               style={{
                 backgroundColor: striped && ri % 2 === 1 ? `hsl(${stripedBg})` : undefined,
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `hsl(${s.mutedColor})`)}
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor =
+                  striped && ri % 2 === 1 ? `hsl(${stripedBg})` : "")
+              }
             >
               {row.map((cell: string, ci: number) => (
                 <td
@@ -1092,7 +1143,7 @@ const TableBlock = ({ content, settings: s, bs }: { content: any; settings: Desi
                   style={{
                     padding: `${cellPad}px ${cellPad + 2}px`,
                     fontSize: `${bs.fontSize ?? s.baseFontSize - 1}px`,
-                    color: `hsl(${s.mutedForegroundColor})`,
+                    color: `hsl(${s.foregroundColor})`,
                     borderBottom: ri < (content.rows || []).length - 1 ? `1px solid hsl(${bs.borderColor || s.borderColor})` : undefined,
                     lineHeight: s.lineHeight,
                   }}
@@ -1142,12 +1193,13 @@ const ApiEndpointBlock = ({ content, settings: s, bs }: { content: any; settings
           style={{
             backgroundColor: `hsl(${methodColor})`,
             color: "hsl(0 0% 100%)",
-            padding: "3px 9px",
+            padding: "4px 10px",
             borderRadius: `${badgeRadius}px`,
             fontSize: "11px",
             fontWeight: 700,
-            letterSpacing: "0.02em",
+            letterSpacing: "0.04em",
             fontFamily: `'${s.codeFont}', monospace`,
+            textTransform: "uppercase",
           }}
         >
           {content.method?.toUpperCase() || "GET"}
@@ -1243,15 +1295,23 @@ const CodeTabsBlock = ({ content, settings: s, bs }: { content: any; settings: D
           paddingRight: "10px",
         }}
       >
-        <div className="flex">
+        <div className="flex" role="tablist">
           {tabs.map((tab: any, i: number) => {
             const isActive = active === i;
             return (
               <button
                 key={i}
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => setActive(i)}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.color = `hsl(${s.foregroundColor})`;
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.color = `hsl(${s.mutedForegroundColor})`;
+                }}
                 style={{
-                  padding: "8px 14px",
+                  padding: "10px 14px",
                   fontSize: "12px",
                   fontFamily: codeFont,
                   fontWeight: isActive ? 600 : 400,
@@ -1260,7 +1320,7 @@ const CodeTabsBlock = ({ content, settings: s, bs }: { content: any; settings: D
                   marginBottom: "-1px",
                   background: "none",
                   cursor: "pointer",
-                  transition: "color 0.15s",
+                  transition: "color 0.15s, border-color 0.15s",
                 }}
               >
                 {tab.label}
@@ -1270,13 +1330,19 @@ const CodeTabsBlock = ({ content, settings: s, bs }: { content: any; settings: D
         </div>
         <button
           onClick={handleCopy}
-          className="inline-flex items-center justify-center"
+          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors"
           style={{
-            color: `hsl(${s.mutedForegroundColor})`,
+            color: copied ? `hsl(${s.primaryColor})` : `hsl(${s.mutedForegroundColor})`,
+            fontSize: "11px",
+            fontFamily: `'${s.bodyFont}', sans-serif`,
+            background: "transparent",
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `hsl(${s.backgroundColor})`)}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
           aria-label="Copy code"
         >
           {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+          <span>{copied ? "Copied" : "Copy"}</span>
         </button>
       </div>
       <pre
