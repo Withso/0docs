@@ -1,4 +1,5 @@
 import { forwardRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Home, Pencil, BarChart3, Settings,
   Bot, Sparkles, Plug,
@@ -31,13 +32,15 @@ const workspaceItems: RailItem[] = [
 ];
 
 // Aspirational items from the Faithful Mintlify clone — wired but disabled until backend exists.
-type AgentItem = { id: string; label: string; icon: typeof Bot };
+type AgentItem = { id: string; label: string; icon: typeof Bot; href?: string };
 const agentItems: AgentItem[] = [
   { id: "assistant", label: "Assistant", icon: Sparkles },
-  { id: "mcp",       label: "MCP",       icon: Plug },
+  { id: "mcp",       label: "MCP",       icon: Plug, href: "settings/mcp" },
 ];
 
 const ProjectRail = forwardRef<HTMLElement, ProjectRailProps>(({ mode, onModeChange, hasUnpublishedChanges }, ref) => {
+  const navigate = useNavigate();
+  const { projectId } = useParams<{ projectId: string }>();
   // map current mode → which rail item is active
   const activeId: string =
     mode === "editor" || mode === "preview" || mode === "code"
@@ -81,6 +84,20 @@ const ProjectRail = forwardRef<HTMLElement, ProjectRailProps>(({ mode, onModeCha
       </div>
       {agentItems.map((item) => {
         const Icon = item.icon;
+        if (item.href && projectId) {
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => navigate(`/builder/${projectId}/${item.href}`)}
+              title={item.label}
+              className="group relative w-full h-8 rounded-md flex items-center gap-2.5 px-2.5 text-[12.5px] font-medium text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/70 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar-background"
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{item.label}</span>
+            </button>
+          );
+        }
         return (
           <Tooltip key={item.id} delayDuration={250}>
             <TooltipTrigger asChild>
