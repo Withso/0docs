@@ -89,6 +89,45 @@ test.describe("Docs viewer accessibility & interactions (Task #24)", () => {
     await expect(drawer).toBeHidden();
   });
 
+  test("sidebar nav: clicking a page link navigates and updates the active row", async ({ page }) => {
+    const links = page.locator('nav[aria-label="Docs"] a, nav[aria-label="Docs"] button');
+    const count = await links.count();
+    test.skip(count < 2, "Sidebar does not expose 2+ entries to navigate between");
+    const target = links.nth(1);
+    const label = (await target.innerText()).trim();
+    await target.click();
+    await page.waitForLoadState("networkidle");
+    // The clicked entry should now be the aria-current="page" row.
+    const current = page.locator('nav[aria-label="Docs"] [aria-current="page"]').first();
+    await expect(current).toBeVisible();
+    if (label) {
+      await expect(current).toContainText(label.split("\n")[0]);
+    }
+  });
+
+  test("search: opening, typing, and selecting a result navigates to it", async ({ page }, testInfo) => {
+    const mod = testInfo.project.use.userAgent?.includes("Mac") ? "Meta" : "Control";
+    await page.keyboard.press(`${mod}+KeyK`);
+    const dialog = page.locator('[role="dialog"][aria-modal="true"]').filter({ has: page.getByPlaceholder(/search/i) });
+    await expect(dialog).toBeVisible();
+    const input = page.getByPlaceholder(/search/i);
+    await input.fill("a");
+    // Wait for at least one result row to render, or skip if the index is empty.
+    const result = dialog.locator('[role="option"], [data-search-result], button').filter({ hasNotText: /^$/ }).first();
+    const appeared = await result.waitFor({ state: "visible", timeout: 2000 }).then(() => true).catch(() => false);
+    test.skip(!appeared, "No search results indexed for this fixture");
+    const beforeUrl = page.url();
+    await result.click();
+    await expect(dialog).toBeHidden();
+    // Either the URL changed or focus jumped to a section heading inside main.
+    const afterUrl = page.url();
+    const focusedInMain = await page.evaluate(() => {
+      const main = document.getElementById("content-area");
+      return main?.contains(document.activeElement) ?? false;
+    });
+    expect(afterUrl !== beforeUrl || focusedInMain).toBe(true);
+  });
+
   test("no console errors on initial /docs render", async ({ page }) => {
     const errors: string[] = [];
     page.on("console", (msg) => {

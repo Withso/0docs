@@ -162,7 +162,9 @@ const DocContentView = ({
             fontFamily: `'${settings.bodyFont}', sans-serif`,
             fontSize: "13px",
             // Keep ring color aligned with the rest of the doc chrome.
-            ['--tw-ring-color' as any]: `hsl(${settings.primaryColor})`,
+            // Cast via React.CSSProperties so the CSS variable is typed
+            // without resorting to `any`.
+            ...({ "--tw-ring-color": `hsl(${settings.primaryColor})` } as React.CSSProperties),
           }}
         >
           Skip to content
