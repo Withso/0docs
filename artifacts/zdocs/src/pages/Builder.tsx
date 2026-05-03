@@ -375,7 +375,11 @@ const BuilderInner = () => {
   }
 
   // Header is scoped to the content area (Mintlify-style) and only shown for editor / code / preview modes.
-  const showContentHeader = mode === "editor" || mode === "code";
+  // Configurations is now a Mintlify-style "third tab" alongside the
+  // editor/code views: it shares the BuilderHeader (branch switcher,
+  // search, Publish) and keeps the inner Navigation/Files sidebar
+  // visible. So it shows the content header just like editor/code.
+  const showContentHeader = mode === "editor" || mode === "code" || mode === "configurations";
   const hasUnpublishedChanges = publishPreview.editorChanges.length > 0 || publishPreview.designChanges.length > 0 || publishPreview.isFirstPublish;
 
   const contentHeader = showContentHeader ? (
@@ -476,7 +480,7 @@ const BuilderInner = () => {
            * on settings restores the nav. Visible in both Visual (editor)
            * and Code modes so the user can switch pages from Code view.
            */}
-          {(mode === "editor" || mode === "code") && (
+          {(mode === "editor" || mode === "code" || mode === "configurations") && (
             <aside
               className={`shrink-0 border-r border-border/40 bg-background flex-col min-h-0 ${settingsTarget ? "hidden" : "flex"}`}
               style={{ width: settings.sidebarWidth + 8 }}
@@ -533,12 +537,18 @@ const BuilderInner = () => {
                   outer workspace rail. The Configurations panel itself is
                   branch-scoped via the existing X-Branch-Id header — each
                   branch persists its own design settings. */}
-              {/* No active state needed — choosing Configurations switches
-                  mode away from editor/code and unmounts this aside. */}
+              {/* Active state shows when the user is on the Configurations
+                  view, so the footer doubles as a "you are here" indicator
+                  while the same nav tree stays visible (Mintlify-style). */}
               <button
                 type="button"
                 onClick={() => handleModeChange("configurations")}
-                className="shrink-0 border-t border-border/40 h-9 px-3 flex items-center gap-2 text-[12.5px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                aria-current={mode === "configurations" ? "page" : undefined}
+                className={`shrink-0 border-t border-border/40 h-9 px-3 flex items-center gap-2 text-[12.5px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${
+                  mode === "configurations"
+                    ? "bg-primary/10 text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                }`}
               >
                 <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">Configurations</span>
@@ -547,7 +557,7 @@ const BuilderInner = () => {
             </aside>
           )}
 
-          {(mode === "editor" || mode === "code") && settingsTarget && (
+          {(mode === "editor" || mode === "code" || mode === "configurations") && settingsTarget && (
             <SettingsSidePanel
               target={settingsTarget}
               onClose={() => setSettingsTarget(null)}
