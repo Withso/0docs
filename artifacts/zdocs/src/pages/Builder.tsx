@@ -1,7 +1,7 @@
 import { useParams, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useBuilder } from "@/hooks/use-builder";
+import { useBuilder, normSection, normBlock } from "@/hooks/use-builder";
 import { useDesignSettings } from "@/hooks/use-design-settings";
 import { usePublish } from "@/hooks/use-publish";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
@@ -25,7 +25,6 @@ import NavigationTree, { type NavSettingsTarget } from "@/components/builder/Nav
 import SettingsSidePanel, { type SettingsTarget } from "@/components/builder/SettingsSidePanel";
 import CodeView from "@/components/builder/CodeView";
 import SearchDialog from "@/components/docs/SearchDialog";
-import VersionSwitcher from "@/components/builder/VersionSwitcher";
 import BranchSwitcher from "@/components/builder/BranchSwitcher";
 import { BranchProvider, useBranchContext } from "@/contexts/BranchContext";
 import { useVersions } from "@/hooks/use-versions";
@@ -233,12 +232,22 @@ const BuilderInner = () => {
 
     if (pageIds.length > 0) {
       const secsRes = await fetch(`/api/sections?pageIds=${pageIds.join(",")}`);
-      allSections = secsRes.ok ? ((await secsRes.json()) as Section[]) : [];
+      // The /api/sections endpoint returns rows with camelCase keys (pageId,
+      // orderIndex, navTitle), but our diff/preview code keys off snake_case
+      // (s.page_id). Without normalization every section's page_id is
+      // undefined, so EditorChange.pageId never resolves and every change
+      // falls into the "orphan" bucket — that was the source of the bogus
+      // "234 orphan changes" row in the publish dropdown.
+      allSections = secsRes.ok
+        ? ((await secsRes.json()) as any[]).map(normSection)
+        : [];
 
       if (allSections.length > 0) {
         const secIds = allSections.map((s) => s.id);
         const blksRes = await fetch(`/api/blocks?sectionIds=${secIds.join(",")}`);
-        allBlocks = blksRes.ok ? ((await blksRes.json()) as Block[]) : [];
+        allBlocks = blksRes.ok
+          ? ((await blksRes.json()) as any[]).map(normBlock)
+          : [];
       }
     }
 
@@ -387,16 +396,6 @@ const BuilderInner = () => {
       leftSlot={
         <div className="flex items-center gap-2 min-w-0">
           <BranchSwitcher />
-          <VersionSwitcher
-            projectId={projectId!}
-            versions={versions}
-            activeVersionId={editingVersionId}
-            onSelect={(id) => setActiveVersion(versions.find((v) => v.id === id) || null)}
-            addVersion={addVersion}
-            cloneVersion={cloneVersion}
-            setDefault={setVersionDefault}
-            deleteVersion={deleteVersion}
-          />
         </div>
       }
     />

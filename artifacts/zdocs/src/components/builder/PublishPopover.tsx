@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Globe, FileText, Loader2, Upload, ChevronDown, Check, GitPullRequest } from "lucide-react";
+import { toast } from "sonner";
 import type { EditorChange, DesignChange } from "@/hooks/use-publish";
 
 interface PublishPopoverProps {
@@ -115,7 +116,13 @@ const PublishPopover = ({
     [editorChanges, designChanges],
   );
 
-  const liveHost = customDomain ?? `${projectSlug || "your-docs"}.0docs.app`;
+  // Default published URL is served by this same app at <host>/p/<slug>
+  // (see the `/p/:slug` route in App.tsx). The hard-coded "*.0docs.app"
+  // fallback was misleading because no such host is actually wired up.
+  const liveHost = customDomain
+    ?? (projectSlug
+      ? `${typeof window !== "undefined" ? window.location.host : ""}/p/${projectSlug}`
+      : "Not published yet");
   const totalFiles = fileChanges.length;
   const onBranch = !isDefaultBranch && branchName;
   const noChangesYet = !isFirstPublish && totalFiles === 0;
@@ -195,18 +202,36 @@ const PublishPopover = ({
         {/* CTAs */}
         {onBranch ? (
           <div className="space-y-2">
+            {/* "Save in <branch>" publishes a snapshot scoped to the active
+                branch — the api-client injects X-Branch-Id, so the existing
+                publish() call already writes to the right branch's
+                published_versions row. No production effect until the PR
+                merges back to default. */}
             <Button
               variant="outline"
               className="w-full h-9 rounded-xl text-[13px] font-medium"
-              disabled
-              title="Branch save flow ships with the PR system"
+              disabled={publishing || (!hasUnpublishedChanges && !isFirstPublish)}
+              onClick={() => {
+                onPublish();
+                setOpen(false);
+              }}
             >
-              Save in {branchName}
+              {publishing ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                <>Save in {branchName}</>
+              )}
             </Button>
             <Button
               className="w-full h-9 rounded-xl text-[13px] font-medium bg-foreground text-background hover:bg-foreground/90"
-              disabled
-              title="Pull request flow coming soon"
+              onClick={() =>
+                toast.info("Pull requests are coming soon", {
+                  description: `Your changes are saved on “${branchName}”. The PR review and merge flow ships in the next release.`,
+                })
+              }
             >
               <GitPullRequest className="h-3.5 w-3.5 mr-1.5" />
               Create pull request

@@ -87,7 +87,7 @@ function normPage(r: any): Page {
   };
 }
 
-function normSection(r: any): Section {
+export function normSection(r: any): Section {
   return {
     id: r.id,
     page_id: r.pageId ?? r.page_id,
@@ -97,7 +97,7 @@ function normSection(r: any): Section {
   };
 }
 
-function normBlock(r: any): Block {
+export function normBlock(r: any): Block {
   return {
     id: r.id,
     section_id: r.sectionId ?? r.section_id,
