@@ -2,6 +2,8 @@ import { Router, Request, Response, NextFunction } from "express";
 import { db, pagesTable, projectsTable, sectionsTable, blocksTable, docVersionsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and, inArray } from "drizzle-orm";
+import { resolveBranchId, getDefaultBranchId } from "../lib/branches";
+import { fireAutoCommit } from "../lib/auto-commit";
 
 const router = Router();
 
@@ -41,20 +43,27 @@ router.get("/pages", async (req: Request, res: Response) => {
     if (!projectId) { res.status(400).json({ error: "projectId required" }); return; }
     if (!isUuid(projectId)) { res.json([]); return; }
 
-    // Check if project is published — if so, allow public read
+    // Public read for published projects must NEVER honor a caller-supplied
+    // branchId — that would let anyone enumerate non-default (draft) branches.
+    // Owners hitting this route still get their active branch via X-Branch-Id.
+    const userId = req.user?.id;
+    const isOwner = userId ? !!(await ownedProject(projectId, userId)) : false;
     if (await isProjectPublished(projectId)) {
+      const branchId = isOwner
+        ? await resolveBranchId(req, projectId)
+        : await getDefaultBranchId(projectId);
       const pages = await db.select().from(pagesTable)
-        .where(eq(pagesTable.projectId, projectId))
+        .where(and(eq(pagesTable.projectId, projectId), eq(pagesTable.branchId, branchId)))
         .orderBy(pagesTable.orderIndex);
       res.json(pages); return;
     }
 
     // Not published — require auth + ownership
-    const userId = req.user?.id;
     if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-    if (!(await ownedProject(projectId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+    if (!isOwner) { res.status(403).json({ error: "Forbidden" }); return; }
+    const branchId = await resolveBranchId(req, projectId);
     const pages = await db.select().from(pagesTable)
-      .where(eq(pagesTable.projectId, projectId))
+      .where(and(eq(pagesTable.projectId, projectId), eq(pagesTable.branchId, branchId)))
       .orderBy(pagesTable.orderIndex);
     res.json(pages);
   } catch (err: unknown) {
@@ -102,8 +111,9 @@ router.get("/projects/:projectId/pages", requireAuth,
       if (!(await ownedProject(projectId, userId))) {
         res.status(404).json({ error: "Not found" }); return;
       }
+      const branchId = await resolveBranchId(req, projectId);
       const pages = await db.select().from(pagesTable)
-        .where(eq(pagesTable.projectId, projectId))
+        .where(and(eq(pagesTable.projectId, projectId), eq(pagesTable.branchId, branchId)))
         .orderBy(pagesTable.orderIndex);
       res.json(pages);
     } catch (err) {
@@ -135,12 +145,14 @@ router.post("/projects/:projectId/pages", requireAuth,
           return;
         }
       }
+      const branchId = await resolveBranchId(req, projectId);
       const [page] = await db.insert(pagesTable).values({
-        projectId, title, slug, orderIndex: orderIndex ?? 0,
+        projectId, branchId, title, slug, orderIndex: orderIndex ?? 0,
         navGroupId: navGroupId ?? null, navTitle: navTitle ?? null,
         metaDescription: metaDescription ?? null,
         versionId: cleanVersionId,
       }).returning();
+      fireAutoCommit(req, { projectId, branchId, message: `Create page ${slug}` });
       res.status(201).json(page);
     } catch (err) {
       req.log.error({ err }, "Failed to create page");
@@ -175,6 +187,7 @@ router.patch("/projects/:projectId/pages/:pageId", requireAuth,
         .where(and(eq(pagesTable.id, pageId), eq(pagesTable.projectId, projectId)))
         .returning();
       if (!page) { res.status(404).json({ error: "Not found" }); return; }
+      fireAutoCommit(req, { projectId, branchId: page.branchId, message: "Update page" });
       res.json(page);
     } catch (err) {
       req.log.error({ err }, "Failed to update page");
@@ -191,9 +204,15 @@ router.delete("/projects/:projectId/pages/:pageId", requireAuth,
       if (!(await ownedProject(projectId, userId))) {
         res.status(404).json({ error: "Not found" }); return;
       }
+      // Capture branchId before delete so we can attribute the auto-commit.
+      const [target] = await db.select({ branchId: pagesTable.branchId, slug: pagesTable.slug }).from(pagesTable)
+        .where(and(eq(pagesTable.id, pageId), eq(pagesTable.projectId, projectId)));
       // Scope delete to both pageId AND projectId to prevent cross-project deletion
       await db.delete(pagesTable)
         .where(and(eq(pagesTable.id, pageId), eq(pagesTable.projectId, projectId)));
+      if (target) {
+        fireAutoCommit(req, { projectId, branchId: target.branchId, message: `Delete page ${target.slug}` });
+      }
       res.status(204).send();
     } catch (err) {
       req.log.error({ err }, "Failed to delete page");
@@ -239,6 +258,9 @@ router.get("/projects/:projectId/pages/:pageId/content", requireAuth,
         .where(and(eq(pagesTable.id, pageId), eq(pagesTable.projectId, projectId)));
       if (!page) { res.status(404).json({ error: "Not found" }); return; }
 
+      // sections + blocks inherit their branch from the parent page, so
+      // filtering by pageId/sectionId is implicitly branch-scoped (each
+      // branch has its own page rows with distinct UUIDs).
       const sections = await db.select().from(sectionsTable)
         .where(eq(sectionsTable.pageId, pageId))
         .orderBy(sectionsTable.orderIndex);

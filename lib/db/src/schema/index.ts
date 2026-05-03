@@ -10,3 +10,5 @@ export * from "./docVersions";
 export * from "./profiles";
 export * from "./pageFeedback";
 export * from "./auth";
+export * from "./branches";
+export * from "./commits";

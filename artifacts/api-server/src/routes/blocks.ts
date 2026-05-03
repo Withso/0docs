@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { db, blocksTable, sectionsTable, pagesTable, projectsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { eq, inArray, and } from "drizzle-orm";
+import { fireAutoCommit } from "../lib/auto-commit";
 
 const router = Router();
 
@@ -102,9 +103,12 @@ router.post("/blocks", requireAuth, async (req: Request, res: Response) => {
     const [project] = await db.select().from(projectsTable)
       .where(and(eq(projectsTable.id, page.projectId), eq(projectsTable.userId, userId)));
     if (!project) { res.status(403).json({ error: "Forbidden" }); return; }
+    // Block inherits branch from its section's page.
     const [block] = await db.insert(blocksTable).values({
-      sectionId, type: type ?? "paragraph", content: content ?? {}, orderIndex: orderIndex ?? 0,
+      sectionId, branchId: section.branchId,
+      type: type ?? "paragraph", content: content ?? {}, orderIndex: orderIndex ?? 0,
     }).returning();
+    fireAutoCommit(req, { projectId: page.projectId, branchId: section.branchId, message: "Create block" });
     res.status(201).json(block);
   } catch (err) {
     req.log.error({ err }, "Failed to create block");
@@ -141,10 +145,19 @@ router.patch("/blocks/:id", requireAuth, async (req: Request<{ id: string }>, re
     if (content !== undefined) updates["content"] = content;
     if (orderIndex !== undefined) updates["orderIndex"] = orderIndex;
     if (type !== undefined) updates["type"] = type;
-    // If caller is moving block to a different section, verify they own the destination section too
+    // If caller is moving block to a different section, verify they own the
+    // destination AND that it lives on the same branch — moving content
+    // across branches would corrupt branch isolation and commit diffs.
     if (sectionId !== undefined) {
       if (!isUuid(sectionId) || !(await ownedSection(sectionId, userId))) {
         res.status(403).json({ error: "Forbidden" }); return;
+      }
+      const [srcBlock] = await db.select({ branchId: blocksTable.branchId }).from(blocksTable)
+        .where(eq(blocksTable.id, blockId));
+      const [destSection] = await db.select({ branchId: sectionsTable.branchId }).from(sectionsTable)
+        .where(eq(sectionsTable.id, sectionId));
+      if (!srcBlock || !destSection || srcBlock.branchId !== destSection.branchId) {
+        res.status(400).json({ error: "Cannot move block across branches" }); return;
       }
       updates["sectionId"] = sectionId;
     }
@@ -154,6 +167,12 @@ router.patch("/blocks/:id", requireAuth, async (req: Request<{ id: string }>, re
     // attacker request cannot race ownership.
     const [block] = await db.update(blocksTable).set(updates).where(eq(blocksTable.id, blockId)).returning();
     if (!block) { res.status(404).json({ error: "Not found" }); return; }
+    // Look up the project for the auto-commit (block → section → page → project).
+    const [ctx] = await db.select({ projectId: pagesTable.projectId }).from(blocksTable)
+      .innerJoin(sectionsTable, eq(sectionsTable.id, blocksTable.sectionId))
+      .innerJoin(pagesTable, eq(pagesTable.id, sectionsTable.pageId))
+      .where(eq(blocksTable.id, blockId));
+    if (ctx) fireAutoCommit(req, { projectId: ctx.projectId, branchId: block.branchId, message: "Edit block" });
     res.json(block);
   } catch (err) {
     req.log.error({ err }, "Failed to update block");
@@ -168,7 +187,15 @@ router.delete("/blocks/:id", requireAuth, async (req: Request<{ id: string }>, r
     const blockId = req.params.id;
     if (!isUuid(blockId)) { res.status(404).json({ error: "Not found" }); return; }
     if (!(await ownedBlock(blockId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+    const [target] = await db.select({
+      branchId: blocksTable.branchId,
+      projectId: pagesTable.projectId,
+    }).from(blocksTable)
+      .innerJoin(sectionsTable, eq(sectionsTable.id, blocksTable.sectionId))
+      .innerJoin(pagesTable, eq(pagesTable.id, sectionsTable.pageId))
+      .where(eq(blocksTable.id, blockId));
     await db.delete(blocksTable).where(eq(blocksTable.id, blockId));
+    if (target) fireAutoCommit(req, { projectId: target.projectId, branchId: target.branchId, message: "Delete block" });
     res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Failed to delete block");
@@ -214,6 +241,21 @@ router.post("/blocks/reorder", requireAuth, async (req: Request, res: Response) 
     const uniqueSectionIds = Array.from(new Set(items.map((i) => i.sectionId)));
     for (const sid of uniqueSectionIds) {
       if (!(await ownedSection(sid, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+    }
+    // Cross-branch move guard: every block's destination section must share
+    // the block's current branch. Cheap to enforce in batch via two selects.
+    const blockBranchRows = await db.select({ id: blocksTable.id, branchId: blocksTable.branchId }).from(blocksTable)
+      .where(inArray(blocksTable.id, items.map((i) => i.id)));
+    const sectionBranchRows = await db.select({ id: sectionsTable.id, branchId: sectionsTable.branchId }).from(sectionsTable)
+      .where(inArray(sectionsTable.id, uniqueSectionIds));
+    const sectionBranchById = new Map(sectionBranchRows.map((s) => [s.id, s.branchId]));
+    const blockBranchById = new Map(blockBranchRows.map((b) => [b.id, b.branchId]));
+    for (const it of items) {
+      const dest = sectionBranchById.get(it.sectionId);
+      const cur = blockBranchById.get(it.id);
+      if (!dest || !cur || dest !== cur) {
+        res.status(400).json({ error: "Cannot move block across branches" }); return;
+      }
     }
     await db.transaction(async (tx) => {
       const now = new Date();

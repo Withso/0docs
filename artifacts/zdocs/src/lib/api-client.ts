@@ -1,5 +1,14 @@
 const API_BASE = "/api";
 
+// Branch routing: BranchContext registers a getter here so every API request
+// transparently carries the active branch via X-Branch-Id. The api-server's
+// resolveBranchId() reads either ?branchId=… or X-Branch-Id, so existing
+// callers that don't append the query param still target the right branch.
+let branchIdGetter: () => string | null = () => null;
+export function setActiveBranchIdGetter(getter: () => string | null): void {
+  branchIdGetter = getter;
+}
+
 export async function apiRequest(
   path: string,
   options: RequestInit = {},
@@ -8,6 +17,8 @@ export async function apiRequest(
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string> || {}),
   };
+  const branchId = branchIdGetter();
+  if (branchId && !headers["X-Branch-Id"]) headers["X-Branch-Id"] = branchId;
 
   return fetch(`${API_BASE}${path}`, {
     ...options,

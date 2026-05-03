@@ -2,6 +2,8 @@ import { Router, Request, Response, NextFunction } from "express";
 import { db, navGroupsTable, pagesTable, projectsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and } from "drizzle-orm";
+import { resolveBranchId, getDefaultBranchId } from "../lib/branches";
+import { fireAutoCommit } from "../lib/auto-commit";
 
 const router = Router();
 
@@ -42,18 +44,24 @@ router.get("/navgroups", async (req: Request, res: Response) => {
     if (!projectId) { res.status(400).json({ error: "projectId required" }); return; }
     if (!isUuid(projectId)) { res.json([]); return; }
 
+    // Public reads must always go to default branch — only owners may pick.
+    const userId = req.user?.id;
+    const isOwner = userId ? !!(await ownedProject(projectId, userId)) : false;
     if (await isProjectPublished(projectId)) {
+      const branchId = isOwner
+        ? await resolveBranchId(req, projectId)
+        : await getDefaultBranchId(projectId);
       const groups = await db.select().from(navGroupsTable)
-        .where(eq(navGroupsTable.projectId, projectId))
+        .where(and(eq(navGroupsTable.projectId, projectId), eq(navGroupsTable.branchId, branchId)))
         .orderBy(navGroupsTable.orderIndex);
       res.json(groups); return;
     }
 
-    const userId = req.user?.id;
     if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-    if (!(await ownedProject(projectId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+    if (!isOwner) { res.status(403).json({ error: "Forbidden" }); return; }
+    const branchId = await resolveBranchId(req, projectId);
     const groups = await db.select().from(navGroupsTable)
-      .where(eq(navGroupsTable.projectId, projectId))
+      .where(and(eq(navGroupsTable.projectId, projectId), eq(navGroupsTable.branchId, branchId)))
       .orderBy(navGroupsTable.orderIndex);
     res.json(groups);
   } catch (err: unknown) {
@@ -85,8 +93,9 @@ router.get("/projects/:projectId/nav-groups", requireAuth,
       const userId = req.user!.id;
       const { projectId } = req.params;
       if (!(await ownedProject(projectId, userId))) { res.status(404).json({ error: "Not found" }); return; }
+      const branchId = await resolveBranchId(req, projectId);
       const groups = await db.select().from(navGroupsTable)
-        .where(eq(navGroupsTable.projectId, projectId))
+        .where(and(eq(navGroupsTable.projectId, projectId), eq(navGroupsTable.branchId, branchId)))
         .orderBy(navGroupsTable.orderIndex);
       res.json(groups);
     } catch (err) {
@@ -105,10 +114,12 @@ router.post("/projects/:projectId/nav-groups", requireAuth,
       const { title, type, orderIndex, tabId } = req.body as {
         title?: string; type?: string; orderIndex?: number; tabId?: string;
       };
+      const branchId = await resolveBranchId(req, projectId);
       const [group] = await db.insert(navGroupsTable).values({
-        projectId, title: title ?? "New Label",
+        projectId, branchId, title: title ?? "New Label",
         type: type ?? "label", orderIndex: orderIndex ?? 0, tabId: tabId ?? null,
       }).returning();
+      fireAutoCommit(req, { projectId, branchId, message: "Create nav group" });
       res.status(201).json(group);
     } catch (err) {
       req.log.error({ err }, "Failed to create nav group");

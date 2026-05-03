@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 export const tabsTable = pgTable("tabs", {
   id: uuid("id").primaryKey().defaultRandom(),
   projectId: uuid("project_id").notNull(),
+  branchId: uuid("branch_id").notNull(),
   label: text("label").notNull().default("New Tab"),
   icon: text("icon"),
   orderIndex: integer("order_index").notNull().default(0),

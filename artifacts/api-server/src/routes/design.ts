@@ -2,6 +2,8 @@ import { Router, Request, Response, NextFunction } from "express";
 import { db, projectDesignSettingsTable, projectsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and } from "drizzle-orm";
+import { resolveBranchId, getDefaultBranchId } from "../lib/branches";
+import { fireAutoCommit } from "../lib/auto-commit";
 
 const router = Router();
 
@@ -23,14 +25,23 @@ router.get("/projects/:projectId/design",
       if (!project) { res.status(404).json({ error: "Not found" }); return; }
 
       const isPublished = project.publishedVersionId != null;
+      const userId = req.user?.id;
+      const isOwner = userId != null && project.userId === userId;
       if (!isPublished) {
-        const userId = req.user?.id;
         if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-        if (project.userId !== userId) { res.status(403).json({ error: "Forbidden" }); return; }
+        if (!isOwner) { res.status(403).json({ error: "Forbidden" }); return; }
       }
 
+      // Public reads on a published project must always return the default
+      // branch's theme — only owners may select another branch.
+      const branchId = isOwner
+        ? await resolveBranchId(req, projectId)
+        : await getDefaultBranchId(projectId);
       const [settings] = await db.select().from(projectDesignSettingsTable)
-        .where(eq(projectDesignSettingsTable.projectId, projectId));
+        .where(and(
+          eq(projectDesignSettingsTable.projectId, projectId),
+          eq(projectDesignSettingsTable.branchId, branchId),
+        ));
       res.json(settings || null);
     } catch (err) {
       req.log.error({ err }, "Failed to get design settings");
@@ -48,19 +59,24 @@ router.put("/projects/:projectId/design", requireAuth,
         .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
       if (!project) { res.status(404).json({ error: "Not found" }); return; }
       const { settings } = req.body as { settings: object };
+      const branchId = await resolveBranchId(req, projectId);
       const [existing] = await db.select().from(projectDesignSettingsTable)
-        .where(eq(projectDesignSettingsTable.projectId, projectId));
+        .where(and(
+          eq(projectDesignSettingsTable.projectId, projectId),
+          eq(projectDesignSettingsTable.branchId, branchId),
+        ));
       let result;
       if (existing) {
         [result] = await db.update(projectDesignSettingsTable)
           .set({ settings, updatedAt: new Date() })
-          .where(eq(projectDesignSettingsTable.projectId, projectId))
+          .where(eq(projectDesignSettingsTable.id, existing.id))
           .returning();
       } else {
         [result] = await db.insert(projectDesignSettingsTable)
-          .values({ projectId, settings })
+          .values({ projectId, branchId, settings })
           .returning();
       }
+      fireAutoCommit(req, { projectId, branchId, message: "Update theme" });
       res.json(result);
     } catch (err) {
       req.log.error({ err }, "Failed to upsert design settings");

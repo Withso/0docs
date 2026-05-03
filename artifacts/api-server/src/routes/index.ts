@@ -12,6 +12,8 @@ import versionsRouter from "./versions";
 import profilesRouter from "./profiles";
 import feedbackRouter from "./feedback";
 import askDocsRouter from "./ask-docs";
+import branchesRouter from "./branches";
+import commitsRouter from "./commits";
 
 const router: IRouter = Router();
 
@@ -28,5 +30,7 @@ router.use(versionsRouter);
 router.use(profilesRouter);
 router.use(feedbackRouter);
 router.use(askDocsRouter);
+router.use(branchesRouter);
+router.use(commitsRouter);
 
 export default router;

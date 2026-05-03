@@ -5,6 +5,8 @@ import { z } from "zod/v4";
 export const blocksTable = pgTable("blocks", {
   id: uuid("id").primaryKey().defaultRandom(),
   sectionId: uuid("section_id").notNull(),
+  // Branch-scoped: every block belongs to exactly one branch.
+  branchId: uuid("branch_id").notNull(),
   type: text("type").notNull().default("paragraph"),
   content: jsonb("content").notNull().default({}),
   orderIndex: integer("order_index").notNull().default(0),

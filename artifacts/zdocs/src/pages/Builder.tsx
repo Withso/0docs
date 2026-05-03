@@ -26,6 +26,8 @@ import SettingsSidePanel, { type SettingsTarget } from "@/components/builder/Set
 import CodeView from "@/components/builder/CodeView";
 import SearchDialog from "@/components/docs/SearchDialog";
 import VersionSwitcher from "@/components/builder/VersionSwitcher";
+import BranchSwitcher from "@/components/builder/BranchSwitcher";
+import { BranchProvider, useBranchContext } from "@/contexts/BranchContext";
 import { useVersions } from "@/hooks/use-versions";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, FileJson, GripVertical, RotateCw, X } from "lucide-react";
@@ -53,7 +55,37 @@ import {
 
 export type { Page, Section, Block, BlockType } from "@/hooks/use-builder";
 
+// Outer wrapper: ensures every page in /builder/:projectId is inside a
+// BranchProvider so api-client gets the X-Branch-Id header and child hooks
+// can read/switch the active branch. The inner key={activeBranchId} forces
+// useBuilder & friends to fully remount on branch switch — the cleanest
+// way to invalidate all in-flight state without touching every hook.
 const Builder = () => {
+  const { projectId } = useParams<{ projectId: string }>();
+  if (!projectId) return <Navigate to="/builder" replace />;
+  return (
+    <BranchProvider projectId={projectId}>
+      <BranchKeyedBuilder />
+    </BranchProvider>
+  );
+};
+
+const BranchKeyedBuilder = () => {
+  const { activeBranchId, loading } = useBranchContext();
+  // Wait for BranchProvider to settle on a branch (so the first render of
+  // BuilderInner already has X-Branch-Id wired up, avoiding a refetch storm).
+  if (loading || !activeBranchId) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
+        <span className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <span className="text-[13px] text-muted-foreground">Loading branch...</span>
+      </div>
+    );
+  }
+  return <BuilderInner key={activeBranchId} />;
+};
+
+const BuilderInner = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -341,16 +373,19 @@ const Builder = () => {
       hasUnpublishedChanges={hasUnpublishedChanges}
       onSearchClick={() => setSearchOpen(true)}
       leftSlot={
-        <VersionSwitcher
-          projectId={projectId!}
-          versions={versions}
-          activeVersionId={editingVersionId}
-          onSelect={(id) => setActiveVersion(versions.find((v) => v.id === id) || null)}
-          addVersion={addVersion}
-          cloneVersion={cloneVersion}
-          setDefault={setVersionDefault}
-          deleteVersion={deleteVersion}
-        />
+        <div className="flex items-center gap-2 min-w-0">
+          <BranchSwitcher />
+          <VersionSwitcher
+            projectId={projectId!}
+            versions={versions}
+            activeVersionId={editingVersionId}
+            onSelect={(id) => setActiveVersion(versions.find((v) => v.id === id) || null)}
+            addVersion={addVersion}
+            cloneVersion={cloneVersion}
+            setDefault={setVersionDefault}
+            deleteVersion={deleteVersion}
+          />
+        </div>
       }
     />
   ) : null;

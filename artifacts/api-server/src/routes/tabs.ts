@@ -2,6 +2,8 @@ import { Router, Request, Response, NextFunction } from "express";
 import { db, tabsTable, navGroupsTable, projectsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and } from "drizzle-orm";
+import { resolveBranchId, getDefaultBranchId } from "../lib/branches";
+import { fireAutoCommit } from "../lib/auto-commit";
 
 const router = Router();
 
@@ -27,20 +29,29 @@ router.get("/tabs", async (req: Request, res: Response) => {
     if (!projectId) { res.status(400).json({ error: "projectId required" }); return; }
     if (!isUuid(projectId)) { res.json([]); return; }
 
+    // Public reads must always go to default branch — only owners may pick.
+    const userId = req.user?.id;
+    const [owned] = userId
+      ? await db.select({ id: projectsTable.id }).from(projectsTable)
+          .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)))
+      : [];
+    const isOwner = !!owned;
+
     if (await isProjectPublished(projectId)) {
+      const branchId = isOwner
+        ? await resolveBranchId(req, projectId)
+        : await getDefaultBranchId(projectId);
       const tabs = await db.select().from(tabsTable)
-        .where(eq(tabsTable.projectId, projectId))
+        .where(and(eq(tabsTable.projectId, projectId), eq(tabsTable.branchId, branchId)))
         .orderBy(tabsTable.orderIndex);
       res.json(tabs); return;
     }
 
-    const userId = req.user?.id;
     if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-    const [owned] = await db.select({ id: projectsTable.id }).from(projectsTable)
-      .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
-    if (!owned) { res.status(403).json({ error: "Forbidden" }); return; }
+    if (!isOwner) { res.status(403).json({ error: "Forbidden" }); return; }
+    const branchId = await resolveBranchId(req, projectId);
     const tabs = await db.select().from(tabsTable)
-      .where(eq(tabsTable.projectId, projectId))
+      .where(and(eq(tabsTable.projectId, projectId), eq(tabsTable.branchId, branchId)))
       .orderBy(tabsTable.orderIndex);
     res.json(tabs);
   } catch (err) {
@@ -72,8 +83,9 @@ router.get("/projects/:projectId/tabs", requireAuth,
       const userId = req.user!.id;
       const { projectId } = req.params;
       if (!(await ownedProject(projectId, userId))) { res.status(404).json({ error: "Not found" }); return; }
+      const branchId = await resolveBranchId(req, projectId);
       const tabs = await db.select().from(tabsTable)
-        .where(eq(tabsTable.projectId, projectId))
+        .where(and(eq(tabsTable.projectId, projectId), eq(tabsTable.branchId, branchId)))
         .orderBy(tabsTable.orderIndex);
       res.json(tabs);
     } catch (err) {
@@ -92,10 +104,12 @@ router.post("/projects/:projectId/tabs", requireAuth,
       const { label, orderIndex, metadata } = req.body as {
         label?: string; orderIndex?: number; metadata?: object;
       };
+      const branchId = await resolveBranchId(req, projectId);
       const [tab] = await db.insert(tabsTable).values({
-        projectId, label: label ?? "New Tab",
+        projectId, branchId, label: label ?? "New Tab",
         orderIndex: orderIndex ?? 0, metadata: metadata ?? {},
       }).returning();
+      fireAutoCommit(req, { projectId, branchId, message: "Create tab" });
       res.status(201).json(tab);
     } catch (err) {
       req.log.error({ err }, "Failed to create tab");

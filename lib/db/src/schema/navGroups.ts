@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 export const navGroupsTable = pgTable("nav_groups", {
   id: uuid("id").primaryKey().defaultRandom(),
   projectId: uuid("project_id").notNull(),
+  branchId: uuid("branch_id").notNull(),
   title: text("title").notNull().default("New Label"),
   type: text("type").notNull().default("label"),
   orderIndex: integer("order_index").notNull().default(0),

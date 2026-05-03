@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { db, sectionsTable, pagesTable, projectsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { eq, inArray, and, isNotNull } from "drizzle-orm";
+import { fireAutoCommit } from "../lib/auto-commit";
 
 const router = Router();
 
@@ -94,9 +95,13 @@ router.post("/sections", requireAuth, async (req: Request, res: Response) => {
     const [project] = await db.select().from(projectsTable)
       .where(and(eq(projectsTable.id, page.projectId), eq(projectsTable.userId, userId)));
     if (!project) { res.status(403).json({ error: "Forbidden" }); return; }
+    // Section inherits its branch from the parent page — sections never
+    // cross branches.
     const [section] = await db.insert(sectionsTable).values({
-      pageId, title: title ?? "New Section", orderIndex: orderIndex ?? 0,
+      pageId, branchId: page.branchId,
+      title: title ?? "New Section", orderIndex: orderIndex ?? 0,
     }).returning();
+    fireAutoCommit(req, { projectId: page.projectId, branchId: page.branchId, message: "Create section" });
     res.status(201).json(section);
   } catch (err) {
     req.log.error({ err }, "Failed to create section");
@@ -115,6 +120,11 @@ router.patch("/sections/:id", requireAuth, async (req: Request<{ id: string }>, 
       if (req.body[k] !== undefined) updates[k] = req.body[k];
     }
     const [section] = await db.update(sectionsTable).set(updates).where(eq(sectionsTable.id, req.params.id)).returning();
+    if (section) {
+      const [page] = await db.select({ projectId: pagesTable.projectId }).from(pagesTable)
+        .where(eq(pagesTable.id, section.pageId));
+      if (page) fireAutoCommit(req, { projectId: page.projectId, branchId: section.branchId, message: "Update section" });
+    }
     res.json(section);
   } catch (err) {
     req.log.error({ err }, "Failed to update section");
@@ -127,7 +137,16 @@ router.delete("/sections/:id", requireAuth, async (req: Request<{ id: string }>,
   try {
     const userId = req.user!.id;
     if (!(await ownedSection(req.params.id, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+    const [target] = await db.select({
+      branchId: sectionsTable.branchId,
+      pageId: sectionsTable.pageId,
+    }).from(sectionsTable).where(eq(sectionsTable.id, req.params.id));
     await db.delete(sectionsTable).where(eq(sectionsTable.id, req.params.id));
+    if (target) {
+      const [page] = await db.select({ projectId: pagesTable.projectId }).from(pagesTable)
+        .where(eq(pagesTable.id, target.pageId));
+      if (page) fireAutoCommit(req, { projectId: page.projectId, branchId: target.branchId, message: "Delete section" });
+    }
     res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Failed to delete section");
