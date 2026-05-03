@@ -130,41 +130,49 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
       >
         {sections.map((section) => {
           const isActive = activeId === section.id;
+          const anchorId = `section-${section.id}`;
           return (
             <a
               key={section.id}
-              href={`#section-${section.id}`}
+              href={`#${anchorId}`}
               onClick={(e) => {
                 e.preventDefault();
-                const el = document.getElementById(`section-${section.id}`);
+                const el = document.getElementById(anchorId);
                 if (el) {
                   const top = el.getBoundingClientRect().top + window.scrollY - (stickyTop + 24);
                   window.scrollTo({ top, behavior: "smooth" });
                 }
+                window.history.replaceState(null, "", `#${anchorId}`);
+                setActiveId(section.id);
               }}
               aria-current={isActive ? "location" : undefined}
-              className="relative flex items-center py-1.5 pl-4 pr-1 transition-colors hover:opacity-100"
+              className="group/toc relative flex items-center py-1.5 pl-4 pr-1 transition-colors focus:outline-none"
               style={{
                 color: isActive
                   ? `hsl(${s.primaryColor})`
                   : `hsl(${s.mutedForegroundColor})`,
                 fontSize: "13px",
-                fontWeight: isActive ? 500 : 400,
+                fontWeight: isActive ? 600 : 400,
                 fontFamily: `'${s.bodyFont}', sans-serif`,
-                opacity: isActive ? 1 : 0.85,
                 lineHeight: 1.4,
               }}
+              onMouseEnter={(e) => {
+                if (!isActive) e.currentTarget.style.color = `hsl(${s.foregroundColor})`;
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) e.currentTarget.style.color = `hsl(${s.mutedForegroundColor})`;
+              }}
             >
-              {isActive && (
-                <span
-                  aria-hidden
-                  className="absolute top-1.5 bottom-1.5 w-[2px] rounded-full"
-                  style={{
-                    left: "-1px",
-                    backgroundColor: `hsl(${s.primaryColor})`,
-                  }}
-                />
-              )}
+              <span
+                aria-hidden
+                className="absolute top-1.5 bottom-1.5 w-[2px] rounded-full transition-colors"
+                style={{
+                  left: "-1px",
+                  backgroundColor: isActive
+                    ? `hsl(${s.primaryColor})`
+                    : "transparent",
+                }}
+              />
               <span className="truncate" dangerouslySetInnerHTML={{ __html: section.title }} />
             </a>
           );

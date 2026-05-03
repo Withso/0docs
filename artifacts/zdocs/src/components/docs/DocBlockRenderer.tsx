@@ -109,6 +109,7 @@ const Callout = ({
           color: `hsl(${s.foregroundColor})`,
           lineHeight: s.lineHeight,
           flex: 1,
+          minWidth: 0,
         }}
       >
         {text}
@@ -133,22 +134,52 @@ const DocBlockRenderer = ({ block, settings: s, highlightType }: Props) => {
   );
 
   switch (type) {
-    case "heading":
+    case "heading": {
+      const headingId = `heading-${block.id}`;
+      const h3FontSize = Math.max(16, Math.round(s.headingFontSize * 0.78));
       return wrapHighlight(
         <h3
+          id={headingId}
+          className="group/h3 flex items-baseline gap-2"
           style={{
             fontFamily: `'${s.headingFont}', sans-serif`,
             fontWeight: s.headingWeight,
-            fontSize: `${s.headingFontSize}px`,
+            fontSize: `${h3FontSize}px`,
+            lineHeight: 1.3,
             letterSpacing: "-0.01em",
-            marginTop: "1.5em",
+            marginTop: "1.6em",
             marginBottom: "0.6em",
             color: bs.color ? `hsl(${bs.color})` : `hsl(${s.foregroundColor})`,
+            scrollMarginTop: "96px",
           }}
         >
-          {content.text}
+          <span>{content.text}</span>
+          <a
+            href={`#${headingId}`}
+            onClick={(e) => {
+              e.preventDefault();
+              const url = `${window.location.origin}${window.location.pathname}#${headingId}`;
+              try {
+                navigator.clipboard?.writeText(url);
+              } catch {}
+              window.history.replaceState(null, "", `#${headingId}`);
+              const el = document.getElementById(headingId);
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            aria-label="Copy link to heading"
+            className="opacity-0 group-hover/h3:opacity-60 hover:!opacity-100 focus:!opacity-100 transition-opacity no-underline focus:outline-none"
+            style={{
+              color: `hsl(${s.mutedForegroundColor})`,
+              fontWeight: 400,
+              fontSize: "0.7em",
+              textDecoration: "none",
+            }}
+          >
+            #
+          </a>
         </h3>,
       );
+    }
 
     case "paragraph":
       return wrapHighlight(

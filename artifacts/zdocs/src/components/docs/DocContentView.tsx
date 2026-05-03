@@ -232,7 +232,8 @@ const DocContentView = ({
                   fontWeight: 700,
                   fontSize: `${settings.pageTitleSize}px`,
                   lineHeight: 1.15,
-                  letterSpacing: "-0.02em",
+                  letterSpacing: "-0.025em",
+                  marginTop: 0,
                   marginBottom: `${settings.sectionSpacing * 0.6}px`,
                   color: `hsl(${settings.foregroundColor})`,
                 }}
@@ -245,23 +246,54 @@ const DocContentView = ({
                   .filter((b) => b.section_id === section.id)
                   .sort((a, b) => a.order_index - b.order_index);
 
+                const anchorId = `section-${section.id}`;
                 return (
                   <section
                     key={section.id}
-                    id={`section-${section.id}`}
-                    style={{ marginBottom: `${settings.sectionSpacing}px` }}
+                    id={anchorId}
+                    style={{
+                      marginBottom: `${settings.sectionSpacing}px`,
+                      scrollMarginTop: `${sidebarTop + 24}px`,
+                    }}
                   >
                     <h2
-                      className="mb-5"
+                      className="group/h2 mb-5 flex items-baseline gap-2"
                       style={{
                         fontFamily: `'${settings.headingFont}', sans-serif`,
                         fontWeight: settings.headingWeight,
                         fontSize: `${settings.headingFontSize}px`,
+                        lineHeight: 1.25,
                         letterSpacing: "-0.015em",
                         color: `hsl(${settings.foregroundColor})`,
                       }}
                     >
                       <span dangerouslySetInnerHTML={{ __html: section.title }} />
+                      <a
+                        href={`#${anchorId}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const url = `${window.location.origin}${window.location.pathname}#${anchorId}`;
+                          try {
+                            navigator.clipboard?.writeText(url);
+                          } catch {}
+                          window.history.replaceState(null, "", `#${anchorId}`);
+                          const el = document.getElementById(anchorId);
+                          if (el) {
+                            const top = el.getBoundingClientRect().top + window.scrollY - (sidebarTop + 24);
+                            window.scrollTo({ top, behavior: "smooth" });
+                          }
+                        }}
+                        aria-label="Copy link to section"
+                        className="opacity-0 group-hover/h2:opacity-60 hover:!opacity-100 focus:!opacity-100 transition-opacity no-underline focus:outline-none"
+                        style={{
+                          color: `hsl(${settings.mutedForegroundColor})`,
+                          fontWeight: 400,
+                          fontSize: "0.7em",
+                          textDecoration: "none",
+                        }}
+                      >
+                        #
+                      </a>
                     </h2>
 
                     <div>

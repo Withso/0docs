@@ -403,9 +403,22 @@ code, pre {
 
 .inline-editor-link,
 .inline-editor-content a {
-  color: var(--zdocs-text1);
+  color: hsl(var(--primary));
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color 0.15s, text-decoration-color 0.15s;
+}
+.inline-editor-link:hover,
+.inline-editor-content a:hover {
+  color: hsl(var(--primary));
+  text-decoration-thickness: 2px;
+}
+.inline-editor-link:focus-visible,
+.inline-editor-content a:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .inline-editor-content .tiptap p.is-editor-empty:first-child::before {
@@ -427,7 +440,9 @@ code, pre {
 .inline-editor-readonly code { background: var(--zdocs-bg3); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; }
 .inline-editor-readonly img { max-width: 100%; height: auto; border-radius: var(--zdocs-radius-sm); margin: 0.75em 0; }
 .inline-editor-readonly hr { border: none; border-top: 1px solid var(--zdocs-border); margin: 1.5em 0; }
-.inline-editor-readonly a { color: var(--zdocs-text1); text-decoration: underline; text-underline-offset: 2px; }
+.inline-editor-readonly a { color: hsl(var(--primary)); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.inline-editor-readonly a:hover { text-decoration-thickness: 2px; }
+.inline-editor-readonly a:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; border-radius: 2px; }
 
 
 /* ─── 6. DESIGN PANEL CONTROLS ─── */
