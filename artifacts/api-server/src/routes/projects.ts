@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { db, projectsTable, pagesTable, navGroupsTable, sectionsTable, blocksTable, projectDesignSettingsTable } from "@workspace/db";
+import { db, projectsTable, pagesTable, navGroupsTable, sectionsTable, blocksTable, projectDesignSettingsTable, branchesTable, tabsTable } from "@workspace/db";
+import { randomUUID } from "node:crypto";
 import { requireAuth } from "../middlewares/requireAuth";
 import { eq, and, desc, ne, inArray } from "drizzle-orm";
 import dns from "node:dns/promises";
@@ -144,9 +145,24 @@ router.post("/projects", requireAuth, async (req: Request, res: Response) => {
     }
     let project;
     try {
-      [project] = await db.insert(projectsTable)
-        .values({ name: cleanName, slug, description: cleanDesc, userId })
-        .returning();
+      project = await db.transaction(async (tx) => {
+        const [created] = await tx.insert(projectsTable)
+          .values({ name: cleanName, slug, description: cleanDesc, userId })
+          .returning();
+        // Every project needs a default "main" branch — schema makes branchId
+        // NOT NULL on every content row. Bootstrap branch + first page in the
+        // same tx so a partial failure rolls back cleanly.
+        const branchId = randomUUID();
+        await tx.insert(branchesTable).values({
+          id: branchId, projectId: created.id, name: "main",
+          isDefault: true, createdBy: userId,
+        });
+        await tx.insert(pagesTable).values({
+          projectId: created.id, branchId,
+          title: "Introduction", slug: "introduction", orderIndex: 0,
+        });
+        return created;
+      });
     } catch (err: any) {
       // 23505 = unique_violation. Race-safe fallback for the slug check above.
       if (err?.code === "23505") {
@@ -155,9 +171,6 @@ router.post("/projects", requireAuth, async (req: Request, res: Response) => {
       }
       throw err;
     }
-    await db.insert(pagesTable).values({
-      projectId: project.id, title: "Introduction", slug: "introduction", orderIndex: 0,
-    });
     res.status(201).json(project);
   } catch (err) {
     req.log.error({ err }, "Failed to create project");
@@ -419,62 +432,108 @@ router.post("/projects/:id/duplicate", requireAuth, async (req: Request<{ id: st
         name: `${src.name} (Copy)`, slug: newSlug, description: src.description, userId,
       }).returning();
 
-      // Nav groups: clone in batch, build id map
-      const srcGroups = await tx.select().from(navGroupsTable)
-        .where(eq(navGroupsTable.projectId, src.id))
-        .orderBy(navGroupsTable.orderIndex);
-      const groupIdMap = new Map<string, string>();
-      for (const g of srcGroups) {
-        const [newG] = await tx.insert(navGroupsTable).values({
-          projectId: created.id, title: g.title, orderIndex: g.orderIndex, type: g.type,
-        }).returning();
-        groupIdMap.set(g.id, newG.id);
-      }
+      // Find the source project's default branch — that's what we'll clone
+      // and that's what the new project's "main" branch will mirror. Falls
+      // back gracefully if the source predates the branches schema.
+      const [srcDefault] = await tx.select().from(branchesTable)
+        .where(and(eq(branchesTable.projectId, src.id), eq(branchesTable.isDefault, true)))
+        .limit(1);
+      const srcBranchId = srcDefault?.id;
 
-      const srcPages = await tx.select().from(pagesTable)
-        .where(eq(pagesTable.projectId, src.id))
-        .orderBy(pagesTable.orderIndex);
-      for (const page of srcPages) {
-        const newNavGroupId = page.navGroupId ? groupIdMap.get(page.navGroupId) ?? null : null;
-        const [newPage] = await tx.insert(pagesTable).values({
-          projectId: created.id, title: page.title, slug: page.slug,
-          orderIndex: page.orderIndex, navGroupId: newNavGroupId,
-          navTitle: page.navTitle, metaDescription: page.metaDescription,
-        }).returning();
-        const srcSections = await tx.select().from(sectionsTable)
-          .where(eq(sectionsTable.pageId, page.id))
-          .orderBy(sectionsTable.orderIndex);
-        if (srcSections.length === 0) continue;
+      const newBranchId = randomUUID();
+      await tx.insert(branchesTable).values({
+        id: newBranchId, projectId: created.id, name: "main",
+        isDefault: true, createdBy: userId,
+      });
 
-        // Batch-insert all sections for this page in one round-trip
-        const newSections = await tx.insert(sectionsTable).values(
-          srcSections.map((sec) => ({
-            pageId: newPage.id, title: sec.title, orderIndex: sec.orderIndex, navTitle: sec.navTitle,
-          })),
-        ).returning();
-        const sectionIdMap = new Map<string, string>();
-        srcSections.forEach((s, i) => sectionIdMap.set(s.id, newSections[i].id));
+      // Read all source content (scoped to source default branch when one
+      // exists) in PARALLEL — these are independent SELECTs.
+      const [srcGroups, srcTabs, srcPages, srcSections, srcBlocks, srcDesignRows] = await Promise.all([
+        tx.select().from(navGroupsTable).where(
+          srcBranchId
+            ? and(eq(navGroupsTable.projectId, src.id), eq(navGroupsTable.branchId, srcBranchId))
+            : eq(navGroupsTable.projectId, src.id),
+        ).orderBy(navGroupsTable.orderIndex),
+        tx.select().from(tabsTable).where(
+          srcBranchId
+            ? and(eq(tabsTable.projectId, src.id), eq(tabsTable.branchId, srcBranchId))
+            : eq(tabsTable.projectId, src.id),
+        ).orderBy(tabsTable.orderIndex),
+        tx.select().from(pagesTable).where(
+          srcBranchId
+            ? and(eq(pagesTable.projectId, src.id), eq(pagesTable.branchId, srcBranchId))
+            : eq(pagesTable.projectId, src.id),
+        ).orderBy(pagesTable.orderIndex),
+        srcBranchId
+          ? tx.select().from(sectionsTable).where(eq(sectionsTable.branchId, srcBranchId))
+          : Promise.resolve([] as Awaited<ReturnType<typeof tx.select>>),
+        srcBranchId
+          ? tx.select().from(blocksTable).where(eq(blocksTable.branchId, srcBranchId))
+          : Promise.resolve([] as Awaited<ReturnType<typeof tx.select>>),
+        tx.select().from(projectDesignSettingsTable).where(
+          srcBranchId
+            ? and(eq(projectDesignSettingsTable.projectId, src.id), eq(projectDesignSettingsTable.branchId, srcBranchId))
+            : eq(projectDesignSettingsTable.projectId, src.id),
+        ),
+      ]);
+      // Fallback for legacy projects without branchId on sections/blocks
+      const fallbackSections = srcBranchId
+        ? srcSections
+        : srcPages.length
+          ? await tx.select().from(sectionsTable).where(inArray(sectionsTable.pageId, srcPages.map(p => p.id)))
+          : [];
+      const fallbackBlocks = srcBranchId
+        ? srcBlocks
+        : fallbackSections.length
+          ? await tx.select().from(blocksTable).where(inArray(blocksTable.sectionId, fallbackSections.map(s => s.id)))
+          : [];
 
-        // Fetch all blocks across all sections of this page in one query
-        const srcBlocks = await tx.select().from(blocksTable)
-          .where(inArray(blocksTable.sectionId, srcSections.map((s) => s.id)))
-          .orderBy(blocksTable.orderIndex);
-        if (srcBlocks.length > 0) {
-          await tx.insert(blocksTable).values(
-            srcBlocks.map((blk) => ({
-              sectionId: sectionIdMap.get(blk.sectionId)!,
-              type: blk.type, content: blk.content, orderIndex: blk.orderIndex,
-            })),
-          );
-        }
-      }
+      // Pre-generate UUIDs so all inserts can run in parallel as bulk inserts.
+      const tabIdMap = new Map(srcTabs.map(t => [t.id, randomUUID()]));
+      const groupIdMap = new Map(srcGroups.map(g => [g.id, randomUUID()]));
+      const pageIdMap = new Map(srcPages.map(p => [p.id, randomUUID()]));
+      const sectionIdMap = new Map(fallbackSections.map(s => [s.id, randomUUID()]));
 
-      const [srcDesign] = await tx.select().from(projectDesignSettingsTable)
-        .where(eq(projectDesignSettingsTable.projectId, src.id));
-      if (srcDesign) {
-        await tx.insert(projectDesignSettingsTable)
-          .values({ projectId: created.id, settings: srcDesign.settings });
-      }
+      const newTabs = srcTabs.map(t => ({
+        id: tabIdMap.get(t.id)!, projectId: created.id, branchId: newBranchId,
+        label: t.label, icon: t.icon, orderIndex: t.orderIndex, metadata: t.metadata as object,
+      }));
+      const newGroups = srcGroups.map(g => ({
+        id: groupIdMap.get(g.id)!, projectId: created.id, branchId: newBranchId,
+        title: g.title, type: g.type, orderIndex: g.orderIndex,
+        tabId: g.tabId ? (tabIdMap.get(g.tabId) ?? null) : null,
+        metadata: g.metadata as object,
+      }));
+      const newPages = srcPages.map(p => ({
+        id: pageIdMap.get(p.id)!, projectId: created.id, branchId: newBranchId,
+        title: p.title, slug: p.slug, orderIndex: p.orderIndex,
+        navGroupId: p.navGroupId ? (groupIdMap.get(p.navGroupId) ?? null) : null,
+        navTitle: p.navTitle, metaDescription: p.metaDescription,
+      }));
+      const newSections = fallbackSections
+        .filter(s => pageIdMap.has(s.pageId))
+        .map(s => ({
+          id: sectionIdMap.get(s.id)!, pageId: pageIdMap.get(s.pageId)!, branchId: newBranchId,
+          title: s.title, navTitle: s.navTitle, orderIndex: s.orderIndex,
+        }));
+      const newBlocks = fallbackBlocks
+        .filter(b => sectionIdMap.has(b.sectionId))
+        .map(b => ({
+          sectionId: sectionIdMap.get(b.sectionId)!, branchId: newBranchId,
+          type: b.type, content: b.content as object, orderIndex: b.orderIndex,
+        }));
+      const newDesign = srcDesignRows.map(d => ({
+        projectId: created.id, branchId: newBranchId, settings: d.settings as object,
+      }));
+
+      const inserts: Promise<unknown>[] = [];
+      if (newTabs.length) inserts.push(tx.insert(tabsTable).values(newTabs));
+      if (newGroups.length) inserts.push(tx.insert(navGroupsTable).values(newGroups));
+      if (newPages.length) inserts.push(tx.insert(pagesTable).values(newPages));
+      if (newSections.length) inserts.push(tx.insert(sectionsTable).values(newSections));
+      if (newBlocks.length) inserts.push(tx.insert(blocksTable).values(newBlocks));
+      if (newDesign.length) inserts.push(tx.insert(projectDesignSettingsTable).values(newDesign));
+      await Promise.all(inserts);
 
       return created;
     });

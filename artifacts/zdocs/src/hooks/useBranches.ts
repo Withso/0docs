@@ -47,24 +47,27 @@ export function useBranches(projectId: string | undefined) {
       method: "POST",
       body: JSON.stringify({ name, sourceBranchId }),
     });
-    await reload();
+    // Optimistically append — saves a full round-trip GET that just to read
+    // back what we already have in the response. The list reorders by
+    // createdAt server-side, but new branches always sort last.
+    setBranches(prev => [...prev, created]);
     return created;
-  }, [projectId, reload]);
+  }, [projectId]);
 
   const renameBranch = useCallback(async (branchId: string, name: string) => {
     const updated = await apiFetch<Branch>(`/branches/${branchId}`, {
       method: "PATCH",
       body: JSON.stringify({ name }),
     });
-    await reload();
+    setBranches(prev => prev.map(b => b.id === branchId ? updated : b));
     return updated;
-  }, [reload]);
+  }, []);
 
   const deleteBranch = useCallback(async (branchId: string) => {
     const res = await apiRequest(`/branches/${branchId}`, { method: "DELETE" });
     if (!res.ok && res.status !== 204) throw new Error(`API ${res.status}`);
-    await reload();
-  }, [reload]);
+    setBranches(prev => prev.filter(b => b.id !== branchId));
+  }, []);
 
   return { branches, loading, error, reload, createBranch, renameBranch, deleteBranch };
 }

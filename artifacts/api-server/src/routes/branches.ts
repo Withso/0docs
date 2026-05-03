@@ -1,13 +1,14 @@
 import { Router, Request, Response } from "express";
+import { randomUUID } from "node:crypto";
 import {
-  db, branchesTable,
+  db, branchesTable, commitsTable,
   pagesTable, sectionsTable, blocksTable,
   navGroupsTable, tabsTable, projectDesignSettingsTable,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { and, eq, isNull, inArray } from "drizzle-orm";
 import { userOwnsProject, getDefaultBranchId, projectIdForBranch } from "../lib/branches";
-import { recordCommit } from "../lib/commits";
+import { snapshotBranch, diffSnapshots } from "../lib/commits";
 
 const router = Router();
 
@@ -69,102 +70,125 @@ router.post("/projects/:projectId/branches", requireAuth,
       if (existing) { res.status(409).json({ error: "branch already exists" }); return; }
 
       const newBranch = await db.transaction(async (tx) => {
-        const [created] = await tx.insert(branchesTable).values({
+        // 1) Read everything we need to clone in PARALLEL — these are
+        //    independent SELECTs so awaiting them sequentially just burns
+        //    Neon round-trip time. Sections/blocks depend on page IDs only
+        //    for the IN-list; for branch isolation we can simply scope every
+        //    select by branchId, no dependency at all.
+        const [srcPages, srcNavGroups, srcTabs, srcDesign, srcSections, srcBlocks] = await Promise.all([
+          tx.select().from(pagesTable)
+            .where(and(eq(pagesTable.projectId, projectId), eq(pagesTable.branchId, srcId))),
+          tx.select().from(navGroupsTable)
+            .where(and(eq(navGroupsTable.projectId, projectId), eq(navGroupsTable.branchId, srcId))),
+          tx.select().from(tabsTable)
+            .where(and(eq(tabsTable.projectId, projectId), eq(tabsTable.branchId, srcId))),
+          tx.select().from(projectDesignSettingsTable)
+            .where(and(
+              eq(projectDesignSettingsTable.projectId, projectId),
+              eq(projectDesignSettingsTable.branchId, srcId),
+            )),
+          tx.select().from(sectionsTable).where(eq(sectionsTable.branchId, srcId)),
+          tx.select().from(blocksTable).where(eq(blocksTable.branchId, srcId)),
+        ]);
+
+        const branchId = randomUUID();
+
+        // 2) Pre-generate UUIDs in JS for every cloned row so we can bulk
+        //    insert (one network round-trip per table) instead of N
+        //    insert-with-returning round-trips. Drizzle's columns have
+        //    .defaultRandom() but supplying our own id is allowed.
+        const tabIdMap = new Map(srcTabs.map(t => [t.id, randomUUID()]));
+        const navIdMap = new Map(srcNavGroups.map(g => [g.id, randomUUID()]));
+        const pageIdMap = new Map(srcPages.map(p => [p.id, randomUUID()]));
+        const sectionIdMap = new Map(srcSections.map(s => [s.id, randomUUID()]));
+
+        // Build insert payloads. Skip orphaned sections/blocks defensively.
+        const newTabs = srcTabs.map(t => ({
+          id: tabIdMap.get(t.id)!, projectId, branchId,
+          label: t.label, icon: t.icon, orderIndex: t.orderIndex,
+          metadata: t.metadata as object,
+        }));
+        const newNavGroups = srcNavGroups.map(g => ({
+          id: navIdMap.get(g.id)!, projectId, branchId,
+          title: g.title, type: g.type, orderIndex: g.orderIndex,
+          tabId: g.tabId ? (tabIdMap.get(g.tabId) ?? null) : null,
+          metadata: g.metadata as object,
+        }));
+        const newPages = srcPages.map(p => ({
+          id: pageIdMap.get(p.id)!, projectId, branchId,
+          title: p.title, slug: p.slug, orderIndex: p.orderIndex,
+          metaDescription: p.metaDescription,
+          navGroupId: p.navGroupId ? (navIdMap.get(p.navGroupId) ?? null) : null,
+          navTitle: p.navTitle, versionId: p.versionId,
+          metadata: p.metadata as object,
+        }));
+        const newSections = srcSections
+          .filter(s => pageIdMap.has(s.pageId))
+          .map(s => ({
+            id: sectionIdMap.get(s.id)!, pageId: pageIdMap.get(s.pageId)!, branchId,
+            title: s.title, navTitle: s.navTitle, orderIndex: s.orderIndex,
+          }));
+        const newBlocks = srcBlocks
+          .filter(b => sectionIdMap.has(b.sectionId))
+          .map(b => ({
+            sectionId: sectionIdMap.get(b.sectionId)!, branchId,
+            type: b.type, content: b.content as object, orderIndex: b.orderIndex,
+          }));
+        const newDesign = srcDesign.map(d => ({
+          projectId, branchId, settings: d.settings as object,
+        }));
+
+        // 3) Reuse the source branch's HEAD commit snapshot for the initial
+        //    fork commit when possible — the new branch is byte-identical to
+        //    the source's HEAD at fork time, so re-snapshotting after the
+        //    INSERTs would be wasteful work over the network. If the source
+        //    has no commit yet (legacy projects), fall back to snapshotting.
+        const [srcHead] = src.headCommitId
+          ? await tx.select({ snap: commitsTable.contentSnapshot }).from(commitsTable)
+              .where(eq(commitsTable.id, src.headCommitId)).limit(1)
+          : [];
+
+        const initialCommitId = randomUUID();
+
+        // 4) Insert the branch row first (FK target for everything else),
+        //    then bulk-insert all cloned content + the initial commit + the
+        //    design settings IN PARALLEL. This collapses what used to be
+        //    ~150 sequential round-trips into ~7.
+        await tx.insert(branchesTable).values({
+          id: branchId,
           projectId, name: cleanName, isDefault: false,
           parentBranchId: srcId, baseCommitId: src.headCommitId ?? null,
+          headCommitId: initialCommitId,
           createdBy: userId,
-        }).returning();
+        });
 
-        // Deep clone everything. Maps oldId -> newId so foreign refs (page→nav,
-        // section→page, block→section, navGroup→tab) stay consistent.
-        const srcPages = await tx.select().from(pagesTable)
-          .where(and(eq(pagesTable.projectId, projectId), eq(pagesTable.branchId, srcId)));
-        const srcNavGroups = await tx.select().from(navGroupsTable)
-          .where(and(eq(navGroupsTable.projectId, projectId), eq(navGroupsTable.branchId, srcId)));
-        const srcTabs = await tx.select().from(tabsTable)
-          .where(and(eq(tabsTable.projectId, projectId), eq(tabsTable.branchId, srcId)));
-        const srcDesign = await tx.select().from(projectDesignSettingsTable)
-          .where(and(
-            eq(projectDesignSettingsTable.projectId, projectId),
-            eq(projectDesignSettingsTable.branchId, srcId),
-          ));
-        const srcSections = srcPages.length
-          ? await tx.select().from(sectionsTable)
-              .where(and(
-                inArray(sectionsTable.pageId, srcPages.map(p => p.id)),
-                eq(sectionsTable.branchId, srcId),
-              ))
-          : [];
-        const srcBlocks = srcSections.length
-          ? await tx.select().from(blocksTable)
-              .where(and(
-                inArray(blocksTable.sectionId, srcSections.map(s => s.id)),
-                eq(blocksTable.branchId, srcId),
-              ))
-          : [];
+        const inserts: Promise<unknown>[] = [];
+        if (newTabs.length) inserts.push(tx.insert(tabsTable).values(newTabs));
+        if (newNavGroups.length) inserts.push(tx.insert(navGroupsTable).values(newNavGroups));
+        if (newPages.length) inserts.push(tx.insert(pagesTable).values(newPages));
+        if (newSections.length) inserts.push(tx.insert(sectionsTable).values(newSections));
+        if (newBlocks.length) inserts.push(tx.insert(blocksTable).values(newBlocks));
+        if (newDesign.length) inserts.push(tx.insert(projectDesignSettingsTable).values(newDesign));
 
-        const tabIdMap = new Map<string, string>();
-        for (const t of srcTabs) {
-          const [n] = await tx.insert(tabsTable).values({
-            projectId, branchId: created.id,
-            label: t.label, icon: t.icon, orderIndex: t.orderIndex,
-            metadata: t.metadata as object,
-          }).returning({ id: tabsTable.id });
-          tabIdMap.set(t.id, n.id);
-        }
-        const navIdMap = new Map<string, string>();
-        for (const g of srcNavGroups) {
-          const [n] = await tx.insert(navGroupsTable).values({
-            projectId, branchId: created.id,
-            title: g.title, type: g.type, orderIndex: g.orderIndex,
-            tabId: g.tabId ? (tabIdMap.get(g.tabId) ?? null) : null,
-            metadata: g.metadata as object,
-          }).returning({ id: navGroupsTable.id });
-          navIdMap.set(g.id, n.id);
-        }
-        const pageIdMap = new Map<string, string>();
-        for (const p of srcPages) {
-          const [n] = await tx.insert(pagesTable).values({
-            projectId, branchId: created.id,
-            title: p.title, slug: p.slug, orderIndex: p.orderIndex,
-            metaDescription: p.metaDescription,
-            navGroupId: p.navGroupId ? (navIdMap.get(p.navGroupId) ?? null) : null,
-            navTitle: p.navTitle, versionId: p.versionId,
-            metadata: p.metadata as object,
-          }).returning({ id: pagesTable.id });
-          pageIdMap.set(p.id, n.id);
-        }
-        const sectionIdMap = new Map<string, string>();
-        for (const s of srcSections) {
-          const newPageId = pageIdMap.get(s.pageId);
-          if (!newPageId) continue;
-          const [n] = await tx.insert(sectionsTable).values({
-            pageId: newPageId, branchId: created.id,
-            title: s.title, navTitle: s.navTitle, orderIndex: s.orderIndex,
-          }).returning({ id: sectionsTable.id });
-          sectionIdMap.set(s.id, n.id);
-        }
-        for (const b of srcBlocks) {
-          const newSectionId = sectionIdMap.get(b.sectionId);
-          if (!newSectionId) continue;
-          await tx.insert(blocksTable).values({
-            sectionId: newSectionId, branchId: created.id,
-            type: b.type, content: b.content as object, orderIndex: b.orderIndex,
-          });
-        }
-        for (const d of srcDesign) {
-          await tx.insert(projectDesignSettingsTable).values({
-            projectId, branchId: created.id,
-            settings: d.settings as object,
-          });
-        }
+        // Initial commit. Snapshot is identical to source HEAD; if the source
+        // has no HEAD we synthesize an empty-diff commit (the snapshot is
+        // computed lazily on the next editor write).
+        const initialSnap = srcHead?.snap ?? await snapshotBranch(projectId, srcId);
+        inserts.push(tx.insert(commitsTable).values({
+          id: initialCommitId,
+          projectId, branchId,
+          parentCommitId: src.headCommitId ?? null,
+          authorUserId: userId,
+          message: `Branched from ${src.name}`,
+          contentSnapshot: initialSnap,
+          filesChanged: diffSnapshots(initialSnap as any, initialSnap as any),
+          source: "manual",
+        }));
+
+        await Promise.all(inserts);
+
+        const [created] = await tx.select().from(branchesTable).where(eq(branchesTable.id, branchId));
         return created;
-      });
-
-      // Initial commit on the new branch — represents the fork point.
-      await recordCommit({
-        projectId, branchId: newBranch.id, authorUserId: userId,
-        message: `Branched from ${src.name}`, source: "manual",
       });
 
       res.status(201).json(newBranch);

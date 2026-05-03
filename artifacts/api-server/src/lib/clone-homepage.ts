@@ -1,4 +1,5 @@
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import {
   db,
   projectsTable,
@@ -10,6 +11,7 @@ import {
   tabsTable,
   docVersionsTable,
   usersTable,
+  branchesTable,
 } from "@workspace/db";
 
 const DEMO_PROJECT_NAME = "0docs Demo";
@@ -80,6 +82,25 @@ export async function ensureDemoProjectForUser(
         })
         .returning();
 
+      // ── Branches: every project must have a default "main" branch, and
+      // every content row carries branchId NOT NULL. Find the source's
+      // default branch (newer projects) and bootstrap the clone's main branch.
+      const [srcDefault] = await tx
+        .select()
+        .from(branchesTable)
+        .where(and(eq(branchesTable.projectId, src.id), eq(branchesTable.isDefault, true)))
+        .limit(1);
+      const srcBranchId = srcDefault?.id;
+
+      const newBranchId = randomUUID();
+      await tx.insert(branchesTable).values({
+        id: newBranchId,
+        projectId: created.id,
+        name: "main",
+        isDefault: true,
+        createdBy: userId,
+      });
+
       // ── Versions: clone, build id map. Pages reference these via versionId.
       const srcVersions = await tx
         .select()
@@ -102,11 +123,18 @@ export async function ensureDemoProjectForUser(
         );
       }
 
+      // Helper: a content-table query is scoped to the source default branch
+      // when we have one; legacy projects without branches get the unscoped
+      // by-projectId query (their content rows will lack branchId entirely
+      // after the migration unless a backfill ran — fall through gracefully).
+      const branchOnly = (col: any) =>
+        srcBranchId ? eq(col, srcBranchId) : sql`true`;
+
       // ── Tabs: clone, build id map. Nav groups reference these via tabId.
       const srcTabs = await tx
         .select()
         .from(tabsTable)
-        .where(eq(tabsTable.projectId, src.id))
+        .where(and(eq(tabsTable.projectId, src.id), branchOnly(tabsTable.branchId)))
         .orderBy(tabsTable.orderIndex);
       const tabIdMap = new Map<string, string>();
       if (srcTabs.length > 0) {
@@ -115,6 +143,7 @@ export async function ensureDemoProjectForUser(
           .values(
             srcTabs.map((t) => ({
               projectId: created.id,
+              branchId: newBranchId,
               label: t.label,
               icon: t.icon,
               orderIndex: t.orderIndex,
@@ -129,7 +158,7 @@ export async function ensureDemoProjectForUser(
       const srcGroups = await tx
         .select()
         .from(navGroupsTable)
-        .where(eq(navGroupsTable.projectId, src.id))
+        .where(and(eq(navGroupsTable.projectId, src.id), branchOnly(navGroupsTable.branchId)))
         .orderBy(navGroupsTable.orderIndex);
       const groupIdMap = new Map<string, string>();
       if (srcGroups.length > 0) {
@@ -138,6 +167,7 @@ export async function ensureDemoProjectForUser(
           .values(
             srcGroups.map((g) => ({
               projectId: created.id,
+              branchId: newBranchId,
               title: g.title,
               type: g.type,
               orderIndex: g.orderIndex,
@@ -149,12 +179,11 @@ export async function ensureDemoProjectForUser(
         srcGroups.forEach((g, i) => groupIdMap.set(g.id, newGroups[i].id));
       }
 
-      // ── Pages (one per row insert so we can capture the new id mapping in
-      // a single batch).
+      // ── Pages
       const srcPages = await tx
         .select()
         .from(pagesTable)
-        .where(eq(pagesTable.projectId, src.id))
+        .where(and(eq(pagesTable.projectId, src.id), branchOnly(pagesTable.branchId)))
         .orderBy(pagesTable.orderIndex);
       const pageIdMap = new Map<string, string>();
       if (srcPages.length > 0) {
@@ -163,6 +192,7 @@ export async function ensureDemoProjectForUser(
           .values(
             srcPages.map((p) => ({
               projectId: created.id,
+              branchId: newBranchId,
               title: p.title,
               slug: p.slug,
               orderIndex: p.orderIndex,
@@ -188,9 +218,9 @@ export async function ensureDemoProjectForUser(
           .select()
           .from(sectionsTable)
           .where(
-            inArray(
-              sectionsTable.pageId,
-              srcPages.map((p) => p.id),
+            and(
+              inArray(sectionsTable.pageId, srcPages.map((p) => p.id)),
+              branchOnly(sectionsTable.branchId),
             ),
           )
           .orderBy(sectionsTable.orderIndex);
@@ -200,6 +230,7 @@ export async function ensureDemoProjectForUser(
             .values(
               srcSections.map((s) => ({
                 pageId: pageIdMap.get(s.pageId)!,
+                branchId: newBranchId,
                 title: s.title,
                 navTitle: s.navTitle,
                 orderIndex: s.orderIndex,
@@ -215,9 +246,9 @@ export async function ensureDemoProjectForUser(
             .select()
             .from(blocksTable)
             .where(
-              inArray(
-                blocksTable.sectionId,
-                srcSections.map((s) => s.id),
+              and(
+                inArray(blocksTable.sectionId, srcSections.map((s) => s.id)),
+                branchOnly(blocksTable.branchId),
               ),
             )
             .orderBy(blocksTable.orderIndex);
@@ -225,6 +256,7 @@ export async function ensureDemoProjectForUser(
             await tx.insert(blocksTable).values(
               srcBlocks.map((b) => ({
                 sectionId: sectionIdMap.get(b.sectionId)!,
+                branchId: newBranchId,
                 type: b.type,
                 content: b.content,
                 orderIndex: b.orderIndex,
@@ -238,11 +270,18 @@ export async function ensureDemoProjectForUser(
       const [srcDesign] = await tx
         .select()
         .from(projectDesignSettingsTable)
-        .where(eq(projectDesignSettingsTable.projectId, src.id));
+        .where(
+          and(
+            eq(projectDesignSettingsTable.projectId, src.id),
+            branchOnly(projectDesignSettingsTable.branchId),
+          ),
+        );
       if (srcDesign) {
-        await tx
-          .insert(projectDesignSettingsTable)
-          .values({ projectId: created.id, settings: srcDesign.settings });
+        await tx.insert(projectDesignSettingsTable).values({
+          projectId: created.id,
+          branchId: newBranchId,
+          settings: srcDesign.settings,
+        });
       }
 
       await tx
