@@ -35,7 +35,7 @@ const workspaceItems: RailItem[] = [
 type AgentItem = { id: string; label: string; icon: typeof Bot; href?: string };
 const agentItems: AgentItem[] = [
   { id: "assistant", label: "Assistant", icon: Sparkles },
-  { id: "mcp",       label: "MCP",       icon: Plug, href: "settings/mcp" },
+  { id: "mcp",       label: "MCP",       icon: Plug, href: "mcp" },
 ];
 
 const ProjectRail = forwardRef<HTMLElement, ProjectRailProps>(({ mode, onModeChange, hasUnpublishedChanges }, ref) => {

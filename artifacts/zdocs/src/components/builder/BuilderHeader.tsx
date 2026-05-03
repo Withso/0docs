@@ -1,6 +1,6 @@
 import { Eye, Play, Code2, FileText, Search } from "lucide-react";
 
-export type BuilderMode = "home" | "editor" | "preview" | "analytics" | "settings" | "configurations" | "code";
+export type BuilderMode = "home" | "editor" | "preview" | "analytics" | "settings" | "configurations" | "code" | "mcp";
 export type EditorTab = "navigation" | "files";
 
 interface BuilderHeaderProps {

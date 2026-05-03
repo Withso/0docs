@@ -14,6 +14,7 @@ import OpenAPIImportDialog from "@/components/builder/OpenAPIImportDialog";
 import DocContentView from "@/components/docs/DocContentView";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SettingsContent from "@/components/builder/SettingsContent";
+import MCPSettings from "@/components/builder/MCPSettings";
 import PublishPopover from "@/components/builder/PublishPopover";
 import WorkspaceShell from "@/components/builder/WorkspaceShell";
 import ProjectHome from "@/components/builder/ProjectHome";
@@ -103,6 +104,7 @@ const BuilderInner = () => {
   // Derive initial mode from URL path
   const getInitialMode = (): BuilderMode => {
     if (location.pathname.includes("/settings")) return "settings";
+    if (location.pathname.endsWith("/mcp")) return "mcp";
     if (location.pathname.endsWith("/editor")) return "editor";
     
     if (location.pathname.endsWith("/configurations")) return "configurations";
@@ -155,6 +157,7 @@ const BuilderInner = () => {
     const base = `/builder/${projectId}`;
     if (newMode === "home") navigate(base, { replace: true });
     else if (newMode === "settings") navigate(`${base}/settings`, { replace: true });
+    else if (newMode === "mcp") navigate(`${base}/mcp`, { replace: true });
     else if (newMode === "editor") navigate(`${base}/editor`, { replace: true });
     
     else if (newMode === "configurations") navigate(`${base}/configurations`, { replace: true });
@@ -674,6 +677,21 @@ const BuilderInner = () => {
             {/* Mode: Settings */}
             {mode === "settings" && (
               <SettingsContent projectId={projectId!} project={project} onSaved={refreshProject} />
+            )}
+
+            {/* Mode: MCP */}
+            {mode === "mcp" && (
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <div className="max-w-4xl mx-auto px-8 py-8">
+                  <div className="mb-6">
+                    <h1 className="text-2xl font-semibold tracking-tight">MCP Server</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Let AI agents read and edit your docs via the Model Context Protocol
+                    </p>
+                  </div>
+                  <MCPSettings projectId={projectId!} />
+                </div>
+              </div>
             )}
 
             {/* Publish UI is now a Mintlify-style dropdown anchored to the
