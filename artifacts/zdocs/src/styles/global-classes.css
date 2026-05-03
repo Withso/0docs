@@ -539,6 +539,21 @@ code, pre {
   to { transform: translateX(0); }
 }
 
+/* Respect users who prefer reduced motion: collapse all transitions and
+   animations to near-instant so the docs viewer never causes vestibular
+   discomfort. Keeps state changes (active markers, theme swap, dialog open)
+   functional but removes the motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 
 /* ─── 9. ZDOCS PLATFORM CLASSES (from platform.css) ─── */
 

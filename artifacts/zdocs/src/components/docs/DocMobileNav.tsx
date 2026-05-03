@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Menu, X, Search, ChevronRight } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
+import { smoothBehavior } from "@/lib/motion";
 
 interface MobileNavPage {
   id: string;
@@ -142,7 +143,7 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
   const handleSelectPage = (page: MobileNavPage) => {
     onSelectPage(page);
     setOpen(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: smoothBehavior() });
   };
 
   const handleSectionClick = (sectionId: string) => {
@@ -151,7 +152,7 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
       const el = document.getElementById(`section-${sectionId}`);
       if (el) {
         const top = el.getBoundingClientRect().top + window.scrollY - 60;
-        window.scrollTo({ top, behavior: "smooth" });
+        window.scrollTo({ top, behavior: smoothBehavior() });
       }
     }, 100);
   };

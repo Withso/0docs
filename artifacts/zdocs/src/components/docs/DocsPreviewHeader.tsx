@@ -108,6 +108,12 @@ const DocsPreviewHeader = ({
   }, []);
 
   const { theme, toggle } = usePlatformTheme();
+  const [themeAnnounce, setThemeAnnounce] = useState<string>("");
+  const handleToggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    toggle();
+    setThemeAnnounce(`Switched to ${next} theme`);
+  };
 
   const visibleTabs = (tabs ?? [])
     .filter((t) => !t.metadata?.hidden)
@@ -423,7 +429,7 @@ const DocsPreviewHeader = ({
           {showThemeToggle && (
             <button
               type="button"
-              onClick={toggle}
+              onClick={handleToggleTheme}
               aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
               title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
               className="h-9 w-9 inline-flex items-center justify-center rounded-lg transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2"
@@ -441,6 +447,9 @@ const DocsPreviewHeader = ({
           )}
           {rightActions}
         </div>
+        <span role="status" aria-live="polite" className="sr-only">
+          {themeAnnounce}
+        </span>
       </div>
     </header>
   );

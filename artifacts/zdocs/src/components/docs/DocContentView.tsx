@@ -10,6 +10,7 @@ import PageFeedback from "./PageFeedback";
 import DocMobileNav from "./DocMobileNav";
 import DocsPreviewHeader from "./DocsPreviewHeader";
 import { getAppearance } from "@/lib/theme/resolve-doc-theme";
+import { smoothBehavior } from "@/lib/motion";
 import { useResolvedDesignSettings } from "./DesignSettingsWrapper";
 
 interface DocPage {
@@ -139,13 +140,13 @@ const DocContentView = ({
   return (
     <DesignSettingsWrapper settings={s} className="min-h-full">
       <a
-        href="#docs-main-content"
+        href="#content-area"
         onClick={(e) => {
           e.preventDefault();
-          const el = document.getElementById("docs-main-content");
+          const el = document.getElementById("content-area");
           if (el) {
             el.focus();
-            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            el.scrollIntoView({ behavior: smoothBehavior(), block: "start" });
           }
         }}
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-3 focus:py-2 focus:rounded-md focus:outline-none focus:ring-2"
@@ -211,7 +212,7 @@ const DocContentView = ({
           projectId={projectId}
         />
 
-        <main id="docs-main-content" tabIndex={-1} className="flex-1 min-w-0 py-12 focus:outline-none">
+        <main id="content-area" tabIndex={-1} className="flex-1 min-w-0 py-12 focus:outline-none">
           {activePage ? (
             <article style={{ maxWidth: `${settings.contentMaxWidth}px` }}>
               {eyebrow && (
@@ -280,7 +281,7 @@ const DocContentView = ({
                           const el = document.getElementById(anchorId);
                           if (el) {
                             const top = el.getBoundingClientRect().top + window.scrollY - (sidebarTop + 24);
-                            window.scrollTo({ top, behavior: "smooth" });
+                            window.scrollTo({ top, behavior: smoothBehavior() });
                           }
                         }}
                         aria-label="Copy link to section"

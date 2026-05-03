@@ -4,6 +4,7 @@ import { useDesignSettings } from "@/hooks/use-design-settings";
 import { useVersions } from "@/hooks/use-versions";
 import { useAuth } from "@/contexts/AuthContext";
 import DocContentView from "@/components/docs/DocContentView";
+import { smoothBehavior } from "@/lib/motion";
 import AskDocsChat from "@/components/docs/AskDocsChat";
 import useSEOHead from "@/hooks/use-seo-head";
 import { LogIn, LayoutDashboard } from "lucide-react";
@@ -405,6 +406,20 @@ const Index = () => {
 
   return (
     <div className="min-h-screen relative">
+      <a
+        href="#content-area"
+        onClick={(e) => {
+          e.preventDefault();
+          const el = document.getElementById("content-area");
+          if (el) {
+            el.focus();
+            el.scrollIntoView({ behavior: smoothBehavior(), block: "start" });
+          }
+        }}
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[300] focus:px-3 focus:py-2 focus:rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground border border-border text-[13px]"
+      >
+        Skip to content
+      </a>
       <DocsPreviewHeader
         settings={settings}
         projectName={project?.name || "0docs"}

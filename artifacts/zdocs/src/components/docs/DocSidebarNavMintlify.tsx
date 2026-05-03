@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type ReactNode, useMemo, useCallback } from "react";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
+import { smoothBehavior } from "@/lib/motion";
 
 export interface SidebarPageBase {
   id: string;
@@ -186,9 +187,9 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
     const rTop = row.offsetTop;
     const rBot = rTop + row.offsetHeight;
     if (rTop < aTop + 16) {
-      aside.scrollTo({ top: Math.max(0, rTop - 24), behavior: "smooth" });
+      aside.scrollTo({ top: Math.max(0, rTop - 24), behavior: smoothBehavior() });
     } else if (rBot > aBot - 16) {
-      aside.scrollTo({ top: rBot - aside.clientHeight + 24, behavior: "smooth" });
+      aside.scrollTo({ top: rBot - aside.clientHeight + 24, behavior: smoothBehavior() });
     }
   }, [activePage?.id, openGroups]);
 
@@ -290,7 +291,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
         type="button"
         onClick={() => {
           onSelectPage(page);
-          window.scrollTo({ top: 0, behavior: "smooth" });
+          window.scrollTo({ top: 0, behavior: smoothBehavior() });
         }}
         aria-current={isActive ? "page" : undefined}
         className={rowClasses}
@@ -323,7 +324,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
                     const el = document.getElementById(`section-${section.id}`);
                     if (el) {
                       const top = el.getBoundingClientRect().top + window.scrollY - (stickyTop + 24);
-                      window.scrollTo({ top, behavior: "smooth" });
+                      window.scrollTo({ top, behavior: smoothBehavior() });
                     }
                   }}
                   className={[
@@ -368,7 +369,6 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
         height: `calc(100vh - ${stickyTop}px)`,
       }}
       className="shrink-0 sticky overflow-y-auto py-8 pr-4 pl-2 hidden lg:block"
-      aria-label="Documentation navigation"
     >
       {!hideHeaderLabel && (
         <div
@@ -385,7 +385,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
         </div>
       )}
 
-      <nav onKeyDown={onNavKeyDown} className="flex flex-col" style={{ gap: `${Math.max(s.sidebarPageGap, 0)}px` }}>
+      <nav aria-label="Docs" onKeyDown={onNavKeyDown} className="flex flex-col" style={{ gap: `${Math.max(s.sidebarPageGap, 0)}px` }}>
         {ungroupedPages.map((p) => renderPageRow(p))}
 
         {sortedNavGroups.map((group) => {

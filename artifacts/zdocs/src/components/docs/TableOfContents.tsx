@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
+import { smoothBehavior } from "@/lib/motion";
 
 interface TOCSection {
   id: string;
@@ -104,6 +105,7 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
 
   return (
     <aside
+      aria-label="On this page"
       className="shrink-0 sticky hidden xl:block py-12"
       style={{
         width: "200px",
@@ -140,7 +142,7 @@ const TableOfContents = ({ sections, settings: s, stickyTop = 48 }: TableOfConte
                 const el = document.getElementById(anchorId);
                 if (el) {
                   const top = el.getBoundingClientRect().top + window.scrollY - (stickyTop + 24);
-                  window.scrollTo({ top, behavior: "smooth" });
+                  window.scrollTo({ top, behavior: smoothBehavior() });
                 }
                 window.history.replaceState(null, "", `#${anchorId}`);
                 setActiveId(section.id);

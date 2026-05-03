@@ -7,6 +7,7 @@ import {
   Fragment,
 } from "react";
 import { createPortal } from "react-dom";
+import { smoothBehavior } from "@/lib/motion";
 import {
   Search,
   FileText,
@@ -469,7 +470,7 @@ const SearchDialog = ({
         setTimeout(() => {
           document
             .getElementById(`section-${r.sectionId}`)
-            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            ?.scrollIntoView({ behavior: smoothBehavior(), block: "start" });
         }, 200);
       }
       onOpenChange(false);
