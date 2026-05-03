@@ -175,8 +175,11 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
           className="fixed inset-0 z-[100]"
           role="dialog"
           aria-modal="true"
-          aria-label="Documentation navigation"
+          aria-labelledby="docs-mobile-nav-title"
         >
+          <h2 id="docs-mobile-nav-title" className="sr-only">
+            Documentation navigation
+          </h2>
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}

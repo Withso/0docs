@@ -561,9 +561,12 @@ const SearchDialog = ({
       className="fixed inset-0 z-[200] flex sm:items-start sm:justify-center sm:pt-[10vh]"
       role="dialog"
       aria-modal="true"
-      aria-label="Search documentation"
+      aria-labelledby="docs-search-dialog-title"
       onKeyDown={onKeyDown}
     >
+      <h2 id="docs-search-dialog-title" className="sr-only">
+        Search documentation
+      </h2>
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in-0"
         onClick={() => onOpenChange(false)}
