@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import {
-  Home, Pencil, BarChart3, Settings, SlidersHorizontal,
+  Home, Pencil, BarChart3, Settings,
   Bot, Sparkles, Plug,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -19,10 +19,13 @@ type RailItem = {
   target: BuilderMode;
 };
 
+// "Configurations" was previously a top-level workspace rail item. It has
+// moved to the bottom of the inner Navigation/Files sidebar (Mintlify-
+// style), so it's no longer listed here. Routing to /configurations is
+// still handled by Builder.tsx; the rail just doesn't surface it.
 const workspaceItems: RailItem[] = [
   { id: "home", label: "Home", icon: Home, target: "home" },
   { id: "editor", label: "Editor", icon: Pencil, target: "editor" },
-  { id: "configurations", label: "Configurations", icon: SlidersHorizontal, target: "configurations" },
   { id: "analytics", label: "Analytics", icon: BarChart3, target: "analytics" },
   { id: "settings", label: "Settings", icon: Settings, target: "settings" },
 ];

@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Globe, FileText, Loader2, Upload, ChevronDown, Check, GitPullRequest } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Globe, FileText, Loader2, Upload, ChevronDown, Check, GitPullRequest, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import type { EditorChange, DesignChange } from "@/hooks/use-publish";
 
@@ -110,6 +111,10 @@ const PublishPopover = ({
   isDefaultBranch = true,
 }: PublishPopoverProps) => {
   const [open, setOpen] = useState(false);
+  // Default ON so the most common case (a branch was used to iterate on
+  // visuals + content together, and the user wants both to ship to the
+  // default branch on merge) doesn't require an extra click.
+  const [mergeConfigurations, setMergeConfigurations] = useState(true);
 
   const fileChanges = useMemo(
     () => buildFileChanges(editorChanges, designChanges),
@@ -225,11 +230,43 @@ const PublishPopover = ({
                 <>Save in {branchName}</>
               )}
             </Button>
+
+            {/* Branch-scoped configurations toggle. Each branch keeps its
+                own design settings (per-branch row in
+                project_design_settings). When this toggle is on and the
+                user merges into the default branch, the branch's
+                Configurations panel state is copied over too; when off,
+                the merge only updates content and leaves the default
+                branch's configurations untouched. */}
+            <label
+              htmlFor="merge-configurations-toggle"
+              className="flex items-start gap-3 p-2.5 rounded-lg border border-border/60 bg-muted/30 cursor-pointer select-none"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[12.5px] font-medium text-foreground leading-snug">
+                  Also merge configurations
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                  Copy this branch's design settings to the default branch
+                  when the pull request merges.
+                </p>
+              </div>
+              <Switch
+                id="merge-configurations-toggle"
+                checked={mergeConfigurations}
+                onCheckedChange={setMergeConfigurations}
+                aria-label="Also merge configurations to the default branch"
+              />
+            </label>
+
             <Button
               className="w-full h-9 rounded-xl text-[13px] font-medium bg-foreground text-background hover:bg-foreground/90"
               onClick={() =>
                 toast.info("Pull requests are coming soon", {
-                  description: `Your changes are saved on “${branchName}”. The PR review and merge flow ships in the next release.`,
+                  description: mergeConfigurations
+                    ? `Your changes are saved on “${branchName}” and will merge with this branch's configurations applied to the default branch. The PR review and merge flow ships in the next release.`
+                    : `Your changes are saved on “${branchName}”. Configurations on the default branch will stay as-is. The PR review and merge flow ships in the next release.`,
                 })
               }
             >

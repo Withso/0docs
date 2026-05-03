@@ -30,7 +30,7 @@ import BranchSwitcher from "@/components/builder/BranchSwitcher";
 import { BranchProvider, useBranchContext } from "@/contexts/BranchContext";
 import { useVersions } from "@/hooks/use-versions";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, FileJson, GripVertical, RotateCw, X } from "lucide-react";
+import { Plus, FileText, FileJson, GripVertical, RotateCw, X, SlidersHorizontal } from "lucide-react";
 import MadeWithBanner from "@/components/docs/MadeWithBanner";
 import type { Page, Section, Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
@@ -527,6 +527,22 @@ const BuilderInner = () => {
                   />
                 )}
               </div>
+
+              {/* Configurations footer (Mintlify-style). Lives at the bottom
+                  of the inner Navigation/Files sidebar instead of the
+                  outer workspace rail. The Configurations panel itself is
+                  branch-scoped via the existing X-Branch-Id header — each
+                  branch persists its own design settings. */}
+              {/* No active state needed — choosing Configurations switches
+                  mode away from editor/code and unmounts this aside. */}
+              <button
+                type="button"
+                onClick={() => handleModeChange("configurations")}
+                className="shrink-0 border-t border-border/40 h-9 px-3 flex items-center gap-2 text-[12.5px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Configurations</span>
+              </button>
 
             </aside>
           )}
