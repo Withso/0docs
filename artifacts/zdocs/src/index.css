@@ -6,3 +6,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ─── Border default ───
+   Make every Tailwind `border` utility resolve to `hsl(var(--border))`.
+   Without this, Tailwind's preflight falls back to `currentColor` for any
+   element that uses `border` without an explicit color class — which in dark
+   mode is near-white text and produces stray light borders on shadcn
+   components. This is the standard shadcn pattern. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    @apply border-border;
+  }
+}

@@ -9,7 +9,22 @@
          All UI must reference these tokens — no hardcoded hex values.
 
    THEME: Dark mode is default (:root). Light mode via [data-theme="light"].
-   ============================================ */
+
+   ─── BORDER RULE ────────────────────────────────────────────────────
+   All borders MUST resolve to `--border` / `--zdocs-border`.
+   Never hardcode hex/white. Sonner and other libraries that ship their
+   own border CSS vars are remapped in
+   `global-classes.css` § Third-party token bridge.
+
+   Per-mode invariant:
+     dark mode (`:root`):           `--border` lightness ≤ 18%
+     light mode (`[data-theme=light]`): `--border` lightness ≥ 88%
+
+   The same invariant applies to every `--*-border`, `--input`,
+   `--sidebar-border`, `--doc-note-border`, `--doc-section-line` token,
+   plus per-preset `colorsDark.border` / `colorsLight.border` values in
+   `src/lib/theme/theme-presets.ts`.
+   ───────────────────────────────────────────────────────────────────── */
 
 /* --- DARK THEME (default) --- */
 :root {

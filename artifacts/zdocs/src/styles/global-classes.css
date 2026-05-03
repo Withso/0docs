@@ -20,10 +20,62 @@
 
 /* ─── 1. BASE / RESET ─── */
 
-* {
+*,
+*::before,
+*::after {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   border-color: var(--zdocs-border);
+}
+
+
+/* ─── 1b. THIRD-PARTY TOKEN BRIDGE ───
+   Libraries (Sonner, etc.) ship their own CSS custom properties for borders /
+   backgrounds / text. Remap them onto our design tokens so they always
+   resolve to `hsl(var(--border))` / `hsl(var(--background))` / etc. and
+   never leak the library's built-in light defaults into dark mode.
+
+   IMPORTANT: This is the structural fix for "white border on dark toast".
+   New third-party components that ship border CSS vars should be added here. */
+
+[data-sonner-toaster] {
+  --normal-bg: hsl(var(--background));
+  --normal-border: hsl(var(--border));
+  --normal-text: hsl(var(--foreground));
+
+  --success-bg: hsl(var(--background));
+  --success-border: hsl(var(--border));
+  --success-text: hsl(var(--foreground));
+
+  --error-bg: hsl(var(--background));
+  --error-border: hsl(var(--border));
+  --error-text: hsl(var(--foreground));
+
+  --info-bg: hsl(var(--background));
+  --info-border: hsl(var(--border));
+  --info-text: hsl(var(--foreground));
+
+  --warning-bg: hsl(var(--background));
+  --warning-border: hsl(var(--border));
+  --warning-text: hsl(var(--foreground));
+
+  --gray1: hsl(var(--background));
+  --gray2: hsl(var(--muted));
+  --gray3: hsl(var(--muted));
+  --gray4: hsl(var(--border));
+  --gray5: hsl(var(--border));
+  --gray12: hsl(var(--foreground));
+
+  --border-radius: var(--radius);
+}
+
+[data-sonner-toast] {
+  border-color: hsl(var(--border)) !important;
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+[data-sonner-toast] [data-description] {
+  color: hsl(var(--muted-foreground)) !important;
 }
 
 body {

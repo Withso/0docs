@@ -31,6 +31,14 @@ export interface ThemePreset {
 
 /* ─── Preset definitions ──────────────────────────────────────────── */
 
+/* INVARIANT (per `src/styles/variables.css` § BORDER RULE):
+   Every preset's `colorsDark.border` / `colorsDark.sectionLine` /
+   `colorsDark.noteBorder` MUST be a dark color (≤ ~18% lightness),
+   and every `colorsLight.border` / etc. MUST be a light color
+   (≥ ~88% lightness). Hardcoding white/near-white border values in
+   dark-mode overrides will visibly leak into Sonner toasts, dialogs,
+   popovers, dropdowns, and sidebar chrome. */
+
 export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
   /* Mint — the Mintlify default. Crisp neutral surfaces, green accent. */
   mint: {
