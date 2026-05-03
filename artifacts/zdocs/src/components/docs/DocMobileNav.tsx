@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Menu, X, Search, ChevronRight } from "lucide-react";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 
@@ -107,6 +107,27 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
       previouslyFocused?.focus?.();
     };
   }, [open]);
+
+  /* Arrow-key roving navigation within the drawer's nav list. */
+  const onNavKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+    const root = e.currentTarget as HTMLElement;
+    const items = Array.from(
+      root.querySelectorAll<HTMLElement>("[data-sidebar-item]")
+    ).filter((el) => !el.hasAttribute("disabled"));
+    if (items.length === 0) return;
+    const current = document.activeElement as HTMLElement | null;
+    const idx = current ? items.indexOf(current) : -1;
+    let nextIdx = idx;
+    if (e.key === "ArrowDown") nextIdx = idx < 0 ? 0 : Math.min(items.length - 1, idx + 1);
+    else if (e.key === "ArrowUp") nextIdx = idx <= 0 ? items.length - 1 : idx - 1;
+    else if (e.key === "Home") nextIdx = 0;
+    else if (e.key === "End") nextIdx = items.length - 1;
+    if (nextIdx !== idx) {
+      e.preventDefault();
+      items[nextIdx]?.focus();
+    }
+  }, []);
 
   const handleSelectPage = (page: MobileNavPage) => {
     onSelectPage(page);
@@ -238,11 +259,12 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
 
             <div className="px-3 py-2 pb-8">
               {showTOC ? (
-                <nav className="flex flex-col gap-0.5" aria-label="Page sections">
+                <nav onKeyDown={onNavKeyDown} className="flex flex-col gap-0.5" aria-label="Page sections">
                   {activeSections.map((section) => (
                     <button
                       key={section.id}
                       onClick={() => handleSectionClick(section.id)}
+                      data-sidebar-item
                       className="text-left px-3 py-2 rounded-lg transition-colors hover:bg-[hsl(var(--docs-muted)/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
                       style={{
                         fontSize: "13px",
@@ -255,7 +277,7 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
                   ))}
                 </nav>
               ) : (
-                <nav className="flex flex-col gap-0.5" aria-label="Pages">
+                <nav onKeyDown={onNavKeyDown} className="flex flex-col gap-0.5" aria-label="Pages">
                   {ungroupedPages.map((page) => {
                     const isActive = activePage?.id === page.id;
                     return (
@@ -263,6 +285,7 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
                         key={page.id}
                         onClick={() => handleSelectPage(page)}
                         aria-current={isActive ? "page" : undefined}
+                        data-sidebar-item
                         className="flex items-center justify-between text-left px-3 py-2 rounded-lg transition-colors hover:bg-[hsl(var(--docs-muted)/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
                         style={{
                           backgroundColor: isActive ? `hsl(${s.mutedColor})` : undefined,
@@ -319,6 +342,7 @@ const DocMobileNav = forwardRef<HTMLDivElement, DocMobileNavProps>(({
                               key={page.id}
                               onClick={() => handleSelectPage(page)}
                               aria-current={isActive ? "page" : undefined}
+                              data-sidebar-item
                               className="w-full flex items-center justify-between text-left px-3 py-2 rounded-lg transition-colors hover:bg-[hsl(var(--docs-muted)/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--docs-ring))]"
                               style={{
                                 backgroundColor: isActive ? `hsl(${s.mutedColor})` : undefined,

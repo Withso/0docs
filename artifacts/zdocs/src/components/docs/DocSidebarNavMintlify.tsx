@@ -201,6 +201,30 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
     // collapsed group still scrolls into view once its group auto-opens.
   }, [activePage?.id, openGroups]);
 
+  /* ─── Arrow-key roving navigation ────────────────────────────────
+   * Treat all rendered rows + group toggles + section links as a flat
+   * vertical list. ArrowDown/Up moves focus, Home/End jump to ends.
+   * Tab still works (everything is in the natural tab order). */
+  const onNavKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+    const root = e.currentTarget as HTMLElement;
+    const items = Array.from(
+      root.querySelectorAll<HTMLElement>("[data-sidebar-item]")
+    ).filter((el) => !el.hasAttribute("disabled"));
+    if (items.length === 0) return;
+    const current = document.activeElement as HTMLElement | null;
+    const idx = current ? items.indexOf(current) : -1;
+    let nextIdx = idx;
+    if (e.key === "ArrowDown") nextIdx = idx < 0 ? 0 : Math.min(items.length - 1, idx + 1);
+    else if (e.key === "ArrowUp") nextIdx = idx <= 0 ? items.length - 1 : idx - 1;
+    else if (e.key === "Home") nextIdx = 0;
+    else if (e.key === "End") nextIdx = items.length - 1;
+    if (nextIdx !== idx) {
+      e.preventDefault();
+      items[nextIdx]?.focus();
+    }
+  }, []);
+
   /* ─── Tag pill ──────────────────────────────────────────────────── */
   const renderTag = (tag: string | undefined) => {
     if (!tag) return null;
@@ -270,6 +294,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
         rel="noopener noreferrer"
         className={rowClasses}
         style={baseStyle}
+        data-sidebar-item
       >
         <span className="truncate" dangerouslySetInnerHTML={{ __html: page.nav_title || page.title }} />
         <ExternalLink className="h-3 w-3 shrink-0 opacity-50" />
@@ -285,6 +310,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
         aria-current={isActive ? "page" : undefined}
         className={rowClasses}
         style={baseStyle}
+        data-sidebar-item
       >
         {innerLabel}
       </button>
@@ -306,6 +332,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
                 <a
                   key={section.id}
                   href={`#section-${section.id}`}
+                  data-sidebar-item
                   onClick={(e) => {
                     e.preventDefault();
                     const el = document.getElementById(`section-${section.id}`);
@@ -373,7 +400,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
         </div>
       )}
 
-      <nav className="flex flex-col" style={{ gap: `${Math.max(s.sidebarPageGap, 0)}px` }}>
+      <nav onKeyDown={onNavKeyDown} className="flex flex-col" style={{ gap: `${Math.max(s.sidebarPageGap, 0)}px` }}>
         {ungroupedPages.map((p) => renderPageRow(p))}
 
         {sortedNavGroups.map((group) => {
@@ -407,6 +434,7 @@ const DocSidebarNavMintlify = <TPage extends SidebarPageBase = SidebarPageBase>(
                 onClick={() => toggleGroup(group)}
                 aria-expanded={open}
                 aria-controls={`sidebar-group-${group.id}`}
+                data-sidebar-item
                 className={[
                   "w-full flex items-center justify-between gap-2 pl-4 pr-3 mb-1.5 text-left select-none rounded-md py-1",
                   "hover:bg-[hsl(var(--docs-muted)/0.5)]",
