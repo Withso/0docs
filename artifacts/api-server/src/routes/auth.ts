@@ -19,6 +19,7 @@ import {
   ISSUER_URL,
   type SessionData,
 } from "../lib/auth";
+import { ensureDemoProjectForUser } from "../lib/clone-homepage";
 
 const OIDC_COOKIE_TTL = 10 * 60 * 1000;
 
@@ -253,6 +254,12 @@ router.get("/callback", async (req: Request, res: Response) => {
 
     const sid = await createSession(sessionData);
     setSessionCookie(res, sid);
+
+    // First-login demo seed. Idempotent + non-blocking on failure (the helper
+    // catches its own errors). Awaited so the user lands in a populated
+    // workspace without a perceptible stall.
+    await ensureDemoProjectForUser(dbUser.id);
+
     res.redirect(returnTo);
   } catch (err: unknown) {
     const e = err as { message?: string; code?: string; cause?: { message?: string; code?: string } };
@@ -338,6 +345,7 @@ router.post(
       };
 
       const sid = await createSession(sessionData);
+      await ensureDemoProjectForUser(dbUser.id);
       res.json(ExchangeMobileAuthorizationCodeResponse.parse({ token: sid }));
     } catch (err) {
       req.log.error({ err }, "Mobile token exchange error");

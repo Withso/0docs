@@ -1,24 +1,37 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import ShaderBackground from "@/components/ShaderBackground";
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  // Authenticated users always land in their workspace, including on a
+  // hard refresh that hits "/". We wait for the auth check to finish so
+  // we don't accidentally bounce a logged-in user to the marketing page
+  // for a moment before redirecting.
+  useEffect(() => {
+    if (!loading && user) navigate("/builder", { replace: true });
+  }, [loading, user, navigate]);
+
+  if (loading || user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <span className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Ambient gradient mesh */}
+      {/* Ambient animated shader — neutral grayscale flow, very subtle. */}
+      <ShaderBackground />
+      {/* Subtle dotted grid layered over the shader for texture. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.55] dark:opacity-[0.35]"
-        style={{
-          background:
-            "radial-gradient(800px 500px at 12% 0%, hsl(220 90% 60% / 0.08), transparent 60%), radial-gradient(700px 500px at 88% 100%, hsl(152 70% 45% / 0.06), transparent 60%)",
-        }}
-      />
-      {/* Subtle dotted grid */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.4] dark:opacity-[0.25]"
+        className="pointer-events-none absolute inset-0 opacity-[0.35] dark:opacity-[0.2]"
         style={{
           backgroundImage:
             "radial-gradient(hsl(var(--foreground) / 0.08) 1px, transparent 1px)",

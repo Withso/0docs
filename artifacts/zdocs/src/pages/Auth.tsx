@@ -8,7 +8,7 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) navigate("/dashboard", { replace: true });
+    if (user) navigate("/builder", { replace: true });
   }, [user, navigate]);
 
   if (loading) {

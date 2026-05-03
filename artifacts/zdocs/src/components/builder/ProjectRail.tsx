@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import {
   Home, Pencil, BarChart3, Settings, SlidersHorizontal,
-  GitBranch, Bot, Sparkles, Plug,
+  Bot, Sparkles, Plug,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { BuilderMode } from "./BuilderHeader";
@@ -30,8 +30,6 @@ const workspaceItems: RailItem[] = [
 // Aspirational items from the Faithful Mintlify clone — wired but disabled until backend exists.
 type AgentItem = { id: string; label: string; icon: typeof Bot };
 const agentItems: AgentItem[] = [
-  { id: "workflows", label: "Workflows", icon: GitBranch },
-  { id: "agent",     label: "Agent",     icon: Bot },
   { id: "assistant", label: "Assistant", icon: Sparkles },
   { id: "mcp",       label: "MCP",       icon: Plug },
 ];

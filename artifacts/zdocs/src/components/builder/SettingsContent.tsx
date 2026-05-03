@@ -160,7 +160,7 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
     try {
       await api.del(`/projects/${projectId}`);
       toast({ title: "Project deleted" });
-      navigate("/dashboard");
+      navigate("/builder");
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }

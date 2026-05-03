@@ -325,7 +325,7 @@ const Builder = () => {
   }
 
   if (!project) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/builder" replace />;
   }
 
   // Header is scoped to the content area (Mintlify-style) and only shown for editor / code / preview modes.

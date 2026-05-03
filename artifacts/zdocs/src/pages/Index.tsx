@@ -369,11 +369,11 @@ const Index = () => {
               Back to home
             </button>
             <button
-              onClick={() => navigate(user ? "/dashboard" : "/auth")}
+              onClick={() => navigate(user ? "/builder" : "/auth")}
               className="h-10 px-4 rounded-lg text-[13px] font-medium inline-flex items-center gap-2 bg-foreground text-background hover:opacity-90 transition-opacity"
             >
               <LogIn className="h-3.5 w-3.5" />
-              {user ? "Open dashboard" : "Sign in"}
+              {user ? "Open workspace" : "Sign in"}
             </button>
           </div>
         </div>
@@ -474,10 +474,10 @@ const Index = () => {
             )}
             {user ? (
               <button
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/builder")}
                 className="h-8 px-3 text-[13px] rounded-lg gap-1.5 inline-flex items-center font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
               >
-                <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
+                <LayoutDashboard className="h-3.5 w-3.5" /> Workspace
               </button>
             ) : (
               <button

@@ -81,7 +81,7 @@ const ProfileSettings = () => {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1.5">
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/builder")}
               className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-accent/60 transition-colors text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />

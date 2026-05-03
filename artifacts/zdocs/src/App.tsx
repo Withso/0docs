@@ -11,7 +11,7 @@ import Index from "./pages/Index";
 import Builder from "./pages/Builder";
 
 const Auth = lazy(() => import("./pages/Auth"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+const BuilderEntry = lazy(() => import("./pages/BuilderEntry"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -25,7 +25,7 @@ const queryClient = new QueryClient();
 
 const LegacyDesignRouteRedirect = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  if (!projectId) return <Navigate to="/dashboard" replace />;
+  if (!projectId) return <Navigate to="/builder" replace />;
   return <Navigate to={`/builder/${projectId}/configurations`} replace />;
 };
 
@@ -48,9 +48,13 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
                 <Route path="/auth" element={<Auth />} />
                 <Route
                   path="/dashboard"
+                  element={<Navigate to="/builder" replace />}
+                />
+                <Route
+                  path="/builder"
                   element={
                     <ProtectedRoute>
-                      <Dashboard />
+                      <BuilderEntry />
                     </ProtectedRoute>
                   }
                 />

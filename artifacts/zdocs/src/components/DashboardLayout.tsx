@@ -19,7 +19,7 @@ const DashboardLayout = forwardRef<HTMLDivElement, DashboardLayoutProps>(({ chil
     || user?.email?.[0]?.toUpperCase()
     || "U";
 
-  const isProjectsActive = location.pathname === "/dashboard";
+  const isProjectsActive = location.pathname === "/builder" || location.pathname.startsWith("/builder/");
   const isProfileActive = location.pathname === "/settings/profile";
 
   return (
@@ -39,7 +39,7 @@ const DashboardLayout = forwardRef<HTMLDivElement, DashboardLayoutProps>(({ chil
           <nav className="flex-1 px-3 py-1 space-y-0.5">
             <div
               className={`platform-nav-item ${isProjectsActive ? "active" : ""} cursor-pointer`}
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/builder")}
             >
               <FolderOpen className="h-4 w-4" />
               <span>Projects</span>

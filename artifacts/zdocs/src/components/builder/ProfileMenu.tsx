@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, LogOut, MessageCircle, Monitor, Moon, Sun, UserCog, UserPlus, Receipt } from "lucide-react";
+import { BookOpen, LogOut, Monitor, Moon, Sun, UserCog, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatformTheme } from "@/hooks/use-platform-theme";
 import {
@@ -49,7 +49,6 @@ const ProfileMenu = ({ projectId }: ProfileMenuProps) => {
         <div className="py-1.5">
           <MenuRow icon={UserCog} label="Your profile" onClick={() => goSettings("profile")} />
           <MenuRow icon={UserPlus} label="Invite members" onClick={() => goSettings("members")} />
-          <MenuRow icon={Receipt} label="Billing" onClick={() => goSettings("billing")} />
         </div>
 
         {/* Theme selector */}
@@ -85,11 +84,6 @@ const ProfileMenu = ({ projectId }: ProfileMenuProps) => {
             icon={BookOpen}
             label="Documentation"
             onClick={() => window.open("https://docs.0docs.dev", "_blank", "noreferrer")}
-          />
-          <MenuRow
-            icon={MessageCircle}
-            label="Contact support"
-            onClick={() => window.open("mailto:support@0docs.dev", "_blank", "noreferrer")}
           />
         </div>
 
