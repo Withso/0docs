@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useApi } from "@/lib/api-client";
 import ShaderBackground from "@/components/ShaderBackground";
@@ -10,16 +9,106 @@ interface LandingProject {
   isHomepage?: boolean;
 }
 
+const LogoIcon = () => (
+  <svg viewBox="0 0 64 64" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="64" height="64" rx="14" fill="#111111" />
+    <path
+      d="M32 12c-9.94 0-18 8.95-18 20s8.06 20 18 20 18-8.95 18-20S41.94 12 32 12zm0 8c5.52 0 10 5.37 10 12s-4.48 12-10 12-10-5.37-10-12 4.48-12 10-12z"
+      fill="url(#ring)"
+    />
+    <defs>
+      <linearGradient id="ring" x1="14" y1="10" x2="50" y2="54" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stopColor="#FFFFFF" />
+        <stop offset="1" stopColor="#B5B5B5" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+const DocsMockup = () => (
+  <div className="w-full h-full flex flex-col rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-[#0d0d0d]">
+    <div className="flex-shrink-0 h-9 bg-[#161616] border-b border-white/[0.07] flex items-center px-3 gap-2">
+      <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+      <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+      <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+      <div className="flex-1 mx-3">
+        <div className="mx-auto h-5 rounded-md bg-white/5 flex items-center justify-center max-w-[260px]">
+          <span className="text-[10px] text-white/25 font-mono">docs.example.com</span>
+        </div>
+      </div>
+    </div>
+    <div className="flex flex-1 overflow-hidden">
+      <div className="flex-shrink-0 w-[200px] border-r border-white/[0.07] bg-[#111111] flex flex-col pt-4 pb-3 gap-0.5 px-2 overflow-hidden">
+        <div className="h-6 px-2 flex items-center gap-2 mb-2">
+          <div className="h-4 w-4 rounded bg-white/10" />
+          <div className="h-2.5 w-16 rounded-full bg-white/20" />
+        </div>
+        {[
+          { w: "w-14", active: false, indent: false },
+          { w: "w-20", active: true, indent: false },
+          { w: "w-16", active: false, indent: true },
+          { w: "w-18", active: false, indent: true },
+          { w: "w-12", active: false, indent: true },
+          { w: "w-20", active: false, indent: false },
+          { w: "w-14", active: false, indent: false },
+          { w: "w-18", active: false, indent: false },
+          { w: "w-16", active: false, indent: true },
+          { w: "w-14", active: false, indent: true },
+        ].map((item, i) => (
+          <div
+            key={i}
+            className={`h-6 rounded-md flex items-center px-2 gap-2 ${item.active ? "bg-emerald-500/15" : "hover:bg-white/5"}`}
+          >
+            {item.indent && <span className="w-3" />}
+            <div
+              className={`h-2 rounded-full ${item.active ? "bg-emerald-400/70" : "bg-white/15"}`}
+              style={{ width: item.active ? "80px" : `${40 + i * 7}px` }}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-hidden bg-[#0d0d0d] px-8 pt-6 pb-4 flex flex-col gap-3 min-w-0">
+        <div className="h-3 w-24 rounded-full bg-emerald-500/30" />
+        <div className="h-5 w-2/3 rounded-full bg-white/25" />
+        <div className="h-2.5 w-full rounded-full bg-white/8" />
+        <div className="h-2.5 w-5/6 rounded-full bg-white/8" />
+        <div className="h-2.5 w-4/5 rounded-full bg-white/8" />
+        <div className="mt-2 rounded-lg bg-[#161616] border border-white/[0.07] p-3 flex flex-col gap-2">
+          <div className="h-2.5 w-12 rounded-full bg-emerald-500/40" />
+          <div className="h-2 w-full rounded-full bg-white/10" />
+          <div className="h-2 w-4/5 rounded-full bg-white/10" />
+        </div>
+        <div className="h-2.5 w-full rounded-full bg-white/8" />
+        <div className="h-2.5 w-11/12 rounded-full bg-white/8" />
+        <div className="mt-1 grid grid-cols-2 gap-2">
+          <div className="rounded-lg bg-[#161616] border border-white/[0.07] p-3 flex flex-col gap-1.5">
+            <div className="h-2.5 w-16 rounded-full bg-white/20" />
+            <div className="h-2 w-full rounded-full bg-white/8" />
+            <div className="h-2 w-3/4 rounded-full bg-white/8" />
+          </div>
+          <div className="rounded-lg bg-[#161616] border border-white/[0.07] p-3 flex flex-col gap-1.5">
+            <div className="h-2.5 w-16 rounded-full bg-white/20" />
+            <div className="h-2 w-full rounded-full bg-white/8" />
+            <div className="h-2 w-3/4 rounded-full bg-white/8" />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-shrink-0 w-[150px] border-l border-white/[0.07] bg-[#0d0d0d] pt-6 px-3 flex flex-col gap-2 overflow-hidden hidden xl:flex">
+        <div className="h-2 w-16 rounded-full bg-white/20 mb-1" />
+        {[40, 64, 52, 48, 56, 44].map((w, i) => (
+          <div key={i} className={`h-2 rounded-full ${i === 1 ? "bg-emerald-500/50" : "bg-white/10"}`} style={{ width: `${w}px` }} />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 const Landing = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const api = useApi();
-  // `checkingProjects` is true while we look up whether a signed-in user
-  // has a workspace to bounce them into. Signed-in users with at least one
-  // non-homepage project skip the marketing page on hard refresh; users
-  // with zero projects (or a fetch failure) see Landing as a terminal page
-  // — otherwise we'd bounce them /builder → / → /builder forever, since
-  // BuilderEntry sends zero-project users back to "/".
   const [checkingProjects, setCheckingProjects] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false);
 
@@ -42,12 +131,7 @@ const Landing = () => {
         if (!cancelled) setCheckingProjects(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
-    // Intentionally only depend on auth-state transitions. `useApi()`
-    // and `navigate` return fresh identities each render, which would
-    // cause this effect to re-fire and re-poll /projects continuously.
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user?.id]);
 
@@ -60,112 +144,94 @@ const Landing = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Ambient animated shader — neutral grayscale flow, very subtle. */}
+    <div className="h-screen overflow-hidden bg-background relative flex flex-col">
       <ShaderBackground />
-      {/* Subtle dotted grid layered over the shader for texture. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.35] dark:opacity-[0.2]"
         style={{
-          backgroundImage:
-            "radial-gradient(hsl(var(--foreground) / 0.08) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(hsl(var(--foreground) / 0.08) 1px, transparent 1px)",
           backgroundSize: "22px 22px",
-          maskImage:
-            "radial-gradient(ellipse at center, black 30%, transparent 70%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+          maskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+          WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
         }}
       />
 
-      <header className="relative z-10 h-14 flex items-center justify-between px-6 lg:px-8 border-b border-border/60 backdrop-blur-sm bg-background/70">
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-md bg-foreground text-background grid place-items-center text-[12px] font-bold tracking-tight">
-            0
-          </div>
+      <header className="relative z-10 flex-shrink-0 h-14 flex items-center justify-between px-6 lg:px-10 border-b border-border/60 backdrop-blur-sm bg-background/70">
+        <div className="flex items-center gap-2.5">
+          <LogoIcon />
           <span className="font-semibold tracking-tight text-[15px]">0docs</span>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="https://github.com/Withso/0docs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="h-8 px-3.5 text-[13px] rounded-md inline-flex items-center gap-1.5 font-medium border border-border hover:bg-accent transition-colors"
+          >
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
+              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+            </svg>
+            View on GitHub
+          </a>
           <button
             onClick={() => navigate("/docs")}
-            className="hidden sm:inline-flex h-8 px-3 text-[13px] rounded-md items-center font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="h-8 px-3.5 text-[13px] rounded-md inline-flex items-center font-medium bg-foreground text-background hover:opacity-90 transition-opacity"
           >
-            Documentation
-          </button>
-          <button
-            onClick={() => navigate("/auth")}
-            className="h-8 px-3.5 text-[13px] rounded-md inline-flex items-center gap-1.5 font-medium bg-foreground text-background hover:opacity-90 transition-opacity"
-          >
-            <LogIn className="h-3.5 w-3.5" /> Sign In
+            Learn more
           </button>
         </div>
       </header>
 
-      <main className="relative z-10 max-w-[920px] mx-auto px-6 lg:px-8 pt-20 pb-20 lg:pt-32">
-        <div className="flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 h-7 px-3 rounded-full border border-border/80 bg-background/60 backdrop-blur text-[12px] text-muted-foreground mb-8">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Documentation, beautifully built
+      <main className="relative z-10 flex-1 flex flex-col overflow-hidden px-6 lg:px-10 pt-8 lg:pt-10 pb-4">
+        <div className="flex flex-col items-center text-center flex-shrink-0">
+          <div className="inline-flex items-center gap-2 h-7 px-3 rounded-full border border-border/80 bg-background/60 backdrop-blur text-[12px] text-muted-foreground mb-5">
+            <svg viewBox="0 0 24 24" className="h-3 w-3" fill="currentColor">
+              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+            </svg>
+            Open source · MIT License
           </div>
-          <h1 className="text-[44px] sm:text-[56px] leading-[1.05] font-semibold tracking-[-0.03em] text-foreground mb-5 max-w-[720px]">
-            Beautiful documentation,
+
+          <h1 className="text-[38px] sm:text-[48px] lg:text-[52px] leading-[1.06] font-semibold tracking-[-0.03em] text-foreground mb-4 max-w-[680px]">
+            Docs that are open,
             <br />
-            <span className="text-muted-foreground">crafted with care.</span>
+            <span className="text-muted-foreground">powerful, and yours.</span>
           </h1>
-          <p className="text-[17px] text-muted-foreground max-w-[540px] mb-10 leading-relaxed">
-            0docs gives your team a Mintlify-grade documentation builder —
-            powerful editor, themable design system, and a reading experience
-            your users will love.
+
+          <p className="text-[15px] lg:text-[16px] text-muted-foreground max-w-[500px] mb-6 leading-relaxed">
+            A Mintlify-grade documentation platform you can self-host for free.
+            Beautiful reader, visual editor, versioning — all open source.
           </p>
+
           <div className="flex flex-col sm:flex-row items-center gap-3">
-            <button
-              onClick={() => navigate("/auth")}
-              className="h-11 px-5 rounded-lg inline-flex items-center gap-2 font-medium text-[14px] bg-foreground text-background hover:opacity-90 transition-opacity"
+            <a
+              href="https://github.com/Withso/0docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-10 px-5 rounded-lg inline-flex items-center gap-2 font-medium text-[14px] bg-foreground text-background hover:opacity-90 transition-opacity"
             >
-              <LogIn className="h-4 w-4" /> Get started
-            </button>
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+              </svg>
+              View on GitHub
+            </a>
             <button
               onClick={() => navigate("/docs")}
-              className="h-11 px-5 rounded-lg inline-flex items-center gap-2 font-medium text-[14px] border border-border hover:bg-accent transition-colors"
+              className="h-10 px-5 rounded-lg inline-flex items-center gap-2 font-medium text-[14px] border border-border hover:bg-accent transition-colors"
             >
               Learn more
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-24">
-          {[
-            {
-              title: "Visual editor",
-              desc: "Write content in a polished WYSIWYG editor with code, tabs, callouts, and components.",
-            },
-            {
-              title: "Themable design",
-              desc: "Pick from curated themes or fully customize colors, type, and spacing.",
-            },
-            {
-              title: "Publish & version",
-              desc: "Snapshot versions, revert anytime, and ship updates with one click.",
-            },
-          ].map((f) => (
-            <div
-              key={f.title}
-              className="rounded-xl border border-border/80 bg-card/40 backdrop-blur p-5 hover:border-border transition-colors"
-            >
-              <div className="text-[14px] font-semibold tracking-tight mb-1.5">
-                {f.title}
-              </div>
-              <p className="text-[13px] text-muted-foreground leading-relaxed">
-                {f.desc}
-              </p>
-            </div>
-          ))}
+        <div className="flex-1 min-h-0 mt-6 lg:mt-8 w-full max-w-5xl mx-auto">
+          <DocsMockup />
         </div>
       </main>
 
-      <footer className="relative z-10 border-t border-border/60 py-5 px-6 lg:px-8 flex items-center justify-between text-[12px] text-muted-foreground">
+      <footer className="relative z-10 flex-shrink-0 border-t border-border/60 py-3 px-6 lg:px-10 flex items-center justify-between text-[11px] text-muted-foreground">
         <span>© {new Date().getFullYear()} 0docs</span>
-        <span className="hidden sm:inline">Built for teams that ship</span>
+        <span className="hidden sm:inline">Free &amp; open source forever</span>
       </footer>
     </div>
   );
