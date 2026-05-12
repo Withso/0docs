@@ -1,14 +1,28 @@
+<div align="center">
+
 # 0docs
 
-> Open-source documentation platform with a visual editor, branching, version
-> publishing, and an "Ask docs" AI feature. Self-hostable in one command, or
-> usable in the hosted Replit demo.
+**Open-source, self-hostable docs platform — block-based editor, themable design system, versioning, and "Ask docs" AI built in.**
+
+[![Website](https://img.shields.io/badge/website-0docs.dev-3B82F6?style=flat-square)](https://0docs.dev)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
+[![Self-host](https://img.shields.io/badge/self--host-one_command-3B82F6?style=flat-square)](#quick-start-self-hosted)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-3B82F6?style=flat-square)](#contributing)
+
+[Website](https://0docs.dev) · [Self-hosting guide](./SELFHOSTING.md) · [MCP server](./artifacts/api-server/MCP.md)
+
+</div>
+
+---
 
 0docs is a Mintlify-style documentation builder. You write docs as pages →
-sections → blocks (paragraphs, code, callouts, tabs, etc), branch to draft
-changes, publish atomic versions, and ship a public docs site at a free
-URL or your own domain. AI-powered "Ask docs" answers questions over the
-content of your published version.
+sections → blocks (paragraphs, code, callouts, tabs, cards, steps, API
+endpoints, etc), branch to draft changes, publish atomic versions, and ship a
+public docs site at a free URL or your own domain. AI-powered "Ask docs"
+answers questions over the content of your published version.
+
+Try the hosted demo at **[0docs.dev](https://0docs.dev)** — or run the whole
+stack on your own infrastructure with one command.
 
 This repository is a **pnpm monorepo** containing the API server, the web
 app, shared libraries, and everything you need to run the whole product on
@@ -56,7 +70,7 @@ You'll need:
 Then:
 
 ```bash
-git clone https://github.com/your-org/0docs.git
+git clone https://github.com/Withso/0docs.git
 cd 0docs
 ./install.sh         # one command: installs, migrates, seeds admin, boots
 ```

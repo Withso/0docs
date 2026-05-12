@@ -1,17 +1,49 @@
 # See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-# compiled output
-dist
-tmp
-out-tsc
+# ─── Dependencies ──────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+
+# ─── Build output ──────────────────────────────────────────────────
+dist/
+build/
+out/
+out-tsc/
+tmp/
 *.tsbuildinfo
-.expo
-.expo-shared
+.expo/
+.expo-shared/
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+.vite/
 
-# dependencies
-node_modules
+# ─── Environment & secrets ─────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+!.env.example
+*.pem
+*.key
 
-# IDEs and editors
+# ─── Logs ──────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+testem.log
+logs/
+
+# ─── Coverage & test output ────────────────────────────────────────
+/coverage
+/.nyc_output
+/typings
+
+# ─── IDE / editor ──────────────────────────────────────────────────
 /.idea
 .project
 .classpath
@@ -19,31 +51,39 @@ node_modules
 *.launch
 .settings/
 *.sublime-workspace
-
-# IDE - VSCode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-
-# misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
-
-# System Files
-.DS_Store
-Thumbs.db
-
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
-# Replit
+# ─── OS files ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ─── Replit-specific (don't push to GitHub) ────────────────────────
+.replit
+.replitignore
+replit.md
+replit.nix
+.upm/
+.breakpoints
+.agents/
 .cache/
+.config/
 .local/
+**/.replit-artifact/
+
+# ─── Workspace dev artifacts (not part of the OSS source) ──────────
+attached_assets/
+screenshots/
+artifact.toml
+
+# ─── Misc ──────────────────────────────────────────────────────────
+/.sass-cache
+/connect.lock
+/libpeerconnection.log
