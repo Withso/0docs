@@ -12,7 +12,7 @@
 #   5. Pushes the Drizzle schema to the database.
 #   6. Prints the URLs and next steps.
 #
-# After this completes, run `pnpm run selfhost:dev` to start the API + web.
+# After this completes, run `pnpm run dev` to start the API + web.
 
 set -euo pipefail
 
@@ -63,13 +63,6 @@ if grep -q "^SESSION_SECRET=replace-me" .env || ! grep -q "^SESSION_SECRET=" .en
     printf "\nSESSION_SECRET=%s\n" "$SECRET" >> .env
   fi
   ok "generated SESSION_SECRET"
-fi
-
-# Force AUTH_MODE=selfhost when running the installer (operators expect this).
-if grep -q "^AUTH_MODE=replit" .env; then
-  tmp=$(mktemp)
-  sed "s|^AUTH_MODE=.*|AUTH_MODE=selfhost|" .env > "$tmp" && mv "$tmp" .env
-  ok "set AUTH_MODE=selfhost"
 fi
 
 # ── 3. Postgres ─────────────────────────────────────────────────────
@@ -126,25 +119,25 @@ echo
 
 if [ "$START_STACK" = "1" ]; then
   cat <<EOF
-Starting 0docs at http://localhost:${WEB_PORT:-8080}
+Starting 0docs at http://localhost:${PORT:-8081}
 
-  Press Ctrl-C to stop. To start later, run:  pnpm run selfhost:dev
+  Press Ctrl-C to stop. To start later, run:  pnpm run dev
   Full container stack:                       docker compose up
 
 Docs: README.md, SELFHOSTING.md.
 EOF
-  exec pnpm run selfhost:dev
+  exec pnpm run dev
 else
   cat <<EOF
 Next steps:
 
   Start the dev server:
-    pnpm run selfhost:dev
+    pnpm run dev
 
   Or run the full stack in containers:
     docker compose up
 
-  Then open: http://localhost:${WEB_PORT:-8080}
+  Then open: http://localhost:${PORT:-8081}
 
   Admin user: set ADMIN_EMAIL + ADMIN_PASSWORD in .env and re-run
   ./install.sh to seed one. Otherwise the first account created via

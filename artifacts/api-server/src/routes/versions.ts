@@ -354,6 +354,7 @@ router.post("/doc-versions/:id/clone", requireAuth,
         for (const page of sourcePages) {
           const [newPage] = await tx.insert(pagesTable).values({
             projectId: page.projectId,
+            branchId: page.branchId,
             title: page.title,
             slug: page.slug,
             orderIndex: page.orderIndex,
@@ -371,6 +372,7 @@ router.post("/doc-versions/:id/clone", requireAuth,
           for (const sec of sourceSections) {
             const [newSec] = await tx.insert(sectionsTable).values({
               pageId: newPage.id,
+              branchId: sec.branchId,
               title: sec.title,
               orderIndex: sec.orderIndex,
               navTitle: sec.navTitle,
@@ -382,6 +384,7 @@ router.post("/doc-versions/:id/clone", requireAuth,
             for (const blk of sourceBlocks) {
               await tx.insert(blocksTable).values({
                 sectionId: newSec.id,
+                branchId: blk.branchId,
                 type: blk.type,
                 content: blk.content,
                 orderIndex: blk.orderIndex,

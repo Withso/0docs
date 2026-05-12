@@ -466,10 +466,10 @@ router.post("/projects/:id/duplicate", requireAuth, async (req: Request<{ id: st
         ).orderBy(pagesTable.orderIndex),
         srcBranchId
           ? tx.select().from(sectionsTable).where(eq(sectionsTable.branchId, srcBranchId))
-          : Promise.resolve([] as Awaited<ReturnType<typeof tx.select>>),
+          : [],
         srcBranchId
           ? tx.select().from(blocksTable).where(eq(blocksTable.branchId, srcBranchId))
-          : Promise.resolve([] as Awaited<ReturnType<typeof tx.select>>),
+          : [],
         tx.select().from(projectDesignSettingsTable).where(
           srcBranchId
             ? and(eq(projectDesignSettingsTable.projectId, src.id), eq(projectDesignSettingsTable.branchId, srcBranchId))

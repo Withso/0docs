@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Check, ChevronsUpDown, FileText, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, FileText, Plus, Search } from "lucide-react";
 import ProfileMenu from "./ProfileMenu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useApi } from "@/lib/api-client";

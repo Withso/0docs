@@ -24,8 +24,8 @@ const scryptAsync = promisify(crypto.scrypt);
 const KEY_LEN = 64;
 const SALT_LEN = 16;
 
-// Format mirrors artifacts/api-server/src/lib/auth/selfhost/password.ts
-// exactly: scrypt$<salt-hex>$<hash-hex>. Keep these in sync.
+// Format mirrors artifacts/api-server/src/lib/auth/password.ts exactly:
+// scrypt$<salt-hex>$<hash-hex>. Keep these in sync.
 async function hashPassword(password) {
   const salt = crypto.randomBytes(SALT_LEN);
   const derived = await scryptAsync(password, salt, KEY_LEN);
@@ -50,8 +50,7 @@ if (password.length < 8) {
   process.exit(1);
 }
 
-const connectionString =
-  process.env.SHARED_DATABASE_URL || process.env.DATABASE_URL;
+const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   console.error(
     "[seed-admin] DATABASE_URL is not set — cannot seed admin user.",

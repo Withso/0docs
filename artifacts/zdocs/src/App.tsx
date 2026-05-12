@@ -56,12 +56,8 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
                     shareable URL at <host>/p/<slug>. Index reads :slug from
                     useParams and looks the project up via /api/projects?slug=. */}
                 <Route path="/p/:slug" element={<Index />} />
-                {/* /auth is a thin redirect into /builder; ProtectedRoute
-                    auto-triggers the OIDC sign-in flow when no user. Kept
-                    as a route so existing links from Landing/Index that
-                    point at "/auth" still work. */}
-                {/* /auth renders the self-host email/password forms. In
-                    Replit (OIDC) mode it auto-redirects to /api/login. */}
+                {/* /auth renders the email/password sign-in, sign-up,
+                    forgot-password, and reset-password forms. */}
                 <Route path="/auth" element={<AuthPage />} />
                 <Route
                   path="/dashboard"
@@ -69,7 +65,7 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
                 />
                 {/* /builder is a pure redirect entry-point. It must NOT be
                     wrapped in ProtectedRoute — signed-out visitors should
-                    land on the Landing page, not the OIDC sign-in flow.
+                    land on the Landing page, not the sign-in flow.
                     BuilderEntry handles the signed-out case itself. */}
                 <Route path="/builder" element={<BuilderEntry />} />
                 <Route

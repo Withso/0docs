@@ -28,9 +28,11 @@ app.use(
   }),
 );
 
-// CORS allow-list. In dev we accept any origin (so Vite preview & tunnel work);
-// in production we only accept Replit-served domains plus configurable extras
-// from CORS_ALLOWLIST (comma-separated).
+// CORS allow-list. In dev we accept any origin (so Vite preview & tunnel
+// work); in production we accept localhost plus origins explicitly listed
+// in CORS_ALLOWLIST (comma-separated). Operators add their public origin
+// there. When the API and web share the same host (the default for the
+// single-service deployment) CORS is effectively a no-op.
 const corsAllowlist = (process.env.CORS_ALLOWLIST ?? "")
   .split(",").map((s) => s.trim()).filter(Boolean);
 const isProd = process.env.NODE_ENV === "production";
@@ -43,12 +45,6 @@ app.use(cors({
       const u = new URL(origin);
       const host = u.hostname;
       const ok =
-        host.endsWith(".replit.dev") ||
-        host.endsWith(".replit.app") ||
-        host.endsWith(".repl.co") ||
-        // Self-hosted defaults — operators add public origins via
-        // CORS_ALLOWLIST. localhost is always trusted in case the user
-        // runs the API behind a non-standard reverse proxy.
         host === "localhost" ||
         host === "127.0.0.1" ||
         corsAllowlist.includes(origin);

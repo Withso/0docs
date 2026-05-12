@@ -6,7 +6,7 @@
 
 [![Website](https://img.shields.io/badge/website-0docs.dev-3B82F6?style=flat-square)](https://0docs.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
-[![Self-host](https://img.shields.io/badge/self--host-one_command-3B82F6?style=flat-square)](#quick-start-self-hosted)
+[![Self-host](https://img.shields.io/badge/self--host-one_command-3B82F6?style=flat-square)](#quick-start)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-3B82F6?style=flat-square)](#contributing)
 
 [Website](https://0docs.dev) · [Self-hosting guide](./SELFHOSTING.md) · [MCP server](./artifacts/api-server/MCP.md)
@@ -17,12 +17,9 @@
 
 0docs is a Mintlify-style documentation builder. You write docs as pages →
 sections → blocks (paragraphs, code, callouts, tabs, cards, steps, API
-endpoints, etc), branch to draft changes, publish atomic versions, and ship a
-public docs site at a free URL or your own domain. AI-powered "Ask docs"
+endpoints, etc), branch to draft changes, publish atomic versions, and ship
+a public docs site at a free URL or your own domain. AI-powered "Ask docs"
 answers questions over the content of your published version.
-
-Try the hosted demo at **[0docs.dev](https://0docs.dev)** — or run the whole
-stack on your own infrastructure with one command.
 
 This repository is a **pnpm monorepo** containing the API server, the web
 app, shared libraries, and everything you need to run the whole product on
@@ -30,37 +27,20 @@ your own infrastructure.
 
 ---
 
-## MCP server for AI agents
+## Quick start
 
-0docs ships a built-in **Model Context Protocol** endpoint at `POST /api/mcp`
-so AI agents (Claude Desktop, Cursor, Continue, custom clients) can read and
-edit your docs. Mint a per-project access token under **Settings → MCP Server**,
-or run the server in anonymous read-only mode. See
-[`artifacts/api-server/MCP.md`](./artifacts/api-server/MCP.md) for the full
-tool catalog, auth modes, and environment defaults
-(`MCP_ENABLED`, `MCP_ALLOW_ANONYMOUS`, `MCP_DISABLED_TOOLS`).
+Pick whichever path fits your setup:
 
-## Two ways to run it
+### 1. Deploy on Railway (one click)
 
-| Mode | When to use it | Auth |
-|---|---|---|
-| **Self-hosted** (default for the OSS release) | You want to run 0docs on your own machine, server, or VPS. | Email + password, with optional SMTP-based password reset. |
-| **Replit-hosted demo** | You want to play with the hosted demo, or you're a Replit user who wants Replit Auth. | Replit OIDC (Sign in with Replit). |
+> The "Deploy on Railway" button + template arrive in the next release.
+> Until then, follow the [manual Railway recipe in `SELFHOSTING.md`](./SELFHOSTING.md#deploying-on-railway).
 
-A single environment variable selects the mode at boot:
+Railway provisions Postgres for you, exposes `$PORT`, and points
+`DATABASE_URL` at the database automatically. Set `SESSION_SECRET`,
+optionally `ADMIN_EMAIL` + `ADMIN_PASSWORD`, and deploy.
 
-```bash
-AUTH_MODE=selfhost   # email + password (default for self-hosters)
-AUTH_MODE=replit     # Replit OIDC (default in the Replit container)
-```
-
-The frontend reads the active mode from `GET /api/auth/config` and renders
-the correct sign-in UI automatically. The rest of the codebase never
-branches on the mode — see [Architecture](#architecture).
-
----
-
-## Quick start (self-hosted)
+### 2. Local install (Docker + pnpm)
 
 You'll need:
 
@@ -75,20 +55,19 @@ cd 0docs
 ./install.sh         # one command: installs, migrates, seeds admin, boots
 ```
 
-That's it. `install.sh` finishes by exec-ing `pnpm run selfhost:dev`, so
-the API + web are running by the time you read the URL it prints. Open
-http://localhost:8080.
+`install.sh` finishes by exec-ing `pnpm run dev`, so the API + web are
+running by the time you read the URL it prints. Open the printed URL.
 
 If you set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` before running
 `install.sh`, that account is seeded as the admin. Otherwise the first
 user that signs up via the web UI becomes the admin.
 
 > Running unattended / in CI? Pass `--no-start` (or set `CI=1`) to do
-> setup only, then start the stack later with `pnpm run selfhost:dev` or
+> setup only, then start the stack later with `pnpm run dev` or
 > `docker compose up`.
 
-`install.sh` is **idempotent** — re-running it is safe and skips work that's
-already been done. It will:
+`install.sh` is **idempotent** — re-running it is safe and skips work
+that's already been done. It will:
 
 1. Verify Node and pnpm are installed.
 2. Copy `.env.example` → `.env` (if missing) and generate a fresh `SESSION_SECRET`.
@@ -106,10 +85,8 @@ already been done. It will:
 > `CREATE INDEX IF NOT EXISTS`, and adds missing columns via
 > `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`), so partially-applied or
 > drifted databases converge to the desired schema instead of failing.
-> Applied migrations are recorded in `drizzle.__drizzle_migrations`,
-> making repeated boots no-ops.
 
-### Run the whole stack in containers
+### 3. Run the whole stack in containers
 
 If you'd rather not have Node on your host:
 
@@ -118,17 +95,45 @@ If you'd rather not have Node on your host:
 docker compose up
 ```
 
-This builds the API server and web app images and runs Postgres + API + web
-together. The web app is served on `WEB_PORT` (default 8080), the API on
-`API_PORT` (default 8081). Put a reverse proxy in front of both for HTTPS —
-see [`SELFHOSTING.md`](./SELFHOSTING.md).
+This builds the API server and web app images and runs Postgres + API +
+web together. Put a reverse proxy in front for HTTPS — see
+[`SELFHOSTING.md`](./SELFHOSTING.md).
 
-### Bring your own Postgres
+### 4. Bring your own Postgres
 
 Edit `DATABASE_URL` in `.env` to point at your own Postgres instance, then
 run `./install.sh`. The installer skips the docker step when `docker`
 isn't on `PATH`. Either way, the schema is pushed via `pnpm --filter
 @workspace/db run push`.
+
+---
+
+## MCP server for AI agents
+
+0docs ships a built-in **Model Context Protocol** endpoint at `POST /api/mcp`
+so AI agents (Claude Desktop, Cursor, Continue, custom clients) can read and
+edit your docs. Mint a per-project access token under **Settings → MCP Server**,
+or run the server in anonymous read-only mode. See
+[`artifacts/api-server/MCP.md`](./artifacts/api-server/MCP.md) for the full
+tool catalog, auth modes, and environment defaults
+(`MCP_ENABLED`, `MCP_ALLOW_ANONYMOUS`, `MCP_DISABLED_TOOLS`).
+
+---
+
+## Authentication
+
+0docs ships with first-party email + password auth, runnable on any
+infrastructure. Sessions are server-side, stored in the `sessions` table,
+identified by an HttpOnly `sid` cookie.
+
+- The **first user** to sign up automatically becomes the admin.
+- Alternatively, set `ADMIN_EMAIL` + `ADMIN_PASSWORD` in `.env` and the
+  installer seeds the admin user for you.
+- Once your team has accounts, set `DISABLE_SIGNUP=true` to lock down
+  public signup. (The first user is still allowed through so a fresh
+  install can complete bootstrap.)
+- Optional SMTP for password-reset emails (`SMTP_URL` / `SMTP_FROM`).
+  Without SMTP, reset links are printed to the server console.
 
 ---
 
@@ -138,12 +143,8 @@ isn't on `PATH`. Either way, the schema is pushed via `pnpm --filter
 0docs/
 ├── artifacts/
 │   ├── api-server/     Express 5 API. Routes under /api.
-│   │   └── src/lib/auth/
-│   │       ├── shared.ts        Sessions, cookies, getSessionId.
-│   │       ├── types.ts         AuthProvider interface + getAuthMode().
-│   │       ├── replit/          Replit OIDC implementation.
-│   │       └── selfhost/        Email + password implementation.
-│   ├── zdocs/          React + Vite web app (the editor + public viewer).
+│   │   └── src/lib/auth/  Email + password sessions.
+│   ├── zdocs/          React + Vite web app (editor + public viewer).
 │   └── mockup-sandbox/ Internal design playground (not user-facing).
 ├── lib/
 │   ├── db/             Drizzle ORM schema + Postgres pool + auto-migrator.
@@ -151,47 +152,13 @@ isn't on `PATH`. Either way, the schema is pushed via `pnpm --filter
 │   │   └── src/migrate.ts  Idempotent migration runner.
 │   ├── api-spec/       OpenAPI source-of-truth.
 │   ├── api-zod/        Zod schemas + types generated from the OpenAPI spec.
-│   ├── api-client-react/  React Query hooks generated by Orval.
-│   └── replit-auth-web/   Tiny `useAuth()` for legacy callers (delegates
-│                          to /api/auth/user).
-├── scripts/            Workspace scripts (post-merge hook etc).
-├── docker-compose.yml  Postgres + (optional) API + web.
+│   └── api-client-react/  React Query hooks generated by Orval.
+├── scripts/            Workspace scripts (admin seeder etc).
+├── docker-compose.yml  Postgres + API + web.
 ├── Dockerfile          Multi-stage: api / web targets.
 ├── install.sh          One-command self-host installer.
 └── .env.example        Documented environment variables.
 ```
-
-### How auth is partitioned
-
-The server defines a small `AuthProvider` interface in
-`artifacts/api-server/src/lib/auth/types.ts`:
-
-```ts
-interface AuthProvider {
-  mode: "replit" | "selfhost";
-  router: IRouter;                  // mounted under /api
-  refreshSession?: (...) => ...;    // hook called by authMiddleware
-  publicConfig: () => Record<string, unknown>;  // /api/auth/config payload
-}
-```
-
-Both implementations live behind it:
-
-- `lib/auth/replit/` — OIDC: `GET /api/login` → IdP → `GET /api/callback`,
-  `GET /api/logout`, plus the mobile-auth token-exchange endpoint.
-- `lib/auth/selfhost/` — email + password: `POST /api/auth/signup`,
-  `POST /api/auth/login`, `POST /api/auth/logout` (and `GET /api/logout`),
-  `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`.
-
-`getAuthMode()` reads `AUTH_MODE` once at boot and exports the right
-provider as `provider`. `authMiddleware` calls `provider.refreshSession`
-without caring which mode is active. New features added later
-automatically work in both modes because they only ever depend on
-`req.user` and the shared session helpers in `lib/auth/shared.ts`.
-
-The frontend (`artifacts/zdocs/src/contexts/AuthContext.tsx`) calls
-`GET /api/auth/config` once on mount and renders `pages/Auth.tsx` (forms)
-or auto-redirects to `/api/login` (Replit OIDC) based on the result.
 
 ---
 
@@ -202,28 +169,28 @@ most-used ones:
 
 | Variable | Purpose |
 |---|---|
-| `AUTH_MODE` | `selfhost` (email + password) or `replit` (OIDC). Default `replit`. |
-| `DATABASE_URL` | Postgres connection string. |
-| `SHARED_DATABASE_URL` | Optional override; takes precedence over `DATABASE_URL` so a deployment can share the dev database. |
-| `SESSION_SECRET` | Random 64+ char string. Generated by `install.sh`. |
-| `ADMIN_EMAIL` | Self-host: email that should be marked admin on signup. |
-| `SELFHOST_DISABLE_SIGNUP` | Set to `true` to disable public signup once your team is in. |
+| `DATABASE_URL` | Postgres connection string. Required. |
+| `SESSION_SECRET` | Random 64+ char string. Generated by `install.sh`. Required. |
+| `PORT` | API server port. Defaults to 8081. Railway provides this. |
+| `ADMIN_EMAIL` | Bootstrap admin email. First signup with this email becomes admin. |
+| `ADMIN_PASSWORD` | When set with `ADMIN_EMAIL`, `install.sh` seeds the admin user directly. |
+| `DISABLE_SIGNUP` | Set to `true` to disable public signup once your team is in. |
 | `OPENAI_API_KEY` | Powers the "Ask docs" feature. Optional. |
+| `OPENAI_BASE_URL` | Override the OpenAI base URL (e.g. for self-hosted Llama via an OpenAI-compatible API). |
 | `SMTP_URL`, `SMTP_FROM` | Optional SMTP for password-reset emails. Without these, reset links are printed to the server console. |
-| `CORS_ALLOWLIST` | Comma-separated extra origins to allow in production. |
-| `REPL_ID`, `ISSUER_URL` | Replit-mode only. Set by the Replit container. |
+| `CORS_ALLOWLIST` | Comma-separated origins to allow in production. |
 
 ---
 
 ## Useful commands
 
 ```bash
-# Self-host one-shot install (idempotent)
+# Local install (idempotent)
 ./install.sh
-pnpm run selfhost              # alias for install.sh
+pnpm run install:local         # alias for install.sh
 
 # Run API + web in dev (requires .env from install.sh)
-pnpm run selfhost:dev
+pnpm run dev
 
 # Type-check the whole monorepo
 pnpm run typecheck
@@ -271,31 +238,20 @@ the next time the container boots. **Take a backup before upgrading** if
 your data matters — the runner is idempotent and additive, but schema
 changes are still schema changes.
 
-If you'd rather apply migrations manually (e.g. to inspect them first):
-
-```bash
-pnpm --filter @workspace/db run migrate    # standalone CLI runner
-# or, for ad-hoc dev pushes that bypass the migration table:
-pnpm --filter @workspace/db run push
-```
-
 ---
 
 ## Production notes
 
-For production deployments — reverse proxy, HTTPS, backups, SMTP, and the
-current limits around object storage — see
-[`SELFHOSTING.md`](./SELFHOSTING.md).
+For production deployments — Railway, reverse proxy, HTTPS, backups, SMTP,
+S3 storage — see [`SELFHOSTING.md`](./SELFHOSTING.md).
 
 ---
 
 ## Contributing
 
 1. Fork the repo and create a branch.
-2. Run `./install.sh` and `pnpm run selfhost:dev` to get the stack up.
-3. Make your change. Keep auth-mode-specific code inside `lib/auth/replit/`
-   or `lib/auth/selfhost/` — never branch on `process.env.AUTH_MODE`
-   outside those folders.
+2. Run `./install.sh` and `pnpm run dev` to get the stack up.
+3. Make your change.
 4. Run `pnpm run typecheck` and `pnpm run build`.
 5. Open a pull request describing the change and how you tested it.
 

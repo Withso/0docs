@@ -4,7 +4,6 @@ import {
   clearSession,
   getSessionId,
   getSession,
-  provider,
 } from "../lib/auth";
 
 declare global {
@@ -45,14 +44,6 @@ export async function authMiddleware(
     return;
   }
 
-  const refreshed = provider.refreshSession
-    ? await provider.refreshSession(req, res, sid, session)
-    : session;
-  if (!refreshed) {
-    next();
-    return;
-  }
-
-  req.user = refreshed.user;
+  req.user = session.user;
   next();
 }

@@ -1,19 +1,12 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { GetCurrentAuthUserResponse } from "@workspace/api-zod";
-import replitProvider from "./replit";
-import selfhostProvider from "./selfhost";
-import { getAuthMode, type AuthProvider } from "./types";
+import authRoutes from "./routes";
 
 export * from "./shared";
-export type { AuthMode, AuthProvider } from "./types";
-
-const mode = getAuthMode();
-export const provider: AuthProvider =
-  mode === "selfhost" ? selfhostProvider : replitProvider;
 
 /**
- * Mount the active provider's routes plus the shared, mode-agnostic auth
- * endpoints (`/auth/user`, `/auth/config`).
+ * Mount the email + password auth routes plus the shared `/auth/user` and
+ * `/auth/config` endpoints.
  */
 export function buildAuthRouter(): IRouter {
   const router: IRouter = Router();
@@ -27,10 +20,14 @@ export function buildAuthRouter(): IRouter {
   });
 
   router.get("/auth/config", (_req: Request, res: Response) => {
-    res.json(provider.publicConfig());
+    res.json({
+      loginUrl: "/auth",
+      logoutUrl: "/api/logout",
+      signupEnabled: process.env.DISABLE_SIGNUP !== "true",
+    });
   });
 
-  router.use(provider.router);
+  router.use(authRoutes);
 
   return router;
 }

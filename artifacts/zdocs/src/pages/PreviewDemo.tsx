@@ -328,7 +328,7 @@ const CodeBlock = () => (
       <span>cd 0docs && pnpm install</span>
       {"\n"}
       <span style={{ color: COLORS.textDim }}>$ </span>
-      <span style={{ color: COLORS.accent }}>pnpm</span> run selfhost
+      <span style={{ color: COLORS.accent }}>./install.sh</span>
     </pre>
   </div>
 );

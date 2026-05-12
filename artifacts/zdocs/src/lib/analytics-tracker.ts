@@ -12,9 +12,9 @@
  * reader's browser. Failures here are logged via console.debug only.
  *
  * Custom-domain note: this tracker fires from whatever host the docs are
- * served on (custom_domain when connected, default *.replit.app
- * otherwise). The server stores `host` so the dashboard can show which
- * domains are sending traffic.
+ * served on (the custom domain when one is connected, otherwise the
+ * deployment's default host). The server stores `host` so the dashboard
+ * can show which domains are sending traffic.
  */
 
 const VISITOR_KEY = "0docs:analytics:visitor";

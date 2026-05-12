@@ -442,9 +442,9 @@ const SettingsContent = ({ projectId, project, onSaved }: SettingsContentProps) 
 
           {activeSection === "domain" && (
             <div className="space-y-6">
-              {/* Default URL — every project gets a free, instantly-working
-                  shareable URL on Replit's free domain at <host>/p/<slug>.
-                  No DNS setup required; this is what users see by default. */}
+              {/* Default URL — every project gets an instantly-working
+                  shareable URL at <host>/p/<slug>. No DNS setup required;
+                  this is what users see by default. */}
               {(() => {
                 const slug = project?.slug || "your-project";
                 const origin = typeof window !== "undefined" ? window.location.origin : "";

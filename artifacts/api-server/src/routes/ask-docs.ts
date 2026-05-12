@@ -97,8 +97,8 @@ router.post("/ask-docs", rateLimit, async (req: Request, res: Response) => {
       });
     }
 
-    const apiKey = process.env.REPLIT_AI_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-    const baseUrl = (process.env.REPLIT_AI_OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
+    const apiKey = process.env.OPENAI_API_KEY;
+    const baseUrl = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
 
     if (!apiKey) {
       // No AI key — send a well-formed SSE response so the client can display it

@@ -9,10 +9,6 @@ export const SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
 
 export interface SessionData {
   user: AuthUser;
-  // OIDC-only. Self-hosted sessions leave these undefined.
-  access_token?: string;
-  refresh_token?: string;
-  expires_at?: number;
 }
 
 export async function createSession(data: SessionData): Promise<string> {

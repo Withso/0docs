@@ -32,15 +32,7 @@ export default function AuthPage() {
     if (!loading && user) navigate(returnTo, { replace: true });
   }, [user, loading, navigate, returnTo]);
 
-  // Replit mode: this page should not render forms — kick straight to OIDC.
-  useEffect(() => {
-    if (!config) return;
-    if (config.mode === "replit") {
-      window.location.href = `/api/login?returnTo=${encodeURIComponent(returnTo)}`;
-    }
-  }, [config, returnTo]);
-
-  if (loading || !config || config.mode === "replit") {
+  if (loading || !config) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <span className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />

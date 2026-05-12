@@ -6,7 +6,33 @@ see [`README.md`](./README.md).
 
 ---
 
-## Recommended topology
+## Deploying on Railway
+
+Railway is the recommended hosted option. The Postgres plugin gives you a
+managed database, and the single-service Dockerfile means there's only
+one app to deploy.
+
+1. Create a new Railway project and add the **PostgreSQL plugin**.
+   Railway injects `DATABASE_URL` automatically.
+2. Add a new service from this repo. Railway detects the `Dockerfile`.
+3. In the service's **Variables** tab, set:
+   - `SESSION_SECRET` — random 64+ char string.
+     Use `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
+     to generate one.
+   - `NODE_ENV=production`.
+   - `ADMIN_EMAIL` + `ADMIN_PASSWORD` (optional) — bootstrap admin user.
+   - `OPENAI_API_KEY` (optional) — enables the "Ask docs" feature.
+   - `SMTP_URL` + `SMTP_FROM` (optional) — enables password-reset emails.
+   - `S3_*` variables (optional) — enables S3-compatible image upload.
+     Required if you scale past one instance, since Railway's filesystem
+     is ephemeral.
+4. Deploy. Railway runs migrations on boot.
+
+A one-click "Deploy on Railway" template is on the roadmap.
+
+---
+
+## Recommended topology (Docker Compose / VPS)
 
 ```
                 ┌──────────────────────────┐
@@ -14,18 +40,21 @@ see [`README.md`](./README.md).
                 │   (HTTPS, gzip, certs)   │
                 └────────────┬─────────────┘
                              │
-              ┌──────────────┼──────────────┐
-              │                             │
-        /api/* → api:8081           /  → web:8080
-              │                             │
-              ▼                             ▼
-      ┌──────────────┐              ┌──────────────┐
-      │   api-server │ ───SQL───►   │   postgres   │
-      └──────────────┘              └──────────────┘
+                             ▼
+                    ┌──────────────┐
+                    │   api-server │
+                    │ + bundled web │
+                    └──────┬───────┘
+                           │ SQL
+                           ▼
+                    ┌──────────────┐
+                    │   postgres   │
+                    └──────────────┘
 ```
 
-All in-app URLs are relative (`/api/...`) so the same build works behind
-any reverse proxy that fronts both services on a single hostname.
+The web app is built into the api-server's `dist/public/` and served as
+static files from the same process, so you have one HTTP service to
+front. Everything lives on a single hostname.
 
 ---
 
@@ -38,16 +67,7 @@ The simplest option. `Caddyfile`:
 ```Caddyfile
 docs.example.com {
     encode zstd gzip
-
-    # Send /api/* to the API server.
-    handle /api/* {
-        reverse_proxy api:8081
-    }
-
-    # Everything else goes to the web app.
-    handle {
-        reverse_proxy web:8080
-    }
+    reverse_proxy api:8081
 }
 ```
 
@@ -62,17 +82,11 @@ server {
     ssl_certificate     /etc/letsencrypt/live/docs.example.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/docs.example.com/privkey.pem;
 
-    location /api/ {
+    location / {
         proxy_pass         http://127.0.0.1:8081;
         proxy_set_header   Host              $host;
         proxy_set_header   X-Real-IP         $remote_addr;
         proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-    }
-
-    location / {
-        proxy_pass         http://127.0.0.1:8080;
-        proxy_set_header   Host              $host;
         proxy_set_header   X-Forwarded-Proto $scheme;
     }
 }
@@ -80,13 +94,14 @@ server {
 
 Make sure to forward `X-Forwarded-Proto`. The session cookie is set with
 `Secure` when `NODE_ENV=production`, so requests must arrive over HTTPS or
-the cookie won't be saved.
+the cookie won't be saved. The API also calls `app.set('trust proxy', 1)`
+so `req.secure` and IP detection work correctly behind a single proxy hop.
 
-### Single-host CORS
+### CORS
 
-When the web app and API live on the same hostname (recommended), you
-don't need to touch CORS at all. If you split them onto different
-hostnames, add the web app's origin to `CORS_ALLOWLIST`:
+When the web app and API share the same hostname (the default), CORS is a
+no-op. Only set `CORS_ALLOWLIST` if you split them onto different
+hostnames:
 
 ```bash
 CORS_ALLOWLIST=https://docs.example.com,https://app.example.com
@@ -114,9 +129,8 @@ gunzip -c backup-2025-01-01.sql.gz | \
 Schedule that with cron (host) or a sidecar container. Keep at least 7
 daily and 4 weekly snapshots offsite (S3, B2, etc).
 
-For a managed Postgres, use that provider's snapshot/PITR features — the
-out-of-the-box options on Neon, Supabase, RDS, and DigitalOcean are all
-fine.
+For a managed Postgres, use the provider's snapshot/PITR features —
+Railway, Neon, Supabase, RDS, and DigitalOcean all have sensible defaults.
 
 ---
 
@@ -145,35 +159,42 @@ add nodemailer`).
 ```bash
 git pull
 docker compose build
-docker compose run --rm api pnpm --filter @workspace/db run push
 docker compose up -d
 ```
 
-The `db push` step is intentionally separate so you can take a backup
-first. Drizzle Kit prints the SQL it's about to run before applying it.
+The api container runs `runMigrations()` on startup, so any new SQL files
+in `lib/db/drizzle/` are applied automatically against your `DATABASE_URL`.
+**Take a backup before upgrading** if your data matters.
 
 ---
 
-## Object storage (current limitation)
+## Object storage
 
-Uploaded images currently live wherever the api-server's local filesystem
-points (or in Replit Object Storage when running on Replit). For a true
-multi-instance deployment you'll want S3-compatible storage. That work is
-tracked as a follow-up — see the open issues. In the meantime:
+Uploaded images live in the api-server's local filesystem by default,
+which works fine for a single-instance VPS deploy with a persistent disk.
+For Railway and any multi-instance deploy, point image uploads at
+S3-compatible storage by setting:
 
-- A single-instance deploy on a server with persistent disk works fine.
-- If you put two `api` replicas behind a load balancer, sticky sessions on
-  the load balancer keeps things mostly working until the S3 backend lands.
+```bash
+S3_ENDPOINT=https://s3.amazonaws.com         # or your R2/MinIO endpoint
+S3_BUCKET=my-0docs-uploads
+S3_REGION=us-east-1
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+S3_PUBLIC_BASE_URL=https://cdn.example.com   # optional; defaults to the bucket URL
+```
+
+When `S3_BUCKET` is set the upload routes write to S3 and return the
+public URL. When it isn't set, uploads stay on local disk.
 
 ---
 
 ## Disabling public signup
 
-Once your team has accounts, flip `SELFHOST_DISABLE_SIGNUP=true` in `.env`
-and restart the API. Login + password reset still work; only `POST
-/api/auth/signup` is hidden from the UI. (The endpoint itself stays
-accessible to keep the API stable, but the web UI hides it; if you'd like
-the endpoint to refuse, lock it down at your reverse proxy.)
+Once your team has accounts, flip `DISABLE_SIGNUP=true` in `.env` and
+restart the API. Login + password reset still work; only `POST
+/api/auth/signup` refuses (with one carve-out: when the users table is
+empty, signup is still allowed so a fresh install can bootstrap).
 
 ---
 
@@ -181,15 +202,15 @@ the endpoint to refuse, lock it down at your reverse proxy.)
 
 - [ ] `SESSION_SECRET` is at least 64 random characters (`install.sh`
       handles this).
-- [ ] `NODE_ENV=production` is set on the API container.
-- [ ] HTTPS is terminated by the reverse proxy and `X-Forwarded-Proto`
-      is forwarded.
+- [ ] `NODE_ENV=production` is set on the API container / Railway service.
+- [ ] HTTPS is terminated upstream and `X-Forwarded-Proto` is forwarded.
 - [ ] `CORS_ALLOWLIST` includes any extra origins (skip if web + API
-      share a hostname).
+      share a hostname — the default).
 - [ ] Postgres has automated, off-host backups.
-- [ ] `ADMIN_EMAIL` matches the address of the person who'll create the
-      bootstrap account.
+- [ ] `ADMIN_EMAIL` matches the person who'll own the bootstrap account.
 - [ ] `OPENAI_API_KEY` is set if you want "Ask docs" to work.
 - [ ] `SMTP_URL` is set if you want password resets to email users.
+- [ ] `S3_BUCKET` (and friends) is set if you're on Railway or any
+      multi-instance / ephemeral-FS host.
 - [ ] You've taken a manual `pg_dump` of an empty fresh install and
       verified the restore path works.

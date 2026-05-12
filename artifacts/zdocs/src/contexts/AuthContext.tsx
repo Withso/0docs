@@ -8,10 +8,7 @@ import {
 } from "react";
 import type { AuthUser } from "@workspace/api-client-react";
 
-export type AuthMode = "replit" | "selfhost";
-
 export interface AuthConfig {
-  mode: AuthMode;
   loginUrl: string;
   logoutUrl: string;
   signupEnabled?: boolean;
@@ -24,7 +21,6 @@ interface AuthContextType {
   config: AuthConfig | null;
   signOut: () => Promise<void>;
   signIn: () => void;
-  // Refetch /api/auth/user (e.g. after a self-host email/password login).
   refresh: () => Promise<void>;
   // Backwards-compat shim. Cookies handle auth, so this always resolves to null.
   getToken: () => Promise<string | null>;
@@ -45,6 +41,12 @@ function toDisplayUser(u: AuthUser | null) {
       "User",
   };
 }
+
+const DEFAULT_CONFIG: AuthConfig = {
+  loginUrl: "/auth",
+  logoutUrl: "/api/logout",
+  signupEnabled: true,
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -75,23 +77,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           ? ((await userRes.json()) as { user: AuthUser | null }).user
           : null;
         if (!cancelled) {
-          setConfig(
-            cfg ?? {
-              mode: "replit",
-              loginUrl: "/api/login",
-              logoutUrl: "/api/logout",
-            },
-          );
+          setConfig(cfg ?? DEFAULT_CONFIG);
           setUser(usr ?? null);
           setLoading(false);
         }
       } catch {
         if (!cancelled) {
-          setConfig({
-            mode: "replit",
-            loginUrl: "/api/login",
-            logoutUrl: "/api/logout",
-          });
+          setConfig(DEFAULT_CONFIG);
           setUser(null);
           setLoading(false);
         }
@@ -104,28 +96,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = useCallback(() => {
     const returnTo = window.location.pathname + window.location.search;
-    const loginUrl = config?.loginUrl ?? "/api/login";
-    if (config?.mode === "selfhost") {
-      // SPA route — preserve returnTo as a query param.
-      const sep = loginUrl.includes("?") ? "&" : "?";
-      window.location.href = `${loginUrl}${sep}returnTo=${encodeURIComponent(returnTo)}`;
-    } else {
-      window.location.href = `${loginUrl}?returnTo=${encodeURIComponent(returnTo)}`;
-    }
+    const loginUrl = config?.loginUrl ?? "/auth";
+    const sep = loginUrl.includes("?") ? "&" : "?";
+    window.location.href = `${loginUrl}${sep}returnTo=${encodeURIComponent(returnTo)}`;
   }, [config]);
 
   const signOut = useCallback(async () => {
-    if (config?.mode === "selfhost") {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-      setUser(null);
-      window.location.href = "/";
-      return;
-    }
-    window.location.href = config?.logoutUrl ?? "/api/logout";
-  }, [config]);
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    setUser(null);
+    window.location.href = "/";
+  }, []);
 
   return (
     <AuthContext.Provider
