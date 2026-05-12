@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
+import PreviewDemo from "./pages/PreviewDemo";
 import Builder from "./pages/Builder";
 import AuthPage from "./pages/Auth";
 
@@ -49,6 +50,7 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
             <Suspense fallback={<LazyFallback />}>
               <Routes>
                 <Route path="/" element={<Landing />} />
+                <Route path="/preview-demo" element={<PreviewDemo />} />
                 <Route path="/docs" element={<Index />} />
                 {/* Default published-doc URL — every project gets a free
                     shareable URL at <host>/p/<slug>. Index reads :slug from

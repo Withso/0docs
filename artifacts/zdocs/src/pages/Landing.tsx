@@ -26,82 +26,24 @@ const LogoIcon = () => (
 );
 
 const DocsMockup = () => (
-  <div className="w-full h-full flex flex-col rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-[#0d0d0d]">
-    <div className="flex-shrink-0 h-9 bg-[#161616] border-b border-white/[0.07] flex items-center px-3 gap-2">
+  <div className="w-full h-full flex flex-col rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-[#0d1117]">
+    <div className="flex-shrink-0 h-9 bg-[#0d1117] border-b border-white/[0.07] flex items-center px-3 gap-2">
       <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
       <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
       <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
       <div className="flex-1 mx-3">
         <div className="mx-auto h-5 rounded-md bg-white/5 flex items-center justify-center max-w-[260px]">
-          <span className="text-[10px] text-white/25 font-mono">docs.example.com</span>
+          <span className="text-[10px] text-white/25 font-mono">docs.0docs.dev</span>
         </div>
       </div>
     </div>
-    <div className="flex flex-1 overflow-hidden">
-      <div className="flex-shrink-0 w-[200px] border-r border-white/[0.07] bg-[#111111] flex flex-col pt-4 pb-3 gap-0.5 px-2 overflow-hidden">
-        <div className="h-6 px-2 flex items-center gap-2 mb-2">
-          <div className="h-4 w-4 rounded bg-white/10" />
-          <div className="h-2.5 w-16 rounded-full bg-white/20" />
-        </div>
-        {[
-          { w: "w-14", active: false, indent: false },
-          { w: "w-20", active: true, indent: false },
-          { w: "w-16", active: false, indent: true },
-          { w: "w-18", active: false, indent: true },
-          { w: "w-12", active: false, indent: true },
-          { w: "w-20", active: false, indent: false },
-          { w: "w-14", active: false, indent: false },
-          { w: "w-18", active: false, indent: false },
-          { w: "w-16", active: false, indent: true },
-          { w: "w-14", active: false, indent: true },
-        ].map((item, i) => (
-          <div
-            key={i}
-            className={`h-6 rounded-md flex items-center px-2 gap-2 ${item.active ? "bg-emerald-500/15" : "hover:bg-white/5"}`}
-          >
-            {item.indent && <span className="w-3" />}
-            <div
-              className={`h-2 rounded-full ${item.active ? "bg-emerald-400/70" : "bg-white/15"}`}
-              style={{ width: item.active ? "80px" : `${40 + i * 7}px` }}
-            />
-          </div>
-        ))}
-      </div>
-
-      <div className="flex-1 overflow-hidden bg-[#0d0d0d] px-8 pt-6 pb-4 flex flex-col gap-3 min-w-0">
-        <div className="h-3 w-24 rounded-full bg-emerald-500/30" />
-        <div className="h-5 w-2/3 rounded-full bg-white/25" />
-        <div className="h-2.5 w-full rounded-full bg-white/8" />
-        <div className="h-2.5 w-5/6 rounded-full bg-white/8" />
-        <div className="h-2.5 w-4/5 rounded-full bg-white/8" />
-        <div className="mt-2 rounded-lg bg-[#161616] border border-white/[0.07] p-3 flex flex-col gap-2">
-          <div className="h-2.5 w-12 rounded-full bg-emerald-500/40" />
-          <div className="h-2 w-full rounded-full bg-white/10" />
-          <div className="h-2 w-4/5 rounded-full bg-white/10" />
-        </div>
-        <div className="h-2.5 w-full rounded-full bg-white/8" />
-        <div className="h-2.5 w-11/12 rounded-full bg-white/8" />
-        <div className="mt-1 grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-[#161616] border border-white/[0.07] p-3 flex flex-col gap-1.5">
-            <div className="h-2.5 w-16 rounded-full bg-white/20" />
-            <div className="h-2 w-full rounded-full bg-white/8" />
-            <div className="h-2 w-3/4 rounded-full bg-white/8" />
-          </div>
-          <div className="rounded-lg bg-[#161616] border border-white/[0.07] p-3 flex flex-col gap-1.5">
-            <div className="h-2.5 w-16 rounded-full bg-white/20" />
-            <div className="h-2 w-full rounded-full bg-white/8" />
-            <div className="h-2 w-3/4 rounded-full bg-white/8" />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-shrink-0 w-[150px] border-l border-white/[0.07] bg-[#0d0d0d] pt-6 px-3 flex flex-col gap-2 overflow-hidden hidden xl:flex">
-        <div className="h-2 w-16 rounded-full bg-white/20 mb-1" />
-        {[40, 64, 52, 48, 56, 44].map((w, i) => (
-          <div key={i} className={`h-2 rounded-full ${i === 1 ? "bg-emerald-500/50" : "bg-white/10"}`} style={{ width: `${w}px` }} />
-        ))}
-      </div>
-    </div>
+    <iframe
+      src="/preview-demo"
+      className="flex-1 w-full border-0"
+      title="0docs live preview"
+      tabIndex={-1}
+      style={{ pointerEvents: "none" }}
+    />
   </div>
 );
 
