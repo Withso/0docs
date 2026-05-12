@@ -15,3 +15,4 @@ export * from "./commits";
 export * from "./analyticsEvents";
 export * from "./mcpSettings";
 export * from "./mcpTokens";
+export * from "./mediaAssets";

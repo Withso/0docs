@@ -16,6 +16,7 @@ import branchesRouter from "./branches";
 import commitsRouter from "./commits";
 import analyticsRouter from "./analytics";
 import mcpRouter from "./mcp";
+import uploadsRouter from "./uploads";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(branchesRouter);
 router.use(commitsRouter);
 router.use(analyticsRouter);
 router.use(mcpRouter);
+router.use(uploadsRouter);
 
 export default router;

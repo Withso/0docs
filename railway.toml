@@ -1,0 +1,28 @@
+# Railway template config.
+#
+# To deploy:
+#   1. Create a new Railway project.
+#   2. Add the PostgreSQL plugin (sets DATABASE_URL automatically).
+#   3. Add a service from this repo. Railway picks up this file
+#      and the Dockerfile.
+#   4. Set SESSION_SECRET in the service's Variables tab (required;
+#      generate with `openssl rand -hex 48`).
+#   5. Optional vars:
+#        ADMIN_EMAIL / ADMIN_PASSWORD  — bootstrap admin
+#        OPENAI_API_KEY                — enables "Ask docs"
+#        SMTP_URL / SMTP_FROM          — password-reset emails
+#        STORAGE_BACKEND=s3 + S3_*     — offload media to object storage
+#                                        (default is Postgres BLOBs)
+#
+# Migrations run automatically on every boot.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "node --enable-source-maps ./dist/index.mjs"
+healthcheckPath = "/api/healthz"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

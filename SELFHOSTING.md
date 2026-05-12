@@ -168,14 +168,23 @@ in `lib/db/drizzle/` are applied automatically against your `DATABASE_URL`.
 
 ---
 
-## Object storage
+## Media storage
 
-Uploaded images live in the api-server's local filesystem by default,
-which works fine for a single-instance VPS deploy with a persistent disk.
-For Railway and any multi-instance deploy, point image uploads at
-S3-compatible storage by setting:
+Uploaded images, video, audio, and PDFs go through a pluggable storage
+layer. Pick a backend with `STORAGE_BACKEND`:
+
+| Backend | When to use it |
+|---|---|
+| `postgres` (default) | Zero infra setup. Bytes live in the `media_blobs` table and are covered by `pg_dump` backups. Best for Railway and single-VPS installs up to a few GB of media. |
+| `s3` | S3-compatible object storage (AWS S3, Cloudflare R2, Backblaze B2, MinIO). Recommended once your corpus grows, or any time you want media on a CDN. |
+
+The choice is per-process and metadata carries the chosen backend so
+existing assets keep being served correctly when you switch.
+
+For S3, set:
 
 ```bash
+STORAGE_BACKEND=s3
 S3_ENDPOINT=https://s3.amazonaws.com         # or your R2/MinIO endpoint
 S3_BUCKET=my-0docs-uploads
 S3_REGION=us-east-1
@@ -184,8 +193,14 @@ S3_SECRET_ACCESS_KEY=...
 S3_PUBLIC_BASE_URL=https://cdn.example.com   # optional; defaults to the bucket URL
 ```
 
-When `S3_BUCKET` is set the upload routes write to S3 and return the
-public URL. When it isn't set, uploads stay on local disk.
+When `STORAGE_BACKEND=s3` and the bucket env vars are set, the upload
+routes stream new media into S3 and the asset metadata row points back
+at it. If the S3 env vars are incomplete the server logs a warning and
+silently falls back to Postgres so a misconfigured deploy still works.
+
+Per-upload size caps live in `MAX_UPLOAD_BYTES` (default 20 MB). Crank
+this up if you're uploading large video files — but remember the
+Postgres backend keeps bytes inline in the database.
 
 ---
 
@@ -210,7 +225,9 @@ empty, signup is still allowed so a fresh install can bootstrap).
 - [ ] `ADMIN_EMAIL` matches the person who'll own the bootstrap account.
 - [ ] `OPENAI_API_KEY` is set if you want "Ask docs" to work.
 - [ ] `SMTP_URL` is set if you want password resets to email users.
-- [ ] `S3_BUCKET` (and friends) is set if you're on Railway or any
-      multi-instance / ephemeral-FS host.
+- [ ] Pick a storage backend. Postgres BLOBs (`STORAGE_BACKEND=postgres`,
+      the default) is fine for small/medium installs. Switch to
+      `STORAGE_BACKEND=s3` once your media corpus grows or you want
+      CDN-edge caching.
 - [ ] You've taken a manual `pg_dump` of an empty fresh install and
       verified the restore path works.

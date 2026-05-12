@@ -139,6 +139,39 @@ Self-host docs: top-level [`README.md`](./README.md) and
 [`SELFHOSTING.md`](./SELFHOSTING.md). One-command install: `./install.sh`
 or `pnpm run install:local`. Full stack via `docker compose up`.
 
+## Media uploads
+
+`POST /api/uploads` accepts raw bytes (body) plus `projectId` /
+`filename` / `mimeType` query params. Returns `{ id, url }` where `url`
+= `/api/uploads/<id>`. The image and video block editors use the shared
+`MediaUploadButton` component (`artifacts/zdocs/src/components/builder/
+MediaUploadButton.tsx`).
+
+Storage adapters live in `artifacts/api-server/src/lib/storage/`:
+- `postgres.ts` (default) — bytes go into `media_blobs` table.
+- `s3.ts` — bytes go to an S3-compatible bucket (AWS / R2 / B2 / MinIO).
+  Loaded lazily so the SDK isn't paid for unless `STORAGE_BACKEND=s3`.
+
+Metadata for every asset is in `media_assets` (project + filename +
+mime + size + storage backend + storage key). Reads check that the
+caller owns the project OR the project has an active published version
+(public assets are served with `Cache-Control: public, max-age=1y`).
+
+## Single-service deployment
+
+In production the api-server serves both `/api/*` and the built
+frontend's static files (`dist/public/`) on a single port. `app.ts`
+resolves the frontend dist via:
+1. `WEB_DIST_DIR` env (escape hatch).
+2. `<api-dist>/public` (Dockerfile copies frontend here).
+3. `artifacts/zdocs/dist/public` (monorepo source layout).
+
+If none exist (dev mode), the api skips static serving and the Vite dev
+server handles the frontend with a `/api` proxy back to the api-server.
+
+`app.set('trust proxy', 1)` is required for HTTPS-Secure cookies to
+work behind Railway / nginx / Caddy. Healthcheck: `GET /api/healthz`.
+
 ## Public docs viewer (zdocs Index.tsx)
 
 The public viewer at `/docs` reads:

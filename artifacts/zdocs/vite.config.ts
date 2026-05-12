@@ -10,6 +10,15 @@ const port = rawPort && !Number.isNaN(Number(rawPort)) && Number(rawPort) > 0
   ? Number(rawPort)
   : 5173;
 
+// In dev, proxy /api/* to the api-server (defaults to localhost:8081).
+// In production the api-server serves both the static frontend and /api
+// from the same port, so this proxy is dev-only.
+const rawApiPort = process.env.PORT;
+const apiPort = rawApiPort && !Number.isNaN(Number(rawApiPort)) && Number(rawApiPort) > 0
+  ? Number(rawApiPort)
+  : 8081;
+const apiTarget = process.env.API_DEV_TARGET ?? `http://localhost:${apiPort}`;
+
 const basePath = process.env.BASE_PATH ?? "/";
 
 export default defineConfig({
@@ -41,6 +50,13 @@ export default defineConfig({
     allowedHosts: true,
     fs: {
       strict: true,
+    },
+    proxy: {
+      "/api": {
+        target: apiTarget,
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
   preview: {

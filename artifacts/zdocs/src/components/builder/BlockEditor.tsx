@@ -3,6 +3,7 @@ import { Trash2, Plus } from "lucide-react";
 import type { Block } from "@/hooks/use-builder";
 import type { DesignSettings } from "@/hooks/use-design-settings";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
+import { MediaUploadButton } from "./MediaUploadButton";
 
 const InlineEditorBlock = lazy(() => import("./InlineEditorBlock"));
 type BlockKey = keyof DesignSettings["blockStyles"];
@@ -92,9 +93,12 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
       case "image":
         return (
           <div>
-            <input className="w-full bg-transparent outline-none border px-3 py-2 mb-2 focus:ring-2 focus:ring-ring/20"
-              style={{ borderColor: `hsl(${settings.borderColor})`, color: `hsl(${settings.mutedForegroundColor})`, fontSize: `${settings.baseFontSize - 1}px`, borderRadius: `${settings.codeBlockBorderRadius}px` }}
-              value={localContent.url || ""} onChange={(e) => updateContent({ url: e.target.value })} placeholder="Image URL..." />
+            <div className="flex items-center gap-2 mb-2">
+              <input className="flex-1 bg-transparent outline-none border px-3 py-2 focus:ring-2 focus:ring-ring/20"
+                style={{ borderColor: `hsl(${settings.borderColor})`, color: `hsl(${settings.mutedForegroundColor})`, fontSize: `${settings.baseFontSize - 1}px`, borderRadius: `${settings.codeBlockBorderRadius}px` }}
+                value={localContent.url || ""} onChange={(e) => updateContent({ url: e.target.value })} placeholder="Image URL or upload…" />
+              <MediaUploadButton accept="image/*" onUploaded={(url) => updateContent({ url })} />
+            </div>
             {localContent.url && (
               <div style={{
                 display: "flex",
@@ -170,9 +174,12 @@ const BlockEditor = ({ block, settings, onUpdate, onDelete }: BlockEditorProps) 
       case "video":
         return (
           <div>
-            <input className="w-full bg-transparent outline-none border px-3 py-2 mb-2 focus:ring-2 focus:ring-ring/20"
-              style={{ borderColor: `hsl(${settings.borderColor})`, color: `hsl(${settings.mutedForegroundColor})`, fontSize: `${settings.baseFontSize - 1}px`, borderRadius: `${settings.codeBlockBorderRadius}px` }}
-              value={localContent.url || ""} onChange={(e) => updateContent({ url: e.target.value })} placeholder="Video URL..." />
+            <div className="flex items-center gap-2 mb-2">
+              <input className="flex-1 bg-transparent outline-none border px-3 py-2 focus:ring-2 focus:ring-ring/20"
+                style={{ borderColor: `hsl(${settings.borderColor})`, color: `hsl(${settings.mutedForegroundColor})`, fontSize: `${settings.baseFontSize - 1}px`, borderRadius: `${settings.codeBlockBorderRadius}px` }}
+                value={localContent.url || ""} onChange={(e) => updateContent({ url: e.target.value })} placeholder="Video URL or upload…" />
+              <MediaUploadButton accept="video/*" onUploaded={(url) => updateContent({ url })} />
+            </div>
             {localContent.url && (
               <div style={{ backgroundColor: bs.backgroundColor ? `hsl(${bs.backgroundColor})` : undefined, border: `1px solid hsl(${bs.borderColor || settings.borderColor})`, borderRadius: `${bs.borderRadius ?? 8}px`, padding: bs.padding != null ? `${bs.padding}px` : undefined }}>
                 <div className="overflow-hidden" style={{ borderRadius: `${bs.borderRadius ?? 8}px` }}>
