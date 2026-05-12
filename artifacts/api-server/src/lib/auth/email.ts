@@ -52,3 +52,51 @@ export async function sendPasswordResetEmail(opts: {
     );
   }
 }
+
+/**
+ * Send an invitation email. Same fallback semantics as password reset:
+ * when SMTP isn't configured the link is printed to the server console
+ * so the admin can copy it and share it directly.
+ */
+export async function sendInviteEmail(opts: {
+  to: string;
+  inviteUrl: string;
+  invitedByName?: string | null;
+  makeAdmin?: boolean;
+}): Promise<void> {
+  const inviterLabel = opts.invitedByName?.trim() || "An admin";
+  const roleLabel = opts.makeAdmin ? " as an admin" : "";
+
+  if (!process.env.SMTP_URL) {
+    logger.info(
+      { to: opts.to, inviteUrl: opts.inviteUrl },
+      "[auth] SMTP not configured — invite link printed to console",
+    );
+    console.log(
+      `\n[0docs] Invite for ${opts.to}${roleLabel}: ${opts.inviteUrl}\n`,
+    );
+    return;
+  }
+
+  try {
+    const modName = "nodemailer";
+    const mod = (await import(/* @vite-ignore */ modName)) as unknown as {
+      default?: { createTransport: Function };
+      createTransport?: Function;
+    };
+    const create = mod.default?.createTransport ?? mod.createTransport;
+    if (typeof create !== "function") throw new Error("nodemailer not installed");
+    const transport = create(process.env.SMTP_URL);
+    await transport.sendMail({
+      from: process.env.SMTP_FROM ?? "noreply@0docs.local",
+      to: opts.to,
+      subject: `${inviterLabel} invited you to 0docs`,
+      text: `${inviterLabel} has invited you to join their 0docs workspace${roleLabel}.\n\nAccept the invite and create your account:\n\n${opts.inviteUrl}\n\nThis link expires in 7 days.`,
+    });
+  } catch (err) {
+    logger.error({ err }, "[auth] failed to send invite email");
+    console.log(
+      `\n[0docs] Invite for ${opts.to}${roleLabel} (SMTP failed): ${opts.inviteUrl}\n`,
+    );
+  }
+}

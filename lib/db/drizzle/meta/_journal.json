@@ -15,6 +15,13 @@
       "when": 1778659200000,
       "tag": "0001_media_assets",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778745600000,
+      "tag": "0002_invites",
+      "breakpoints": true
     }
   ]
 }

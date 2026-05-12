@@ -5,6 +5,7 @@ import {
   db,
   usersTable,
   passwordResetTokensTable,
+  invitesTable,
 } from "@workspace/db";
 import {
   clearSession,
@@ -62,6 +63,7 @@ function parseSignup(body: unknown):
       password: string;
       firstName?: string;
       lastName?: string;
+      inviteToken?: string;
     }
   | null {
   if (!body || typeof body !== "object") return null;
@@ -72,7 +74,12 @@ function parseSignup(body: unknown):
     password: b.password,
     firstName: typeof b.firstName === "string" ? b.firstName : undefined,
     lastName: typeof b.lastName === "string" ? b.lastName : undefined,
+    inviteToken: typeof b.inviteToken === "string" ? b.inviteToken : undefined,
   };
+}
+
+function hashInviteToken(raw: string): string {
+  return crypto.createHash("sha256").update(raw).digest("hex");
 }
 
 function parseLogin(body: unknown): { email: string; password: string } | null {
@@ -108,13 +115,43 @@ router.get("/login", (req: Request, res: Response) => {
 });
 
 router.post("/auth/signup", authLimiter, async (req: Request, res: Response) => {
-  // Hard server-side enforcement of DISABLE_SIGNUP. The web UI also hides
-  // the signup form when /api/auth/config reports signupEnabled=false, but
-  // operators rely on the endpoint itself refusing — otherwise hiding the
-  // UI is just security-by-obscurity. Exception: when there are zero users
-  // in the DB we still allow signup so the admin can bootstrap themselves
-  // even with signup disabled (matches the install.sh seeding flow).
-  if (process.env.DISABLE_SIGNUP === "true") {
+  const parsed = parseSignup(req.body);
+  if (!parsed) {
+    res.status(400).json({ error: "Invalid signup payload." });
+    return;
+  }
+
+  // If the caller provided an invite token, resolve it first so we can
+  // honor the invite (bypass DISABLE_SIGNUP, force the invite email, set
+  // is_admin from the invite). Token is validated before any password
+  // work to avoid timing-attack signal on token validity.
+  let invite: typeof invitesTable.$inferSelect | null = null;
+  if (parsed.inviteToken) {
+    const tokenHash = hashInviteToken(parsed.inviteToken);
+    const [row] = await db
+      .select()
+      .from(invitesTable)
+      .where(
+        and(
+          eq(invitesTable.tokenHash, tokenHash),
+          isNull(invitesTable.acceptedAt),
+          isNull(invitesTable.revokedAt),
+          gt(invitesTable.expiresAt, new Date()),
+        ),
+      )
+      .limit(1);
+    if (!row) {
+      res.status(400).json({ error: "Invite is invalid, used, revoked, or expired." });
+      return;
+    }
+    invite = row;
+  }
+
+  // Hard server-side enforcement of DISABLE_SIGNUP. Bypassed by:
+  //   - the very first user (bootstrap path: matches install.sh seeding)
+  //   - signups carrying a valid invite token
+  // Otherwise the endpoint refuses even if the UI tries to show the form.
+  if (!invite && process.env.DISABLE_SIGNUP === "true") {
     const anyUser = await db
       .select({ id: usersTable.id })
       .from(usersTable)
@@ -125,12 +162,12 @@ router.post("/auth/signup", authLimiter, async (req: Request, res: Response) => 
     }
   }
 
-  const parsed = parseSignup(req.body);
-  if (!parsed) {
-    res.status(400).json({ error: "Invalid signup payload." });
-    return;
-  }
-  const email = normalizeEmail(parsed.email);
+  // When an invite is present, the email is non-negotiable: the form
+  // shows it pre-filled and locked, but a hostile client could still
+  // POST something different. Force it here.
+  const email = invite
+    ? normalizeEmail(invite.email)
+    : normalizeEmail(parsed.email);
   if (!isValidEmail(email)) {
     res.status(400).json({ error: "Please enter a valid email address." });
     return;
@@ -154,8 +191,10 @@ router.post("/auth/signup", authLimiter, async (req: Request, res: Response) => 
 
     const passwordHash = await hashPassword(parsed.password);
 
-    // First user becomes admin (bootstrap path). Any user matching
-    // ADMIN_EMAIL also becomes admin.
+    // Admin flag precedence:
+    //   1. Invite's makeAdmin (if accepting an invite)
+    //   2. First user (bootstrap)
+    //   3. ADMIN_EMAIL env match
     const anyUser = await db
       .select({ id: usersTable.id })
       .from(usersTable)
@@ -164,6 +203,10 @@ router.post("/auth/signup", authLimiter, async (req: Request, res: Response) => 
     const adminEmail = process.env.ADMIN_EMAIL
       ? normalizeEmail(process.env.ADMIN_EMAIL)
       : null;
+    const isAdmin =
+      (invite?.makeAdmin ?? false) ||
+      isFirstUser ||
+      (!!adminEmail && adminEmail === email);
 
     const [user] = await db
       .insert(usersTable)
@@ -172,9 +215,32 @@ router.post("/auth/signup", authLimiter, async (req: Request, res: Response) => 
         firstName: parsed.firstName ?? null,
         lastName: parsed.lastName ?? null,
         passwordHash,
-        isAdmin: isFirstUser || (!!adminEmail && adminEmail === email),
+        isAdmin,
       })
       .returning();
+
+    // Consume the invite atomically — if a concurrent signup already
+    // claimed it, the WHERE clause makes our UPDATE a no-op and we treat
+    // that as an error so we never end up with two accounts on one invite.
+    if (invite) {
+      const consumed = await db
+        .update(invitesTable)
+        .set({ acceptedAt: new Date(), acceptedByUserId: user.id })
+        .where(
+          and(
+            eq(invitesTable.id, invite.id),
+            isNull(invitesTable.acceptedAt),
+            isNull(invitesTable.revokedAt),
+          ),
+        )
+        .returning({ id: invitesTable.id });
+      if (consumed.length === 0) {
+        // Race condition — roll back the user we just created.
+        await db.delete(usersTable).where(eq(usersTable.id, user.id));
+        res.status(409).json({ error: "Invite was just used by someone else." });
+        return;
+      }
+    }
 
     const sessionData: SessionData = { user: toAuthUser(user) };
     const sid = await createSession(sessionData);

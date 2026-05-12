@@ -14,6 +14,7 @@ import AuthPage from "./pages/Auth";
 
 const BuilderEntry = lazy(() => import("./pages/BuilderEntry"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
+const TeamSettings = lazy(() => import("./pages/TeamSettings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const LazyFallback = () => (
@@ -161,6 +162,14 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
                   element={
                     <ProtectedRoute>
                       <ProfileSettings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings/team"
+                  element={
+                    <ProtectedRoute>
+                      <TeamSettings />
                     </ProtectedRoute>
                   }
                 />

@@ -1,7 +1,7 @@
 import { forwardRef, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { FileText, FolderOpen, LogOut, User } from "lucide-react";
+import { FileText, FolderOpen, LogOut, User, Users } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -11,7 +11,7 @@ interface DashboardLayoutProps {
 }
 
 const DashboardLayout = forwardRef<HTMLDivElement, DashboardLayoutProps>(({ children }, ref) => {
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -21,6 +21,7 @@ const DashboardLayout = forwardRef<HTMLDivElement, DashboardLayoutProps>(({ chil
 
   const isProjectsActive = location.pathname === "/builder" || location.pathname.startsWith("/builder/");
   const isProfileActive = location.pathname === "/settings/profile";
+  const isTeamActive = location.pathname === "/settings/team";
 
   return (
     <div ref={ref} className="h-screen bg-background flex overflow-hidden">
@@ -51,6 +52,15 @@ const DashboardLayout = forwardRef<HTMLDivElement, DashboardLayoutProps>(({ chil
               <User className="h-4 w-4" />
               <span>Profile</span>
             </div>
+            {isAdmin && (
+              <div
+                className={`platform-nav-item ${isTeamActive ? "active" : ""} cursor-pointer`}
+                onClick={() => navigate("/settings/team")}
+              >
+                <Users className="h-4 w-4" />
+                <span>Team</span>
+              </div>
+            )}
           </nav>
 
           {/* User section */}
@@ -99,6 +109,11 @@ const DashboardLayout = forwardRef<HTMLDivElement, DashboardLayoutProps>(({ chil
               <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
                 <User className="h-4 w-4 mr-2" /> Profile
               </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem onClick={() => navigate("/settings/team")}>
+                  <Users className="h-4 w-4 mr-2" /> Team
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={signOut} className="text-destructive">
                 <LogOut className="h-4 w-4 mr-2" /> Sign Out
               </DropdownMenuItem>

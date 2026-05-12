@@ -14,9 +14,17 @@ export interface AuthConfig {
   signupEnabled?: boolean;
 }
 
+// Augmented user, fetched from /api/auth/me — includes `isAdmin` so the
+// frontend can conditionally render admin-only UI without an extra round-
+// trip.
+interface AuthMeUser extends AuthUser {
+  isAdmin?: boolean;
+}
+
 interface AuthContextType {
   user: { id: string; email?: string; displayName?: string } | null;
   userId: string | null;
+  isAdmin: boolean;
   loading: boolean;
   config: AuthConfig | null;
   signOut: () => Promise<void>;
@@ -30,7 +38,7 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const useAuth = () => useContext(AuthContext);
 
-function toDisplayUser(u: AuthUser | null) {
+function toDisplayUser(u: AuthMeUser | null) {
   if (!u) return null;
   return {
     id: u.id,
@@ -49,15 +57,15 @@ const DEFAULT_CONFIG: AuthConfig = {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthMeUser | null>(null);
   const [config, setConfig] = useState<AuthConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/auth/user", { credentials: "include" });
+      const res = await fetch("/api/auth/me", { credentials: "include" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { user: AuthUser | null };
+      const data = (await res.json()) as { user: AuthMeUser | null };
       setUser(data.user ?? null);
     } catch {
       setUser(null);
@@ -70,11 +78,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const [cfgRes, userRes] = await Promise.all([
           fetch("/api/auth/config", { credentials: "include" }),
-          fetch("/api/auth/user", { credentials: "include" }),
+          fetch("/api/auth/me", { credentials: "include" }),
         ]);
         const cfg = cfgRes.ok ? ((await cfgRes.json()) as AuthConfig) : null;
         const usr = userRes.ok
-          ? ((await userRes.json()) as { user: AuthUser | null }).user
+          ? ((await userRes.json()) as { user: AuthMeUser | null }).user
           : null;
         if (!cancelled) {
           setConfig(cfg ?? DEFAULT_CONFIG);
@@ -115,6 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         user: toDisplayUser(user),
         userId: user?.id ?? null,
+        isAdmin: user?.isAdmin === true,
         loading,
         config,
         signOut,

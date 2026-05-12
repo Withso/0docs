@@ -4,6 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type Tab = "signin" | "signup" | "forgot" | "reset";
 
+interface InviteInfo {
+  email: string;
+  makeAdmin: boolean;
+  expiresAt: string;
+}
+
 function getReturnTo(search: URLSearchParams): string {
   const r = search.get("returnTo");
   if (r && r.startsWith("/") && !r.startsWith("//")) return r;
@@ -15,7 +21,17 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const [search] = useSearchParams();
   const resetToken = search.get("reset");
-  const initialTab: Tab = resetToken ? "reset" : "signin";
+  const inviteToken = search.get("invite");
+
+  const [invite, setInvite] = useState<InviteInfo | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState<boolean>(!!inviteToken);
+
+  const initialTab: Tab = inviteToken
+    ? "signup"
+    : resetToken
+      ? "reset"
+      : "signin";
   const [tab, setTab] = useState<Tab>(initialTab);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,15 +43,68 @@ export default function AuthPage() {
 
   const returnTo = useMemo(() => getReturnTo(search), [search]);
 
-  // Already signed in — bounce to returnTo.
+  // Already signed in — bounce to returnTo. Skip when accepting an
+  // invite, since the invite might be for a different account.
   useEffect(() => {
-    if (!loading && user) navigate(returnTo, { replace: true });
-  }, [user, loading, navigate, returnTo]);
+    if (!loading && user && !inviteToken) navigate(returnTo, { replace: true });
+  }, [user, loading, navigate, returnTo, inviteToken]);
 
-  if (loading || !config) {
+  // Resolve the invite token, if any, so we can pre-fill + lock the email
+  // and badge the form with the inviter / role.
+  useEffect(() => {
+    if (!inviteToken) return;
+    let cancelled = false;
+    (async () => {
+      setInviteLoading(true);
+      try {
+        const res = await fetch(
+          `/api/auth/invites/lookup?token=${encodeURIComponent(inviteToken)}`,
+        );
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          if (!cancelled) setInviteError(j.error || "Invite link is invalid.");
+          return;
+        }
+        const data = (await res.json()) as { invite: InviteInfo };
+        if (!cancelled) {
+          setInvite(data.invite);
+          setEmail(data.invite.email);
+        }
+      } catch {
+        if (!cancelled) setInviteError("Could not validate this invite link.");
+      } finally {
+        if (!cancelled) setInviteLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [inviteToken]);
+
+  if (loading || !config || inviteLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <span className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Invite link is broken / expired / used — surface the reason and let
+  // the user pick a different path.
+  if (inviteToken && inviteError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="w-full max-w-sm border border-border rounded-lg p-6 bg-card">
+          <h1 className="text-xl font-semibold mb-2">Invite unavailable</h1>
+          <p className="text-sm text-muted-foreground mb-4">{inviteError}</p>
+          <button
+            type="button"
+            onClick={() => navigate("/auth", { replace: true })}
+            className="w-full rounded-md bg-primary text-primary-foreground px-3 py-2 text-sm font-medium"
+          >
+            Sign in instead
+          </button>
+        </div>
       </div>
     );
   }
@@ -64,7 +133,13 @@ export default function AuthPage() {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, firstName, lastName }),
+          body: JSON.stringify({
+            email,
+            password,
+            firstName,
+            lastName,
+            ...(inviteToken ? { inviteToken } : {}),
+          }),
         });
         if (!res.ok) {
           const j = await res.json().catch(() => ({}));
@@ -114,13 +189,15 @@ export default function AuthPage() {
       <div className="w-full max-w-sm border border-border rounded-lg p-6 bg-card">
         <h1 className="text-xl font-semibold mb-1">
           {tab === "signin" && "Sign in"}
-          {tab === "signup" && "Create your account"}
+          {tab === "signup" && (invite ? "Accept your invite" : "Create your account")}
           {tab === "forgot" && "Reset your password"}
           {tab === "reset" && "Choose a new password"}
         </h1>
         <p className="text-sm text-muted-foreground mb-4">
           {tab === "signin" && "Welcome back to 0docs."}
-          {tab === "signup" && "Self-hosted 0docs instance."}
+          {tab === "signup" && !invite && "Self-hosted 0docs instance."}
+          {tab === "signup" && invite &&
+            `You've been invited as ${invite.makeAdmin ? "an admin" : "a member"}. Set a password to finish creating your account.`}
           {tab === "forgot" &&
             "Enter your email and we'll send a reset link."}
           {tab === "reset" && "Enter a new password for your account."}
@@ -135,7 +212,10 @@ export default function AuthPage() {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              readOnly={tab === "signup" && !!invite}
+              className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                tab === "signup" && invite ? "opacity-70 cursor-not-allowed" : ""
+              }`}
             />
           )}
           {tab === "signup" && (
@@ -192,7 +272,7 @@ export default function AuthPage() {
               : tab === "signin"
                 ? "Sign in"
                 : tab === "signup"
-                  ? "Create account"
+                  ? invite ? "Accept invite" : "Create account"
                   : tab === "forgot"
                     ? "Send reset link"
                     : "Update password"}
@@ -230,7 +310,7 @@ export default function AuthPage() {
               </div>
             </>
           )}
-          {(tab === "signup" || tab === "forgot" || tab === "reset") && (
+          {(tab === "signup" || tab === "forgot" || tab === "reset") && !invite && (
             <button
               type="button"
               onClick={() => {

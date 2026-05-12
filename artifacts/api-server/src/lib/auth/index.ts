@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { GetCurrentAuthUserResponse } from "@workspace/api-zod";
 import authRoutes from "./routes";
+import adminRoutes from "./admin";
 
 export * from "./shared";
 
@@ -28,6 +29,7 @@ export function buildAuthRouter(): IRouter {
   });
 
   router.use(authRoutes);
+  router.use(adminRoutes);
 
   return router;
 }
