@@ -37,13 +37,24 @@ const DocsMockup = () => (
         </div>
       </div>
     </div>
-    <iframe
-      src="/preview-demo"
-      className="flex-1 w-full border-0"
-      title="0docs live preview"
-      tabIndex={-1}
-      style={{ pointerEvents: "none" }}
-    />
+    <div className="relative flex-1 min-h-0">
+      <iframe
+        src="/preview-demo"
+        className="absolute inset-0 w-full h-full border-0"
+        title="0docs live preview"
+        tabIndex={-1}
+        style={{ pointerEvents: "none" }}
+      />
+      {/* Bottom fade so the cut-off feels intentional, not clipped */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-32"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(10,13,18,0) 0%, rgba(10,13,18,0.55) 45%, rgba(10,13,18,0.92) 80%, rgba(10,13,18,1) 100%)",
+        }}
+      />
+    </div>
   </div>
 );
 
