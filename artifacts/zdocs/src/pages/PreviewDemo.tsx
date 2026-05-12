@@ -1,39 +1,44 @@
 import {
   Search,
   Sparkles,
-  MessageSquare,
-  BookOpen,
-  Settings,
-  Brain,
-  Component,
-  Palette,
-  Compass,
-  GitBranch,
-  Globe,
-  Code2,
-  Wrench,
-  FileCode,
-  Image as ImageIcon,
-  Hash,
-  Rocket,
-  Download,
+  Home,
   Pencil,
+  SlidersHorizontal,
+  BarChart3,
+  Workflow,
+  Bot,
+  Plug,
+  GitBranch,
+  Rocket,
+  Globe,
+  Users,
+  Key,
+  Database,
+  FileText,
+  Terminal,
+  Info,
+  Check,
   Boxes,
+  Layout,
 } from "lucide-react";
 
 const COLORS = {
-  bg: "#0a0d0c",
-  panel: "#0d1210",
+  bg: "#0a0d12",
+  panel: "#0c1018",
   border: "rgba(255,255,255,0.06)",
   borderStrong: "rgba(255,255,255,0.10)",
-  text: "rgba(255,255,255,0.92)",
-  textMuted: "rgba(255,255,255,0.55)",
+  text: "rgba(255,255,255,0.94)",
+  textMuted: "rgba(255,255,255,0.58)",
   textDim: "rgba(255,255,255,0.40)",
-  accent: "#15B36E",
-  accentSoft: "rgba(21,179,110,0.12)",
-  card: "#0f1513",
-  cardArt: "#0c1310",
-  gridLine: "rgba(21,179,110,0.08)",
+  accent: "#3B82F6",
+  accentSoft: "rgba(59,130,246,0.12)",
+  accentSofter: "rgba(59,130,246,0.06)",
+  card: "#0f131c",
+  cardArt: "#0c1119",
+  gridLine: "rgba(59,130,246,0.07)",
+  noteBg: "rgba(59,130,246,0.06)",
+  noteBorder: "rgba(59,130,246,0.22)",
+  codeBg: "#0b0f17",
 };
 
 type NavItem = { label: string; icon: React.ComponentType<{ className?: string }>; active?: boolean };
@@ -42,60 +47,49 @@ type NavSection = { heading?: string; items: NavItem[] };
 const NAV: NavSection[] = [
   {
     items: [
-      { label: "Ask Assistant", icon: Sparkles },
-      { label: "Quickstart", icon: BookOpen, active: true },
-      { label: "Global Settings", icon: Settings },
-      { label: "AI Optimization", icon: Brain },
-      { label: "Components", icon: Component },
-      { label: "Themes", icon: Palette },
+      { label: "Project Home", icon: Home },
+      { label: "Visual Editor", icon: Pencil, active: true },
+      { label: "Configurations", icon: SlidersHorizontal },
+      { label: "Analytics", icon: BarChart3 },
     ],
   },
   {
+    heading: "Agents",
     items: [
-      { label: "Navigation", icon: Compass },
+      { label: "Workflows", icon: Workflow },
+      { label: "Agent", icon: Bot },
+      { label: "MCP Server", icon: Plug },
+    ],
+  },
+  {
+    heading: "Publishing",
+    items: [
       { label: "Versioning", icon: GitBranch },
+      { label: "Publish", icon: Rocket },
       { label: "Custom Domain", icon: Globe },
-      { label: "Web Editor", icon: Code2 },
-      { label: "Development", icon: Wrench },
     ],
   },
   {
-    heading: "Markdown Syntax",
+    heading: "Workspace",
     items: [
-      { label: "Global Settings", icon: Settings },
-      { label: "Code Blocks", icon: FileCode },
-      { label: "Media Embeds", icon: ImageIcon },
-      { label: "Global Settings", icon: Settings },
-      { label: "Navigation", icon: Compass },
-      { label: "Snippets", icon: Hash },
+      { label: "Members", icon: Users },
+      { label: "API Keys", icon: Key },
+      { label: "Database", icon: Database },
     ],
   },
 ];
 
 const TABS = [
-  { label: "Guides", active: true },
-  { label: "API Reference", active: false },
+  { label: "Docs", active: true },
+  { label: "Reference", active: false },
   { label: "Changelog", active: false },
 ];
 
 const TOC = [
-  { label: "Introduction", active: true },
-  { label: "Getting started", active: false },
-  { label: "AI optimization", active: false },
-  { label: "Themes", active: false },
-];
-
-type Card = {
-  title: string;
-  desc: string;
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-};
-
-const CARDS: Card[] = [
-  { title: "Quickstart", desc: "Deploy your first docs site in minutes with our step-by-step guide", icon: Rocket },
-  { title: "Installation", desc: "Install the CLI to preview and develop your docs locally", icon: Download },
-  { title: "Web editor", desc: "Make quick updates and manage content with our browser-based editor", icon: Pencil },
-  { title: "Components", desc: "Build rich, interactive documentation with our ready-to-use components", icon: Boxes },
+  { label: "Overview", active: true },
+  { label: "Three steps to ship", active: false },
+  { label: "Run locally", active: false },
+  { label: "Next steps", active: false },
 ];
 
 /* ── Sidebar ─────────────────────────────────────────────────────── */
@@ -199,7 +193,7 @@ const TopBar = () => (
         }}
       >
         <Search className="w-[13px] h-[13px]" style={{ color: COLORS.textDim }} />
-        <span style={{ fontSize: 12, color: COLORS.textDim, flex: 1 }}>Search or ask</span>
+        <span style={{ fontSize: 12, color: COLORS.textDim, flex: 1 }}>Search the docs</span>
         <span
           className="px-1 rounded text-[10px]"
           style={{ color: COLORS.textDim, border: `1px solid ${COLORS.border}` }}
@@ -218,50 +212,167 @@ const TopBar = () => (
         }}
       >
         <Sparkles className="w-[12px] h-[12px]" style={{ color: COLORS.accent }} />
-        Ask AI
+        Ask 0docs
       </button>
     </div>
   </div>
 );
 
-/* ── Cards ───────────────────────────────────────────────────────── */
+/* ── Blocks ──────────────────────────────────────────────────────── */
 
-const CardArt = ({ Icon }: { Icon: Card["icon"] }) => (
+const NoteBlock = ({ children }: { children: React.ReactNode }) => (
   <div
-    className="relative w-full overflow-hidden flex items-center justify-center"
+    className="flex items-start gap-2.5 px-3.5 py-3 my-5 rounded-[10px]"
     style={{
-      height: 132,
-      borderRadius: 8,
-      background: COLORS.cardArt,
-      backgroundImage: `linear-gradient(${COLORS.gridLine} 1px, transparent 1px), linear-gradient(90deg, ${COLORS.gridLine} 1px, transparent 1px)`,
-      backgroundSize: "16px 16px",
-      border: `1px solid ${COLORS.border}`,
+      background: COLORS.noteBg,
+      border: `1px solid ${COLORS.noteBorder}`,
     }}
   >
-    <Icon className="w-9 h-9" style={{ color: COLORS.accent, strokeWidth: 1.4 }} />
+    <Info
+      className="w-[14px] h-[14px] mt-[2px] flex-shrink-0"
+      style={{ color: COLORS.accent }}
+    />
+    <div style={{ color: COLORS.text, fontSize: 12.5, lineHeight: 1.55 }}>
+      {children}
+    </div>
   </div>
 );
 
+const StepsBlock = ({ items }: { items: { title: string; body: string }[] }) => (
+  <div className="my-6">
+    {items.map((it, i) => {
+      const isLast = i === items.length - 1;
+      return (
+        <div key={i} className="flex gap-3.5 relative" style={{ paddingBottom: isLast ? 0 : 18 }}>
+          <div className="flex flex-col items-center" style={{ width: 26, flexShrink: 0 }}>
+            <div
+              className="flex items-center justify-center"
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                background: COLORS.accentSoft,
+                color: COLORS.accent,
+                fontSize: 11,
+                fontWeight: 600,
+                border: `1px solid ${COLORS.noteBorder}`,
+              }}
+            >
+              {i + 1}
+            </div>
+            {!isLast && (
+              <div
+                className="flex-1 mt-1"
+                style={{ width: 1, background: COLORS.border, minHeight: 18 }}
+              />
+            )}
+          </div>
+          <div className="pb-1 flex-1 min-w-0">
+            <div
+              style={{
+                color: COLORS.text,
+                fontSize: 13,
+                fontWeight: 600,
+                lineHeight: 1.3,
+                letterSpacing: "-0.005em",
+              }}
+            >
+              {it.title}
+            </div>
+            <div
+              className="mt-1"
+              style={{ color: COLORS.textMuted, fontSize: 12.5, lineHeight: 1.55 }}
+            >
+              {it.body}
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+);
+
+const CodeBlock = () => (
+  <div
+    className="my-5 overflow-hidden"
+    style={{
+      borderRadius: 10,
+      border: `1px solid ${COLORS.border}`,
+      background: COLORS.codeBg,
+    }}
+  >
+    <div
+      className="flex items-center justify-between px-3.5 py-2"
+      style={{ borderBottom: `1px solid ${COLORS.border}` }}
+    >
+      <div className="flex items-center gap-1.5" style={{ color: COLORS.textMuted, fontSize: 11 }}>
+        <Terminal className="w-[11px] h-[11px]" />
+        <span>terminal</span>
+      </div>
+      <div style={{ color: COLORS.textDim, fontSize: 10.5 }}>bash</div>
+    </div>
+    <pre
+      className="px-3.5 py-3 overflow-hidden"
+      style={{
+        fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+        fontSize: 11.5,
+        lineHeight: 1.7,
+        color: COLORS.text,
+        margin: 0,
+      }}
+    >
+      <span style={{ color: COLORS.textDim }}>$ </span>
+      <span>git clone https://github.com/Withso/0docs</span>
+      {"\n"}
+      <span style={{ color: COLORS.textDim }}>$ </span>
+      <span>cd 0docs && pnpm install</span>
+      {"\n"}
+      <span style={{ color: COLORS.textDim }}>$ </span>
+      <span style={{ color: COLORS.accent }}>pnpm</span> run selfhost
+    </pre>
+  </div>
+);
+
+type Card = {
+  title: string;
+  desc: string;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+};
+
+const FOOTER_CARDS: Card[] = [
+  { title: "Block library", desc: "Cards, steps, callouts, tabs, code, API endpoints, and more.", icon: Boxes },
+  { title: "Theming", desc: "Tweak colors, fonts, sidebar, and per-block styles in one place.", icon: Layout },
+];
+
 const FeatureCard = ({ card }: { card: Card }) => (
   <div
-    className="p-3.5 transition-colors"
+    className="p-3.5"
     style={{
-      borderRadius: 12,
+      borderRadius: 10,
       border: `1px solid ${COLORS.border}`,
       background: COLORS.card,
     }}
   >
-    <CardArt Icon={card.icon} />
-    <div className="mt-3.5">
-      <div style={{ color: COLORS.text, fontSize: 13.5, fontWeight: 600, letterSpacing: "-0.005em" }}>
-        {card.title}
-      </div>
-      <div
-        className="mt-1"
-        style={{ color: COLORS.textMuted, fontSize: 12, lineHeight: 1.5 }}
-      >
-        {card.desc}
-      </div>
+    <div
+      className="flex items-center justify-center mb-3"
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        background: COLORS.accentSofter,
+        border: `1px solid ${COLORS.noteBorder}`,
+      }}
+    >
+      <card.icon className="w-[15px] h-[15px]" style={{ color: COLORS.accent }} />
+    </div>
+    <div style={{ color: COLORS.text, fontSize: 13, fontWeight: 600, letterSpacing: "-0.005em" }}>
+      {card.title}
+    </div>
+    <div
+      className="mt-1"
+      style={{ color: COLORS.textMuted, fontSize: 12, lineHeight: 1.5 }}
+    >
+      {card.desc}
     </div>
   </div>
 );
@@ -269,18 +380,12 @@ const FeatureCard = ({ card }: { card: Card }) => (
 /* ── TOC ─────────────────────────────────────────────────────────── */
 
 const TOCPanel = () => (
-  <aside
-    className="flex-shrink-0 pt-9 pl-6 pr-7"
-    style={{ width: 200 }}
-  >
+  <aside className="flex-shrink-0 pt-9 pl-6 pr-7" style={{ width: 200 }}>
     <div
       className="flex items-center gap-1.5 mb-2.5"
       style={{ color: COLORS.textMuted, fontSize: 11.5, fontWeight: 500 }}
     >
-      <span
-        className="inline-block w-3 h-[1.5px]"
-        style={{ background: COLORS.textDim }}
-      />
+      <span className="inline-block w-3 h-[1.5px]" style={{ background: COLORS.textDim }} />
       On this page
     </div>
     <ul className="flex flex-col">
@@ -333,7 +438,7 @@ const PreviewDemo = () => (
                 letterSpacing: "-0.005em",
               }}
             >
-              Getting Started
+              Welcome
             </div>
             <h1
               className="mt-1.5"
@@ -345,7 +450,7 @@ const PreviewDemo = () => (
                 lineHeight: 1.15,
               }}
             >
-              Quickstart Guide
+              Your docs, your way
             </h1>
             <p
               className="mt-2"
@@ -355,10 +460,28 @@ const PreviewDemo = () => (
                 lineHeight: 1.55,
               }}
             >
-              Start building intelligent documentation in under five minutes.
+              0docs gives you a block-based editor, a themable design system, and a beautiful
+              public reader — fully open source and self-hostable in one command.
             </p>
-            <div className="mt-6 grid grid-cols-2 gap-3.5">
-              {CARDS.map((c) => (
+
+            <NoteBlock>
+              <strong style={{ color: COLORS.text, fontWeight: 600 }}>Heads up.</strong>{" "}
+              Every page you write is rendered by the same DocBlockRenderer that powers
+              this preview — what you build is what your readers see.
+            </NoteBlock>
+
+            <StepsBlock
+              items={[
+                { title: "Create a project", body: "Spin up a workspace and pick a theme. Branding cascades to every block." },
+                { title: "Author with blocks", body: "Drag in callouts, steps, code tabs, cards, accordions, API endpoints — no markdown required." },
+                { title: "Publish a version", body: "Snapshot your docs, point a custom domain, and ship — with full version history." },
+              ]}
+            />
+
+            <CodeBlock />
+
+            <div className="mt-7 grid grid-cols-2 gap-3.5">
+              {FOOTER_CARDS.map((c) => (
                 <FeatureCard key={c.title} card={c} />
               ))}
             </div>
