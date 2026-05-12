@@ -44,22 +44,6 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
-# Replit-specific (workspace config — not relevant outside Replit)
+# Replit
 .cache/
 .local/
-.config/
-.agents/
-.replit
-.replitignore
-replit.md
-attached_assets/
-screenshots/
-**/.replit-artifact/
-
-# Local environment files (only .env.example is committed)
-.env
-.env.local
-.env.*.local
-
-# Build artefacts
-build/

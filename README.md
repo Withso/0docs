@@ -1,33 +1,18 @@
 # 0docs
 
-> **Docs that are open, powerful, and yours.** An open-source, self-hostable
-> documentation platform with a visual block-based editor, version
-> publishing, branching, and an "Ask docs" AI feature.
+> Open-source documentation platform with a visual editor, branching, version
+> publishing, and an "Ask docs" AI feature. Self-hostable in one command, or
+> usable in the hosted Replit demo.
 
-**🌐 Website:** [0docs.dev](https://0docs.dev) · **📦 GitHub:** [Withso/0docs](https://github.com/Withso/0docs) · **📜 License:** MIT
-
-0docs is a Mintlify-grade documentation builder you can run on your own
-infrastructure for free. You write docs as pages → sections → blocks
-(paragraphs, code, callouts, steps, tabs, cards, API endpoints, and more),
-branch to draft changes, publish atomic versions, and ship a public docs
-site at a free URL or your own domain. AI-powered "Ask docs" answers
-questions over the content of your published version, and a built-in MCP
-server lets AI agents read and edit your docs directly.
+0docs is a Mintlify-style documentation builder. You write docs as pages →
+sections → blocks (paragraphs, code, callouts, tabs, etc), branch to draft
+changes, publish atomic versions, and ship a public docs site at a free
+URL or your own domain. AI-powered "Ask docs" answers questions over the
+content of your published version.
 
 This repository is a **pnpm monorepo** containing the API server, the web
 app, shared libraries, and everything you need to run the whole product on
 your own infrastructure.
-
-## Highlights
-
-- 🧩 **Block-based visual editor** — paragraphs, headings, callouts, steps, code blocks, tabs, accordions, cards, API endpoints, tables, and more.
-- 🎨 **Themable design system** — visual branding cascades to every block; per-block overrides when you need them.
-- 🔀 **Branching & atomic publishing** — draft on a branch, snapshot a version, ship; full version history and one-click revert.
-- 🌍 **Custom domains** — bring your own domain or use the free `*.0docs.dev` URL.
-- 🤖 **Ask docs (AI)** — readers can ask questions answered from your published content.
-- 🔌 **MCP server** — AI agents (Claude Desktop, Cursor, Continue, custom clients) can read & edit docs over the Model Context Protocol.
-- 🔐 **Two auth modes** — email + password (self-host) or Replit OIDC (hosted demo); switch with one env var.
-- 📦 **One-command install** — `./install.sh` boots Postgres, applies migrations, seeds an admin, and starts the stack.
 
 ---
 
@@ -71,7 +56,7 @@ You'll need:
 Then:
 
 ```bash
-git clone https://github.com/Withso/0docs.git
+git clone https://github.com/your-org/0docs.git
 cd 0docs
 ./install.sh         # one command: installs, migrates, seeds admin, boots
 ```
@@ -311,16 +296,6 @@ The codebase follows a small set of conventions:
 
 ---
 
-## Links
-
-- 🌐 Website / hosted demo: **[0docs.dev](https://0docs.dev)**
-- 📦 Source: **[github.com/Withso/0docs](https://github.com/Withso/0docs)**
-- 📖 Self-hosting guide: [`SELFHOSTING.md`](./SELFHOSTING.md)
-- 🤖 MCP server reference: [`artifacts/api-server/MCP.md`](./artifacts/api-server/MCP.md)
-
----
-
 ## License
 
-MIT — see [`LICENSE`](./LICENSE) (or assume MIT if the file is absent; the
-project is released under the standard MIT terms).
+MIT.

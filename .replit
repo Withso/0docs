@@ -11,27 +11,6 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
-[[workflows.workflow]]
-name = "Project"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Start application"
-
-[[workflows.workflow]]
-name = "Start application"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm -r --parallel --filter @workspace/api-server --filter @workspace/zdocs --filter @workspace/mockup-sandbox run dev"
-waitForPort = 8080
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
@@ -43,14 +22,6 @@ timeoutMs = 20000
 [userenv]
 
 [userenv.shared]
-
-[[ports]]
-localPort = 5173
-externalPort = 5173
-
-[[ports]]
-localPort = 5174
-externalPort = 3001
 
 [[ports]]
 localPort = 8080
