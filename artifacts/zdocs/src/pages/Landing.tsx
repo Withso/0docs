@@ -37,13 +37,22 @@ const DocsMockup = () => (
         </div>
       </div>
     </div>
-    <iframe
-      src="/preview-demo"
-      className="flex-1 w-full border-0"
-      title="0docs live preview"
-      tabIndex={-1}
-      style={{ pointerEvents: "none" }}
-    />
+    <div className="relative flex-1 w-full overflow-hidden">
+      <iframe
+        src="/preview-demo"
+        className="absolute inset-0 w-full h-full border-0"
+        title="0docs live preview"
+        tabIndex={-1}
+        style={{ pointerEvents: "none" }}
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-40"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(10,13,18,0) 0%, rgba(10,13,18,0.55) 45%, rgba(10,13,18,0.92) 80%, rgba(10,13,18,1) 100%)",
+        }}
+      />
+    </div>
   </div>
 );
 
