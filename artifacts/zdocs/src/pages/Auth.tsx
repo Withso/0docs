@@ -33,6 +33,7 @@ export default function AuthPage() {
       ? "reset"
       : "signin";
   const [tab, setTab] = useState<Tab>(initialTab);
+  const [tabAdjusted, setTabAdjusted] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -48,6 +49,23 @@ export default function AuthPage() {
   useEffect(() => {
     if (!loading && user && !inviteToken) navigate(returnTo, { replace: true });
   }, [user, loading, navigate, returnTo, inviteToken]);
+
+  // Fresh-instance bootstrap: when no users exist yet, default the
+  // page to the signup form so the first visitor sets up the admin
+  // account. We only flip once on initial load so the user can still
+  // toggle to signin manually afterwards.
+  useEffect(() => {
+    if (tabAdjusted) return;
+    if (!config) return;
+    if (inviteToken || resetToken) return;
+    if (config.hasAnyUser === false) {
+      setTab("signup");
+    }
+    setTabAdjusted(true);
+  }, [config, inviteToken, resetToken, tabAdjusted]);
+
+  const isBootstrapSignup =
+    tab === "signup" && !invite && config?.hasAnyUser === false;
 
   // Resolve the invite token, if any, so we can pre-fill + lock the email
   // and badge the form with the inviter / role.
@@ -189,13 +207,22 @@ export default function AuthPage() {
       <div className="w-full max-w-sm border border-border rounded-lg p-6 bg-card">
         <h1 className="text-xl font-semibold mb-1">
           {tab === "signin" && "Sign in"}
-          {tab === "signup" && (invite ? "Accept your invite" : "Create your account")}
+          {tab === "signup" && (
+            invite
+              ? "Accept your invite"
+              : isBootstrapSignup
+                ? "Set up your admin account"
+                : "Create your account"
+          )}
           {tab === "forgot" && "Reset your password"}
           {tab === "reset" && "Choose a new password"}
         </h1>
         <p className="text-sm text-muted-foreground mb-4">
           {tab === "signin" && "Welcome back to 0docs."}
-          {tab === "signup" && !invite && "Self-hosted 0docs instance."}
+          {tab === "signup" && isBootstrapSignup &&
+            "Welcome to your new 0docs instance. The first account is the admin — that's you."}
+          {tab === "signup" && !invite && !isBootstrapSignup &&
+            "Self-hosted 0docs instance."}
           {tab === "signup" && invite &&
             `You've been invited as ${invite.makeAdmin ? "an admin" : "a member"}. Set a password to finish creating your account.`}
           {tab === "forgot" &&
@@ -272,7 +299,11 @@ export default function AuthPage() {
               : tab === "signin"
                 ? "Sign in"
                 : tab === "signup"
-                  ? invite ? "Accept invite" : "Create account"
+                  ? invite
+                    ? "Accept invite"
+                    : isBootstrapSignup
+                      ? "Create admin account"
+                      : "Create account"
                   : tab === "forgot"
                     ? "Send reset link"
                     : "Update password"}

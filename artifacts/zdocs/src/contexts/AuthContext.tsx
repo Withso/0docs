@@ -12,6 +12,7 @@ export interface AuthConfig {
   loginUrl: string;
   logoutUrl: string;
   signupEnabled?: boolean;
+  hasAnyUser?: boolean;
 }
 
 // Augmented user, fetched from /api/auth/me — includes `isAdmin` so the

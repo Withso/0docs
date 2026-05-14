@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { GetCurrentAuthUserResponse } from "@workspace/api-zod";
+import { db, usersTable } from "@workspace/db";
 import authRoutes from "./routes";
 import adminRoutes from "./admin";
 
@@ -20,11 +21,19 @@ export function buildAuthRouter(): IRouter {
     );
   });
 
-  router.get("/auth/config", (_req: Request, res: Response) => {
+  router.get("/auth/config", async (_req: Request, res: Response) => {
+    // `hasAnyUser` lets the frontend pick the right Auth-page default:
+    // signup on a brand-new instance (so the very first visitor sets up
+    // the bootstrap admin), signin otherwise.
+    const [firstUser] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .limit(1);
     res.json({
       loginUrl: "/auth",
       logoutUrl: "/api/logout",
       signupEnabled: process.env.DISABLE_SIGNUP !== "true",
+      hasAnyUser: !!firstUser,
     });
   });
 

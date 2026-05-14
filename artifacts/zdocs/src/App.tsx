@@ -6,9 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Routes, Route, useParams } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Landing from "./pages/Landing";
+import RootRedirect from "@/components/RootRedirect";
 import Index from "./pages/Index";
-import PreviewDemo from "./pages/PreviewDemo";
 import Builder from "./pages/Builder";
 import AuthPage from "./pages/Auth";
 
@@ -50,8 +49,11 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
             <Sonner />
             <Suspense fallback={<LazyFallback />}>
               <Routes>
-                <Route path="/" element={<Landing />} />
-                <Route path="/preview-demo" element={<PreviewDemo />} />
+                {/* Root → the app itself. Signed-in users go to the
+                    builder; signed-out visitors land on /auth (which
+                    picks signin vs signup based on whether the
+                    instance has any users yet). */}
+                <Route path="/" element={<RootRedirect />} />
                 <Route path="/docs" element={<Index />} />
                 {/* Default published-doc URL — every project gets a free
                     shareable URL at <host>/p/<slug>. Index reads :slug from
@@ -65,9 +67,8 @@ const App = forwardRef<HTMLDivElement>((_, ref) => (
                   element={<Navigate to="/builder" replace />}
                 />
                 {/* /builder is a pure redirect entry-point. It must NOT be
-                    wrapped in ProtectedRoute — signed-out visitors should
-                    land on the Landing page, not the sign-in flow.
-                    BuilderEntry handles the signed-out case itself. */}
+                    wrapped in ProtectedRoute — BuilderEntry handles the
+                    signed-out case itself (it sends them to /auth). */}
                 <Route path="/builder" element={<BuilderEntry />} />
                 <Route
                   path="/builder/:projectId"
