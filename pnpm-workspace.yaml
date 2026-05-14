@@ -3,6 +3,7 @@ packages:
   - lib/*
   - lib/integrations/*
   - scripts
+  - site
 
 autoInstallPeers: false
 
