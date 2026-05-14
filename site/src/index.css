@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 6% 4%;
+    --foreground: 30 5% 96%;
+    --muted: 30 4% 11%;
+    --muted-foreground: 30 4% 60%;
+    --accent: 30 4% 13%;
+    --accent-foreground: 30 5% 96%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+    --border: 30 5% 14%;
+  }
+
+  *,
+  ::before,
+  ::after {
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
+  }
+}
