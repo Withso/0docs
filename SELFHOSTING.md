@@ -15,18 +15,21 @@ one app to deploy.
 1. Create a new Railway project and add the **PostgreSQL plugin**.
    Railway injects `DATABASE_URL` automatically.
 2. Add a new service from this repo. Railway detects the `Dockerfile`.
-3. In the service's **Variables** tab, set:
-   - `SESSION_SECRET` — random 64+ char string.
-     Use `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
-     to generate one.
-   - `NODE_ENV=production`.
+3. In the **app service's** Variables tab (not the Postgres service):
+   - `NODE_ENV=production` (recommended, sets the Secure cookie flag).
    - `ADMIN_EMAIL` + `ADMIN_PASSWORD` (optional) — bootstrap admin user.
    - `OPENAI_API_KEY` (optional) — enables the "Ask docs" feature.
-   - `SMTP_URL` + `SMTP_FROM` (optional) — enables password-reset emails.
-   - `S3_*` variables (optional) — enables S3-compatible image upload.
-     Required if you scale past one instance, since Railway's filesystem
-     is ephemeral.
+   - `SMTP_URL` + `SMTP_FROM` (optional) — enables password-reset and
+     invite emails. Without these, links are printed to the server logs
+     so the operator can copy and share them.
+   - `S3_*` variables (optional) — enables S3-compatible media storage.
+     Recommended once your corpus grows. Without it, media is stored
+     inline in Postgres (works fine for small/medium installs).
 4. Deploy. Railway runs migrations on boot.
+
+You do **not** need to set `DATABASE_URL` (Railway injects it from the
+Postgres plugin) or `SESSION_SECRET` (the server auto-generates and
+persists one in `system_settings` on first boot).
 
 A one-click "Deploy on Railway" template is on the roadmap.
 
@@ -215,8 +218,6 @@ empty, signup is still allowed so a fresh install can bootstrap).
 
 ## Checklist before going live
 
-- [ ] `SESSION_SECRET` is at least 64 random characters (`install.sh`
-      handles this).
 - [ ] `NODE_ENV=production` is set on the API container / Railway service.
 - [ ] HTTPS is terminated upstream and `X-Forwarded-Proto` is forwarded.
 - [ ] `CORS_ALLOWLIST` includes any extra origins (skip if web + API

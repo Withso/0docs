@@ -53,16 +53,14 @@ if [ ! -f .env ]; then
   ok "created .env from .env.example"
 fi
 
-if grep -q "^SESSION_SECRET=replace-me" .env || ! grep -q "^SESSION_SECRET=" .env; then
-  SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))")
-  if grep -q "^SESSION_SECRET=" .env; then
-    # POSIX-safe in-place edit (works on Linux + macOS).
-    tmp=$(mktemp)
-    sed "s|^SESSION_SECRET=.*|SESSION_SECRET=${SECRET}|" .env > "$tmp" && mv "$tmp" .env
-  else
-    printf "\nSESSION_SECRET=%s\n" "$SECRET" >> .env
-  fi
-  ok "generated SESSION_SECRET"
+# SESSION_SECRET is optional — the server auto-generates one on first
+# boot and persists it in the system_settings table. We still clear the
+# placeholder if it's left from a stale .env so docker-compose doesn't
+# pass a literally-"replace-me" value through.
+if grep -q "^SESSION_SECRET=replace-me" .env; then
+  tmp=$(mktemp)
+  sed "s|^SESSION_SECRET=.*|SESSION_SECRET=|" .env > "$tmp" && mv "$tmp" .env
+  ok "cleared placeholder SESSION_SECRET (will be auto-generated on boot)"
 fi
 
 # ── 3. Postgres ─────────────────────────────────────────────────────

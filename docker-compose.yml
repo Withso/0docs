@@ -41,7 +41,9 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-zerodocs}
-      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      # Optional override. Leave unset and the server auto-generates a
+      # secret on first boot, persisted in the system_settings table.
+      SESSION_SECRET: ${SESSION_SECRET:-}
       NODE_ENV: production
       PORT: 8081
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}

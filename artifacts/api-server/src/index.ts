@@ -1,5 +1,5 @@
 import { runMigrations } from "@workspace/db/migrate";
-import app from "./app";
+import { buildApp } from "./app";
 import { logger } from "./lib/logger";
 
 const rawPort = process.env["PORT"];
@@ -20,6 +20,8 @@ async function bootstrap() {
   logger.info("Applying database migrations");
   await runMigrations();
   logger.info("Database migrations applied");
+
+  const app = await buildApp();
 
   app.listen(port, (err) => {
     if (err) {

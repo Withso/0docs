@@ -106,17 +106,29 @@ Builder components:
 
 0docs uses first-party email + password auth, runnable on any infrastructure
 (Railway, Docker, VPS, bare metal). Sessions are server-side, stored in the
-`sessions` table, and identified by an `sid` cookie (HttpOnly, SameSite=Lax,
-Secure in production).
+`sessions` table, and identified by a signed `sid` cookie (HttpOnly,
+SameSite=Lax, Secure in production).
+
+The cookie is signed by `cookie-parser` using a server-side secret. The
+secret is resolved by `lib/auth/secret.ts` at boot: it prefers the
+`SESSION_SECRET` env var, falls back to the `system_settings.session_secret`
+row, and otherwise generates 48 random bytes and writes them into
+`system_settings` so subsequent boots reuse the same value. This means
+zero-config deploys (Railway with just `DATABASE_URL`) get signed
+cookies automatically.
 
 Code layout (`artifacts/api-server/src/lib/auth/`):
-- `shared.ts` — sessions, cookies, `getSessionId`
+- `shared.ts` — sessions, signed cookies, `getSessionId` (reads from
+  `req.signedCookies` so unsigned/tampered values are ignored)
+- `secret.ts` — `ensureSessionSecret()` cookie-signing secret resolver
 - `routes.ts` — email/password: `/api/auth/{signup,login,logout,forgot-password,reset-password}`
+- `admin.ts` — admin/invite endpoints: `/api/auth/me`, `/api/auth/invites/*`,
+  `/api/auth/admin/users/*`
 - `password.ts` — scrypt hashing + password strength checks
 - `ratelimit.ts` — in-memory rate limit for login / reset endpoints
-- `email.ts` — optional SMTP for reset emails (falls back to `console.log`)
-- `index.ts` — exports `buildAuthRouter()` which mounts `/api/auth/user`
-  (current user) plus the auth provider's routes
+- `email.ts` — optional SMTP for reset + invite emails (falls back to
+  `console.log`)
+- `index.ts` — exports `buildAuthRouter()` which mounts the routes
 
 The frontend (`artifacts/zdocs/src/contexts/AuthContext.tsx`) calls
 `/api/auth/user` to hydrate the current user. `pages/Auth.tsx` renders

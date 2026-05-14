@@ -65,12 +65,20 @@ export function getSessionId(req: Request): string | undefined {
   if (authHeader?.startsWith("Bearer ")) {
     return authHeader.slice(7);
   }
-  return req.cookies?.[SESSION_COOKIE];
+  // cookie-parser populates `signedCookies` with the value if the
+  // signature verifies, or `false` if it doesn't. Reading from
+  // `signedCookies` (not `cookies`) means tampered or unsigned values
+  // never count as a valid sid.
+  const signed = req.signedCookies?.[SESSION_COOKIE];
+  if (typeof signed === "string" && signed.length > 0) return signed;
+  return undefined;
 }
 
 export function setSessionCookie(res: Response, sid: string): void {
-  // `secure` is required when SameSite=None (we use Lax, so we keep secure
-  // off in dev to allow local http). In production we set it on.
+  // `secure` is required when SameSite=None (we use Lax, so we keep
+  // secure off in dev to allow local http). In production we set it on.
+  // `signed: true` adds an HMAC suffix verified by cookie-parser via the
+  // session secret; tampering invalidates the cookie.
   const isProd = process.env.NODE_ENV === "production";
   res.cookie(SESSION_COOKIE, sid, {
     httpOnly: true,
@@ -78,5 +86,6 @@ export function setSessionCookie(res: Response, sid: string): void {
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_TTL,
+    signed: true,
   });
 }
